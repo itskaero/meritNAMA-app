@@ -1,3 +1,5 @@
+import type { IconName } from "@/components/icon";
+
 /**
  * Single source for app sections: drives the sidebar and the placeholder pages,
  * so a route's planned scope is documented in exactly one place.
@@ -6,6 +8,10 @@ export type Milestone = "Delivery 2 · Data foundations" | "Delivery 3 · Admin 
 
 export type Section = {
   href: string;
+  /** Sidebar group heading. */
+  group: string;
+  /** Icon name from src/components/icon.tsx. */
+  icon: IconName;
   label: string;
   description: string;
   milestone: Milestone;
@@ -15,6 +21,8 @@ export type Section = {
 export const candidateSections: Section[] = [
   {
     href: "/portal",
+    group: "Menu",
+    icon: "dashboard",
     label: "Dashboard",
     description: "Your programme, induction, merit and plans at a glance.",
     milestone: "Delivery 4 · Candidate MVP",
@@ -22,6 +30,8 @@ export const candidateSections: Section[] = [
   },
   {
     href: "/portal/profile",
+    group: "Menu",
+    icon: "user",
     label: "Merit profile",
     description: "Imported marks under the applicable scoring policy.",
     milestone: "Delivery 4 · Candidate MVP",
@@ -29,6 +39,8 @@ export const candidateSections: Section[] = [
   },
   {
     href: "/portal/preferences",
+    group: "Menu",
+    icon: "list",
     label: "Preference planner",
     description: "Draft and compare preference lists.",
     milestone: "Delivery 4 · Candidate MVP",
@@ -36,6 +48,8 @@ export const candidateSections: Section[] = [
   },
   {
     href: "/portal/simulation",
+    group: "Menu",
+    icon: "target",
     label: "Simulation",
     description: "Seat-allocation simulation using the existing engine.",
     milestone: "Delivery 4 · Candidate MVP",
@@ -43,6 +57,8 @@ export const candidateSections: Section[] = [
   },
   {
     href: "/portal/history",
+    group: "Explore",
+    icon: "trend",
     label: "Historical cutoffs",
     description: "Closing merit across inductions and rounds.",
     milestone: "Delivery 4 · Candidate MVP",
@@ -50,6 +66,8 @@ export const candidateSections: Section[] = [
   },
   {
     href: "/portal/explore",
+    group: "Explore",
+    icon: "building",
     label: "Hospitals & specialties",
     description: "Discover training opportunities.",
     milestone: "Delivery 4 · Candidate MVP",
@@ -57,6 +75,8 @@ export const candidateSections: Section[] = [
   },
   {
     href: "/portal/workspace",
+    group: "Personal",
+    icon: "folder",
     label: "Workspace",
     description: "Saved drafts, scenarios and favourites.",
     milestone: "Delivery 4 · Candidate MVP",
@@ -67,6 +87,8 @@ export const candidateSections: Section[] = [
 export const adminSections: Section[] = [
   {
     href: "/admin",
+    group: "Menu",
+    icon: "dashboard",
     label: "Overview",
     description: "Active induction, datasets, processing and system health.",
     milestone: "Delivery 3 · Admin MVP",
@@ -74,6 +96,8 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/candidates",
+    group: "Menu",
+    icon: "users",
     label: "Candidates",
     description: "Search, inspect and correct candidate records.",
     milestone: "Delivery 3 · Admin MVP",
@@ -81,6 +105,8 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/inductions",
+    group: "Menu",
+    icon: "calendar",
     label: "Inductions",
     description: "Induction configuration, merit lists and gazettes.",
     milestone: "Delivery 3 · Admin MVP",
@@ -88,6 +114,8 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/policies",
+    group: "Configuration",
+    icon: "sliders",
     label: "Scoring policies",
     description: "Versioned scoring-policy definitions.",
     milestone: "Delivery 3 · Admin MVP",
@@ -95,6 +123,8 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/reference-data",
+    group: "Configuration",
+    icon: "database",
     label: "Reference data",
     description: "Specialties, hospitals, quotas and seats.",
     milestone: "Delivery 2 · Data foundations",
@@ -102,6 +132,8 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/processing",
+    group: "Operations",
+    icon: "cpu",
     label: "Processing & simulation",
     description: "Server-side pipelines and simulation runs.",
     milestone: "Delivery 3 · Admin MVP",
@@ -109,6 +141,8 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/audit",
+    group: "Operations",
+    icon: "history",
     label: "Audit history",
     description: "Who changed what, when and why.",
     milestone: "Delivery 3 · Admin MVP",
@@ -116,6 +150,8 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/settings",
+    group: "System",
+    icon: "settings",
     label: "Settings",
     description: "Application settings and health.",
     milestone: "Delivery 3 · Admin MVP",

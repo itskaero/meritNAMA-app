@@ -23,6 +23,7 @@
   --radius-sm: var(--mn-radius-sm);
   --radius-md: var(--mn-radius-md);
   --radius-lg: var(--mn-radius-lg);
+  --radius-xl: var(--mn-radius-xl);
 }
 
 html { color-scheme: dark; }

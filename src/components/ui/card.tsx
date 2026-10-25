@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "./cn";
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn("rounded-lg border border-line bg-surface p-5", className)}>{children}</section>;
+  return <section className={cn("rounded-[1.5rem] border border-line bg-surface p-5", className)}>{children}</section>;
 }
 
 export function CardHeader({ title, action, description }: { title: string; action?: ReactNode; description?: string }) {

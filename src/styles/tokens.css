@@ -56,10 +56,11 @@
   --mn-space-8: 64px;
   --mn-space-9: 96px;
 
-  /* Radii — kept modest on purpose */
+  /* Radii */
   --mn-radius-sm: 6px;
   --mn-radius-md: 10px;
   --mn-radius-lg: 14px;
+  --mn-radius-xl: 20px;   /* panels and metric cards */
   --mn-radius-pill: 999px;
 
   /* Elevation */

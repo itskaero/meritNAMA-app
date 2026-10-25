@@ -1,18 +1,31 @@
 import type { ReactNode } from "react";
-import { Card } from "./card";
 
-/** A single figure. Pass `value={null}` when the data does not exist yet — never a made-up number. */
-export function Metric({ label, value, hint, badge }: { label: string; value: ReactNode | null; hint?: string; badge?: ReactNode }) {
+/**
+ * Pill-shaped figure card. Pass `value={null}` when the data does not exist yet —
+ * it renders an em dash, never a made-up number.
+ */
+export function Metric({ label, value, unit, hint, badge }: {
+  label: string;
+  value: ReactNode | null;
+  unit?: string;
+  hint?: string;
+  badge?: ReactNode;
+}) {
   return (
-    <Card className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-muted">{label}</span>
+    <section className="flex min-h-32 flex-col justify-between gap-4 rounded-[1.5rem] border border-line bg-surface p-5">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="max-w-[12rem] text-xs leading-snug text-muted">{label}</h3>
         {badge}
       </div>
-      <span className="text-2xl font-bold tabular-nums tracking-tight">
-        {value ?? <span className="text-subtle" aria-label="Not available">—</span>}
-      </span>
-      {hint ? <span className="text-xs text-muted">{hint}</span> : null}
-    </Card>
+      <div>
+        <p className="flex items-baseline gap-1.5">
+          <span className="text-4xl font-medium tabular-nums tracking-tight">
+            {value ?? <span className="text-subtle" aria-label="Not available">—</span>}
+          </span>
+          {value !== null && unit ? <span className="text-sm text-muted">{unit}</span> : null}
+        </p>
+        {hint ? <p className="mt-1 text-xs text-subtle">{hint}</p> : null}
+      </div>
+    </section>
   );
 }

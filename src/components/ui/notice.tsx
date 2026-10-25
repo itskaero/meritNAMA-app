@@ -6,7 +6,7 @@ export function Notice({ tone = "info", title, children }: { tone?: "info" | "wa
     <div
       role="note"
       className={cn(
-        "rounded-lg border p-4 text-sm",
+        "rounded-2xl border p-4 text-sm",
         tone === "warning" ? "border-amber/40 bg-amber/10" : "border-signal/30 bg-signal/5",
       )}
     >

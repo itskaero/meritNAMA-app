@@ -16,29 +16,48 @@ export function BrandMark({ className = "h-7 w-7" }: { className?: string }) {
   );
 }
 
+function ProfileCard({ session }: { session: Session }) {
+  const initials = session.email.slice(0, 2).toUpperCase();
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-[inset_0_1px_0_rgba(242,246,252,0.04)]">
+      <span aria-hidden className="grid h-10 w-10 flex-none place-items-center rounded-full bg-gradient-to-br from-signal/30 to-elevated text-sm font-bold text-ink ring-1 ring-line-strong">
+        {initials}
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold" title={session.email}>{session.email}</p>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-ink px-2 py-px text-[0.68rem] font-bold capitalize text-canvas">{session.role}</span>
+          {session.isStub ? <Badge tone="warning" className="py-px text-[0.6rem]">Dev stub</Badge> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Two-pane layout from the dashboard references: a quiet sidebar with a profile
+ * card and grouped menu, and the content inside a framed panel with a breadcrumb bar.
+ */
 export function AppShell({ area, sections, session, children }: { area: string; sections: Section[]; session: Session; children: ReactNode }) {
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
+    <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[272px_1fr]">
       <SideNav
         area={area}
-        sections={sections.map(({ href, label }) => ({ href, label }))}
+        items={sections.map(({ href, label, group, icon }) => ({ href, label, group, icon }))}
         brand={
           <Link href="/" className="flex items-center gap-2.5 font-extrabold tracking-tight">
             <BrandMark />
             <span>Merit<span className="text-signal">Nama</span></span>
           </Link>
         }
-        footer={
-          <div className="flex flex-col gap-2 text-xs text-muted">
-            <span className="truncate" title={session.email}>{session.email}</span>
-            <span className="flex flex-wrap gap-1.5">
-              <Badge>{session.role}</Badge>
-              {session.isStub ? <Badge tone="warning">Dev stub</Badge> : null}
-            </span>
-          </div>
-        }
+        profile={<ProfileCard session={session} />}
+        footer={<p className="text-xs text-subtle">{area} · scaffold v0.1</p>}
       />
-      <main id="main" className="min-w-0 px-4 py-8 sm:px-8 lg:px-10">{children}</main>
+      <div className="min-w-0 lg:py-3 lg:pr-3">
+        <main id="main" className="min-h-full bg-canvas lg:min-h-[calc(100vh-1.5rem)] lg:rounded-[1.75rem] lg:border lg:border-line lg:bg-[linear-gradient(180deg,var(--mn-navy-900),var(--mn-navy-950)_40%)]">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
