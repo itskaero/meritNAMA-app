@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: meritnama
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: meritnama_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U meritnama" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://meritnama:ci-only-password@localhost:5432/meritnama_test
+      TEST_DATABASE_URL: postgres://meritnama:ci-only-password@localhost:5432/meritnama_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run db:migrate
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose file
+        run: POSTGRES_PASSWORD=ci docker compose config -q
+      - name: Build images
+        run: |
+          docker build --target runtime -t meritnama-app:ci .
+          docker build --target migrate -t meritnama-app-migrate:ci .

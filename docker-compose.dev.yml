@@ -1,0 +1,18 @@
+# Development database only. Run the app itself with `npm run dev`.
+#   docker compose -f docker-compose.dev.yml up -d
+name: meritnama-dev
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-meritnama}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-meritnama}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [dev-db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      retries: 10
+volumes:
+  dev-db: {}

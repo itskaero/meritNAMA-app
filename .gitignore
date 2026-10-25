@@ -1,0 +1,21 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment — only .env.example is committed
+.env
+.env.*
+!.env.example
+
+# Runtime state (database, uploads, backups) — never commit
+var/
+backups/
+storage/
+
+# Restricted induction datasets must not be committed; import them at runtime.
+data/private/
+
+.DS_Store

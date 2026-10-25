@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+/* Expose the shared MeritNama tokens to Tailwind utilities (bg-surface, text-muted, …). */
+@theme inline {
+  --color-canvas: var(--mn-navy-950);
+  --color-surface: var(--mn-navy-900);
+  --color-elevated: var(--mn-navy-800);
+  --color-hover: var(--mn-navy-700);
+  --color-line: var(--mn-border);
+  --color-line-strong: var(--mn-border-strong);
+  --color-ink: var(--mn-text);
+  --color-muted: var(--mn-text-muted);
+  --color-subtle: var(--mn-text-subtle);
+  --color-signal: var(--mn-cyan);
+  --color-signal-strong: var(--mn-cyan-strong);
+  --color-signal-ink: var(--mn-cyan-ink);
+  --color-amber: var(--mn-amber);
+  --color-danger: var(--mn-danger);
+  --color-success: var(--mn-success);
+  --font-sans: var(--mn-font-sans);
+  --font-mono: var(--mn-font-mono);
+  --radius-sm: var(--mn-radius-sm);
+  --radius-md: var(--mn-radius-md);
+  --radius-lg: var(--mn-radius-lg);
+}
+
+html { color-scheme: dark; }
+body {
+  background: var(--mn-navy-950);
+  color: var(--mn-text);
+  font-family: var(--mn-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: none; box-shadow: var(--mn-focus-ring); border-radius: var(--mn-radius-sm); }
+::selection { background: var(--mn-cyan); color: var(--mn-cyan-ink); }

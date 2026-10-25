@@ -1,0 +1,10 @@
+# Caddy obtains and renews HTTPS certificates automatically for a public domain.
+# For LAN-only or VPN-only access use `tls internal` and trust Caddy's root CA.
+{$MERITNAMA_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	reverse_proxy app:3000
+}

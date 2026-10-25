@@ -1,0 +1,82 @@
+# MeritNama — self-hosted stack (NAS / any Linux host with Docker Compose v2).
+#
+#   cp .env.example .env   # then edit
+#   docker compose up -d --build
+#
+# All persistent state lives under ${MERITNAMA_DATA_DIR}. Back that directory up
+# with scripts/backup.sh (a consistent pg_dump), not by copying live DB files.
+
+name: meritnama
+
+x-db-url: &db-url postgres://${POSTGRES_USER:-meritnama}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-meritnama}
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-meritnama}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-meritnama}
+    volumes:
+      - ${MERITNAMA_DATA_DIR:-./var}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Not published to the host: only the app and migrate containers can reach it.
+    networks: [internal]
+
+  migrate:
+    build: { context: ., target: migrate }
+    image: meritnama-app-migrate:local
+    environment:
+      DATABASE_URL: *db-url
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+    networks: [internal]
+
+  app:
+    build: { context: ., target: runtime }
+    image: meritnama-app:local
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: *db-url
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      PUBLIC_SITE_ORIGIN: ${PUBLIC_SITE_ORIGIN:-}
+      APP_STORAGE_DIR: /app/storage
+    volumes:
+      - ${MERITNAMA_DATA_DIR:-./var}/storage:/app/storage
+    ports:
+      # Loopback only. Expose through a reverse proxy with HTTPS (see docs/DEPLOYMENT.md).
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    depends_on:
+      db: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
+    networks: [internal, web]
+
+  # Optional HTTPS reverse proxy:  docker compose --profile proxy up -d
+  proxy:
+    image: caddy:2-alpine
+    profiles: ["proxy"]
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${MERITNAMA_DATA_DIR:-./var}/caddy/data:/data
+      - ${MERITNAMA_DATA_DIR:-./var}/caddy/config:/config
+    environment:
+      MERITNAMA_DOMAIN: ${MERITNAMA_DOMAIN:-localhost}
+    depends_on: [app]
+    networks: [web]
+
+  # Background worker for long simulations / imports — added in delivery 3.
+  # worker:
+  #   build: { context: ., target: worker }
+  #   environment: { DATABASE_URL: *db-url }
+
+networks:
+  internal: { internal: true }
+  web: {}
