@@ -19,22 +19,26 @@ const contrast = (a: string, b: string) => {
 };
 
 describe("design token contrast", () => {
-  const surfaces = ["mn-navy-950", "mn-navy-900", "mn-navy-800"];
+  const surfaces = ["mn-night-950", "mn-night-900", "mn-night-800"];
   it.each(surfaces)("body text and muted text are AA on %s", (bg) => {
     expect(contrast(token("mn-text"), token(bg))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(token("mn-text-muted"), token(bg))).toBeGreaterThanOrEqual(4.5);
   });
 
-  it.each(surfaces)("cyan and amber signals are AA on %s", (bg) => {
-    expect(contrast(token("mn-cyan"), token(bg))).toBeGreaterThanOrEqual(4.5);
+  it.each(surfaces)("accent and amber signals are AA on %s", (bg) => {
+    expect(contrast(token("mn-accent"), token(bg))).toBeGreaterThanOrEqual(4.5);
     expect(contrast(token("mn-amber"), token(bg))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("text on primary buttons is AA", () => {
-    expect(contrast(token("mn-cyan-ink"), token("mn-cyan"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token("mn-accent-ink"), token("mn-accent"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("text on amber chips is AA", () => {
+    expect(contrast(token("mn-accent-ink"), token("mn-amber"))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("subtle text meets AA on the page background", () => {
-    expect(contrast(token("mn-text-subtle"), token("mn-navy-950"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token("mn-text-subtle"), token("mn-night-950"))).toBeGreaterThanOrEqual(4.5);
   });
 });

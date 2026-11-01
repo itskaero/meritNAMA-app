@@ -1,40 +1,46 @@
 /*
- * MeritNama design tokens — v1
+ * MeritNama design tokens — v2 "Dusk"
  *
- * Canonical copy lives here (public site). The private application keeps a
- * byte-identical copy at src/styles/tokens.css. If you change one, change the
- * other; see docs/DESIGN_SYSTEM.md. No build step, no cross-repo package.
+ * Midnight indigo surfaces, a lavender accent and a sunset amber glow, taken
+ * from the "From Study to Speciality" journey artwork.
+ *
+ * v1 (navy + cyan) was kept byte-identical with the public site's copy. v2 has
+ * not been ported there yet: when the public site adopts it, copy this file
+ * across unchanged. tests/tokens.test.ts checks WCAG contrast for every pair
+ * the UI relies on.
  */
 :root {
   /* Surfaces */
-  --mn-navy-950: #07111f;   /* page background */
-  --mn-navy-900: #0e1b2c;   /* main surface */
-  --mn-navy-800: #14253a;   /* elevated surface */
-  --mn-navy-700: #1b3049;   /* hover / pressed surface */
-  --mn-border: #26394e;
-  --mn-border-strong: #35506b;
+  --mn-night-950: #0a0918;   /* page background */
+  --mn-night-900: #121129;   /* main surface */
+  --mn-night-800: #1a1837;   /* elevated surface */
+  --mn-night-700: #24214b;   /* hover / pressed surface */
+  --mn-border: #2b2850;
+  --mn-border-strong: #3e3a6e;
 
   /* Text */
-  --mn-text: #f2f6fc;
-  --mn-text-muted: #a8b8ca;
-  --mn-text-subtle: #7d90a6;   /* AA on navy-950 for >=14px; avoid for body copy */
+  --mn-text: #f4f2fc;
+  --mn-text-muted: #b6b1d4;
+  --mn-text-subtle: #8f89b8;   /* AA on night-950 for >=14px; avoid for body copy */
 
-  /* Signal */
-  --mn-cyan: #42d6d0;          /* primary action, selection, active nav */
-  --mn-cyan-strong: #6be3de;   /* hover */
-  --mn-cyan-ink: #04201f;      /* text on cyan */
-  --mn-cyan-soft: rgba(66, 214, 208, 0.12);
-  --mn-amber: #e8b878;         /* warnings, sparing distinctions */
-  --mn-amber-soft: rgba(232, 184, 120, 0.12);
-  --mn-danger: #f0767a;
-  --mn-success: #5fd39a;
+  /* Accent */
+  --mn-accent: #ab95ff;        /* primary action, selection, active nav */
+  --mn-accent-strong: #c4b5ff; /* hover */
+  --mn-accent-deep: #6d4fe0;   /* gradients and fills behind white text only at large sizes */
+  --mn-accent-ink: #150a38;    /* text on accent */
+  --mn-accent-soft: rgba(171, 149, 255, 0.14);
+  --mn-amber: #f5b97a;         /* sunset glow, warnings, journey path */
+  --mn-amber-soft: rgba(245, 185, 122, 0.14);
+  --mn-danger: #f4818a;
+  --mn-success: #62d9a5;
 
   /* Glass (used over imagery only) */
-  --mn-glass: rgba(14, 27, 44, 0.62);
-  --mn-glass-border: rgba(168, 184, 202, 0.18);
+  --mn-glass: rgba(18, 17, 41, 0.6);
+  --mn-glass-border: rgba(196, 181, 255, 0.16);
 
   /* Typography */
   --mn-font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mn-font-serif: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
   --mn-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --mn-text-xs: 0.75rem;
   --mn-text-sm: 0.875rem;
@@ -43,7 +49,7 @@
   --mn-text-xl: 1.375rem;
   --mn-text-2xl: 1.75rem;
   --mn-text-3xl: clamp(1.9rem, 3.4vw, 2.6rem);
-  --mn-text-display: clamp(2.6rem, 6.4vw, 5rem);
+  --mn-text-display: clamp(3rem, 8vw, 6.5rem);
 
   /* Spacing (4px scale) */
   --mn-space-1: 4px;
@@ -65,10 +71,11 @@
 
   /* Elevation */
   --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --mn-shadow-2: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --mn-shadow-2: 0 18px 40px -16px rgba(0, 0, 0, 0.7);
+  --mn-shadow-glow: 0 0 0 1px rgba(171, 149, 255, 0.25), 0 10px 30px -10px rgba(109, 79, 224, 0.55);
 
   /* Focus */
-  --mn-focus-ring: 0 0 0 2px var(--mn-navy-950), 0 0 0 4px var(--mn-cyan);
+  --mn-focus-ring: 0 0 0 2px var(--mn-night-950), 0 0 0 4px var(--mn-accent);
 
   /* Motion */
   --mn-ease: cubic-bezier(0.2, 0.8, 0.2, 1);

@@ -3,35 +3,73 @@
 
 /* Expose the shared MeritNama tokens to Tailwind utilities (bg-surface, text-muted, …). */
 @theme inline {
-  --color-canvas: var(--mn-navy-950);
-  --color-surface: var(--mn-navy-900);
-  --color-elevated: var(--mn-navy-800);
-  --color-hover: var(--mn-navy-700);
+  --color-canvas: var(--mn-night-950);
+  --color-surface: var(--mn-night-900);
+  --color-elevated: var(--mn-night-800);
+  --color-hover: var(--mn-night-700);
   --color-line: var(--mn-border);
   --color-line-strong: var(--mn-border-strong);
   --color-ink: var(--mn-text);
   --color-muted: var(--mn-text-muted);
   --color-subtle: var(--mn-text-subtle);
-  --color-signal: var(--mn-cyan);
-  --color-signal-strong: var(--mn-cyan-strong);
-  --color-signal-ink: var(--mn-cyan-ink);
+  --color-signal: var(--mn-accent);
+  --color-signal-strong: var(--mn-accent-strong);
+  --color-signal-deep: var(--mn-accent-deep);
+  --color-signal-ink: var(--mn-accent-ink);
   --color-amber: var(--mn-amber);
   --color-danger: var(--mn-danger);
   --color-success: var(--mn-success);
   --font-sans: var(--mn-font-sans);
+  --font-serif: var(--mn-font-serif);
   --font-mono: var(--mn-font-mono);
   --radius-sm: var(--mn-radius-sm);
   --radius-md: var(--mn-radius-md);
   --radius-lg: var(--mn-radius-lg);
   --radius-xl: var(--mn-radius-xl);
+  --shadow-glow: var(--mn-shadow-glow);
+  --shadow-float: var(--mn-shadow-2);
 }
 
-html { color-scheme: dark; }
+html { color-scheme: dark; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
-  background: var(--mn-navy-950);
+  background: var(--mn-night-950);
   color: var(--mn-text);
   font-family: var(--mn-font-sans);
   -webkit-font-smoothing: antialiased;
 }
 :focus-visible { outline: none; box-shadow: var(--mn-focus-ring); border-radius: var(--mn-radius-sm); }
-::selection { background: var(--mn-cyan); color: var(--mn-cyan-ink); }
+::selection { background: var(--mn-accent); color: var(--mn-accent-ink); }
+
+/* Frosted panel used across the dashboard (the "glass" surfaces in the references). */
+@utility glass {
+  background: linear-gradient(180deg, rgba(36, 33, 75, 0.55), rgba(18, 17, 41, 0.55));
+  border: 1px solid var(--mn-glass-border);
+  box-shadow: inset 0 1px 0 rgba(244, 242, 252, 0.05), var(--mn-shadow-2);
+  backdrop-filter: blur(14px);
+}
+
+/* ---- Landing page motion ---------------------------------------------- */
+
+/* Slow push-in on the hero artwork, like a camera move in the intro video. */
+@keyframes mn-push { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes mn-rise { from { opacity: 0; transform: translateY(24px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes mn-draw { to { stroke-dashoffset: 0; } }
+@keyframes mn-pulse { 0%, 100% { opacity: 0.55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.35); } }
+@keyframes mn-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+
+.mn-push { animation: mn-push 14s var(--mn-ease) both; }
+.mn-rise { animation: mn-rise 1.1s var(--mn-ease) both; }
+.mn-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: mn-draw 2.6s 0.6s var(--mn-ease) forwards; }
+.mn-node { animation: mn-pulse 2.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.mn-marquee { animation: mn-drift 40s linear infinite; }
+
+/* Scroll reveal: elements start hidden only once JS has marked the page ready. */
+.js .mn-reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.9s var(--mn-ease), transform 0.9s var(--mn-ease); }
+.js .mn-reveal.is-visible { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mn-push, .mn-rise, .mn-node, .mn-marquee { animation: none; }
+  .mn-draw { animation: none; stroke-dashoffset: 0; }
+  .js .mn-reveal { opacity: 1; transform: none; transition: none; }
+}

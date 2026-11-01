@@ -62,14 +62,17 @@ Recommended: `APP_URL`, `PUBLIC_SITE_ORIGIN`, `MERITNAMA_DATA_DIR`, `APP_PORT`.
 ## Layout
 
 ```
-src/app/            routes — (auth)/sign-in, portal/*, admin/*, api/health
-src/components/     AppShell, SideNav, PlaceholderPage, ui/* primitives
+src/app/            routes — / (public landing), start (role redirect), (auth)/sign-in,
+                    portal/*, admin/*, api/health
+src/assets/journey/ "From Study to Speciality" artwork, cropped per chapter
+src/components/     AppShell, SideNav (collapsible), PlaceholderPage, brand, landing/*,
+                    dashboard/*, ui/* primitives
 src/lib/auth/       roles + server-side session/guards (provider not yet integrated)
 src/lib/data/       data-access boundary — every function re-checks the role
 src/lib/db/         Drizzle schema + lazy client + DB health check
 src/lib/domain/     data contracts (scoring policy)
 src/lib/navigation  single source for sections and their planned scope
-src/styles/tokens.css  copy of the public site's design tokens
+src/styles/tokens.css  design tokens v2 "Dusk" (not yet ported to the public site)
 drizzle/            generated SQL migrations (commit these)
 scripts/            migrate.mjs, backup.sh, restore.sh
 deploy/Caddyfile    optional reverse proxy

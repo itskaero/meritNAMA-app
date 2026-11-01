@@ -18,10 +18,10 @@ export default async function AdminOverviewPage() {
     <PlaceholderPage href="/admin">
       {/* Only system health is live; induction figures stay empty until real data is imported. */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Database" value={db === "ok" ? "Online" : null} badge={dbBadge[db]} hint="Live check" />
-        <Metric label="Active induction" value={null} hint="Available after data import" />
-        <Metric label="Candidates" value={null} hint="Available after data import" />
-        <Metric label="Active scoring policy" value={null} hint="Available after policy import" />
+        <Metric icon="database" label="Database" value={db === "ok" ? "Online" : null} badge={dbBadge[db]} hint="Live check" />
+        <Metric icon="calendar" label="Active induction" value={null} hint="Available after data import" />
+        <Metric icon="users" label="Candidates" value={null} hint="Available after data import" />
+        <Metric icon="sliders" label="Active scoring policy" value={null} hint="Available after policy import" />
       </div>
     </PlaceholderPage>
   );

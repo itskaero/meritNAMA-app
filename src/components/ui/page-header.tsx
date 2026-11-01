@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
  */
 export function PageHeader({ breadcrumb, title, description, status }: {
   breadcrumb: string[];
-  title: string;
+  title: ReactNode;
   description?: string;
   status?: ReactNode;
 }) {
@@ -24,7 +24,7 @@ export function PageHeader({ breadcrumb, title, description, status }: {
           </ol>
         </nav>
         {status ? (
-          <div className="flex items-center gap-1 rounded-full bg-black/60 p-1 text-xs ring-1 ring-line">{status}</div>
+          <div className="flex items-center gap-1 rounded-full bg-canvas/70 p-1 text-xs ring-1 ring-line backdrop-blur">{status}</div>
         ) : null}
       </div>
       <div className="px-4 pt-8 pb-6 sm:px-8 sm:pt-10">
