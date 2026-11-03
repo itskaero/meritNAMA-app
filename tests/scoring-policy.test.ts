@@ -55,6 +55,13 @@ describe("scoring policy contract", () => {
     expect(policySchema.safeParse(p).success).toBe(false);
   });
 
+  it("does not add defaults, so a parsed file equals its source", () => {
+    expect(scoringPolicyFileSchema.parse(fixture)).toEqual(fixture);
+    const p = active();
+    delete p.components[0].included;
+    expect(policySchema.parse(p).components[0]).not.toHaveProperty("included");
+  });
+
   it("expands induction ranges", () => {
     const parsed = scoringPolicyFileSchema.parse(fixture);
     expect(policyInductions(parsed.policies["2025"]!)).toEqual([17, 18, 19]);

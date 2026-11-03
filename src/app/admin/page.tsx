@@ -1,7 +1,9 @@
 import { PlaceholderPage } from "@/components/placeholder-page";
 import { Badge } from "@/components/ui/badge";
 import { Metric } from "@/components/ui/metric";
-import { checkDatabase } from "@/lib/db/client";
+import { getSession } from "@/lib/auth/session";
+import { listPolicyVersions } from "@/lib/data/policies";
+import { checkDatabase, getDb } from "@/lib/db/client";
 
 export const metadata = { title: "Admin overview" };
 export const dynamic = "force-dynamic";
@@ -14,6 +16,7 @@ const dbBadge = {
 
 export default async function AdminOverviewPage() {
   const db = await checkDatabase();
+  const active = db === "ok" ? (await listPolicyVersions(getDb(), await getSession())).find((r) => r.status === "active") : undefined;
   return (
     <PlaceholderPage href="/admin">
       {/* Only system health is live; induction figures stay empty until real data is imported. */}
@@ -21,7 +24,12 @@ export default async function AdminOverviewPage() {
         <Metric label="Database" value={db === "ok" ? "Online" : null} badge={dbBadge[db]} hint="Live check" />
         <Metric label="Active induction" value={null} hint="Available after data import" />
         <Metric label="Candidates" value={null} hint="Available after data import" />
-        <Metric label="Active scoring policy" value={null} hint="Available after policy import" />
+        <Metric
+          label="Active scoring policy"
+          value={active ? active.policyKey : null}
+          unit={active ? `v${active.version}` : undefined}
+          hint={active ? "Manage under Scoring policies" : "Import scoring_policy.json under Scoring policies"}
+        />
       </div>
     </PlaceholderPage>
   );

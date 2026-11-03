@@ -24,14 +24,24 @@
   --radius-md: var(--mn-radius-md);
   --radius-lg: var(--mn-radius-lg);
   --radius-xl: var(--mn-radius-xl);
+  /* Tailwind's transition-* utilities follow the token, so reduced motion turns them off. */
+  --default-transition-duration: var(--mn-duration);
+  --default-transition-timing-function: var(--mn-ease);
 }
 
-html { color-scheme: dark; }
-body {
-  background: var(--mn-navy-950);
-  color: var(--mn-text);
-  font-family: var(--mn-font-sans);
-  -webkit-font-smoothing: antialiased;
+/*
+ * In the base layer so utilities (rounded-full, ring-*) still win: a pill keeps its
+ * shape while focused. The transparent outline is what forced-colors mode draws,
+ * since box-shadows are dropped there.
+ */
+@layer base {
+  html { color-scheme: dark; }
+  body {
+    background: var(--mn-navy-950);
+    color: var(--mn-text);
+    font-family: var(--mn-font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: var(--mn-focus-ring); }
+  ::selection { background: var(--mn-cyan); color: var(--mn-cyan-ink); }
 }
-:focus-visible { outline: none; box-shadow: var(--mn-focus-ring); border-radius: var(--mn-radius-sm); }
-::selection { background: var(--mn-cyan); color: var(--mn-cyan-ink); }

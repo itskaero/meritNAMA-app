@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { Session } from "@/lib/auth/roles";
 import type { Section } from "@/lib/navigation";
 import { Badge } from "./ui/badge";
-import { SideNav } from "./side-nav";
+import { SideNav, type NavItem } from "./side-nav";
 
 export function BrandMark({ className = "h-7 w-7" }: { className?: string }) {
   return (
@@ -27,7 +27,7 @@ function ProfileCard({ session }: { session: Session }) {
         <p className="truncate text-sm font-semibold" title={session.email}>{session.email}</p>
         <div className="mt-1 flex flex-wrap gap-1.5">
           <span className="rounded-full bg-ink px-2 py-px text-[0.68rem] font-bold capitalize text-canvas">{session.role}</span>
-          {session.isStub ? <Badge tone="warning" className="py-px text-[0.6rem]">Dev stub</Badge> : null}
+          {session.isStub ? <Badge tone="warning" className="py-px text-[0.7rem]">Dev stub</Badge> : null}
         </div>
       </div>
     </div>
@@ -38,12 +38,19 @@ function ProfileCard({ session }: { session: Session }) {
  * Two-pane layout from the dashboard references: a quiet sidebar with a profile
  * card and grouped menu, and the content inside a framed panel with a breadcrumb bar.
  */
-export function AppShell({ area, sections, session, children }: { area: string; sections: Section[]; session: Session; children: ReactNode }) {
+export function AppShell({ area, sections, links = [], session, children }: {
+  area: string;
+  sections: Section[];
+  /** Extra sidebar links that are not sections of this area (e.g. admin → candidate portal). */
+  links?: NavItem[];
+  session: Session;
+  children: ReactNode;
+}) {
   return (
     <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[272px_1fr]">
       <SideNav
         area={area}
-        items={sections.map(({ href, label, group, icon }) => ({ href, label, group, icon }))}
+        items={[...sections.map(({ href, label, group, icon }) => ({ href, label, group, icon })), ...links]}
         brand={
           <Link href="/" className="flex items-center gap-2.5 font-extrabold tracking-tight">
             <BrandMark />
@@ -51,7 +58,7 @@ export function AppShell({ area, sections, session, children }: { area: string; 
           </Link>
         }
         profile={<ProfileCard session={session} />}
-        footer={<p className="text-xs text-subtle">{area} · scaffold v0.1</p>}
+        footer={<p className="text-xs text-subtle">{session.isStub ? `${area} · scaffold v0.1` : area}</p>}
       />
       <div className="min-w-0 lg:py-3 lg:pr-3">
         <main id="main" className="min-h-full bg-canvas lg:min-h-[calc(100vh-1.5rem)] lg:rounded-[1.75rem] lg:border lg:border-line lg:bg-[linear-gradient(180deg,var(--mn-navy-900),var(--mn-navy-950)_40%)]">

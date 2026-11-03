@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "./icon";
 import { cn } from "./ui/cn";
 
-type NavItem = { href: string; label: string; group: string; icon: IconName };
+export type NavItem ={ href: string; label: string; group: string; icon: IconName };
 
 export function SideNav({ area, items, brand, profile, footer }: {
   area: string;
@@ -21,22 +21,45 @@ export function SideNav({ area, items, brand, profile, footer }: {
   const open = openFor === pathname;
   const setOpen = (v: boolean) => setOpenFor(v ? pathname : null);
 
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  // While the drawer is open it is the only interactive surface: the page behind
+  // is inert and does not scroll, focus starts inside it and returns to the toggle.
   useEffect(() => {
     if (!open) return;
+    const toggle = toggleRef.current;
+    const nav = navRef.current;
+    const main = document.getElementById("main");
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    main?.setAttribute("inert", "");
+    nav?.querySelector<HTMLElement>("a[href]")?.focus();
+
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenFor(null);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      main?.removeAttribute("inert");
+      // Only pull focus back if it was inside the drawer (not after a link navigated away).
+      if (nav?.contains(document.activeElement)) toggle?.focus();
+    };
   }, [open]);
 
   const groups = [...new Set(items.map((i) => i.group))];
+  // Section roots (/admin, /portal) match exactly; other items also own their sub-routes.
+  const isActive = (href: string) =>
+    pathname === href || (href.split("/").length > 2 && pathname.startsWith(`${href}/`));
 
   return (
     <>
       <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden">
         {brand}
         <button
+          ref={toggleRef}
           type="button"
-          className="grid h-11 w-11 place-items-center rounded-full border border-line-strong"
+          className="grid h-11 w-11 place-items-center rounded-full border border-muted/60"
           aria-expanded={open}
           aria-controls="app-nav"
           aria-label={open ? "Close navigation" : "Open navigation"}
@@ -55,13 +78,13 @@ export function SideNav({ area, items, brand, profile, footer }: {
       >
         <div className="hidden h-16 items-center px-6 lg:flex">{brand}</div>
         <div className="px-4 pt-2">{profile}</div>
-        <nav aria-label={area} className="flex-1 overflow-y-auto px-4 py-5">
+        <nav ref={navRef} aria-label={area} className="flex-1 overflow-y-auto px-4 py-5">
           {groups.map((g) => (
             <div key={g} className="mb-6 last:mb-0">
               <p className="px-3 pb-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-subtle">{g}</p>
               <ul className="flex flex-col gap-1">
                 {items.filter((i) => i.group === g).map((s) => {
-                  const active = s.href === pathname;
+                  const active = isActive(s.href);
                   return (
                     <li key={s.href}>
                       <Link

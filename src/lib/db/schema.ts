@@ -4,6 +4,7 @@ import {
   check,
   index,
   integer,
+  json,
   jsonb,
   pgEnum,
   pgTable,
@@ -49,8 +50,11 @@ export const scoringPolicies = pgTable(
     policyKey: text("policy_key").notNull(),
     version: integer("version").notNull(),
     status: policyStatus("status").notNull().default("draft"),
-    /** Validated against policySchema (src/lib/domain/scoring-policy.ts) before every write. */
-    definition: jsonb("definition").notNull(),
+    /**
+     * Validated against policySchema (src/lib/domain/scoring-policy.ts) before every write.
+     * `json`, not `jsonb`: it keeps the source's key order, so an export matches the public file.
+     */
+    definition: json("definition").notNull(),
     createdBy: uuid("created_by").references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     activatedAt: timestamp("activated_at", { withTimezone: true }),
@@ -62,6 +66,18 @@ export const scoringPolicies = pgTable(
     check("scoring_policies_version_positive", sql`${t.version} > 0`),
   ],
 );
+
+/**
+ * File-level fields of scoring_policy.json — everything except `policies`
+ * (`active_policy`, `_induction_max`, `year_total_max`, `_note`…). Append-only:
+ * the newest row is current. Kept so the file can be exported without loss.
+ */
+export const scoringPolicyFileMeta = pgTable("scoring_policy_file_meta", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  meta: json("meta").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const auditLog = pgTable(
   "audit_log",

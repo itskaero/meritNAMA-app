@@ -1,11 +1,15 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
+export type Crumb = { label: string; href?: string };
+
 /**
- * Breadcrumb bar + large title. `status` renders in the dark pill on the right —
+ * Breadcrumb bar + large title. Ancestor crumbs with an `href` are links; the last
+ * crumb is the current page. `status` renders in the dark pill on the right —
  * read-only state (e.g. integration status), never controls that do nothing.
  */
 export function PageHeader({ breadcrumb, title, description, status }: {
-  breadcrumb: string[];
+  breadcrumb: Crumb[];
   title: string;
   description?: string;
   status?: ReactNode;
@@ -15,12 +19,19 @@ export function PageHeader({ breadcrumb, title, description, status }: {
       <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-8">
         <nav aria-label="Breadcrumb" className="text-sm">
           <ol className="flex items-center gap-1.5">
-            {breadcrumb.map((b, i) => (
-              <li key={b} className={i === breadcrumb.length - 1 ? "font-medium text-ink" : "text-subtle"}>
-                {i > 0 ? <span aria-hidden className="mr-1.5 text-subtle">/</span> : null}
-                <span aria-current={i === breadcrumb.length - 1 ? "page" : undefined}>{b}</span>
-              </li>
-            ))}
+            {breadcrumb.map((b, i) => {
+              const last = i === breadcrumb.length - 1;
+              return (
+                <li key={i} className={last ? "font-medium text-ink" : "text-muted"}>
+                  {i > 0 ? <span aria-hidden className="mr-1.5 text-subtle">/</span> : null}
+                  {!last && b.href ? (
+                    <Link href={b.href} className="rounded-sm underline-offset-4 hover:text-ink hover:underline">{b.label}</Link>
+                  ) : (
+                    <span aria-current={last ? "page" : undefined}>{b.label}</span>
+                  )}
+                </li>
+              );
+            })}
           </ol>
         </nav>
         {status ? (
