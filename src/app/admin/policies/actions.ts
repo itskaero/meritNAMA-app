@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
-import { AuthorizationError } from "@/lib/auth/roles";
+import { readJsonUpload, toActionState as toState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
 import { activatePolicyVersion, createPolicyDraft, importScoringPolicyFile } from "@/lib/data/policies";
 import { getDb } from "@/lib/db/client";
@@ -13,32 +12,12 @@ import { getDb } from "@/lib/db/client";
  * so authorization is enforced by the data layer (assertRole), not by the page.
  */
 
-export type ActionState = { status: "idle" | "error" | "success"; message?: string; issues?: string[] };
-
 const MAX_FILE_BYTES = 512 * 1024;
 
-function toState(err: unknown): ActionState {
-  if (err instanceof z.ZodError) {
-    return {
-      status: "error",
-      message: "The data did not pass validation. Nothing was saved.",
-      issues: err.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`),
-    };
-  }
-  if (err instanceof AuthorizationError) return { status: "error", message: "You are not allowed to change scoring policies." };
-  if (err instanceof SyntaxError) return { status: "error", message: `Not valid JSON: ${err.message}` };
-  if (err instanceof Error && /reason is required/.test(err.message)) return { status: "error", message: err.message };
-  console.error(err);
-  return { status: "error", message: "Saving failed. Check that the database is reachable and try again." };
-}
-
 export async function importPolicyFileAction(_prev: ActionState, form: FormData): Promise<ActionState> {
-  const upload = form.get("file");
-  if (!(upload instanceof File) || upload.size === 0) return { status: "error", message: "Choose a scoring_policy.json file." };
-  if (upload.size > MAX_FILE_BYTES) return { status: "error", message: "The file is larger than 512 KB; that is not a scoring policy file." };
   try {
     const result = await importScoringPolicyFile(getDb(), await getSession(), {
-      file: JSON.parse(await upload.text()),
+      file: await readJsonUpload(form, "file", MAX_FILE_BYTES),
       reason: String(form.get("reason") ?? ""),
     });
     revalidatePath("/admin/policies");

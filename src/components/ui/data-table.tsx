@@ -12,7 +12,7 @@ export function DataTable<T>({ caption, columns, rows, rowKey, empty }: {
 }) {
   if (rows.length === 0 && empty) return <>{empty}</>;
   return (
-    <div className="overflow-x-auto rounded-2xl border border-line">
+    <div className="relative overflow-x-auto rounded-2xl border border-line">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-elevated text-muted">

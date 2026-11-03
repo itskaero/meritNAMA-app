@@ -1,6 +1,7 @@
 import "server-only";
 import { desc, eq } from "drizzle-orm";
 import { assertRole, type Session } from "@/lib/auth/roles";
+import { UserFacingError } from "@/lib/errors";
 import type { Database } from "@/lib/db/client";
 import { auditLog, scoringPolicies, scoringPolicyFileMeta } from "@/lib/db/schema";
 import {
@@ -27,7 +28,7 @@ type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 function requireReason(reason: string) {
   const r = reason.trim();
-  if (!r) throw new Error("A reason is required for policy changes");
+  if (!r) throw new UserFacingError("A reason is required for policy changes");
   return r;
 }
 
@@ -80,7 +81,7 @@ async function insertDraft(tx: Tx, actorEmail: string, policyKey: string, defini
 
 async function activate(tx: Tx, actorEmail: string, id: string, reason: string) {
   const [target] = await tx.select().from(scoringPolicies).where(eq(scoringPolicies.id, id)).limit(1);
-  if (!target) throw new Error("Policy version not found");
+  if (!target) throw new UserFacingError("Policy version not found");
   if (target.status === "active") return target;
 
   // Retire the current active version first: the partial unique index allows one active row.

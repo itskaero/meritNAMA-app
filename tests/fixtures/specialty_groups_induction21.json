@@ -1,0 +1,666 @@
+{
+  "version": "induction21",
+  "disciplineIndex": {
+    "1": {
+      "program": "FCPS",
+      "group": "anaesthesia",
+      "labels": [
+        "Anaesthesiology",
+        "Anesthesiology",
+        "Anaesthesia"
+      ],
+      "programs": [
+        "FCPS",
+        "MS"
+      ]
+    },
+    "2": {
+      "program": "FCPS",
+      "group": "medicine-allied",
+      "labels": [
+        "Medicine And Allied",
+        "Medicine"
+      ],
+      "programs": [
+        "FCPS",
+        "MD"
+      ]
+    },
+    "3": {
+      "program": "FCPS",
+      "group": "surgery-allied",
+      "labels": [
+        "Surgery And Allied",
+        "Surgery",
+        "General Surgery"
+      ],
+      "programs": [
+        "FCPS",
+        "MS"
+      ]
+    },
+    "4": {
+      "program": "FCPS",
+      "group": "radiology",
+      "labels": [
+        "Diagnostic Radiology"
+      ],
+      "programs": [
+        "FCPS",
+        "MD"
+      ]
+    },
+    "5": {
+      "program": "FCPS",
+      "group": "obgyn",
+      "labels": [
+        "Obstetrics And Gynaecology",
+        "Obstetrics & Gynecology"
+      ],
+      "programs": [
+        "FCPS",
+        "MS"
+      ]
+    },
+    "6": {
+      "program": "FCPS",
+      "group": "ophthalmology",
+      "labels": [
+        "Ophthalmology"
+      ],
+      "programs": [
+        "FCPS",
+        "MS"
+      ]
+    },
+    "7": {
+      "program": "FCPS",
+      "group": "ent",
+      "labels": [
+        "E.N.T.",
+        "ENT",
+        "Otorhinolaryngology"
+      ],
+      "programs": [
+        "FCPS",
+        "MS"
+      ]
+    },
+    "8": {
+      "program": "FCPS",
+      "group": "psychiatry",
+      "labels": [
+        "Psychiatry"
+      ],
+      "programs": [
+        "FCPS",
+        "MD"
+      ]
+    },
+    "9": {
+      "program": "FCPS",
+      "group": "pathology",
+      "labels": [
+        "Pathology"
+      ],
+      "programs": [
+        "FCPS",
+        "MD"
+      ]
+    },
+    "10": {
+      "program": "FCPS",
+      "group": "community-medicine",
+      "labels": [
+        "Community Medicine"
+      ]
+    },
+    "13": {
+      "program": "FCPS",
+      "group": "physiology",
+      "labels": [
+        "Physiology"
+      ]
+    },
+    "15": {
+      "program": "FCPS",
+      "group": "microbiology",
+      "labels": [
+        "MicroBiology",
+        "Microbiology"
+      ]
+    },
+    "11": {
+      "program": "FCPSD",
+      "group": "dentistry",
+      "labels": [
+        "Dentistry"
+      ],
+      "programs": [
+        "FCPSD",
+        "MDS"
+      ]
+    }
+  },
+  "programs": {
+    "FCPS": {
+      "groups": {
+        "anaesthesia": {
+          "disciplineId": 1,
+          "labels": [
+            "Anaesthesiology",
+            "Anesthesiology",
+            "Anaesthesia"
+          ],
+          "specialties": [
+            "Anaesthesia",
+            "Cardio Thoracic Anesthesia",
+            "Critical Care",
+            "Emergency Medicine",
+            "Anaesthesiology",
+            "Anesthesiology",
+            "Cardiac Anaesthesia",
+            "Cardiac Anesthesia"
+          ],
+          "specialtyIds": [
+            1,
+            58,
+            47,
+            40
+          ]
+        },
+        "medicine-allied": {
+          "disciplineId": 2,
+          "labels": [
+            "Medicine And Allied",
+            "Medicine"
+          ],
+          "specialties": [
+            "Cardiology",
+            "Community Medicine",
+            "Critical Care",
+            "Dermatology",
+            "Emergency Medicine",
+            "Endocrinology",
+            "Forensic Medicine",
+            "Gastroenterology",
+            "Infectious Disease",
+            "Medical Oncology",
+            "Medicine",
+            "Nephrology",
+            "Neurology",
+            "Pediatrics",
+            "Pulmonology",
+            "Radiation Oncology",
+            "Radiotherapy",
+            "Rheamatology",
+            "Rehabilitation",
+            "Rheumatology"
+          ],
+          "specialtyIds": [
+            2,
+            6,
+            47,
+            7,
+            40,
+            46,
+            9,
+            10,
+            51,
+            15,
+            14,
+            16,
+            18,
+            23,
+            27,
+            61,
+            28,
+            57
+          ]
+        },
+        "surgery-allied": {
+          "disciplineId": 3,
+          "labels": [
+            "Surgery And Allied",
+            "Surgery",
+            "General Surgery"
+          ],
+          "specialties": [
+            "Anatomy",
+            "Cardiac Surgery",
+            "Chest Surgery",
+            "Emergency Medicine",
+            "Forensic Medicine",
+            "General Surgery",
+            "Neuro Surgery",
+            "Orthopedic Surgery",
+            "Pediatric Surgery",
+            "Plastic Surgery",
+            "Radiation Oncology",
+            "Radiotherapy",
+            "Thoracic Surgery",
+            "Urology",
+            "Orthopaedics"
+          ],
+          "specialtyIds": [
+            41,
+            3,
+            56,
+            40,
+            9,
+            11,
+            17,
+            21,
+            24,
+            25,
+            61,
+            28,
+            29,
+            30
+          ]
+        },
+        "radiology": {
+          "disciplineId": 4,
+          "labels": [
+            "Diagnostic Radiology"
+          ],
+          "specialties": [
+            "Diagnostic Radiology",
+            "Radiation Oncology",
+            "Radiotherapy"
+          ],
+          "specialtyIds": [
+            8,
+            61,
+            28
+          ]
+        },
+        "obgyn": {
+          "disciplineId": 5,
+          "labels": [
+            "Obstetrics And Gynaecology",
+            "Obstetrics & Gynecology"
+          ],
+          "specialties": [
+            "Obstetrics & Gynecology"
+          ],
+          "specialtyIds": [
+            19
+          ]
+        },
+        "ophthalmology": {
+          "disciplineId": 6,
+          "labels": [
+            "Ophthalmology"
+          ],
+          "specialties": [
+            "Ophthalmology"
+          ],
+          "specialtyIds": [
+            20
+          ]
+        },
+        "ent": {
+          "disciplineId": 7,
+          "labels": [
+            "E.N.T.",
+            "ENT",
+            "Otorhinolaryngology"
+          ],
+          "specialties": [
+            "Otorhinolaryngology ENT",
+            "E.N.T.",
+            "ENT",
+            "Otorhinolaryngology"
+          ],
+          "specialtyIds": [
+            22
+          ]
+        },
+        "psychiatry": {
+          "disciplineId": 8,
+          "labels": [
+            "Psychiatry"
+          ],
+          "specialties": [
+            "Psychiatry"
+          ],
+          "specialtyIds": [
+            26
+          ]
+        },
+        "pathology": {
+          "disciplineId": 9,
+          "labels": [
+            "Pathology"
+          ],
+          "specialties": [
+            "Chemical Pathology",
+            "Clinical Hematology",
+            "Hematology",
+            "Histopathology",
+            "Clinical Haematology",
+            "Haematology"
+          ],
+          "specialtyIds": [
+            5,
+            36,
+            12,
+            13
+          ]
+        },
+        "community-medicine": {
+          "disciplineId": 10,
+          "labels": [
+            "Community Medicine"
+          ],
+          "specialties": [
+            "Anaesthesia",
+            "Community Medicine"
+          ],
+          "specialtyIds": [
+            1,
+            6
+          ]
+        },
+        "physiology": {
+          "disciplineId": 13,
+          "labels": [
+            "Physiology"
+          ],
+          "specialties": [
+            "Physiology"
+          ],
+          "specialtyIds": [
+            48
+          ]
+        },
+        "microbiology": {
+          "disciplineId": 15,
+          "labels": [
+            "MicroBiology",
+            "Microbiology"
+          ],
+          "specialties": [
+            "Microbiology"
+          ],
+          "specialtyIds": [
+            44
+          ]
+        }
+      }
+    },
+    "MS": {
+      "groups": {
+        "anaesthesia": {
+          "disciplineId": 1,
+          "labels": [
+            "Anaesthesiology",
+            "Anesthesiology",
+            "Anaesthesia"
+          ],
+          "specialties": [
+            "Anaesthesia",
+            "Cardio Thoracic Anesthesia",
+            "Critical Care",
+            "Emergency Medicine",
+            "Anaesthesiology",
+            "Anesthesiology",
+            "Cardiac Anaesthesia",
+            "Cardiac Anesthesia"
+          ],
+          "specialtyIds": [
+            1,
+            58,
+            47,
+            40
+          ]
+        },
+        "surgery-allied": {
+          "disciplineId": 3,
+          "labels": [
+            "Surgery And Allied",
+            "Surgery",
+            "General Surgery"
+          ],
+          "specialties": [
+            "Anatomy",
+            "Cardiac Surgery",
+            "Chest Surgery",
+            "Emergency Medicine",
+            "Forensic Medicine",
+            "General Surgery",
+            "Neuro Surgery",
+            "Orthopedic Surgery",
+            "Pediatric Surgery",
+            "Plastic Surgery",
+            "Radiation Oncology",
+            "Radiotherapy",
+            "Thoracic Surgery",
+            "Urology",
+            "Orthopaedics"
+          ],
+          "specialtyIds": [
+            41,
+            3,
+            56,
+            40,
+            9,
+            11,
+            17,
+            21,
+            24,
+            25,
+            61,
+            28,
+            29,
+            30
+          ]
+        },
+        "obgyn": {
+          "disciplineId": 5,
+          "labels": [
+            "Obstetrics And Gynaecology",
+            "Obstetrics & Gynecology"
+          ],
+          "specialties": [
+            "Obstetrics & Gynecology"
+          ],
+          "specialtyIds": [
+            19
+          ]
+        },
+        "ophthalmology": {
+          "disciplineId": 6,
+          "labels": [
+            "Ophthalmology"
+          ],
+          "specialties": [
+            "Ophthalmology"
+          ],
+          "specialtyIds": [
+            20
+          ]
+        },
+        "ent": {
+          "disciplineId": 7,
+          "labels": [
+            "E.N.T.",
+            "ENT",
+            "Otorhinolaryngology"
+          ],
+          "specialties": [
+            "Otorhinolaryngology ENT",
+            "E.N.T.",
+            "ENT",
+            "Otorhinolaryngology"
+          ],
+          "specialtyIds": [
+            22
+          ]
+        }
+      }
+    },
+    "MD": {
+      "groups": {
+        "medicine-allied": {
+          "disciplineId": 2,
+          "labels": [
+            "Medicine And Allied",
+            "Medicine"
+          ],
+          "specialties": [
+            "Cardiology",
+            "Community Medicine",
+            "Critical Care",
+            "Dermatology",
+            "Emergency Medicine",
+            "Endocrinology",
+            "Forensic Medicine",
+            "Gastroenterology",
+            "Infectious Disease",
+            "Medical Oncology",
+            "Medicine",
+            "Nephrology",
+            "Neurology",
+            "Pediatrics",
+            "Pulmonology",
+            "Radiation Oncology",
+            "Radiotherapy",
+            "Rheamatology",
+            "Rehabilitation",
+            "Rheumatology"
+          ],
+          "specialtyIds": [
+            2,
+            6,
+            47,
+            7,
+            40,
+            46,
+            9,
+            10,
+            51,
+            15,
+            14,
+            16,
+            18,
+            23,
+            27,
+            61,
+            28,
+            57
+          ]
+        },
+        "radiology": {
+          "disciplineId": 4,
+          "labels": [
+            "Diagnostic Radiology"
+          ],
+          "specialties": [
+            "Diagnostic Radiology",
+            "Radiation Oncology",
+            "Radiotherapy"
+          ],
+          "specialtyIds": [
+            8,
+            61,
+            28
+          ]
+        },
+        "psychiatry": {
+          "disciplineId": 8,
+          "labels": [
+            "Psychiatry"
+          ],
+          "specialties": [
+            "Psychiatry"
+          ],
+          "specialtyIds": [
+            26
+          ]
+        },
+        "pathology": {
+          "disciplineId": 9,
+          "labels": [
+            "Pathology"
+          ],
+          "specialties": [
+            "Chemical Pathology",
+            "Clinical Hematology",
+            "Hematology",
+            "Histopathology",
+            "Clinical Haematology",
+            "Haematology"
+          ],
+          "specialtyIds": [
+            5,
+            36,
+            12,
+            13
+          ]
+        }
+      }
+    },
+    "FCPSD": {
+      "groups": {
+        "dentistry": {
+          "disciplineId": 11,
+          "labels": [
+            "Dentistry"
+          ],
+          "specialties": [
+            "Operative Dentistry",
+            "Orthodontics",
+            "Prosthodontics",
+            "Oral & Maxillofacial Surgery",
+            "Family Dentistry"
+          ],
+          "specialtyIds": [
+            31,
+            33,
+            34,
+            32,
+            39
+          ]
+        }
+      }
+    },
+    "MDS": {
+      "groups": {
+        "dentistry": {
+          "disciplineId": 11,
+          "labels": [
+            "Dentistry"
+          ],
+          "specialties": [
+            "Operative Dentistry",
+            "Orthodontics",
+            "Prosthodontics",
+            "Oral & Maxillofacial Surgery",
+            "Family Dentistry"
+          ],
+          "specialtyIds": [
+            31,
+            33,
+            34,
+            32,
+            39
+          ]
+        }
+      }
+    }
+  },
+  "specialtyAliases": {
+    "Clinical Haematology": "Clinical Hematology",
+    "Haematology": "Hematology",
+    "Orthopaedics": "Orthopedic Surgery",
+    "Anaesthesiology": "Anaesthesia",
+    "Anesthesiology": "Anaesthesia",
+    "Cardiac Anaesthesia": "Cardio Thoracic Anesthesia",
+    "Cardiac Anesthesia": "Cardio Thoracic Anesthesia",
+    "Rheumatology": "Rheamatology",
+    "Rehabilitation": "Physical Medicine & Rehabilitation",
+    "Rehabilitation Medicine": "Physical Medicine & Rehabilitation"
+  }
+}

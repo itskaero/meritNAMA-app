@@ -3,45 +3,9 @@
 import { useActionState, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
-import { activateAction, importPolicyFileAction, saveDraftAction, type ActionState } from "./actions";
-
-const idle: ActionState = { status: "idle" };
-
-const field = "w-full rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-sm text-ink placeholder:text-subtle";
-
-function Result({ state }: { state: ActionState }) {
-  if (state.status === "idle") return null;
-  const error = state.status === "error";
-  return (
-    <div
-      role={error ? "alert" : "status"}
-      className={cn("rounded-2xl border p-4 text-sm", error ? "border-danger/40 bg-danger/10" : "border-success/40 bg-success/10")}
-    >
-      <p className={cn("font-semibold", error ? "text-danger" : "text-success")}>{state.message}</p>
-      {state.issues?.length ? (
-        <ul className="mt-2 list-disc space-y-1 pl-5 font-mono text-xs text-muted">
-          {state.issues.slice(0, 20).map((i, n) => <li key={n}>{i}</li>)}
-          {state.issues.length > 20 ? <li>…and {state.issues.length - 20} more</li> : null}
-        </ul>
-      ) : null}
-    </div>
-  );
-}
-
-/**
- * Fields are controlled on purpose: React resets uncontrolled form fields after an
- * action runs, which would wipe an admin's edits whenever validation fails.
- */
-function Reason({ placeholder }: { placeholder: string }) {
-  const id = useId();
-  const [value, setValue] = useState("");
-  return (
-    <div className="grid gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium">Reason <span className="text-muted">(recorded in the audit log)</span></label>
-      <input id={id} name="reason" required className={field} placeholder={placeholder} value={value} onChange={(e) => setValue(e.target.value)} />
-    </div>
-  );
-}
+import { ActionResult as Result, fieldClass as field, ReasonField as Reason } from "@/components/ui/form";
+import { idleState as idle } from "@/lib/action-state";
+import { activateAction, importPolicyFileAction, saveDraftAction } from "./actions";
 
 export function ImportForm() {
   const [state, action, pending] = useActionState(importPolicyFileAction, idle);
@@ -65,7 +29,7 @@ export function ImportForm() {
       </div>
       <Reason placeholder="e.g. Initial import from the public site" />
       <div><Button type="submit" disabled={pending}>{pending ? "Importing…" : "Import file"}</Button></div>
-      <Result state={state} />
+      <Result state={state} fileReset />
     </form>
   );
 }

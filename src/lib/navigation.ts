@@ -126,7 +126,7 @@ export const adminSections: Section[] = [
     group: "Configuration",
     icon: "database",
     label: "Reference data",
-    description: "Specialties, hospitals, quotas and seats.",
+    description: "Seat matrices, lookups, disciplines, specialty groups and CPSP accreditation.",
     milestone: "Delivery 2 · Data foundations",
     planned: ["Canonical identifiers", "Display names and aliases", "Specialty groups", "Quota categories and seat counts", "Missing-reference checks"],
   },

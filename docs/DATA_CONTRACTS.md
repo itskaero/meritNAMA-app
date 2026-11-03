@@ -10,8 +10,10 @@ app. A contract = zod schema + Postgres table + importer + tests against real fi
 | `inductions/<n>/gazette/gazette_<n>.json` | Same envelope; `Table5` rows: `applicantId, nameFull, pmdcNo, cnic, contactNumber, matric, fsc, degree, houseJob, experience, hardArea, research, position, attempts, marksProgram, marksTotal, statusId, …` | Delivery 2 — **restricted** |
 | `data/induction21_candidates.json` | `{applicantId → {applicantId, nameFull, pmdcNo, emailId, contactNumber, cnic, preferences[{specialityId, typeName, typeId, hospitalName, instituteName, preferenceNo, quotaName, programMarks, marks, disciplineIds, parentInstitute}]}}` | Delivery 2 — **restricted** |
 | `data/induction21_consent_round*.json`, `induction21_joining_status.json`, `induction21_merit_round*.json` | Per-round candidate states | Delivery 2 — restricted |
-| `data/induction21_seats.json`, `induction21_specialty_groups.json`, `disciplineFullData.json` | Seat matrix, specialty groupings | Delivery 2 |
-| `data/cpsp_accreditation.json` | Accredited programmes per hospital | Delivery 2 (public reference data) |
+| `data/induction<n>_seats.json` | `[{typeId, typeName, quotaId, quotaName, specialityId, specialityName, instituteId, instituteName, hospitalId, hospitalName, seats}]` (induction 21: 873 lines, 1 449 seats) | ✅ `src/lib/domain/reference-data.ts`; lookup tables `programs`, `quotas`, `specialities`, `institutes`, `hospitals` + `induction_seats`; managed at `/admin/reference-data` |
+| `data/disciplineFullData.json` | `[{programs[{name, typeId}], name, disciplineId, specialities[{specialityName, specialityId}]}]` | ✅ versioned document (`reference_documents`, kind `disciplines`) |
+| `data/induction<n>_specialty_groups.json` | `{version, disciplineIndex{id → {program, group, labels, programs?}}, programs{…{groups{slug → {disciplineId, labels, specialties, specialtyIds}}}}, specialtyAliases}` | ✅ versioned document per induction (kind `specialty_groups`) |
+| `data/cpsp_accreditation.json` | `[{hospital, city, programs[{speciality, unit, type, since: dd-mm-yyyy}]}]` (542 hospitals) | ✅ versioned document (kind `cpsp_accreditation`) |
 | `data/flat_lookup.json`, `closing_merit.json`, `normalized_merit.json`, `trends.json`, `specialty_ranking.json` | Derived by `scripts/process_data.py` | Re-derived by the ported pipeline; legacy outputs become golden files |
 
 ## scoring_policy.json round trip
@@ -29,6 +31,23 @@ app. A contract = zod schema + Postgres table + importer + tests against real fi
   asserts the exported file equals the real one.
 - **Unknown fields are rejected** (strict objects) to catch admin typos. If the public
   site adds a field, extend `scoring-policy.ts` before importing.
+
+## Reference data round trip
+
+- **Seats are relational.** Import validates the whole file (no duplicate seat lines, each
+  id has one name), then in one transaction: creates the induction if needed (calendar
+  year required), upserts lookup names (renames are audited), and replaces that
+  induction's matrix. `position` keeps the source order. Export rebuilds the file
+  byte for byte (asserted by `tests/reference-data.integration.test.ts`).
+- **Seat edits** (count, add line, remove line) and **lookup edits** (rename, add id) are
+  audited one by one, each with a reason. A new hospital or speciality must be added as a
+  lookup, with its PHF id, before a seat line can use it.
+- **Documents** (disciplines, specialty groups, CPSP) are stored whole, as written, in a
+  `json` column. Every import or edit is a new version; opening an older version and
+  saving it is a rollback. Export returns exactly the stored data.
+- **Not linked yet:** CPSP accreditation names hospitals by free text, so it is not joined
+  to `hospitals`; disciplines and specialty groups reference speciality ids but are not
+  checked against `specialities`. Both are follow-ups (see "Missing-reference checks").
 
 ## Observations that shape the contracts
 

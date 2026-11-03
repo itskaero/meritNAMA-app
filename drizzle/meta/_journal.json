@@ -15,6 +15,13 @@
       "when": 1793716490447,
       "tag": "0001_policy_file_meta",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793734355370,
+      "tag": "0002_reference_data",
+      "breakpoints": true
     }
   ]
 }

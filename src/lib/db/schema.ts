@@ -4,6 +4,7 @@ import {
   check,
   index,
   integer,
+  primaryKey,
   json,
   jsonb,
   pgEnum,
@@ -15,16 +16,16 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Initial schema. Deliberately small: only entities whose shape is already
- * known from the existing data. Candidate records, merit lists, gazette seats
- * and reference data (hospitals, specialties, quotas) arrive in delivery 2
- * once their contracts are mapped — see docs/DATA_CONTRACTS.md.
+ * Deliberately small: only entities whose shape is already known from the
+ * existing data. Candidate records, merit lists and gazettes arrive once their
+ * contracts are mapped — see docs/DATA_CONTRACTS.md.
  */
 
 export const userRole = pgEnum("user_role", ["candidate", "admin"]);
 export const inductionStatus = pgEnum("induction_status", ["planned", "active", "completed"]);
 export const policyStatus = pgEnum("policy_status", ["draft", "active", "retired"]);
 export const auditResult = pgEnum("audit_result", ["success", "failure"]);
+export const referenceDocumentKind = pgEnum("reference_document_kind", ["disciplines", "specialty_groups", "cpsp_accreditation"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -78,6 +79,71 @@ export const scoringPolicyFileMeta = pgTable("scoring_policy_file_meta", {
   createdBy: text("created_by").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/*
+ * Reference data. Lookup ids are the PHF ids used in the public seat files, so
+ * imported rows keep their identity. Names may be corrected by admins (audited).
+ */
+const lookup = (table: string) =>
+  pgTable(table, {
+    id: integer("id").primaryKey(),
+    name: text("name").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  });
+
+/** Training programme type: FCPS, MS, MD, FCPSD, MDS (`typeId` in the files). */
+export const programs = lookup("programs");
+export const quotas = lookup("quotas");
+export const specialities = lookup("specialities");
+/** `instituteId` 0 with an empty name means "no institute". */
+export const institutes = lookup("institutes");
+export const hospitals = lookup("hospitals");
+
+/** Seat matrix of an induction (data/induction<n>_seats.json), one row per seat line. */
+export const inductionSeats = pgTable(
+  "induction_seats",
+  {
+    inductionId: integer("induction_id").notNull().references(() => inductions.id),
+    programId: integer("program_id").notNull().references(() => programs.id),
+    quotaId: integer("quota_id").notNull().references(() => quotas.id),
+    specialityId: integer("speciality_id").notNull().references(() => specialities.id),
+    instituteId: integer("institute_id").notNull().references(() => institutes.id),
+    hospitalId: integer("hospital_id").notNull().references(() => hospitals.id),
+    seats: integer("seats").notNull(),
+    /** Source order, so an export reproduces the original file. */
+    position: integer("position").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.inductionId, t.programId, t.quotaId, t.specialityId, t.instituteId, t.hospitalId] }),
+    index("induction_seats_position_idx").on(t.inductionId, t.position),
+    check("induction_seats_seats_nonnegative", sql`${t.seats} >= 0`),
+  ],
+);
+
+/**
+ * Nested reference files kept whole (disciplines, specialty groups, CPSP accreditation).
+ * Append-only: the newest version per kind (and induction, where it applies) is current.
+ * `json`, not `jsonb`, so an export keeps the source's key order.
+ */
+export const referenceDocuments = pgTable(
+  "reference_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: referenceDocumentKind("kind").notNull(),
+    /** 0 for datasets that do not belong to one induction (avoids NULL in the unique key). */
+    inductionId: integer("induction_id").notNull().default(0),
+    version: integer("version").notNull(),
+    data: json("data").notNull(),
+    summary: text("summary").notNull(),
+    createdBy: text("created_by").notNull(),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("reference_documents_kind_induction_version_uq").on(t.kind, t.inductionId, t.version),
+    check("reference_documents_version_positive", sql`${t.version} > 0`),
+  ],
+);
 
 export const auditLog = pgTable(
   "audit_log",
