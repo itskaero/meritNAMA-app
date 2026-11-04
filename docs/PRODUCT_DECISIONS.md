@@ -35,7 +35,7 @@ email), rate limits, reports and audited moderation.
 
 ## Suggested order
 
-1. **Score-first finder** with % units, heatmap, comparison and shortlist (uses data already imported).
+1. ✅ **Score-first finder** with % units, heatmap, comparison and shortlist: `/portal/finder`, shortlist in `/portal/workspace`. Status per option: *Safe* if the score reaches its first-round closing, *Borderline* if it only reaches the final-round closing, *Out of reach* otherwise.
 2. **Split roles + preview/publish** (foundation for safe admin work and for verifiers/moderators).
 3. **Admin work-queue home + watched-folder intake.**
 4. **Candidate accounts and verification**: unlocks verified posting.

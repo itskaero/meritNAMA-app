@@ -12,7 +12,6 @@ import {
   users,
 } from "@/lib/db/schema";
 import {
-  defaultDisplayName,
   displayNameSchema,
   replyInputSchema,
   reportInputSchema,
@@ -23,6 +22,7 @@ import {
 } from "@/lib/domain/community";
 import { UserFacingError } from "@/lib/errors";
 import { requireReason, writeAudit, type Db } from "./shared";
+import { ensureUser } from "./users";
 
 /**
  * Community discussions. Any signed-in user reads and posts; admins moderate.
@@ -30,16 +30,6 @@ import { requireReason, writeAudit, type Db } from "./shared";
  */
 
 const RATE = { perMinute: 5, perHour: 40 };
-
-/** The users row for this session, created on first use with an anonymous display name. */
-export async function ensureUser(db: Db, session: Session) {
-  const [row] = await db
-    .insert(users)
-    .values({ email: session.email, role: session.role, displayName: defaultDisplayName(session.email) })
-    .onConflictDoUpdate({ target: users.email, set: { email: session.email } })
-    .returning({ id: users.id, displayName: users.displayName, role: users.role });
-  return row!;
-}
 
 export async function getMyProfile(db: Database, session: Session | null) {
   assertRole(session, "candidate");

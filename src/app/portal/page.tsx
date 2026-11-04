@@ -15,9 +15,9 @@ export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
 const SHORTCUTS: { href: string; title: string; text: string; icon: IconName }[] = [
+  { href: "/portal/finder", title: "Where can my score get me?", text: "Safe, borderline and out-of-reach options", icon: "target" },
   { href: "/portal/history", title: "See closing merit", text: "Every round of every induction", icon: "trend" },
   { href: "/portal/explore", title: "Browse hospitals", text: "Seats and closing merit in each", icon: "building" },
-  { href: "/portal/profile", title: "My merit profile", text: "Coming with candidate accounts", icon: "user" },
 ];
 
 export default async function PortalDashboard() {

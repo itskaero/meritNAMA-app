@@ -300,6 +300,25 @@ export const discussionReports = pgTable(
   ],
 );
 
+/**
+ * A member's shortlist: speciality + hospital options for one programme and quota,
+ * starred while browsing (score finder, merit pages). Feeds the preference planner.
+ * Names are as published in merit rounds; ids are filled when mapped.
+ */
+export const shortlistItems = pgTable(
+  "shortlist_items",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    program: text("program").notNull(),
+    quota: text("quota").notNull(),
+    speciality: text("speciality").notNull(),
+    hospital: text("hospital").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.program, t.quota, t.speciality, t.hospital] })],
+);
+
 export const auditLog = pgTable(
   "audit_log",
   {

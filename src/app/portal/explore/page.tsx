@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 function List({ items, base, empty }: { items: { id: number; name: string; allocations: number }[]; base: string; empty: string }) {
   if (!items.length) return <p className="text-sm text-muted">{empty}</p>;
   return (
-    <ul className="grid gap-1.5 sm:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
       {items.map((i) => (
         <li key={i.id}>
           <Link href={`${base}/${i.id}`} className="flex items-baseline justify-between gap-3 rounded-xl px-3 py-2.5 text-sm hover:bg-elevated">
