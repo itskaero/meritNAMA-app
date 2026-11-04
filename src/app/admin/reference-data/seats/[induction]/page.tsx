@@ -3,7 +3,9 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AreaPage } from "@/components/area-page";
+import { selectClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
+import { intParam } from "@/lib/params";
 import { listAllLookups, listSeats, type SeatFilters } from "@/lib/data/reference-data";
 import { getDb } from "@/lib/db/client";
 import { SeatEditor, SeatImportForm } from "../../forms";
@@ -18,15 +20,13 @@ const FILTERS = [
   ["hospitalId", "Hospital", "hospitals"],
 ] as const;
 
-const selectClass = "w-full rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-sm text-ink";
 
 export default async function SeatMatrixPage({ params, searchParams }: {
   params: Promise<{ induction: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { induction: raw } = await params;
-  if (!/^\d{1,3}$/.test(raw)) notFound();
-  const induction = Number(raw);
+  const induction = intParam((await params).induction);
+  if (induction === null) notFound();
   const sp = await searchParams;
 
   const filters: SeatFilters = {};

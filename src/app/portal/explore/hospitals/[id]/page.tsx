@@ -1,22 +1,24 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { BarList } from "@/components/charts/bar-list";
 import { Card, CardHeader } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { EntityLink } from "@/components/entity-link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { hospitalProfile } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
+import { intParam } from "@/lib/params";
 
 export const metadata = { title: "Hospital" };
 export const dynamic = "force-dynamic";
 
 export default async function HospitalPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  if (!/^\d{1,6}$/.test(id)) notFound();
-  const p = await hospitalProfile(getDb(), await getSession(), Number(id));
+  const id = intParam((await params).id, 6);
+  if (id === null) notFound();
+  const p = await hospitalProfile(getDb(), await getSession(), id);
   if (!p) notFound();
 
   const seatsBySpec = new Map<string, { id: number; seats: number }>();
@@ -43,27 +45,17 @@ export default async function HospitalPage({ params }: { params: Promise<{ id: s
           <Card className="min-w-0">
             <CardHeader title={latest ? `Closing merit · induction ${latest.induction_id}, round ${latest.round_no}` : "Closing merit"} description={max ? `Out of ${max}.` : undefined} />
             {p.closing.length ? (
-              <div className="relative overflow-x-auto rounded-2xl border border-line">
-                <table className="w-full text-left text-sm">
-                  <caption className="sr-only">Closing merit by speciality</caption>
-                  <thead className="bg-elevated text-muted"><tr>
-                    <th scope="col" className="px-3 py-3 font-medium">Speciality</th>
-                    <th scope="col" className="px-3 py-3 font-medium">Programme · quota</th>
-                    <th scope="col" className="px-3 py-3 text-right font-medium">Allocated</th>
-                    <th scope="col" className="px-3 py-3 text-right font-medium">Closing</th>
-                  </tr></thead>
-                  <tbody className="divide-y divide-line">
-                    {p.closing.map((r) => (
-                      <tr key={`${r.speciality}|${r.program}|${r.quota}`} className="hover:bg-surface">
-                        <td className="px-3 py-2.5">{r.speciality_id ? <Link href={`/portal/explore/specialities/${r.speciality_id}`} className="hover:text-signal hover:underline">{r.speciality}</Link> : r.speciality}</td>
-                        <td className="px-3 py-2.5 text-muted">{r.program} · {r.quota}</td>
-                        <td className="px-3 py-2.5 text-right tabular-nums">{r.allocations}</td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatMarks(Number(r.closing))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                caption="Closing merit by speciality"
+                rows={p.closing}
+                rowKey={(r) => `${r.speciality}|${r.program}|${r.quota}`}
+                columns={[
+                  { key: "s", header: "Speciality", cell: (r) => <EntityLink kind="speciality" id={r.speciality_id} name={r.speciality} /> },
+                  { key: "pq", header: "Programme · quota", tone: "muted", cell: (r) => `${r.program} · ${r.quota}` },
+                  { key: "n", header: "Allocated", align: "right", cell: (r) => r.allocations },
+                  { key: "c", header: "Closing", align: "right", tone: "mono", cell: (r) => formatMarks(Number(r.closing)) },
+                ]}
+              />
             ) : <p className="text-sm text-muted">No merit rounds include this hospital yet.</p>}
           </Card>
         </div>

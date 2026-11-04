@@ -2,14 +2,14 @@ import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { ThreadList } from "@/components/community/thread-list";
-import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { whenDatabaseDown } from "@/components/database-unavailable";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { communityStats, describeTopics, getMyProfile, listThreads } from "@/lib/data/community";
-import { checkDatabase, getDb } from "@/lib/db/client";
+import { getDb } from "@/lib/db/client";
 import { parseTopicParam, topicParam } from "@/lib/domain/topic-param";
 import { findSection } from "@/lib/navigation";
 import { DisplayNameForm } from "./forms";
@@ -19,8 +19,8 @@ export const dynamic = "force-dynamic";
 
 export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ topic?: string; sort?: string }> }) {
   const s = findSection("/portal/community");
-  if ((await checkDatabase()) !== "ok") return <AreaPage area="portal" trail={[{ label: s.label }]} title={s.label} description={s.description}><DatabaseUnavailable /></AreaPage>;
-  const sp = await searchParams;
+  const down = await whenDatabaseDown({ area: "portal", trail: [{ label: s.label }], title: s.label, description: s.description });
+  if (down) return down;const sp = await searchParams;
   const topic = parseTopicParam(sp.topic);
   const sort = sp.sort === "helpful" ? "helpful" : "active";
   const db = getDb();

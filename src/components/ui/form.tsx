@@ -4,7 +4,9 @@ import { useId, useState, type ReactNode } from "react";
 import type { ActionState } from "@/lib/action-state";
 import { cn } from "./cn";
 
-export const fieldClass = "w-full rounded-xl border border-line-strong bg-canvas px-3 py-2.5 text-sm text-ink placeholder:text-subtle";
+import { fieldClass } from "./styles";
+
+export { fieldClass };
 
 /** Success or error banner for a form Server Action, with validation issues listed. */
 export function ActionResult({ state, fileReset = false }: { state: ActionState; fileReset?: boolean }) {

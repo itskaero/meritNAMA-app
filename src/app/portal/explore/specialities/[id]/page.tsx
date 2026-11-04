@@ -1,28 +1,30 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { LineChart } from "@/components/charts/line-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { EntityLink } from "@/components/entity-link";
+import { selectClass } from "@/components/ui/styles";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { specialityHistory } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
+import { intParam } from "@/lib/params";
 
 export const metadata = { title: "Speciality" };
 export const dynamic = "force-dynamic";
 
-const selectClass = "h-10 w-full min-w-0 max-w-full rounded-xl border border-line-strong bg-canvas px-3 text-sm text-ink";
 
 export default async function SpecialityPage({ params, searchParams }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ track?: string }>;
 }) {
-  const { id } = await params;
-  if (!/^\d{1,6}$/.test(id)) notFound();
-  const h = await specialityHistory(getDb(), await getSession(), Number(id));
+  const id = intParam((await params).id, 6);
+  if (id === null) notFound();
+  const h = await specialityHistory(getDb(), await getSession(), id);
   if (!h) notFound();
 
   // A "track" is one programme + quota; default to the one with the most allocations.
@@ -75,27 +77,17 @@ export default async function SpecialityPage({ params, searchParams }: {
           {latest ? (
             <Card>
               <CardHeader title={`By hospital · induction ${latest.induction_id}, round ${latest.round_no}`} description="The latest round with this speciality." />
-              <div className="relative overflow-x-auto rounded-2xl border border-line">
-                <table className="w-full text-left text-sm">
-                  <caption className="sr-only">Closing merit by hospital</caption>
-                  <thead className="bg-elevated text-muted"><tr>
-                    <th scope="col" className="px-3 py-3 font-medium">Hospital</th>
-                    <th scope="col" className="px-3 py-3 font-medium">Programme · quota</th>
-                    <th scope="col" className="px-3 py-3 text-right font-medium">Allocated</th>
-                    <th scope="col" className="px-3 py-3 text-right font-medium">Closing</th>
-                  </tr></thead>
-                  <tbody className="divide-y divide-line">
-                    {h.byHospital.map((r) => (
-                      <tr key={`${r.hospital}|${r.program}|${r.quota}`} className="hover:bg-surface">
-                        <td className="px-3 py-2.5">{r.hospital_id ? <Link href={`/portal/explore/hospitals/${r.hospital_id}`} className="hover:text-signal hover:underline">{r.hospital}</Link> : r.hospital}</td>
-                        <td className="px-3 py-2.5 text-muted">{r.program} · {r.quota}</td>
-                        <td className="px-3 py-2.5 text-right tabular-nums">{r.allocations}</td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatMarks(Number(r.closing))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                caption="Closing merit by hospital"
+                rows={h.byHospital}
+                rowKey={(r) => `${r.hospital}|${r.program}|${r.quota}`}
+                columns={[
+                  { key: "h", header: "Hospital", cell: (r) => <EntityLink kind="hospital" id={r.hospital_id} name={r.hospital} /> },
+                  { key: "pq", header: "Programme · quota", tone: "muted", cell: (r) => `${r.program} · ${r.quota}` },
+                  { key: "n", header: "Allocated", align: "right", cell: (r) => r.allocations },
+                  { key: "c", header: "Closing", align: "right", tone: "mono", cell: (r) => formatMarks(Number(r.closing)) },
+                ]}
+              />
             </Card>
           ) : null}
         </>

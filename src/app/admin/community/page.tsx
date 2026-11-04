@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { StatTiles } from "@/components/charts/stat-tiles";
-import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { communityStats, listOpenReports } from "@/lib/data/community";
-import { checkDatabase, getDb } from "@/lib/db/client";
+import { getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
 import { ModerationControls } from "./forms";
 
@@ -16,8 +16,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ModerationPage() {
   const s = findSection("/admin/community");
-  if ((await checkDatabase()) !== "ok") return <AreaPage area="admin" trail={[{ label: s.label }]} title={s.label} description={s.description}><DatabaseUnavailable /></AreaPage>;
-  const db = getDb();
+  const down = await whenDatabaseDown({ area: "admin", trail: [{ label: s.label }], title: s.label, description: s.description });
+  if (down) return down;const db = getDb();
   const session = await getSession();
   const [reports, stats] = await Promise.all([listOpenReports(db, session), communityStats(db, session)]);
   return (

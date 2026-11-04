@@ -2,12 +2,12 @@ import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { RoundBeam } from "@/components/charts/round-beam";
 import { StatTiles } from "@/components/charts/stat-tiles";
-import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { listInductionsWithRounds, meritOverview } from "@/lib/data/merit";
-import { checkDatabase, getDb } from "@/lib/db/client";
+import { getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
 
 export const metadata = { title: "Merit lists" };
@@ -15,9 +15,8 @@ export const dynamic = "force-dynamic";
 
 export default async function MeritListsPage() {
   const s = findSection("/portal/history");
-  if ((await checkDatabase()) !== "ok") {
-    return <AreaPage area="portal" trail={[{ label: s.label }]} title={s.label} description={s.description}><DatabaseUnavailable /></AreaPage>;
-  }
+  const down = await whenDatabaseDown({ area: "portal", trail: [{ label: s.label }], title: s.label, description: s.description });
+  if (down) return down;
   const db = getDb();
   const session = await getSession();
   const [inductions, overview] = await Promise.all([listInductionsWithRounds(db, session), meritOverview(db, session)]);

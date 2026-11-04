@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
+import { formInt, formOptionalInt, formText, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
 import {
   addSeatLine,
@@ -24,29 +24,22 @@ import { UserFacingError } from "@/lib/errors";
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
 const BASE = "/admin/reference-data";
 
-const str = (form: FormData, k: string) => String(form.get(k) ?? "");
-const int = (form: FormData, k: string) => {
-  const v = str(form, k).trim();
-  if (!/^-?\d+$/.test(v)) throw new UserFacingError(`${k} must be a whole number`);
-  return Number(v);
-};
-const optionalInt = (form: FormData, k: string) => (str(form, k).trim() ? int(form, k) : undefined);
 const seatKey = (form: FormData): SeatKey => ({
-  programId: int(form, "programId"),
-  quotaId: int(form, "quotaId"),
-  specialityId: int(form, "specialityId"),
-  instituteId: int(form, "instituteId"),
-  hospitalId: int(form, "hospitalId"),
+  programId: formInt(form, "programId"),
+  quotaId: formInt(form, "quotaId"),
+  specialityId: formInt(form, "specialityId"),
+  instituteId: formInt(form, "instituteId"),
+  hospitalId: formInt(form, "hospitalId"),
 });
 
 export async function importSeatFileAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
-    const induction = int(form, "induction");
+    const induction = formInt(form, "induction");
     const r = await importSeatFile(getDb(), await getSession(), {
       induction,
-      calendarYear: optionalInt(form, "calendarYear"),
+      calendarYear: formOptionalInt(form, "calendarYear"),
       file: await readJsonUpload(form, "file", MAX_FILE_BYTES),
-      reason: str(form, "reason"),
+      reason: formText(form, "reason"),
     });
     revalidatePath(BASE, "layout");
     const renamed = Object.values(r.renames).flat().length;
@@ -67,10 +60,10 @@ export async function importSeatFileAction(_prev: ActionState, form: FormData): 
 export async function updateSeatAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
     const r = await updateSeatCount(getDb(), await getSession(), {
-      induction: int(form, "induction"),
+      induction: formInt(form, "induction"),
       key: seatKey(form),
-      seats: int(form, "seats"),
-      reason: str(form, "reason"),
+      seats: formInt(form, "seats"),
+      reason: formText(form, "reason"),
     });
     revalidatePath(BASE, "layout");
     return { status: "success", message: r.changed ? "Saved" : "No change" };
@@ -82,10 +75,10 @@ export async function updateSeatAction(_prev: ActionState, form: FormData): Prom
 export async function addSeatAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
     await addSeatLine(getDb(), await getSession(), {
-      induction: int(form, "induction"),
+      induction: formInt(form, "induction"),
       key: seatKey(form),
-      seats: int(form, "seats"),
-      reason: str(form, "reason"),
+      seats: formInt(form, "seats"),
+      reason: formText(form, "reason"),
     });
     revalidatePath(BASE, "layout");
     return { status: "success", message: "Seat line added at the end of the matrix." };
@@ -96,7 +89,7 @@ export async function addSeatAction(_prev: ActionState, form: FormData): Promise
 
 export async function removeSeatAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
-    await removeSeatLine(getDb(), await getSession(), { induction: int(form, "induction"), key: seatKey(form), reason: str(form, "reason") });
+    await removeSeatLine(getDb(), await getSession(), { induction: formInt(form, "induction"), key: seatKey(form), reason: formText(form, "reason") });
     revalidatePath(BASE, "layout");
     return { status: "success", message: "Removed" };
   } catch (err) {
@@ -106,9 +99,9 @@ export async function removeSeatAction(_prev: ActionState, form: FormData): Prom
 
 export async function saveLookupAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
-    const kind = str(form, "kind") as LookupKind;
+    const kind = formText(form, "kind") as LookupKind;
     if (!LOOKUP_KINDS.includes(kind)) throw new UserFacingError("Unknown lookup");
-    const r = await saveLookup(getDb(), await getSession(), { kind, id: int(form, "id"), name: str(form, "name"), reason: str(form, "reason") });
+    const r = await saveLookup(getDb(), await getSession(), { kind, id: formInt(form, "id"), name: formText(form, "name"), reason: formText(form, "reason") });
     revalidatePath(BASE, "layout");
     return { status: "success", message: r.created ? "Added" : "Saved" };
   } catch (err) {
@@ -119,13 +112,13 @@ export async function saveLookupAction(_prev: ActionState, form: FormData): Prom
 /** Import (file upload) or edit (JSON text) of a reference document: both store a new version. */
 export async function saveDocumentAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
-    const kind = documentKindSchema.parse(str(form, "kind"));
-    const data = form.get("file") instanceof File ? await readJsonUpload(form, "file", MAX_FILE_BYTES) : JSON.parse(str(form, "data"));
+    const kind = documentKindSchema.parse(formText(form, "kind"));
+    const data = form.get("file") instanceof File ? await readJsonUpload(form, "file", MAX_FILE_BYTES) : JSON.parse(formText(form, "data"));
     const r = await saveReferenceDocument(getDb(), await getSession(), {
       kind,
-      induction: optionalInt(form, "induction") ?? null,
+      induction: formOptionalInt(form, "induction") ?? null,
       data,
-      reason: str(form, "reason"),
+      reason: formText(form, "reason"),
     });
     revalidatePath(BASE, "layout");
     return { status: "success", message: `Saved as version ${r.version}: ${r.summary}.` };

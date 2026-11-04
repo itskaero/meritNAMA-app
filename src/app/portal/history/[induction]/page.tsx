@@ -7,21 +7,21 @@ import { RoundBeam } from "@/components/charts/round-beam";
 import { RoundColumns } from "@/components/charts/round-columns";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
+import { selectClass } from "@/components/ui/styles";
 import { DataTable } from "@/components/ui/data-table";
 import { getSession } from "@/lib/auth/session";
 import { inductionMaxMarks, inductionTimeline, listInductionsWithRounds } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
+import { intParam } from "@/lib/params";
 
 export const metadata = { title: "Induction" };
 export const dynamic = "force-dynamic";
 
-const selectClass = "h-10 rounded-xl border border-line-strong bg-canvas px-3 text-sm text-ink";
 
 export default async function InductionPage({ params }: { params: Promise<{ induction: string }> }) {
-  const { induction: raw } = await params;
-  if (!/^\d{1,3}$/.test(raw)) notFound();
-  const induction = Number(raw);
+  const induction = intParam((await params).induction);
+  if (induction === null) notFound();
   const db = getDb();
   const session = await getSession();
   const [all, timeline, maxMarks] = await Promise.all([listInductionsWithRounds(db, session), inductionTimeline(db, session, induction), inductionMaxMarks(db)]);
@@ -80,10 +80,10 @@ export default async function InductionPage({ params }: { params: Promise<{ indu
           <CardHeader title="Compare two rounds" description="Closing merit changes and how many candidates entered, left or moved." />
           <form method="get" action={`/portal/history/${induction}/compare`} className="flex flex-wrap items-end gap-3">
             <label className="grid gap-1.5 text-sm font-medium">From
-              <select name="from" defaultValue={ind.rounds[0]!.roundNo} className={selectClass}>{ind.rounds.map((r) => <option key={r.roundNo} value={r.roundNo}>Round {r.roundNo}</option>)}</select>
+              <select name="from" defaultValue={ind.rounds[0]!.roundNo} className={`${selectClass} w-auto`}>{ind.rounds.map((r) => <option key={r.roundNo} value={r.roundNo}>Round {r.roundNo}</option>)}</select>
             </label>
             <label className="grid gap-1.5 text-sm font-medium">To
-              <select name="to" defaultValue={last.roundNo} className={selectClass}>{ind.rounds.map((r) => <option key={r.roundNo} value={r.roundNo}>Round {r.roundNo}</option>)}</select>
+              <select name="to" defaultValue={last.roundNo} className={`${selectClass} w-auto`}>{ind.rounds.map((r) => <option key={r.roundNo} value={r.roundNo}>Round {r.roundNo}</option>)}</select>
             </label>
             <Button type="submit" variant="secondary">Compare</Button>
           </form>

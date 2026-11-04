@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
@@ -6,13 +5,17 @@ import { BarList } from "@/components/charts/bar-list";
 import { RoundBeam } from "@/components/charts/round-beam";
 import { MeritDelta } from "@/components/merit-delta";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { selectClass } from "@/components/ui/styles";
 import { Card, CardHeader } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { EntityLink } from "@/components/entity-link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/page-header";
 import { getSession } from "@/lib/auth/session";
 import { getRound, inductionMaxMarks, listInductionsWithRounds, roundFacets, roundGroups, type RoundFilters } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
+import { intParam, oneOf } from "@/lib/params";
 
 export const metadata = { title: "Merit round" };
 export const dynamic = "force-dynamic";
@@ -24,15 +27,14 @@ const FILTERS = [
   ["speciality", "Speciality"],
   ["hospital", "Hospital"],
 ] as const;
-const selectClass = "h-10 w-full rounded-xl border border-line-strong bg-canvas px-3 text-sm text-ink";
 
 export default async function RoundPage({ params, searchParams }: {
   params: Promise<{ induction: string; round: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { induction: ri, round: rr } = await params;
-  if (!/^\d{1,3}$/.test(ri) || !/^\d{1,2}$/.test(rr)) notFound();
-  const induction = Number(ri), roundNo = Number(rr);
+  const p = await params;
+  const induction = intParam(p.induction), roundNo = intParam(p.round, 2);
+  if (induction === null || roundNo === null) notFound();
   const db = getDb();
   const session = await getSession();
   const round = await getRound(db, session, induction, roundNo);
@@ -41,10 +43,7 @@ export default async function RoundPage({ params, searchParams }: {
   const sp = await searchParams;
   const facets = await roundFacets(db, session, round.id);
   const filters: RoundFilters = {};
-  for (const [k] of FILTERS) {
-    const v = sp[k];
-    if (typeof v === "string" && (facets[k] as string[]).includes(v)) filters[k] = v;
-  }
+  for (const [k] of FILTERS) filters[k] = oneOf(sp[k], facets[k]);
   const all = await listInductionsWithRounds(db, session);
   const ind = all.find((i) => i.id === induction)!;
   const prevNo = ind.rounds.filter((r) => r.roundNo < roundNo).at(-1)?.roundNo;
@@ -107,33 +106,24 @@ export default async function RoundPage({ params, searchParams }: {
           )}
           <Card>
             <CardHeader title="Closing merit" description={groups.length > LIMIT ? `Showing the first ${LIMIT}; filter to narrow down.` : undefined} />
-            <div className="relative overflow-x-auto rounded-2xl border border-line">
-              <table className="w-full text-left text-sm">
-                <caption className="sr-only">Closing merit by programme, quota, speciality and hospital</caption>
-                <thead className="bg-elevated text-muted">
-                  <tr>
-                    <th scope="col" className="px-3 py-3 font-medium">Speciality</th>
-                    <th scope="col" className="px-3 py-3 font-medium">Hospital</th>
-                    <th scope="col" className="px-3 py-3 font-medium">Programme · quota</th>
-                    <th scope="col" className="px-3 py-3 text-right font-medium">Allocated</th>
-                    <th scope="col" className="px-3 py-3 text-right font-medium">Closing</th>
-                    <th scope="col" className="px-3 py-3 text-right font-medium">vs R{prev?.roundNo ?? "–"}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {groups.slice(0, LIMIT).map((g) => (
-                    <tr key={`${g.program}|${g.quota}|${g.speciality}|${g.hospital}`} className="hover:bg-surface">
-                      <td className="px-3 py-2.5">{g.specialityId ? <Link href={`/portal/explore/specialities/${g.specialityId}`} className="hover:text-signal hover:underline">{g.speciality}</Link> : g.speciality}</td>
-                      <td className="px-3 py-2.5 text-muted">{g.hospitalId ? <Link href={`/portal/explore/hospitals/${g.hospitalId}`} className="hover:text-signal hover:underline">{g.hospital}</Link> : g.hospital}</td>
-                      <td className="px-3 py-2.5 text-muted">{g.program} · {g.quota}</td>
-                      <td className="px-3 py-2.5 text-right tabular-nums">{g.allocations}</td>
-                      <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatMarks(g.closing)}</td>
-                      <td className="px-3 py-2.5 text-right">{prev ? <MeritDelta value={g.prevClosing == null ? null : (g.closing ?? 0) - g.prevClosing} /> : <span className="text-subtle">—</span>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              caption="Closing merit by programme, quota, speciality and hospital"
+              rows={groups.slice(0, LIMIT)}
+              rowKey={(g) => `${g.program}|${g.quota}|${g.speciality}|${g.hospital}`}
+              columns={[
+                { key: "s", header: "Speciality", cell: (g) => <EntityLink kind="speciality" id={g.specialityId} name={g.speciality} /> },
+                { key: "h", header: "Hospital", tone: "muted", cell: (g) => <EntityLink kind="hospital" id={g.hospitalId} name={g.hospital} /> },
+                { key: "pq", header: "Programme · quota", tone: "muted", cell: (g) => `${g.program} · ${g.quota}` },
+                { key: "n", header: "Allocated", align: "right", cell: (g) => g.allocations },
+                { key: "c", header: "Closing", align: "right", tone: "mono", cell: (g) => formatMarks(g.closing) },
+                {
+                  key: "d",
+                  header: `vs R${prev?.roundNo ?? "–"}`,
+                  align: "right",
+                  cell: (g) => (prev ? <MeritDelta value={g.prevClosing == null ? null : (g.closing ?? 0) - g.prevClosing} /> : <span className="text-subtle">—</span>),
+                },
+              ]}
+            />
           </Card>
         </>
       )}

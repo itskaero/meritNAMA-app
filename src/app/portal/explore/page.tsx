@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
-import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
 import { exploreIndex } from "@/lib/data/merit";
-import { checkDatabase, getDb } from "@/lib/db/client";
+import { getDb } from "@/lib/db/client";
 import { nameKey } from "@/lib/domain/merit-round";
 import { findSection } from "@/lib/navigation";
 
@@ -31,9 +31,8 @@ function List({ items, base, empty }: { items: { id: number; name: string; alloc
 export default async function ExplorePage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const s = findSection("/portal/explore");
   const { q = "" } = await searchParams;
-  if ((await checkDatabase()) !== "ok") {
-    return <AreaPage area="portal" trail={[{ label: s.label }]} title={s.label} description={s.description}><DatabaseUnavailable /></AreaPage>;
-  }
+  const down = await whenDatabaseDown({ area: "portal", trail: [{ label: s.label }], title: s.label, description: s.description });
+  if (down) return down;
   const idx = await exploreIndex(getDb(), await getSession());
   const key = nameKey(q);
   const match = (n: string) => !key || nameKey(n).includes(key);

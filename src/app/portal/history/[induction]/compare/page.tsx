@@ -1,14 +1,16 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { BarList } from "@/components/charts/bar-list";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { MeritDelta } from "@/components/merit-delta";
 import { Card, CardHeader } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { EntityLink } from "@/components/entity-link";
 import { getSession } from "@/lib/auth/session";
 import { compareRounds } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
+import { intParam } from "@/lib/params";
 
 export const metadata = { title: "Compare rounds" };
 export const dynamic = "force-dynamic";
@@ -17,11 +19,10 @@ export default async function ComparePage({ params, searchParams }: {
   params: Promise<{ induction: string }>;
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
-  const { induction: ri } = await params;
-  const { from = "", to = "" } = await searchParams;
-  if (!/^\d{1,3}$/.test(ri) || !/^\d{1,2}$/.test(from) || !/^\d{1,2}$/.test(to)) notFound();
-  const induction = Number(ri);
-  const cmp = await compareRounds(getDb(), await getSession(), induction, Number(from), Number(to));
+  const sp = await searchParams;
+  const induction = intParam((await params).induction), from = intParam(sp.from, 2), to = intParam(sp.to, 2);
+  if (induction === null || from === null || to === null) notFound();
+  const cmp = await compareRounds(getDb(), await getSession(), induction, from, to);
   if (!cmp) notFound();
   const drops = cmp.groups.filter((g) => g.delta != null && g.delta < -0.005).slice(0, 10);
 
@@ -49,31 +50,19 @@ export default async function ComparePage({ params, searchParams }: {
         </Card>
         <Card className="min-w-0">
           <CardHeader title="All groups" />
-          <div className="relative max-h-[640px] overflow-auto rounded-2xl border border-line">
-            <table className="w-full text-left text-sm">
-              <caption className="sr-only">Closing merit change per programme, quota and speciality</caption>
-              <thead className="sticky top-0 bg-elevated text-muted">
-                <tr>
-                  <th scope="col" className="px-3 py-3 font-medium">Speciality</th>
-                  <th scope="col" className="px-3 py-3 font-medium">Programme · quota</th>
-                  <th scope="col" className="px-3 py-3 text-right font-medium">R{from}</th>
-                  <th scope="col" className="px-3 py-3 text-right font-medium">R{to}</th>
-                  <th scope="col" className="px-3 py-3 text-right font-medium">Change</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {cmp.groups.map((g) => (
-                  <tr key={`${g.program}|${g.quota}|${g.speciality}`} className="hover:bg-surface">
-                    <td className="px-3 py-2.5">{g.specialityId ? <Link href={`/portal/explore/specialities/${g.specialityId}`} className="hover:text-signal hover:underline">{g.speciality}</Link> : g.speciality}</td>
-                    <td className="px-3 py-2.5 text-muted">{g.program} · {g.quota}</td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatMarks(g.fromClosing)}</td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums">{formatMarks(g.closing)}</td>
-                    <td className="px-3 py-2.5 text-right"><MeritDelta value={g.delta} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            caption="Closing merit change per programme, quota and speciality"
+            maxHeight="640px"
+            rows={cmp.groups}
+            rowKey={(g) => `${g.program}|${g.quota}|${g.speciality}`}
+            columns={[
+              { key: "s", header: "Speciality", cell: (g) => <EntityLink kind="speciality" id={g.specialityId} name={g.speciality} /> },
+              { key: "pq", header: "Programme · quota", tone: "muted", cell: (g) => `${g.program} · ${g.quota}` },
+              { key: "f", header: `R${from}`, align: "right", tone: "mono", cell: (g) => formatMarks(g.fromClosing) },
+              { key: "t", header: `R${to}`, align: "right", tone: "mono", cell: (g) => formatMarks(g.closing) },
+              { key: "d", header: "Change", align: "right", cell: (g) => <MeritDelta value={g.delta} /> },
+            ]}
+          />
         </Card>
       </div>
     </AreaPage>

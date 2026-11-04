@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
+import { formText, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
 import { deleteMeritRound, importMeritRound, saveNameAlias } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
@@ -20,7 +20,7 @@ const MAX_FILES = 20;
  */
 export async function importRoundsAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   const files = form.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
-  const reason = String(form.get("reason") ?? "");
+  const reason = formText(form, "reason");
   if (!files.length) return { status: "error", message: "Choose one or more round_<n>.json files." };
   if (files.length > MAX_FILES) return { status: "error", message: `Import at most ${MAX_FILES} files at a time.` };
 
@@ -48,7 +48,7 @@ export async function importRoundsAction(_prev: ActionState, form: FormData): Pr
 
 export async function deleteRoundAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
-    await deleteMeritRound(getDb(), await getSession(), { roundId: Number(form.get("roundId")), reason: String(form.get("reason") ?? "") });
+    await deleteMeritRound(getDb(), await getSession(), { roundId: Number(form.get("roundId")), reason: formText(form, "reason") });
     revalidatePath("/admin/inductions");
     revalidatePath("/portal", "layout");
     return { status: "success", message: "Round removed." };
@@ -62,7 +62,7 @@ export async function saveAliasAction(_prev: ActionState, form: FormData): Promi
     const kind = form.get("kind") === "hospital" ? "hospital" : "speciality";
     const lookupId = Number(form.get("lookupId"));
     if (!Number.isInteger(lookupId)) throw new UserFacingError("Choose what this name refers to.");
-    const r = await saveNameAlias(getDb(), await getSession(), { kind, name: String(form.get("name") ?? ""), lookupId, reason: String(form.get("reason") ?? "") });
+    const r = await saveNameAlias(getDb(), await getSession(), { kind, name: formText(form, "name"), lookupId, reason: formText(form, "reason") });
     revalidatePath("/admin/inductions");
     revalidatePath("/portal", "layout");
     return { status: "success", message: `Mapped to ${r.target}; ${r.updated} allocations updated.` };

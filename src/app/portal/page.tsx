@@ -3,12 +3,12 @@ import { AreaPage } from "@/components/area-page";
 import { LineChart } from "@/components/charts/line-chart";
 import { RoundBeam } from "@/components/charts/round-beam";
 import { StatTiles } from "@/components/charts/stat-tiles";
-import { DatabaseUnavailable } from "@/components/database-unavailable";
+import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Icon, type IconName } from "@/components/icon";
 import { Card, CardHeader } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
 import { inductionTimeline, listInductionsWithRounds, meritOverview } from "@/lib/data/merit";
-import { checkDatabase, getDb } from "@/lib/db/client";
+import { getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
 
 export const metadata = { title: "Dashboard" };
@@ -23,7 +23,8 @@ const SHORTCUTS: { href: string; title: string; text: string; icon: IconName }[]
 export default async function PortalDashboard() {
   const s = findSection("/portal");
   const frame = { area: "portal" as const, trail: [{ label: s.label }], isRoot: true, title: s.label, description: "Where the latest induction stands, and where to go next." };
-  if ((await checkDatabase()) !== "ok") return <AreaPage {...frame}><DatabaseUnavailable /></AreaPage>;
+  const down = await whenDatabaseDown(frame);
+  if (down) return down;
 
   const db = getDb();
   const session = await getSession();

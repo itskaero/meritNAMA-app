@@ -41,3 +41,23 @@ export async function readJsonUpload(form: FormData, fieldName: string, maxBytes
   if (upload.size > maxBytes) throw new UserFacingError(`The file is larger than ${Math.round(maxBytes / 1024)} KB.`);
   return JSON.parse(await upload.text());
 }
+
+// ── Reading form fields in Server Actions ─────────────────────────────────────
+
+/** A text field, or "" when absent. */
+export function formText(form: FormData, key: string): string {
+  const v = form.get(key);
+  return typeof v === "string" ? v : "";
+}
+
+/** A whole-number field; a clear error names the field when it is not one. */
+export function formInt(form: FormData, key: string, label = key): number {
+  const v = formText(form, key).trim();
+  if (!/^-?\d+$/.test(v)) throw new UserFacingError(`${label} must be a whole number`);
+  return Number(v);
+}
+
+/** Like formInt, but an empty field is undefined. */
+export function formOptionalInt(form: FormData, key: string, label = key): number | undefined {
+  return formText(form, key).trim() ? formInt(form, key, label) : undefined;
+}
