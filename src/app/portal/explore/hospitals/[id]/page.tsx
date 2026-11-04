@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
+import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { BarList } from "@/components/charts/bar-list";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -67,6 +68,7 @@ export default async function HospitalPage({ params }: { params: Promise<{ id: s
           </Card>
         </div>
       )}
+      <DiscussionPanel topic={{ kind: "hospital", key: String(p.hospital.id) }} label={p.hospital.name} />
     </AreaPage>
   );
 }

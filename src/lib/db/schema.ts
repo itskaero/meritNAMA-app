@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigserial,
+  boolean,
   check,
   date,
   doublePrecision,
@@ -28,12 +29,17 @@ export const inductionStatus = pgEnum("induction_status", ["planned", "active", 
 export const policyStatus = pgEnum("policy_status", ["draft", "active", "retired"]);
 export const auditResult = pgEnum("audit_result", ["success", "failure"]);
 export const nameAliasKind = pgEnum("name_alias_kind", ["speciality", "hospital"]);
+export const discussionTopicKind = pgEnum("discussion_topic_kind", ["general", "induction", "round", "speciality", "hospital"]);
+export const discussionStatus = pgEnum("discussion_status", ["visible", "hidden"]);
+export const reportStatus = pgEnum("report_status", ["open", "resolved", "dismissed"]);
 export const referenceDocumentKind = pgEnum("reference_document_kind", ["disciplines", "specialty_groups", "cpsp_accreditation"]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   role: userRole("role").notNull().default("candidate"),
+  /** Shown on community posts instead of the email address. */
+  displayName: text("display_name"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -220,6 +226,78 @@ export const nameAliases = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.kind, t.nameKey] })],
+);
+
+/*
+ * Community discussions. A thread is about one topic: general, an induction, a round,
+ * a speciality or a hospital (topic_key holds "20", "20:6", or the lookup id). Every
+ * signed-in user can read and post; admins moderate (hide, lock, pin) and act on
+ * reports. Hidden content stays in the database for the audit trail.
+ */
+export const discussionThreads = pgTable(
+  "discussion_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    topicKind: discussionTopicKind("topic_kind").notNull(),
+    topicKey: text("topic_key").notNull().default(""),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    authorId: uuid("author_id").notNull().references(() => users.id),
+    status: discussionStatus("status").notNull().default("visible"),
+    locked: boolean("locked").notNull().default(false),
+    pinned: boolean("pinned").notNull().default(false),
+    replyCount: integer("reply_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("discussion_threads_topic_idx").on(t.topicKind, t.topicKey, t.lastActivityAt),
+    index("discussion_threads_activity_idx").on(t.lastActivityAt),
+  ],
+);
+
+export const discussionPosts = pgTable(
+  "discussion_posts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id").notNull().references(() => discussionThreads.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id").notNull().references(() => users.id),
+    body: text("body").notNull(),
+    status: discussionStatus("status").notNull().default("visible"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("discussion_posts_thread_idx").on(t.threadId, t.createdAt), index("discussion_posts_author_idx").on(t.authorId, t.createdAt)],
+);
+
+/** "Helpful" votes on a thread or a reply; one per user per item. */
+export const discussionVotes = pgTable(
+  "discussion_votes",
+  {
+    targetKind: text("target_kind").notNull(),
+    targetId: uuid("target_id").notNull(),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.targetKind, t.targetId, t.userId] }), check("discussion_votes_kind", sql`${t.targetKind} in ('thread', 'post')`)],
+);
+
+export const discussionReports = pgTable(
+  "discussion_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    targetKind: text("target_kind").notNull(),
+    targetId: uuid("target_id").notNull(),
+    reporterId: uuid("reporter_id").notNull().references(() => users.id),
+    reason: text("reason").notNull(),
+    status: reportStatus("status").notNull().default("open"),
+    resolvedBy: text("resolved_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("discussion_reports_status_idx").on(t.status, t.createdAt),
+    uniqueIndex("discussion_reports_once_uq").on(t.targetKind, t.targetId, t.reporterId),
+    check("discussion_reports_kind", sql`${t.targetKind} in ('thread', 'post')`),
+  ],
 );
 
 export const auditLog = pgTable(

@@ -74,6 +74,15 @@ export const candidateSections: Section[] = [
     planned: ["Canonical hospital and specialty directory", "Programme availability", "Accreditation metadata where available"],
   },
   {
+    href: "/portal/community",
+    group: "Explore",
+    icon: "chat",
+    label: "Community",
+    description: "Ask and answer questions about inductions, rounds, specialities and hospitals.",
+    milestone: "Delivery 4 · Candidate MVP",
+    planned: [],
+  },
+  {
     href: "/portal/workspace",
     group: "Personal",
     icon: "folder",
@@ -147,6 +156,15 @@ export const adminSections: Section[] = [
     description: "Who changed what, when and why.",
     milestone: "Delivery 3 · Admin MVP",
     planned: ["Actor and timestamp", "Previous and new values", "Reason and result", "Reversal where feasible"],
+  },
+  {
+    href: "/admin/community",
+    group: "Operations",
+    icon: "flag",
+    label: "Community moderation",
+    description: "Reported posts, hidden content and locked discussions.",
+    milestone: "Delivery 3 · Admin MVP",
+    planned: [],
   },
   {
     href: "/admin/settings",

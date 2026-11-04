@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
+import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { BarList } from "@/components/charts/bar-list";
 import { RoundBeam } from "@/components/charts/round-beam";
 import { MeritDelta } from "@/components/merit-delta";
@@ -136,6 +137,7 @@ export default async function RoundPage({ params, searchParams }: {
           </Card>
         </>
       )}
+      <DiscussionPanel topic={{ kind: "round", key: `${induction}:${roundNo}` }} label={`round ${roundNo} of induction ${induction}`} />
     </AreaPage>
   );
 }

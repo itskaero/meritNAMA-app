@@ -29,6 +29,13 @@
       "when": 1793808279166,
       "tag": "0003_merit_rounds",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793809548824,
+      "tag": "0004_community",
+      "breakpoints": true
     }
   ]
 }

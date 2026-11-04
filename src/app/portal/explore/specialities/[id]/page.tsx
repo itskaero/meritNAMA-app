@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
+import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { LineChart } from "@/components/charts/line-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -99,6 +100,7 @@ export default async function SpecialityPage({ params, searchParams }: {
           ) : null}
         </>
       )}
+      <DiscussionPanel topic={{ kind: "speciality", key: String(h.speciality.id) }} label={h.speciality.name} />
     </AreaPage>
   );
 }

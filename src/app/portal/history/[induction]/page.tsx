@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
+import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { LineChart } from "@/components/charts/line-chart";
 import { RoundBeam } from "@/components/charts/round-beam";
 import { RoundColumns } from "@/components/charts/round-columns";
@@ -88,6 +89,7 @@ export default async function InductionPage({ params }: { params: Promise<{ indu
           </form>
         </Card>
       ) : null}
+      <DiscussionPanel topic={{ kind: "induction", key: String(induction) }} label={`induction ${induction}`} />
     </AreaPage>
   );
 }
