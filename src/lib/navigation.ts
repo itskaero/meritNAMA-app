@@ -59,8 +59,8 @@ export const candidateSections: Section[] = [
     href: "/portal/history",
     group: "Explore",
     icon: "trend",
-    label: "Historical cutoffs",
-    description: "Closing merit across inductions and rounds.",
+    label: "Merit lists",
+    description: "Every round of every induction: closing merit by programme, quota, speciality and hospital.",
     milestone: "Delivery 4 · Candidate MVP",
     planned: ["Programme- and quota-aware comparisons", "Seat-count trends", "Round-by-round movement", "Your score vs. historical cutoff"],
   },
@@ -69,7 +69,7 @@ export const candidateSections: Section[] = [
     group: "Explore",
     icon: "building",
     label: "Hospitals & specialties",
-    description: "Discover training opportunities.",
+    description: "Each speciality and hospital, its seats and its closing merit across inductions.",
     milestone: "Delivery 4 · Candidate MVP",
     planned: ["Canonical hospital and specialty directory", "Programme availability", "Accreditation metadata where available"],
   },
@@ -107,8 +107,8 @@ export const adminSections: Section[] = [
     href: "/admin/inductions",
     group: "Menu",
     icon: "calendar",
-    label: "Inductions",
-    description: "Induction configuration, merit lists and gazettes.",
+    label: "Inductions & merit lists",
+    description: "Import merit-round files, replace or remove rounds, and map published names to hospitals and specialities.",
     milestone: "Delivery 3 · Admin MVP",
     planned: ["Induction configuration", "Historical merit lists", "Gazette seat data", "Source-data versions", "Before/after comparisons"],
   },
@@ -161,6 +161,7 @@ export const adminSections: Section[] = [
 
 /** Admin quick actions for the Ctrl K palette, beyond the sidebar pages. */
 export const adminCommands: { label: string; hint: string; href: string; icon: IconName; download?: boolean; keywords?: string }[] = [
+  { label: "Import merit rounds", hint: "Inductions", href: "/admin/inductions", icon: "upload", keywords: "merit list round_ file" },
   { label: "Import a seat file", hint: "Reference data", href: "/admin/reference-data", icon: "upload", keywords: "seats matrix induction upload" },
   { label: "Hospitals", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=hospitals", icon: "building", keywords: "rename add hospital" },
   { label: "Specialities", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=specialities", icon: "target", keywords: "speciality specialty rename" },

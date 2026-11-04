@@ -6,7 +6,7 @@ app. A contract = zod schema + Postgres table + importer + tests against real fi
 | Dataset (legacy path) | Shape observed | Contract |
 |---|---|---|
 | `data/scoring_policy.json` | `{active_policy, _induction_max, year_total_max, policies{key → {label, induction, total_marks, policy_ref?, notes?, tidbits?, components[]}}}` | ✅ `src/lib/domain/scoring-policy.ts`, tables `scoring_policies` + `scoring_policy_file_meta`; import, edit, activate and export at `/admin/policies` (lossless round trip, see below) |
-| `inductions/<n>/merit/round_<r>.json` | PHF export: `Table` (induction/round meta), `Table3` (column map), `Table5` rows: `type, specialityJobId, quotaId, quota, speciality, institute, hospital, seats, marks, applicantId, name, relation…, pmdcNo, …` | Delivery 2 |
+| `inductions/<n>/merit/round_<r>.json` | PHF export: `Table[0]` cycle (`inductionId, name` e.g. `PHF/26/JAN/01`, `displayName`, dates), `Table5` allocation rows: `rowNo, type, quota, specialityJobId, speciality, institute, hospital, seats, marks, applicantId, preferenceNo, consent` plus personal fields | ✅ `src/lib/domain/merit-round.ts`; tables `merit_rounds`, `merit_allocations`, `name_aliases`; imported at `/admin/inductions`, browsed at `/portal/history` and `/portal/explore` |
 | `inductions/<n>/gazette/gazette_<n>.json` | Same envelope; `Table5` rows: `applicantId, nameFull, pmdcNo, cnic, contactNumber, matric, fsc, degree, houseJob, experience, hardArea, research, position, attempts, marksProgram, marksTotal, statusId, …` | Delivery 2 — **restricted** |
 | `data/induction21_candidates.json` | `{applicantId → {applicantId, nameFull, pmdcNo, emailId, contactNumber, cnic, preferences[{specialityId, typeName, typeId, hospitalName, instituteName, preferenceNo, quotaName, programMarks, marks, disciplineIds, parentInstitute}]}}` | Delivery 2 — **restricted** |
 | `data/induction21_consent_round*.json`, `induction21_joining_status.json`, `induction21_merit_round*.json` | Per-round candidate states | Delivery 2 — restricted |
@@ -48,6 +48,26 @@ app. A contract = zod schema + Postgres table + importer + tests against real fi
 - **Not linked yet:** CPSP accreditation names hospitals by free text, so it is not joined
   to `hospitals`; disciplines and specialty groups reference speciality ids but are not
   checked against `specialities`. Both are follow-ups (see "Missing-reference checks").
+
+## Merit rounds
+
+- **Stored:** cycle code and name, dates, and per allocation: programme, quota,
+  speciality, hospital, institute, seats, marks, preference number, consent and
+  `applicant_id`. **Not stored:** name, relation, PMDC number, email and employment
+  fields. `applicant_id` is used only inside SQL to count movement between rounds;
+  browsing functions return aggregates (counts, closing and opening marks) only.
+- **One candidate, several allocations:** a round can list the same applicant once per
+  programme or quota (one "Accepted", the rest "Not Avail"), so rows are keyed by
+  `rowNo`. Closing merit is the lowest marks allocated in a group.
+- **Ids are not stable across inductions:** `quotaId` 1 is "Punjab" in induction 21 but
+  "Armed Force" in inductions 8 and 12. Allocations keep the published names; speciality
+  and hospital are resolved to the lookup tables by normalised name, or by an
+  admin-confirmed alias (`name_aliases`), which also applies to later imports.
+- **Totals differ by induction** (60 marks for 17–19, 35 for 20, 30 for 21), so pages
+  that compare inductions use percent of `_induction_max` from the imported
+  `scoring_policy.json`.
+- **Round number** comes from the file name (`round_<n>.json`); the induction is read
+  from the file, and created from its cycle dates if missing. Re-importing replaces.
 
 ## Observations that shape the contracts
 

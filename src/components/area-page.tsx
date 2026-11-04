@@ -29,7 +29,8 @@ export function AreaPage({ area, trail, isRoot = false, title, description, stat
   return (
     <>
       <PageHeader breadcrumb={breadcrumb} title={title} description={description} status={status} />
-      <div className="grid gap-5 px-4 pb-10 sm:px-8">{children}</div>
+      {/* min-w-0 on every child: wide tables and charts scroll inside their card instead of widening the page */}
+      <div className="grid gap-5 px-4 pb-10 sm:px-8 [&>*]:min-w-0">{children}</div>
     </>
   );
 }

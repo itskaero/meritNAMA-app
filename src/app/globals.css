@@ -57,3 +57,23 @@
 html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger text in Simple mode */
 [data-mode="pro"] table th,
 [data-mode="pro"] table td { padding-top: 0.45rem; padding-bottom: 0.45rem; }   /* denser tables in Pro mode */
+
+/*
+ * Motion for dashboards and charts. Elements are complete at rest: animations only
+ * play the entrance (lines draw, bars grow, cards rise) and are removed entirely
+ * under prefers-reduced-motion.
+ */
+@keyframes mn-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes mn-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes mn-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes mn-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes mn-pop { 0% { r: 0; } 70% { r: 7; } 100% { r: 5; } }
+@keyframes mn-beam { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+.mn-draw { stroke-dasharray: 1; animation: mn-draw 1.1s var(--mn-ease) both; }
+.mn-grow-x { transform-origin: left center; animation: mn-grow-x .8s var(--mn-ease) both; }
+.mn-grow-y { transform-box: fill-box; transform-origin: bottom; animation: mn-grow-y .7s var(--mn-ease) both; }
+.mn-rise { animation: mn-rise .5s var(--mn-ease) both; }
+.mn-beam-flow { background-size: 200% 100%; animation: mn-beam 6s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mn-draw, .mn-grow-x, .mn-grow-y, .mn-rise, .mn-beam-flow { animation: none; }
+}

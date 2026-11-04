@@ -53,7 +53,7 @@ export default async function PolicyVersionPage({ params, searchParams }: {
         </ul>
       </Card>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader title="Edit" description="Changes are saved as a new draft version of this policy key." />
           <EditDraftForm policyKey={row.policyKey} definition={JSON.stringify(row.definition, null, 2)} />

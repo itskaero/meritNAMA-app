@@ -33,7 +33,7 @@ export default async function ReferenceDataPage() {
         <EmptyState title="Database not available">Configure DATABASE_URL and run migrations to manage reference data.</EmptyState>
       ) : (
         <>
-          <div className="grid gap-5 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
             <Card>
               <CardHeader title="Seat matrices" description="One per induction. Open one to filter, edit seat counts, or add and remove lines." />
               {overview.seatMatrices.length === 0 ? (
@@ -76,7 +76,7 @@ export default async function ReferenceDataPage() {
             </ul>
           </Card>
 
-          <div className="grid gap-5 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
             {(Object.keys(DOCUMENT_KINDS) as DocumentKind[]).map((kind) => {
               const meta = DOCUMENT_KINDS[kind];
               const current = overview.documents.filter((d) => d.kind === kind);

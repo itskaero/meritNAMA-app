@@ -26,7 +26,7 @@ export function PlaceholderPage({ href, children }: { href: string; children?: R
       }
     >
       {children}
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
         <section className="rounded-[1.5rem] border border-line bg-surface p-6">
           <h2 className="text-lg font-semibold">
             Planned scope <span className="text-muted">({s.planned.length})</span>

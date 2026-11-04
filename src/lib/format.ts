@@ -11,3 +11,15 @@ export function isUuid(value: unknown): value is string {
 export function formatUtc(date: Date | null | undefined): string {
   return date ? date.toISOString().slice(0, 16).replace("T", " ") : "—";
 }
+
+/** Merit marks with two decimals ("23.76"), or an em dash. */
+export function formatMarks(v: number | null | undefined): string {
+  return v == null ? "—" : v.toFixed(2);
+}
+
+/** Signed change with two decimals ("+0.42", "−1.10"), or an em dash. */
+export function formatDelta(v: number | null | undefined): string {
+  if (v == null) return "—";
+  if (Math.abs(v) < 0.005) return "0.00";
+  return `${v > 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}`;
+}
