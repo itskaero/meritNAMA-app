@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ActionBar } from "@/components/ui/action-bar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
@@ -37,6 +38,14 @@ export default async function PolicyVersionPage({ params, searchParams }: {
     >
       {saved ? <Notice title="Saved as a new draft">This page shows the version you just created.</Notice> : null}
 
+      <ActionBar
+        actions={[
+          { label: "Edit as new draft", href: "#edit", icon: "sliders", primary: true },
+          ...(row.status === "active" ? [] : [{ label: "Make active", href: "#activate", icon: "upload" as const }]),
+          { label: "Export file", href: "/admin/policies/export", icon: "download", download: true },
+          { label: "All versions", href: "/admin/policies", icon: "list" },
+        ]}
+      />
       <Card>
         <CardHeader title="Components" description={`Included components sum to ${includedMaxTotal(policy.components)} of ${policy.total_marks}.`} />
         <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -55,11 +64,11 @@ export default async function PolicyVersionPage({ params, searchParams }: {
       </Card>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <Card>
+        <Card id="edit">
           <CardHeader title="Edit" description="Changes are saved as a new draft version of this policy key." />
           <EditDraftForm policyKey={row.policyKey} definition={JSON.stringify(row.definition, null, 2)} />
         </Card>
-        <Card className="self-start">
+        <Card id="activate" className="self-start">
           <CardHeader
             title="Activation"
             description={row.status === "active"

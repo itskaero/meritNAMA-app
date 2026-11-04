@@ -7,7 +7,9 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Metric } from "@/components/ui/metric";
 import { can } from "@/lib/auth/roles";
 import { getSession, requireSection } from "@/lib/auth/session";
-import { listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
+import { latestRoundChange, listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
+import { latestRoundStats } from "@/lib/round-stats";
+import { InductionTimeline } from "@/components/charts/induction-timeline";
 import { pendingChangeCount } from "@/lib/data/changes";
 import { listPolicyVersions } from "@/lib/data/policies";
 import { getReferenceOverview } from "@/lib/data/reference-data";
@@ -37,13 +39,14 @@ export default async function AdminOverviewPage() {
   }
   const db = getDb();
   const session = await getSession();
-  const [policies, merit, inductions, unmatched, reference, pendingChanges] = await Promise.all([
+  const [policies, merit, inductions, unmatched, reference, pendingChanges, change] = await Promise.all([
     listPolicyVersions(db, session),
     meritOverview(db, session),
     listInductionsWithRounds(db, session),
     listUnmatchedNames(db, session),
     getReferenceOverview(db, session),
     pendingChangeCount(db, session),
+    latestRoundChange(db, session),
   ]);
   const active = policies.find((r) => r.status === "active");
   const toMap = unmatched.speciality.length + unmatched.hospital.length;
@@ -71,6 +74,13 @@ export default async function AdminOverviewPage() {
           { label: "Policy versions", value: policies.length },
         ]}
       />
+      {change ? <StatTiles stats={latestRoundStats(change, inductions[0]?.maxMarks ?? undefined)} /> : null}
+      {inductions.length ? (
+        <Card>
+          <CardHeader title="Timeline" description="Imported induction cycles and their rounds." />
+          <InductionTimeline inductions={inductions} />
+        </Card>
+      ) : null}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Card>
           <CardHeader title="Needs attention" />

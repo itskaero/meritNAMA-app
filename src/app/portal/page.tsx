@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { LineChart } from "@/components/charts/line-chart";
-import { RoundBeam } from "@/components/charts/round-beam";
+import { InductionTimeline } from "@/components/charts/induction-timeline";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Icon, type IconName } from "@/components/icon";
 import { Card, CardHeader } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
-import { inductionTimeline, listInductionsWithRounds, meritOverview } from "@/lib/data/merit";
+import { inductionTimeline, latestRoundChange, listInductionsWithRounds } from "@/lib/data/merit";
+import { latestRoundStats } from "@/lib/round-stats";
 import { getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
 
@@ -28,7 +29,7 @@ export default async function PortalDashboard() {
 
   const db = getDb();
   const session = await getSession();
-  const [overview, inductions] = await Promise.all([meritOverview(db, session), listInductionsWithRounds(db, session)]);
+  const [inductions, change] = await Promise.all([listInductionsWithRounds(db, session), latestRoundChange(db, session)]);
   const latest = inductions[0];
   const timeline = latest ? await inductionTimeline(db, session, latest.id) : [];
 
@@ -42,18 +43,16 @@ export default async function PortalDashboard() {
           </Link>
         ))}
       </div>
-      <StatTiles
-        stats={[
-          { label: "Inductions with merit lists", value: overview.inductions },
-          { label: "Rounds published", value: overview.rounds },
-          { label: "Allocations", value: overview.allocations },
-          { label: "Seats in the latest matrix", value: overview.seats, hint: `${overview.hospitals} hospitals` },
-        ]}
-      />
+      {change ? <StatTiles stats={latestRoundStats(change, latest?.maxMarks ?? undefined)} /> : null}
+      {inductions.length ? (
+        <Card>
+          <CardHeader title="Timeline" description="Induction cycles and their rounds. Select a round to open it." />
+          <InductionTimeline inductions={inductions} />
+        </Card>
+      ) : null}
       {latest ? (
         <Card>
           <CardHeader title={`Latest: induction ${latest.id} · ${latest.rounds[0]!.cycleName}`} description={`Median closing merit per round${latest.maxMarks ? `, out of ${latest.maxMarks}` : ""}.`} />
-          <RoundBeam rounds={latest.rounds.map((r) => r.roundNo)} current={latest.rounds.at(-1)!.roundNo} hrefFor={(r) => `/portal/history/${latest.id}/rounds/${r}`} />
           <LineChart title={`Induction ${latest.id}: median closing merit per round`} xLabels={timeline.map((t) => `R${t.roundNo}`)} series={[{ label: "Median closing merit", values: timeline.map((t) => t.medianClosing) }]} height={200} />
         </Card>
       ) : null}

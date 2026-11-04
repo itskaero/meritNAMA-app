@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
-import { RoundBeam } from "@/components/charts/round-beam";
+import { InductionTimeline } from "@/components/charts/induction-timeline";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { listInductionsWithRounds, meritOverview } from "@/lib/data/merit";
@@ -31,6 +31,12 @@ export default async function MeritListsPage() {
           { label: "Seats in the latest matrix", value: overview.seats, hint: `${overview.hospitals} hospitals` },
         ]}
       />
+      {inductions.length ? (
+        <Card>
+          <CardHeader title="Timeline" description="Each induction's cycle; select a round to open its merit list." />
+          <InductionTimeline inductions={inductions} />
+        </Card>
+      ) : null}
       {inductions.length === 0 ? (
         <EmptyState title="No merit lists yet">Merit rounds appear here once an administrator imports them.</EmptyState>
       ) : (
@@ -53,7 +59,6 @@ export default async function MeritListsPage() {
                   </div>
                   <Link href={`/portal/history/${ind.id}`} className="rounded-full border border-line-strong px-4 py-2 text-sm font-semibold hover:bg-hover">Open</Link>
                 </div>
-                <RoundBeam rounds={ind.rounds.map((r) => r.roundNo)} hrefFor={(r) => `/portal/history/${ind.id}/rounds/${r}`} />
               </Card>
             );
           })}

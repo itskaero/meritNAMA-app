@@ -3,10 +3,13 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Session } from "@/lib/auth/roles";
 import type { Section } from "@/lib/navigation";
-import { parseUiMode, UI_MODE_COOKIE, type UiMode } from "@/lib/ui-mode";
+import { whatsNew } from "@/lib/data/whats-new";
+import { getDb } from "@/lib/db/client";
+import { parseUiMode, UI_MODE_COOKIE, WHATS_NEW_COOKIE, type UiMode } from "@/lib/ui-mode";
 import { LogoMark, Wordmark } from "./brand";
 import { CommandPalette, PaletteButton, type Command } from "./command-palette";
 import { ModeToggle } from "./mode-toggle";
+import { WhatsNew } from "./whats-new";
 import { SideNav, type NavItem } from "./side-nav";
 import { Badge } from "./ui/badge";
 import { cn } from "./ui/cn";
@@ -48,7 +51,13 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
   session: Session;
   children: ReactNode;
 }) {
-  const mode = parseUiMode((await cookies()).get(UI_MODE_COOKIE)?.value);
+  const jar = await cookies();
+  const mode = parseUiMode(jar.get(UI_MODE_COOKIE)?.value);
+  // "What's new": newest events after the last dismissal; quietly empty if the database is down.
+  const seen = Number(jar.get(WHATS_NEW_COOKIE)?.value ?? 0) || 0;
+  const news = (await whatsNew(getDb(), session).catch(() => []))
+    .filter((n) => n.at.getTime() > seen)
+    .map((n) => ({ text: n.text, href: n.href, at: n.at.toISOString() }));
   const pro = mode === "pro";
   const items: NavItem[] = [...sections.map(({ href, label, group, icon }) => ({ href, label, group, icon })), ...links];
   const palette: Command[] = [
@@ -70,12 +79,22 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
         }
         profile={<ProfileCard session={session} mode={mode} />}
         tools={
-          <div className={cn("flex items-center gap-2", pro ? "lg:flex-col" : "justify-between")}>
-            {pro ? <PaletteButton compact /> : null}
+          <div className={cn("grid gap-2", pro && "lg:justify-items-center")}>
+            {pro ? (
+              <>
+                <PaletteButton compact className="hidden lg:inline-flex" />
+                <PaletteButton className="w-full lg:hidden" />
+              </>
+            ) : <PaletteButton className="w-full" />}
             <ModeToggle mode={mode} compact={pro} />
           </div>
         }
-        footer={<p className={cn("text-xs text-subtle", pro && "lg:sr-only")}>{session.isStub ? `${area} · scaffold v0.1` : area}</p>}
+        footer={
+          <div className="grid gap-3">
+            {news.length ? <div className={cn(pro && "lg:hidden")}><WhatsNew items={news} /></div> : null}
+            <p className={cn("text-xs text-subtle", pro && "lg:sr-only")}>{session.isStub ? `${area} · scaffold v0.1` : area}</p>
+          </div>
+        }
       />
       <div className="min-w-0 lg:py-3 lg:pr-3">
         <main id="main" className="min-h-full bg-canvas lg:min-h-[calc(100vh-1.5rem)] lg:rounded-[1.75rem] lg:border lg:border-line lg:bg-[linear-gradient(180deg,var(--mn-navy-900),var(--mn-navy-950)_40%)]">

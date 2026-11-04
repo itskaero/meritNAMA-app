@@ -19,25 +19,28 @@ export type Command = {
 
 const OPEN_EVENT = "mn:open-palette";
 
-/** Opens the palette from anywhere (buttons render this; Ctrl/⌘K also works). */
+/**
+ * Opens the palette from anywhere (Ctrl/⌘K also works). Full size it looks like a
+ * search field ("Search… ⌘K"); compact it is an icon button for the Pro rail.
+ */
 export function PaletteButton({ className, compact = false }: { className?: string; compact?: boolean }) {
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-line-strong text-sm text-muted transition-colors hover:bg-hover hover:text-ink",
-        compact ? "h-10 w-10 justify-center" : "h-10 px-3",
+        "inline-flex items-center gap-2 border border-line bg-canvas text-sm text-subtle transition-colors hover:border-line-strong hover:text-ink",
+        compact ? "h-10 w-10 justify-center rounded-full" : "h-10 rounded-xl px-3",
         className,
       )}
-      aria-label="Search and jump (Ctrl K)"
-      title="Search and jump (Ctrl K)"
+      aria-label="Search pages and actions (Ctrl K)"
+      title="Search pages and actions (Ctrl K)"
     >
       <Icon name="search" className="h-[18px] w-[18px]" />
       {compact ? null : (
         <>
-          <span className="flex-1 text-left">Jump to…</span>
-          <kbd className="rounded-md border border-line-strong px-1.5 py-0.5 font-mono text-[0.68rem]">Ctrl K</kbd>
+          <span className="flex-1 text-left">Search…</span>
+          <kbd className="rounded-md border border-line-strong px-1.5 py-0.5 font-mono text-[0.68rem] text-muted">⌘K</kbd>
         </>
       )}
     </button>

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { ActionBar } from "@/components/ui/action-bar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AreaPage } from "@/components/area-page";
@@ -62,6 +63,14 @@ export default async function SeatMatrixPage({ params, searchParams }: {
       title={`Induction ${induction} seat matrix`}
       description={`${all.length} seat lines · ${all.reduce((s, r) => s + r.seats, 0)} seats. Changes apply immediately and are audited; export to update the public site's file.`}
     >
+      <ActionBar
+        actions={[
+          { label: "Add a seat line", href: "#add-line", icon: "list", primary: true },
+          { label: "Replace from file", href: "#replace", icon: "upload" },
+          { label: "Export", href: `/admin/reference-data/export?dataset=seats&induction=${induction}`, icon: "download", download: true },
+          { label: "Lookups", href: "/admin/reference-data/lookups", icon: "database" },
+        ]}
+      />
       <Card>
         <form method="get" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto] xl:items-end">
           {FILTERS.map(([key, label, kind]) => (
@@ -95,7 +104,7 @@ export default async function SeatMatrixPage({ params, searchParams }: {
         </SeatEditor>
       )}
 
-      <details className="rounded-[1.5rem] border border-line bg-surface p-5">
+      <details id="replace" className="scroll-mt-20 rounded-[1.5rem] border border-line bg-surface p-5">
         <summary className="cursor-pointer font-semibold">Replace this matrix from a file</summary>
         <div className="mt-4"><SeatImportForm defaultInduction={induction} /></div>
       </details>

@@ -40,7 +40,7 @@ export function PlaceholderPage({ href, children }: { href: string; children?: R
             ))}
           </ul>
         </section>
-        <section className="relative overflow-hidden rounded-[1.5rem] border border-signal/20 bg-[linear-gradient(135deg,#14253a_0%,#14404e_55%,#155f62_100%)] p-6">
+        <section className="relative overflow-hidden rounded-[1.5rem] border border-signal/20 bg-[linear-gradient(135deg,var(--mn-navy-800)_0%,var(--mn-teal-deep)_60%,#12564f_100%)] p-6">
           <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-signal/10 blur-3xl" />
           <div className="relative">
             <span className="grid h-10 w-10 place-items-center rounded-full bg-white/10 ring-1 ring-white/20">

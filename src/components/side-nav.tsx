@@ -105,11 +105,11 @@ export function SideNav({ area, items, pro = false, brand, profile, tools, foote
                           "flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition-colors",
                           pro && "lg:justify-center lg:px-0 lg:py-3",
                           active
-                            ? "border-line-strong bg-gradient-to-b from-elevated to-surface font-semibold text-ink shadow-[inset_0_1px_0_rgba(242,246,252,0.06)]"
+                            ? "border-ink bg-ink font-semibold text-canvas shadow-[0_6px_20px_-8px_rgba(244,244,245,0.45)]"
                             : "border-transparent text-muted hover:bg-surface hover:text-ink",
                         )}
                       >
-                        <Icon name={s.icon} className={cn("h-[18px] w-[18px] flex-none", active ? "text-signal" : "")} />
+                        <Icon name={s.icon} className="h-[18px] w-[18px] flex-none" />
                         <span className={cn(pro && "lg:sr-only")}>{s.label}</span>
                       </Link>
                     </li>

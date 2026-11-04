@@ -4,6 +4,7 @@ import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { BarList } from "@/components/charts/bar-list";
 import { RoundBeam } from "@/components/charts/round-beam";
 import { MeritDelta } from "@/components/merit-delta";
+import { ActionBar } from "@/components/ui/action-bar";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { selectClass } from "@/components/ui/styles";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -67,6 +68,15 @@ export default async function RoundPage({ params, searchParams }: {
       description={`${round.cycleName} (${round.cycleCode}) · ${round.allocations.toLocaleString("en-US")} allocations. Closing merit is the lowest marks allocated in each group${max ? `, out of ${max}` : ""}.`}
       status={<StatusPill>{prev ? `Compared with round ${prev.roundNo}` : "First round"}</StatusPill>}
     >
+      <ActionBar
+        actions={[
+          ...(prevNo ? [{ label: `Compare with round ${prevNo}`, href: `/portal/history/${induction}/compare?from=${prevNo}&to=${roundNo}`, icon: "trend" as const, primary: true }] : []),
+          ...(prevNo ? [{ label: `Round ${prevNo}`, href: `/portal/history/${induction}/rounds/${prevNo}`, icon: "history" as const }] : []),
+          ...(nextNo ? [{ label: `Round ${nextNo}`, href: `/portal/history/${induction}/rounds/${nextNo}`, icon: "arrow" as const }] : []),
+          { label: "Score finder", href: `/portal/finder?induction=${induction}`, icon: "target" as const },
+          { label: "Discuss", href: "#discussion", icon: "chat" as const },
+        ]}
+      />
       <Card>
         <RoundBeam rounds={ind.rounds.map((r) => r.roundNo)} current={roundNo} hrefFor={(r) => `/portal/history/${induction}/rounds/${r}`} />
         <form method="get" className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto] xl:items-end">
@@ -86,11 +96,6 @@ export default async function RoundPage({ params, searchParams }: {
         </form>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
           <span aria-live="polite">{groups.length.toLocaleString("en-US")} groups{filtered ? " match" : ""}</span>
-          <span className="flex gap-2">
-            {prevNo ? <ButtonLink href={`/portal/history/${induction}/rounds/${prevNo}`} variant="ghost" size="sm">← Round {prevNo}</ButtonLink> : null}
-            {nextNo ? <ButtonLink href={`/portal/history/${induction}/rounds/${nextNo}`} variant="ghost" size="sm">Round {nextNo} →</ButtonLink> : null}
-            {prevNo ? <ButtonLink href={`/portal/history/${induction}/compare?from=${prevNo}&to=${roundNo}`} variant="secondary" size="sm">Compare with round {prevNo}</ButtonLink> : null}
-          </span>
         </div>
       </Card>
 

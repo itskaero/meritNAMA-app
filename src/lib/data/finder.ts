@@ -78,6 +78,11 @@ export type FinderOption = {
  */
 export async function findOptions(db: Database, session: Session | null, input: z.input<typeof inputSchema>) {
   assertCan(session, "portal");
+  return computeOptions(db, input);
+}
+
+/** The finder's calculation without an access check: aggregates only. Used by the public landing page too. */
+export async function computeOptions(db: Database, input: z.input<typeof inputSchema>) {
   const v = inputSchema.parse(input);
   if (v.marks > v.total) throw new UserFacingError(`Your marks cannot be more than the total (${v.total}).`);
   const maxMarks = await inductionMaxMarks(db);

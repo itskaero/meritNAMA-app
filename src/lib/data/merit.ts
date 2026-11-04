@@ -504,3 +504,17 @@ export async function meritOverview(db: Database, session: Session | null) {
   return { rounds: r?.rounds ?? 0, inductions: r?.inductions ?? 0, allocations: a?.allocations ?? 0, seats: s?.seats ?? 0, hospitals: s?.hospitals ?? 0 };
 }
 
+
+/**
+ * The latest round of the latest induction against the round before it: allocations,
+ * acceptances and median closing merit. Null when there is no earlier round.
+ */
+export async function latestRoundChange(db: Database, session: Session | null) {
+  assertCan(session, "portal");
+  const [latest] = await db.select({ ind: meritRounds.inductionId }).from(meritRounds).orderBy(desc(meritRounds.inductionId)).limit(1);
+  if (!latest) return null;
+  const t = await inductionTimeline(db, session, latest.ind);
+  const now = t.at(-1), before = t.at(-2);
+  if (!now) return null;
+  return { induction: latest.ind, now, before: before ?? null };
+}

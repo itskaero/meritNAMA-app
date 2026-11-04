@@ -217,6 +217,10 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                       label: `${i === 0 ? "A" : "B"}: ${p.speciality}, ${p.hospital}`,
                       tone: i === 0 ? ("ember" as const) : ("teal" as const),
                       values: compareLabels.map((l) => histories[i]!.find((h) => `I${h.inductionId} R${h.roundNo}` === l)?.pct ?? null),
+                      details: compareLabels.map((l) => {
+                        const h = histories[i]!.find((x) => `I${x.inductionId} R${x.roundNo}` === l);
+                        return h ? h.closing.toFixed(2) : null;
+                      }),
                     }))}
                     format={(v) => `${v.toFixed(1)}%`}
                   />

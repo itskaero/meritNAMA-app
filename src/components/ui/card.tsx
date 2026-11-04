@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { cn } from "./cn";
 
-export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cn("min-w-0 rounded-[1.5rem] border border-line bg-surface p-5", className)}>{children}</section>;
+export function Card({ children, className, id }: { children: ReactNode; className?: string; id?: string }) {
+  return <section id={id} className={cn("min-w-0 scroll-mt-20 rounded-[1.5rem] border border-line bg-surface p-5", className)}>{children}</section>;
 }
 
 export function CardHeader({ title, action, description }: { title: ReactNode; action?: ReactNode; description?: ReactNode }) {

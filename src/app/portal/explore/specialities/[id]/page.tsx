@@ -69,6 +69,7 @@ export default async function SpecialityPage({ params, searchParams }: {
                 label: `Induction ${n}`,
                 tone: i === 0 ? ("ember" as const) : ("muted" as const),
                 values: points.map((p) => (p.inductionId === n ? value(p) : null)),
+                details: points.map((p) => (p.inductionId === n && allKnown ? `${(p.closing ?? 0).toFixed(2)}/${h.maxMarks[p.inductionId]}` : null)),
               }))}
               format={(v) => (allKnown ? `${v.toFixed(1)}%` : v.toFixed(2))}
               height={260}

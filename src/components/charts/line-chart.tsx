@@ -1,8 +1,12 @@
+import { ChartCrosshair } from "./chart-crosshair";
+
 export type Series = {
   label: string;
   /** One value per x label; null leaves a gap. */
   values: (number | null)[];
   tone?: "ember" | "teal" | "muted";
+  /** Optional extra text per point for the tooltip, e.g. the raw marks behind a percent. */
+  details?: (string | null)[];
 };
 
 const STROKE = { ember: "var(--mn-ember)", teal: "var(--mn-cyan)", muted: "var(--mn-text-subtle)" } as const;
@@ -47,10 +51,20 @@ export function LineChart({ xLabels, series, format = (v) => v.toFixed(2), title
     return d.trim();
   });
   const first = series[0]!;
+  // Area under the first series, one closed shape per unbroken run of points.
+  const areas: string[] = [];
+  let run: number[] = [];
+  const flush = () => {
+    if (run.length > 1) areas.push(`M${x(run[0]!)} ${y(first.values[run[0]!]!)} ${run.slice(1).map((k) => `L${x(k)} ${y(first.values[k]!)}`).join(" ")} L${x(run.at(-1)!)} ${H - B} L${x(run[0]!)} ${H - B}Z`);
+    run = [];
+  };
+  first.values.forEach((v, k) => (v == null ? flush() : run.push(k)));
+  flush();
   const lastIdx = first.values.reduce<number>((acc, v, i) => (v != null ? i : acc), -1);
 
   return (
     <figure className="m-0 min-w-0">
+      <div className="relative">
       <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={title}>
         {ticks.map((t) => (
           <g key={t}>
@@ -61,6 +75,7 @@ export function LineChart({ xLabels, series, format = (v) => v.toFixed(2), title
         {xLabels.map((l, i) => (i % every === 0 || i === xLabels.length - 1 ? (
           <text key={i} x={x(i)} y={H - 10} textAnchor="middle" fontSize="11" fill="var(--mn-text-muted)" fontFamily="var(--mn-font-mono)">{l}</text>
         ) : null))}
+        {areas.map((d, k) => <path key={`area-${k}`} d={d} fill={STROKE[first.tone ?? "ember"]} fillOpacity="0.1" />)}
         {series.map((s, si) => (
           <path
             key={s.label}
@@ -84,6 +99,20 @@ export function LineChart({ xLabels, series, format = (v) => v.toFixed(2), title
           </text>
         ) : null}
       </svg>
+      <ChartCrosshair
+        title={title}
+        plotTopPct={(T / H) * 100}
+        plotBottomPct={((H - B) / H) * 100}
+        points={xLabels.map((l, i) => ({
+          xPct: (x(i) / W) * 100,
+          label: l,
+          rows: series
+            .map((s, si) => ({ s, si }))
+            .filter(({ s }) => s.values[i] != null)
+            .map(({ s, si }) => ({ name: s.label, value: format(s.values[i]!), detail: s.details?.[i] ?? undefined, color: STROKE[s.tone ?? (si === 0 ? "ember" : "muted")] })),
+        }))}
+      />
+      </div>
       {series.length > 1 ? (
         <figcaption className="mt-2 flex flex-wrap gap-4 text-xs text-muted">
           {series.map((s, si) => (

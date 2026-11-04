@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
+import { ActionBar } from "@/components/ui/action-bar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
@@ -149,9 +150,17 @@ export default async function ChangePage({ params }: { params: Promise<{ id: str
       description={`Proposed by ${c.createdBy}, ${formatUtc(c.createdAt)} UTC: “${c.reason}”`}
       status={<StatusPill tone={c.status === "pending" ? "warning" : "neutral"}>{statusLabel(c.status)}</StatusPill>}
     >
+      <ActionBar
+        actions={[
+          ...(c.canDecide && (c.status === "pending" || c.rollbackable)
+            ? [{ label: c.status === "pending" ? "Publish or discard" : "Roll back", href: "#decide", icon: "arrow" as const, primary: true }]
+            : []),
+          { label: "All changes", href: "/admin/changes", icon: "history" as const },
+        ]}
+      />
       {c.stale ? <Notice tone="warning" title="Out of date">The data changed after this preview was made, so it cannot be published. Discard it and propose the change again.</Notice> : null}
       <Preview kind={c.kind} preview={c.preview} />
-      <Card>
+      <Card id="decide">
         {c.status === "pending" ? (
           c.canDecide ? (
             <>

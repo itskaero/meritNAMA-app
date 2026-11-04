@@ -12,7 +12,7 @@ export async function DiscussionPanel({ topic, label }: { topic: Topic; label: s
   const threads = await listThreads(getDb(), await getSession(), { topic, limit: 3 });
   const q = encodeURIComponent(`${topic.kind}|${topic.key}`);
   return (
-    <Card>
+    <Card id="discussion">
       <CardHeader
         title="Discussion"
         description={threads.length ? `What members are saying about ${label}.` : `No one has started a discussion about ${label} yet.`}
