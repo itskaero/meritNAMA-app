@@ -3,7 +3,21 @@ import { AuthorizationError } from "@/lib/auth/roles";
 import { UserFacingError } from "@/lib/errors";
 
 /** Result of a form Server Action, rendered by <ActionResult>. */
-export type ActionState = { status: "idle" | "error" | "success"; message?: string; issues?: string[] };
+export type ActionState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+  issues?: string[];
+  /** A follow-up link, e.g. to review a change that was staged instead of applied. */
+  href?: string;
+  hrefLabel?: string;
+};
+
+/** The ActionState for a proposed change: applied at once, or staged for review. */
+export function proposalState(p: { applied: boolean; message: string; changeId?: string }): ActionState {
+  return p.applied
+    ? { status: "success", message: p.message }
+    : { status: "success", message: p.message, href: `/admin/changes/${p.changeId}`, hrefLabel: "Review and publish" };
+}
 
 export const idleState: ActionState = { status: "idle" };
 

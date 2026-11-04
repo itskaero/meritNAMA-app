@@ -19,6 +19,7 @@ export function ActionResult({ state, fileReset = false }: { state: ActionState;
     >
       <p className={cn("font-semibold", error ? "text-danger" : "text-success")}>{state.message}</p>
       {error && fileReset ? <p className="mt-1 text-muted">Choose the file again before retrying.</p> : null}
+      {state.href ? <a href={state.href} className="mt-2 inline-block font-semibold text-signal underline-offset-4 hover:underline">{state.hrefLabel ?? "Open"} →</a> : null}
       {state.issues?.length ? (
         <ul className="mt-2 list-disc space-y-1 pl-5 font-mono text-xs text-muted">
           {state.issues.slice(0, 20).map((i, n) => <li key={n}>{i}</li>)}

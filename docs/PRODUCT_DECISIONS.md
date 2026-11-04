@@ -36,7 +36,7 @@ email), rate limits, reports and audited moderation.
 ## Suggested order
 
 1. ✅ **Score-first finder** with % units, heatmap, comparison and shortlist: `/portal/finder`, shortlist in `/portal/workspace`. Status per option: *Safe* if the score reaches its first-round closing, *Borderline* if it only reaches the final-round closing, *Out of reach* otherwise.
-2. **Split roles + preview/publish** (foundation for safe admin work and for verifiers/moderators).
+2. ✅ **Split roles + preview/publish.** Roles map to capabilities (`src/lib/auth/roles.ts`); owners manage them on Team & roles. Replacing a seat matrix or merit round, removing a round, activating a policy and re-importing the policy file are staged at `/admin/changes` with a before/after preview; publishing is refused if the data changed since the preview, and keeps a snapshot for rollback. First-time imports apply directly.
 3. **Admin work-queue home + watched-folder intake.**
 4. **Candidate accounts and verification**: unlocks verified posting.
 5. **Community Q&A, snippets, polls, reviews, follow/inbox.**

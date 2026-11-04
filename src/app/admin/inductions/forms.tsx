@@ -7,7 +7,7 @@ import { cn } from "@/components/ui/cn";
 import { idleState } from "@/lib/action-state";
 import { deleteRoundAction, importRoundsAction, saveAliasAction } from "./actions";
 
-type FileResult = { name: string; state: "waiting" | "importing" | "done" | "failed"; message?: string };
+type FileResult = { name: string; state: "waiting" | "importing" | "done" | "failed"; message?: string; href?: string };
 
 /**
  * Uploads each selected file in its own request (round files are ~1 MB each, and
@@ -39,7 +39,7 @@ export function ImportRoundsForm() {
       try {
         const r = await importRoundsAction(idleState, fd);
         const detail = r.issues?.[0]?.replace(`${files[i]!.name}: `, "") ?? r.message;
-        list[i] = { ...list[i]!, state: r.status === "success" ? "done" : "failed", message: detail };
+        list[i] = { ...list[i]!, state: r.status === "success" ? "done" : "failed", message: detail, href: r.href };
       } catch {
         list[i] = { ...list[i]!, state: "failed", message: "Upload failed. Check the file size (3 MB at most) and try again." };
       }
@@ -81,6 +81,7 @@ export function ImportRoundsForm() {
                 <span className="font-mono text-xs">{r.name}</span>
                 <span className="sr-only"> {r.state}</span>
                 {r.message ? <span className={cn("block text-xs", r.state === "failed" ? "text-danger" : "text-muted")}>{r.message}</span> : null}
+                {r.href ? <a href={r.href} className="text-xs font-semibold text-signal hover:underline">Review and publish →</a> : null}
               </span>
             </li>
           ))}

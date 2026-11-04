@@ -320,6 +320,45 @@ export const shortlistItems = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.program, t.quota, t.speciality, t.hospital] })],
 );
 
+export const changeKind = pgEnum("change_kind", [
+  "policy_activate",
+  "policy_file_import",
+  "seat_matrix_replace",
+  "merit_round_replace",
+  "merit_round_delete",
+]);
+export const changeStatus = pgEnum("change_status", ["pending", "published", "discarded", "rolled_back"]);
+
+/**
+ * Risky changes go through preview → publish. A change is staged with its input
+ * (`payload`, personal fields stripped) and a computed before/after `preview`;
+ * publishing applies it and keeps a `snapshot` of what it replaced, so it can be
+ * rolled back. `baseline` fingerprints the data the preview was made against;
+ * publishing is refused if it no longer matches.
+ */
+export const stagedChanges = pgTable(
+  "staged_changes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: changeKind("kind").notNull(),
+    /** What it affects, e.g. "induction:20:round:3", "seats:21", "policy:2026". */
+    target: text("target").notNull(),
+    title: text("title").notNull(),
+    status: changeStatus("status").notNull().default("pending"),
+    payload: json("payload").notNull(),
+    preview: json("preview").notNull(),
+    baseline: text("baseline").notNull(),
+    snapshot: json("snapshot"),
+    reason: text("reason").notNull(),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    decidedBy: text("decided_by"),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    decisionReason: text("decision_reason"),
+  },
+  (t) => [index("staged_changes_status_idx").on(t.status, t.createdAt), index("staged_changes_target_idx").on(t.target, t.decidedAt)],
+);
+
 export const auditLog = pgTable(
   "audit_log",
   {

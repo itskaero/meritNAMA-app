@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { formText, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
+import { formInt, formText, proposalState, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { deleteMeritRound, importMeritRound, saveNameAlias } from "@/lib/data/merit";
+import { proposeDeleteRound, proposeMeritRound } from "@/lib/data/changes";
+import { saveNameAlias } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { roundNoFromFilename } from "@/lib/domain/merit-round";
 import { UserFacingError } from "@/lib/errors";
@@ -24,16 +25,16 @@ export async function importRoundsAction(_prev: ActionState, form: FormData): Pr
   if (!files.length) return { status: "error", message: "Choose one or more round_<n>.json files." };
   if (files.length > MAX_FILES) return { status: "error", message: `Import at most ${MAX_FILES} files at a time.` };
 
-  const done: string[] = [], failed: string[] = [];
+  const done: string[] = [], failed: string[] = [], staged: string[] = [];
   for (const file of files) {
     try {
       const roundNo = roundNoFromFilename(file.name);
       if (!roundNo) throw new UserFacingError("the round number is not in the file name (expected round_<n>.json)");
       const single = new FormData();
       single.set("file", file);
-      const r = await importMeritRound(getDb(), await getSession(), { roundNo, file: await readJsonUpload(single, "file", MAX_FILE_BYTES), reason });
-      const unmatched = r.unmatched.specialities.length + r.unmatched.hospitals.length;
-      done.push(`${file.name}: induction ${r.inductionId} round ${r.roundNo}, ${r.allocations} allocations${r.replaced ? " (replaced)" : ""}${unmatched ? `, ${unmatched} names to map` : ""}`);
+      const p = await proposeMeritRound(getDb(), await getSession(), { roundNo, file: await readJsonUpload(single, "file", MAX_FILE_BYTES), reason });
+      done.push(`${file.name}: ${p.message}`);
+      if (!p.applied) staged.push(p.changeId);
     } catch (err) {
       const s = toActionState(err);
       failed.push(`${file.name}: ${s.message}${s.issues?.length ? ` (${s.issues.slice(0, 2).join("; ")})` : ""}`);
@@ -42,16 +43,17 @@ export async function importRoundsAction(_prev: ActionState, form: FormData): Pr
   }
   revalidatePath("/admin/inductions");
   revalidatePath("/portal", "layout");
+  revalidatePath("/admin/changes");
   if (!done.length) return { status: "error", message: "Nothing was imported.", issues: failed };
-  return { status: failed.length ? "error" : "success", message: `Imported ${done.length} of ${files.length} files.`, issues: [...done, ...failed] };
+  const review = staged.length ? { href: staged.length === 1 ? `/admin/changes/${staged[0]}` : "/admin/changes", hrefLabel: "Review and publish" } : {};
+  return { status: failed.length ? "error" : "success", message: `Processed ${done.length} of ${files.length} files.`, issues: [...done, ...failed], ...review };
 }
 
 export async function deleteRoundAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
-    await deleteMeritRound(getDb(), await getSession(), { roundId: Number(form.get("roundId")), reason: formText(form, "reason") });
-    revalidatePath("/admin/inductions");
-    revalidatePath("/portal", "layout");
-    return { status: "success", message: "Round removed." };
+    const p = await proposeDeleteRound(getDb(), await getSession(), { roundId: formInt(form, "roundId", "Round"), reason: formText(form, "reason") });
+    revalidatePath("/admin/changes");
+    return proposalState(p);
   } catch (err) {
     return toActionState(err);
   }

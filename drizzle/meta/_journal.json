@@ -50,6 +50,13 @@
       "when": 1793812216650,
       "tag": "0006_staff_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793812449369,
+      "tag": "0007_staged_changes",
+      "breakpoints": true
     }
   ]
 }

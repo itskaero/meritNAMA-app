@@ -8,6 +8,7 @@ import { Metric } from "@/components/ui/metric";
 import { can } from "@/lib/auth/roles";
 import { getSession, requireSection } from "@/lib/auth/session";
 import { listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
+import { pendingChangeCount } from "@/lib/data/changes";
 import { listPolicyVersions } from "@/lib/data/policies";
 import { getReferenceOverview } from "@/lib/data/reference-data";
 import { checkDatabase, getDb } from "@/lib/db/client";
@@ -36,16 +37,18 @@ export default async function AdminOverviewPage() {
   }
   const db = getDb();
   const session = await getSession();
-  const [policies, merit, inductions, unmatched, reference] = await Promise.all([
+  const [policies, merit, inductions, unmatched, reference, pendingChanges] = await Promise.all([
     listPolicyVersions(db, session),
     meritOverview(db, session),
     listInductionsWithRounds(db, session),
     listUnmatchedNames(db, session),
     getReferenceOverview(db, session),
+    pendingChangeCount(db, session),
   ]);
   const active = policies.find((r) => r.status === "active");
   const toMap = unmatched.speciality.length + unmatched.hospital.length;
   const todo = [
+    pendingChanges > 0 && { href: "/admin/changes", text: `Review ${pendingChanges} staged ${pendingChanges === 1 ? "change" : "changes"} before they go live` },
     !active && can(session, "policy.edit") && { href: "/admin/policies", text: "Import scoring_policy.json, so merit can be shown out of each induction's total" },
     reference.seatMatrices.length === 0 && can(session, "data.edit") && { href: "/admin/reference-data", text: "Import a seat matrix (induction<n>_seats.json)" },
     inductions.length === 0 && can(session, "data.edit") && { href: "/admin/inductions", text: "Import merit round files" },

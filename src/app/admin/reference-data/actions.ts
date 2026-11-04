@@ -1,11 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { formInt, formOptionalInt, formText, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
+import { formInt, formOptionalInt, formText, proposalState, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
+import { proposeSeatFile } from "@/lib/data/changes";
 import { getSession } from "@/lib/auth/session";
 import {
   addSeatLine,
-  importSeatFile,
   removeSeatLine,
   saveLookup,
   saveReferenceDocument,
@@ -34,24 +34,15 @@ const seatKey = (form: FormData): SeatKey => ({
 
 export async function importSeatFileAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
-    const induction = formInt(form, "induction");
-    const r = await importSeatFile(getDb(), await getSession(), {
-      induction,
+    const p = await proposeSeatFile(getDb(), await getSession(), {
+      induction: formInt(form, "induction"),
       calendarYear: formOptionalInt(form, "calendarYear"),
       file: await readJsonUpload(form, "file", MAX_FILE_BYTES),
       reason: formText(form, "reason"),
     });
     revalidatePath(BASE, "layout");
-    const renamed = Object.values(r.renames).flat().length;
-    return {
-      status: "success",
-      message:
-        `Induction ${induction}: ${r.lines} seat lines, ${r.seats} seats imported` +
-        (r.createdInduction ? " (induction created)" : "") +
-        (r.addedLookups ? `; ${r.addedLookups} new lookup entries` : "") +
-        (renamed ? `; ${renamed} names updated from the file` : "") +
-        ".",
-    };
+    revalidatePath("/admin/changes");
+    return proposalState(p);
   } catch (err) {
     return toActionState(err);
   }

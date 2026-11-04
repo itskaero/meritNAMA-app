@@ -167,6 +167,16 @@ export const adminSections: Section[] = [
     planned: ["Input selection and preflight validation", "Dataset reconciliation", "Processing logs", "Comparison against reference results", "Versioned, downloadable outputs"],
   },
   {
+    href: "/admin/changes",
+    capability: "staff",
+    group: "Operations",
+    icon: "history",
+    label: "Changes to review",
+    description: "Risky changes wait here with a before/after preview. Publish, discard, or roll back a published change.",
+    milestone: "Delivery 3 · Admin MVP",
+    planned: [],
+  },
+  {
     href: "/admin/audit",
     capability: "staff",
     group: "Operations",
