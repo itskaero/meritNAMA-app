@@ -1,0 +1,12 @@
+/**
+ * Interface mode. "simple" (default): labelled sidebar, larger type, everything a
+ * visible link. "pro": icon rail, Ctrl K palette button, denser tables.
+ * Stored in a cookie so the server renders the right layout without a flash.
+ */
+export const UI_MODES = ["simple", "pro"] as const;
+export type UiMode = (typeof UI_MODES)[number];
+export const UI_MODE_COOKIE = "mn_mode";
+
+export function parseUiMode(value: string | undefined): UiMode {
+  return value === "pro" ? "pro" : "simple";
+}

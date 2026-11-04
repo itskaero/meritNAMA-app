@@ -34,6 +34,11 @@ describe("design token contrast", () => {
     expect(contrast(token("mn-cyan-ink"), token("mn-cyan"))).toBeGreaterThanOrEqual(4.5);
   });
 
+  it.each(surfaces)("ember accents are AA on %s", (bg) => {
+    expect(contrast(token("mn-ember"), token(bg))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token("mn-ember-hot"), token(bg))).toBeGreaterThanOrEqual(4.5);
+  });
+
   it("subtle text meets AA on the page background", () => {
     expect(contrast(token("mn-text-subtle"), token("mn-navy-950"))).toBeGreaterThanOrEqual(4.5);
   });

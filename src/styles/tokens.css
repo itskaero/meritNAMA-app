@@ -29,6 +29,12 @@
   --mn-danger: #f0767a;
   --mn-success: #5fd39a;
 
+  /* Ember (brand beam): the logo, the landing story and "where you are in an
+     induction" (round switcher, progress). Never for buttons or links. */
+  --mn-ember: #ff6a3d;
+  --mn-ember-hot: #ffb08a;
+  --mn-ember-deep: #b8321a;
+
   /* Glass (used over imagery only) */
   --mn-glass: rgba(14, 27, 44, 0.62);
   --mn-glass-border: rgba(168, 184, 202, 0.18);
@@ -36,6 +42,7 @@
   /* Typography */
   --mn-font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mn-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --mn-font-display: "Archivo", "Arial Black", "Helvetica Neue", sans-serif;   /* wordmark and large headings only */
   --mn-text-xs: 0.75rem;
   --mn-text-sm: 0.875rem;
   --mn-text-md: 1rem;

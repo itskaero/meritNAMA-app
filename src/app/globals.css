@@ -18,8 +18,12 @@
   --color-amber: var(--mn-amber);
   --color-danger: var(--mn-danger);
   --color-success: var(--mn-success);
+  --color-ember: var(--mn-ember);
+  --color-ember-hot: var(--mn-ember-hot);
+  --color-ember-deep: var(--mn-ember-deep);
   --font-sans: var(--mn-font-sans);
   --font-mono: var(--mn-font-mono);
+  --font-display: var(--mn-font-display);
   --radius-sm: var(--mn-radius-sm);
   --radius-md: var(--mn-radius-md);
   --radius-lg: var(--mn-radius-lg);
@@ -45,3 +49,11 @@
   :focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: var(--mn-focus-ring); }
   ::selection { background: var(--mn-cyan); color: var(--mn-cyan-ink); }
 }
+
+/*
+ * Interface modes (data-mode on the app shell, from the mn_mode cookie).
+ * Unlayered so they win over utility padding; scoped to the mode attribute.
+ */
+html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger text in Simple mode */
+[data-mode="pro"] table th,
+[data-mode="pro"] table td { padding-top: 0.45rem; padding-bottom: 0.45rem; }   /* denser tables in Pro mode */

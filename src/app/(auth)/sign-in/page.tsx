@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BrandMark } from "@/components/app-shell";
+import { BrandLockup } from "@/components/brand";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { env } from "@/lib/env";
@@ -11,10 +11,7 @@ export default function SignInPage() {
   return (
     <main id="main" className="grid min-h-screen place-items-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="mb-8 flex items-center gap-3 text-xl font-extrabold tracking-tight">
-          <BrandMark className="h-9 w-9" />
-          <span>Merit<span className="text-signal">Nama</span></span>
-        </div>
+        <BrandLockup className="mb-8 text-xl" markClassName="h-9 w-9" />
         <Card className="p-6">
           <h1 className="text-2xl font-bold tracking-tight">Sign in</h1>
           <p className="mt-2 text-sm text-muted">Access your candidate portal or the admin workspace.</p>
@@ -31,7 +28,7 @@ export default function SignInPage() {
           ) : null}
         </Card>
         <p className="mt-6 text-center text-xs text-subtle">
-          MeritNama is independent and not an official admissions authority.
+          meritNAMA is independent and not an official admissions authority.
         </p>
       </div>
     </main>

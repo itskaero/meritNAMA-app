@@ -3,12 +3,12 @@
 import { useActionState, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
-import { ActionResult as Result, fieldClass as field, ReasonField as Reason } from "@/components/ui/form";
-import { idleState as idle } from "@/lib/action-state";
+import { ActionResult, fieldClass, ReasonField } from "@/components/ui/form";
+import { idleState } from "@/lib/action-state";
 import { activateAction, importPolicyFileAction, saveDraftAction } from "./actions";
 
 export function ImportForm() {
-  const [state, action, pending] = useActionState(importPolicyFileAction, idle);
+  const [state, action, pending] = useActionState(importPolicyFileAction, idleState);
   const fileId = useId();
   return (
     <form action={action} className="grid gap-4">
@@ -20,22 +20,22 @@ export function ImportForm() {
           type="file"
           accept="application/json,.json"
           required
-          className={cn(field, "file:mr-3 file:rounded-full file:border-0 file:bg-elevated file:px-3 file:py-1 file:text-ink")}
+          className={cn(fieldClass, "file:mr-3 file:rounded-full file:border-0 file:bg-elevated file:px-3 file:py-1 file:text-ink")}
         />
         <p className="text-xs text-subtle">
           Validated in full before anything is written. Each policy is stored as a new version; existing versions are kept.
           The file&apos;s active_policy becomes active.
         </p>
       </div>
-      <Reason placeholder="e.g. Initial import from the public site" />
+      <ReasonField placeholder="e.g. Initial import from the public site" />
       <div><Button type="submit" disabled={pending}>{pending ? "Importing…" : "Import file"}</Button></div>
-      <Result state={state} fileReset />
+      <ActionResult state={state} fileReset />
     </form>
   );
 }
 
 export function EditDraftForm({ policyKey, definition }: { policyKey: string; definition: string }) {
-  const [state, action, pending] = useActionState(saveDraftAction, idle);
+  const [state, action, pending] = useActionState(saveDraftAction, idleState);
   const [text, setText] = useState(definition);
   const id = useId();
   return (
@@ -50,27 +50,27 @@ export function EditDraftForm({ policyKey, definition }: { policyKey: string; de
           onChange={(e) => setText(e.target.value)}
           spellCheck={false}
           rows={24}
-          className={cn(field, "font-mono text-xs leading-relaxed")}
+          className={cn(fieldClass, "font-mono text-xs leading-relaxed")}
         />
         <p className="text-xs text-subtle">
           Saving never changes this version: it creates a new draft. Components must sum to total_marks; unknown fields are rejected.
         </p>
       </div>
-      <Reason placeholder="e.g. Correct research marks per the 2026 notification" />
+      <ReasonField placeholder="e.g. Correct research marks per the 2026 notification" />
       <div><Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save as new draft"}</Button></div>
-      <Result state={state} />
+      <ActionResult state={state} />
     </form>
   );
 }
 
 export function ActivateForm({ id }: { id: string }) {
-  const [state, action, pending] = useActionState(activateAction, idle);
+  const [state, action, pending] = useActionState(activateAction, idleState);
   return (
     <form action={action} className="grid gap-4">
       <input type="hidden" name="id" value={id} />
-      <Reason placeholder="e.g. Policy for induction 22 announced" />
+      <ReasonField placeholder="e.g. Policy for induction 22 announced" />
       <div><Button type="submit" variant="secondary" disabled={pending}>{pending ? "Activating…" : "Make active"}</Button></div>
-      <Result state={state} />
+      <ActionResult state={state} />
     </form>
   );
 }

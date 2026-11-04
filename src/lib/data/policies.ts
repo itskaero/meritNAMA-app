@@ -3,7 +3,8 @@ import { desc, eq } from "drizzle-orm";
 import { assertRole, type Session } from "@/lib/auth/roles";
 import { UserFacingError } from "@/lib/errors";
 import type { Database } from "@/lib/db/client";
-import { auditLog, scoringPolicies, scoringPolicyFileMeta } from "@/lib/db/schema";
+import { scoringPolicies, scoringPolicyFileMeta } from "@/lib/db/schema";
+import { requireReason, writeAudit, type Tx } from "./shared";
 import {
   policyKeySchema,
   policySchema,
@@ -24,13 +25,7 @@ import {
  * keys) in `json` columns, so an export is byte-for-byte the imported file.
  */
 
-type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
-
-function requireReason(reason: string) {
-  const r = reason.trim();
-  if (!r) throw new UserFacingError("A reason is required for policy changes");
-  return r;
-}
+const reasonFor = (reason: string) => requireReason(reason, "policy changes");
 
 export async function listPolicyVersions(db: Database, session: Session | null) {
   assertRole(session, "admin");
@@ -67,14 +62,12 @@ async function insertDraft(tx: Tx, actorEmail: string, policyKey: string, defini
     .values({ policyKey, version, definition, status: "draft" })
     .returning({ id: scoringPolicies.id, version: scoringPolicies.version });
 
-  await tx.insert(auditLog).values({
-    actorEmail,
+  await writeAudit(tx, actorEmail, {
     action: "scoring_policy.create_draft",
     entityType: "scoring_policy",
     entityId: `${policyKey}@v${version}`,
     after: definition,
     reason,
-    result: "success",
   });
   return row!;
 }
@@ -97,15 +90,13 @@ async function activate(tx: Tx, actorEmail: string, id: string, reason: string) 
     .where(eq(scoringPolicies.id, id))
     .returning();
 
-  await tx.insert(auditLog).values({
-    actorEmail,
+  await writeAudit(tx, actorEmail, {
     action: "scoring_policy.activate",
     entityType: "scoring_policy",
     entityId: `${target.policyKey}@v${target.version}`,
     before: previous ? { active: `${previous.policyKey}@v${previous.version}` } : null,
     after: { active: `${target.policyKey}@v${target.version}` },
     reason,
-    result: "success",
   });
   return row!;
 }
@@ -120,14 +111,14 @@ export async function createPolicyDraft(
   const policyKey = policyKeySchema.parse(input.policyKey);
   policySchema.parse(input.definition); // validation only; store the input as written
   const definition = input.definition as Policy;
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
   return db.transaction((tx) => insertDraft(tx, session.email, policyKey, definition, reason));
 }
 
 /** Make one version the active policy; the previously active version is retired. */
 export async function activatePolicyVersion(db: Database, session: Session | null, input: { id: string; reason: string }) {
   assertRole(session, "admin");
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
   return db.transaction((tx) => activate(tx, session.email, input.id, reason));
 }
 
@@ -141,7 +132,7 @@ export async function importScoringPolicyFile(db: Database, session: Session | n
   // Validate, then keep the input as written: the schema adds nothing, and its output reorders keys.
   scoringPolicyFileSchema.parse(input.file);
   const file = input.file as ScoringPolicyFile;
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
   const { policies, ...meta } = file;
 
   return db.transaction(async (tx) => {
@@ -152,14 +143,12 @@ export async function importScoringPolicyFile(db: Database, session: Session | n
     await tx.insert(scoringPolicyFileMeta).values({ meta, createdBy: session.email });
     const active = created.find((c) => c.policyKey === file.active_policy)!;
     await activate(tx, session.email, active.id, reason);
-    await tx.insert(auditLog).values({
-      actorEmail: session.email,
+    await writeAudit(tx, session.email, {
       action: "scoring_policy.import_file",
       entityType: "scoring_policy_file",
       entityId: "scoring_policy.json",
       after: { meta, versions: created.map((c) => `${c.policyKey}@v${c.version}`) },
       reason,
-      result: "success",
     });
     return { created, activePolicy: file.active_policy };
   });

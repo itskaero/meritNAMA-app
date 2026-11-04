@@ -159,6 +159,18 @@ export const adminSections: Section[] = [
   },
 ];
 
+/** Admin quick actions for the Ctrl K palette, beyond the sidebar pages. */
+export const adminCommands: { label: string; hint: string; href: string; icon: IconName; download?: boolean; keywords?: string }[] = [
+  { label: "Import a seat file", hint: "Reference data", href: "/admin/reference-data", icon: "upload", keywords: "seats matrix induction upload" },
+  { label: "Hospitals", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=hospitals", icon: "building", keywords: "rename add hospital" },
+  { label: "Specialities", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=specialities", icon: "target", keywords: "speciality specialty rename" },
+  { label: "Quotas", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=quotas", icon: "list" },
+  { label: "CPSP accreditation", hint: "Reference data · document", href: "/admin/reference-data/documents/cpsp_accreditation", icon: "folder" },
+  { label: "Specialty groups", hint: "Reference data · document", href: "/admin/reference-data/documents/specialty_groups", icon: "folder" },
+  { label: "Disciplines", hint: "Reference data · document", href: "/admin/reference-data/documents/disciplines", icon: "folder" },
+  { label: "Export scoring_policy.json", hint: "Download", href: "/admin/policies/export", icon: "download", download: true, keywords: "policy json calculator" },
+];
+
 export function findSection(href: string): Section {
   const s = [...candidateSections, ...adminSections].find((x) => x.href === href);
   if (!s) throw new Error(`Unknown section ${href}`);

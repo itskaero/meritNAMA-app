@@ -1,0 +1,35 @@
+import { AuthorizationError } from "@/lib/auth/roles";
+
+/** Shared responses for the admin export routes. */
+
+const noStore = { "Cache-Control": "no-store" };
+
+/** A pretty-printed JSON file download, in the public site's format. */
+export function jsonDownload(data: unknown, filename: string, { trailingNewline = false } = {}) {
+  return new Response(JSON.stringify(data, null, 2) + (trailingNewline ? "\n" : ""), {
+    headers: {
+      ...noStore,
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename.replace(/["\\\r\n]/g, "")}"`,
+    },
+  });
+}
+
+export function jsonProblem(status: number, error: string, extra?: Record<string, unknown>) {
+  return Response.json({ error, ...extra }, { status, headers: noStore });
+}
+
+/**
+ * Route handlers are not covered by layout guards; the data layer throws
+ * AuthorizationError instead. Turn that into 401/403 rather than a 500.
+ */
+export function withAuthErrors(handler: (request: Request) => Promise<Response>) {
+  return async (request: Request) => {
+    try {
+      return await handler(request);
+    } catch (err) {
+      if (err instanceof AuthorizationError) return jsonProblem(err.reason === "unauthenticated" ? 401 : 403, err.reason);
+      throw err;
+    }
+  };
+}

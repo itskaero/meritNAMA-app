@@ -19,6 +19,9 @@ const paths = {
   arrow: "M5 12h14M13 6l6 6-6 6",
   spark: "M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6",
   pulse: "M3 12h4l3-8 4 16 3-8h4",
+  search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4",
+  upload: "M12 16V4M7 9l5-5 5 5M4 20h16",
+  download: "M12 4v12M7 11l5 5 5-5M4 20h16",
 } as const;
 
 export type IconName = keyof typeof paths;

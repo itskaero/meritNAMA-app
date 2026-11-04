@@ -6,13 +6,20 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "./icon";
 import { cn } from "./ui/cn";
 
-export type NavItem ={ href: string; label: string; group: string; icon: IconName };
+export type NavItem = { href: string; label: string; group: string; icon: IconName };
 
-export function SideNav({ area, items, brand, profile, footer }: {
+/**
+ * Sidebar on wide screens, drawer on phones. In Pro mode the wide-screen sidebar is
+ * an icon rail: labels stay in the DOM for screen readers and show as tooltips.
+ * The phone drawer always shows full labels.
+ */
+export function SideNav({ area, items, pro = false, brand, profile, tools, footer }: {
   area: string;
   items: NavItem[];
+  pro?: boolean;
   brand: ReactNode;
   profile: ReactNode;
+  tools?: ReactNode;
   footer: ReactNode;
 }) {
   const pathname = usePathname();
@@ -76,12 +83,15 @@ export function SideNav({ area, items, brand, profile, footer }: {
           open ? "fixed inset-x-0 top-16 bottom-0 z-20 flex flex-col overflow-y-auto" : "hidden",
         )}
       >
-        <div className="hidden h-16 items-center px-6 lg:flex">{brand}</div>
-        <div className="px-4 pt-2">{profile}</div>
-        <nav ref={navRef} aria-label={area} className="flex-1 overflow-y-auto px-4 py-5">
+        <div className={cn("hidden h-16 items-center lg:flex", pro ? "justify-center" : "px-6")}>{brand}</div>
+        <div className="grid gap-3 px-4 pt-2">
+          {profile}
+          {tools}
+        </div>
+        <nav ref={navRef} aria-label={area} className={cn("flex-1 overflow-y-auto py-5", pro ? "px-4 lg:px-3" : "px-4")}>
           {groups.map((g) => (
-            <div key={g} className="mb-6 last:mb-0">
-              <p className="px-3 pb-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-subtle">{g}</p>
+            <div key={g} className={cn("mb-6 last:mb-0", pro && "lg:mb-3 lg:border-b lg:border-line lg:pb-3 lg:last:border-0")}>
+              <p className={cn("px-3 pb-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-subtle", pro && "lg:sr-only")}>{g}</p>
               <ul className="flex flex-col gap-1">
                 {items.filter((i) => i.group === g).map((s) => {
                   const active = isActive(s.href);
@@ -90,15 +100,17 @@ export function SideNav({ area, items, brand, profile, footer }: {
                       <Link
                         href={s.href}
                         aria-current={active ? "page" : undefined}
+                        title={pro ? s.label : undefined}
                         className={cn(
                           "flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition-colors",
+                          pro && "lg:justify-center lg:px-0 lg:py-3",
                           active
                             ? "border-line-strong bg-gradient-to-b from-elevated to-surface font-semibold text-ink shadow-[inset_0_1px_0_rgba(242,246,252,0.06)]"
                             : "border-transparent text-muted hover:bg-surface hover:text-ink",
                         )}
                       >
-                        <Icon name={s.icon} className={cn("h-[18px] w-[18px]", active ? "text-signal" : "")} />
-                        {s.label}
+                        <Icon name={s.icon} className={cn("h-[18px] w-[18px] flex-none", active ? "text-signal" : "")} />
+                        <span className={cn(pro && "lg:sr-only")}>{s.label}</span>
                       </Link>
                     </li>
                   );
@@ -107,7 +119,7 @@ export function SideNav({ area, items, brand, profile, footer }: {
             </div>
           ))}
         </nav>
-        <div className="px-6 py-4">{footer}</div>
+        <div className={cn("py-4", pro ? "px-6 lg:px-3" : "px-6")}>{footer}</div>
       </aside>
     </>
   );

@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
-import { PageHeader } from "@/components/ui/page-header";
+import { AreaPage } from "@/components/area-page";
 import { getSession } from "@/lib/auth/session";
+import { formatUtc, isUuid } from "@/lib/format";
 import { getDocumentVersion, listDocumentVersions } from "@/lib/data/reference-data";
 import { getDb } from "@/lib/db/client";
 import { documentKindSchema, DOCUMENT_KINDS, type DocumentKind } from "@/lib/domain/reference-data";
@@ -13,8 +14,6 @@ import { DocumentEditForm, DocumentImportForm } from "../../forms";
 export const metadata = { title: "Reference document" };
 export const dynamic = "force-dynamic";
 
-const fmt = (d: Date) => d.toISOString().slice(0, 16).replace("T", " ");
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** A readable overview of the document, so admins need not read raw JSON. */
 function Preview({ kind, data }: { kind: DocumentKind; data: unknown }) {
@@ -88,84 +87,78 @@ export default async function DocumentPage({ params, searchParams }: {
   const session = await getSession();
   const versions = await listDocumentVersions(db, session, kind);
   // Default: newest version of the newest induction (or the only series).
-  const selectedId = versionId && UUID.test(versionId) ? versionId : versions[0]?.id;
+  const selectedId = isUuid(versionId) ? versionId : versions[0]?.id;
   const doc = selectedId ? await getDocumentVersion(db, session, selectedId) : null;
   if (versionId && (!doc || doc.kind !== kind)) notFound();
   const latestForSeries = doc ? versions.find((v) => v.inductionId === doc.inductionId)?.id === doc.id : false;
 
   return (
-    <>
-      <PageHeader
-        breadcrumb={[
-          { label: "Admin workspace", href: "/admin" },
-          { label: "Reference data", href: "/admin/reference-data" },
-          { label: meta.label },
-        ]}
-        title={meta.label}
-        description={meta.description}
-      />
-      <div className="grid gap-5 px-4 pb-10 sm:px-8">
-        {!doc ? (
+    <AreaPage
+      area="admin"
+      trail={[{ label: "Reference data", href: "/admin/reference-data" }, { label: meta.label }]}
+      title={meta.label}
+      description={meta.description}
+    >
+      {!doc ? (
+        <Card>
+          <CardHeader title={`Import ${meta.file}`} />
+          <DocumentImportForm kind={kind} file={meta.file} perInduction={meta.perInduction} />
+        </Card>
+      ) : (
+        <>
           <Card>
-            <CardHeader title={`Import ${meta.file}`} />
-            <DocumentImportForm kind={kind} file={meta.file} perInduction={meta.perInduction} />
+            <CardHeader
+              title={`${doc.inductionId ? `Induction ${doc.inductionId} · ` : ""}version ${doc.version}${latestForSeries ? " (current)" : ""}`}
+              description={`${doc.summary} · saved ${formatUtc(doc.createdAt)} UTC by ${doc.createdBy}: “${doc.reason}”`}
+              action={
+                <ButtonLink href={`/admin/reference-data/export?dataset=${kind}&version=${doc.id}`} variant="secondary" size="sm" prefetch={false}>
+                  Export JSON
+                </ButtonLink>
+              }
+            />
+            <Preview kind={kind} data={doc.data} />
           </Card>
-        ) : (
-          <>
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
             <Card>
               <CardHeader
-                title={`${doc.inductionId ? `Induction ${doc.inductionId} · ` : ""}version ${doc.version}${latestForSeries ? " (current)" : ""}`}
-                description={`${doc.summary} · saved ${fmt(doc.createdAt)} UTC by ${doc.createdBy}: “${doc.reason}”`}
-                action={
-                  <ButtonLink href={`/admin/reference-data/export?dataset=${kind}&version=${doc.id}`} variant="secondary" size="sm" prefetch={false}>
-                    Export JSON
-                  </ButtonLink>
-                }
+                title="Edit"
+                description={latestForSeries ? "Saves a new version." : "You are viewing an older version. Saving it makes it the newest version again (a rollback)."}
               />
-              <Preview kind={kind} data={doc.data} />
+              <DocumentEditForm key={doc.id} kind={kind} induction={doc.inductionId || null} initial={JSON.stringify(doc.data, null, 2)} />
             </Card>
-
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            <div className="grid min-w-0 content-start gap-5">
               <Card>
-                <CardHeader
-                  title="Edit"
-                  description={latestForSeries ? "Saves a new version." : "You are viewing an older version. Saving it makes it the newest version again (a rollback)."}
+                <CardHeader title="Versions" />
+                <DataTable
+                  caption={`${meta.label} versions`}
+                  rows={versions}
+                  rowKey={(v) => v.id}
+                  columns={[
+                    ...(meta.perInduction ? [{ key: "ind", header: "Induction", cell: (v: (typeof versions)[number]) => v.inductionId }] : []),
+                    {
+                      key: "v",
+                      header: "Version",
+                      cell: (v) =>
+                        v.id === doc.id ? (
+                          <span aria-current="true" className="font-semibold">v{v.version}</span>
+                        ) : (
+                          <Link href={`?version=${v.id}`} className="text-signal underline-offset-4 hover:underline">v{v.version}</Link>
+                        ),
+                    },
+                    { key: "when", header: "Saved (UTC)", cell: (v) => formatUtc(v.createdAt) },
+                    { key: "reason", header: "Reason", cell: (v) => <span className="text-muted">{v.reason}</span> },
+                  ]}
                 />
-                <DocumentEditForm key={doc.id} kind={kind} induction={doc.inductionId || null} initial={JSON.stringify(doc.data, null, 2)} />
               </Card>
-              <div className="grid min-w-0 content-start gap-5">
-                <Card>
-                  <CardHeader title="Versions" />
-                  <DataTable
-                    caption={`${meta.label} versions`}
-                    rows={versions}
-                    rowKey={(v) => v.id}
-                    columns={[
-                      ...(meta.perInduction ? [{ key: "ind", header: "Induction", cell: (v: (typeof versions)[number]) => v.inductionId }] : []),
-                      {
-                        key: "v",
-                        header: "Version",
-                        cell: (v) =>
-                          v.id === doc.id ? (
-                            <span aria-current="true" className="font-semibold">v{v.version}</span>
-                          ) : (
-                            <Link href={`?version=${v.id}`} className="text-signal underline-offset-4 hover:underline">v{v.version}</Link>
-                          ),
-                      },
-                      { key: "when", header: "Saved (UTC)", cell: (v) => fmt(v.createdAt) },
-                      { key: "reason", header: "Reason", cell: (v) => <span className="text-muted">{v.reason}</span> },
-                    ]}
-                  />
-                </Card>
-                <Card>
-                  <CardHeader title="Import a new file" />
-                  <DocumentImportForm kind={kind} file={meta.file} perInduction={meta.perInduction} />
-                </Card>
-              </div>
+              <Card>
+                <CardHeader title="Import a new file" />
+                <DocumentImportForm kind={kind} file={meta.file} perInduction={meta.perInduction} />
+              </Card>
             </div>
-          </>
-        )}
-      </div>
-    </>
+          </div>
+        </>
+      )}
+    </AreaPage>
   );
 }

@@ -3,9 +3,9 @@ import { and, asc, count, desc, eq, inArray, max, sql, sum } from "drizzle-orm";
 import { z } from "zod";
 import { assertRole, type Session } from "@/lib/auth/roles";
 import { UserFacingError } from "@/lib/errors";
+import { requireReason, writeAudit, type Tx } from "./shared";
 import type { Database } from "@/lib/db/client";
 import {
-  auditLog,
   hospitals,
   inductions,
   inductionSeats,
@@ -35,8 +35,6 @@ import {
  * - documents: stored as written (json column), so export equals the import.
  */
 
-type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
-type Db = Database | Tx;
 
 export const lookupTables = { programs, quotas, specialities, institutes, hospitals } as const;
 export const LOOKUP_LABELS: Record<LookupKind, string> = {
@@ -58,11 +56,7 @@ const seatKeySchema = z.object({
 export type SeatKey = z.infer<typeof seatKeySchema>;
 const seatsSchema = z.number().int().min(0).max(10_000);
 
-function requireReason(reason: string) {
-  const r = reason.trim();
-  if (!r) throw new UserFacingError("A reason is required for reference data changes");
-  return r;
-}
+const reasonFor = (reason: string) => requireReason(reason, "reference data changes");
 
 const keyText = (k: SeatKey) => [k.programId, k.quotaId, k.specialityId, k.instituteId, k.hospitalId].join("-");
 const seatWhere = (induction: number, k: SeatKey) =>
@@ -74,10 +68,6 @@ const seatWhere = (induction: number, k: SeatKey) =>
     eq(inductionSeats.instituteId, k.instituteId),
     eq(inductionSeats.hospitalId, k.hospitalId),
   );
-
-async function audit(tx: Db, actorEmail: string, entry: { action: string; entityType: string; entityId: string; before?: unknown; after?: unknown; reason: string }) {
-  await tx.insert(auditLog).values({ actorEmail, result: "success", ...entry, before: entry.before ?? null, after: entry.after ?? null });
-}
 
 // ── Overview ────────────────────────────────────────────────────────────────
 
@@ -185,13 +175,13 @@ export async function saveLookup(
   assertRole(session, "admin");
   const id = z.number().int().min(0).parse(input.id);
   const name = z.string().trim().min(input.kind === "institutes" ? 0 : 1, "Name is required").parse(input.name);
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
   const table = lookupTables[input.kind];
   return db.transaction(async (tx) => {
     const [prev] = await tx.select().from(table).where(eq(table.id, id)).limit(1);
     if (prev) await tx.update(table).set({ name, updatedAt: new Date() }).where(eq(table.id, id));
     else await tx.insert(table).values({ id, name });
-    await audit(tx, session.email, {
+    await writeAudit(tx, session.email, {
       action: prev ? "lookup.rename" : "lookup.create",
       entityType: input.kind,
       entityId: String(id),
@@ -218,7 +208,7 @@ export async function importSeatFile(
   assertRole(session, "admin");
   const induction = inductionSchema.parse(input.induction);
   const rows = seatFileSchema.parse(input.file);
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
 
   return db.transaction(async (tx) => {
     const [ind] = await tx.select().from(inductions).where(eq(inductions.id, induction)).limit(1);
@@ -258,7 +248,7 @@ export async function importSeatFile(
       })),
     );
     const after = { lines: rows.length, seats: rows.reduce((s, r) => s + r.seats, 0) };
-    await audit(tx, session.email, {
+    await writeAudit(tx, session.email, {
       action: "seats.import_file",
       entityType: "induction_seats",
       entityId: `induction:${induction}`,
@@ -327,13 +317,13 @@ export async function updateSeatCount(
   const induction = inductionSchema.parse(input.induction);
   const key = seatKeySchema.parse(input.key);
   const seats = seatsSchema.parse(input.seats);
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
   return db.transaction(async (tx) => {
     const [prev] = await tx.select({ seats: inductionSeats.seats }).from(inductionSeats).where(seatWhere(induction, key)).limit(1);
     if (!prev) throw new UserFacingError("That seat line does not exist");
     if (prev.seats === seats) return { changed: false };
     await tx.update(inductionSeats).set({ seats }).where(seatWhere(induction, key));
-    await audit(tx, session.email, {
+    await writeAudit(tx, session.email, {
       action: "seats.update",
       entityType: "induction_seats",
       entityId: `induction:${induction}:${keyText(key)}`,
@@ -354,7 +344,7 @@ export async function addSeatLine(
   const induction = inductionSchema.parse(input.induction);
   const key = seatKeySchema.parse(input.key);
   const seats = seatsSchema.parse(input.seats);
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
   return db.transaction(async (tx) => {
     const [exists] = await tx.select({ seats: inductionSeats.seats }).from(inductionSeats).where(seatWhere(induction, key)).limit(1);
     if (exists) throw new UserFacingError("That seat line already exists — edit its seat count instead");
@@ -363,7 +353,7 @@ export async function addSeatLine(
       .from(inductionSeats)
       .where(eq(inductionSeats.inductionId, induction));
     await tx.insert(inductionSeats).values({ inductionId: induction, ...key, seats, position: (last?.p ?? -1) + 1 });
-    await audit(tx, session.email, {
+    await writeAudit(tx, session.email, {
       action: "seats.add",
       entityType: "induction_seats",
       entityId: `induction:${induction}:${keyText(key)}`,
@@ -377,11 +367,11 @@ export async function removeSeatLine(db: Database, session: Session | null, inpu
   assertRole(session, "admin");
   const induction = inductionSchema.parse(input.induction);
   const key = seatKeySchema.parse(input.key);
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
   return db.transaction(async (tx) => {
     const [prev] = await tx.delete(inductionSeats).where(seatWhere(induction, key)).returning({ seats: inductionSeats.seats });
     if (!prev) throw new UserFacingError("That seat line does not exist");
-    await audit(tx, session.email, {
+    await writeAudit(tx, session.email, {
       action: "seats.remove",
       entityType: "induction_seats",
       entityId: `induction:${induction}:${keyText(key)}`,
@@ -426,7 +416,7 @@ export async function saveReferenceDocument(
   const { kind } = input;
   const inductionId = documentInduction(kind, input.induction);
   DOCUMENT_KINDS[kind].schema.parse(input.data); // validation only; store the input as written
-  const reason = requireReason(input.reason);
+  const reason = reasonFor(input.reason);
   const summary = summarizeDocument(kind, input.data);
 
   return db.transaction(async (tx) => {
@@ -439,7 +429,7 @@ export async function saveReferenceDocument(
       .insert(referenceDocuments)
       .values({ kind, inductionId, version, data: input.data, summary, createdBy: session.email, reason })
       .returning({ id: referenceDocuments.id, version: referenceDocuments.version });
-    await audit(tx, session.email, {
+    await writeAudit(tx, session.email, {
       action: "reference_document.save",
       entityType: kind,
       entityId: `${kind}${inductionId ? `:${inductionId}` : ""}@v${version}`,
