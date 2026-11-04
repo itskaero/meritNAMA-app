@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray, max, sql, sum } from "drizzle-orm";
 import { z } from "zod";
-import { assertRole, type Session } from "@/lib/auth/roles";
+import { assertCan, type Session } from "@/lib/auth/roles";
 import { UserFacingError } from "@/lib/errors";
 import { requireReason, writeAudit, type Tx } from "./shared";
 import type { Database } from "@/lib/db/client";
@@ -72,7 +72,7 @@ const seatWhere = (induction: number, k: SeatKey) =>
 // ── Overview ────────────────────────────────────────────────────────────────
 
 export async function getReferenceOverview(db: Database, session: Session | null) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const seatMatrices = await db
     .select({
       inductionId: inductionSeats.inductionId,
@@ -140,7 +140,7 @@ async function upsertLookups(tx: Tx, kind: LookupKind, entries: Map<number, stri
 }
 
 export async function listLookup(db: Database, session: Session | null, kind: LookupKind) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const table = lookupTables[kind];
   const column = {
     programs: inductionSeats.programId,
@@ -172,7 +172,7 @@ export async function saveLookup(
   session: Session | null,
   input: { kind: LookupKind; id: number; name: string; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const id = z.number().int().min(0).parse(input.id);
   const name = z.string().trim().min(input.kind === "institutes" ? 0 : 1, "Name is required").parse(input.name);
   const reason = reasonFor(input.reason);
@@ -205,7 +205,7 @@ export async function importSeatFile(
   session: Session | null,
   input: { induction: number; calendarYear?: number; file: unknown; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const induction = inductionSchema.parse(input.induction);
   const rows = seatFileSchema.parse(input.file);
   const reason = reasonFor(input.reason);
@@ -263,7 +263,7 @@ export async function importSeatFile(
 export type SeatFilters = Partial<Record<"programId" | "quotaId" | "specialityId" | "hospitalId", number>>;
 
 export async function listSeats(db: Database, session: Session | null, induction: number, filters: SeatFilters = {}) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const where = and(
     eq(inductionSeats.inductionId, induction),
     filters.programId !== undefined ? eq(inductionSeats.programId, filters.programId) : undefined,
@@ -298,7 +298,7 @@ export async function listSeats(db: Database, session: Session | null, induction
 
 /** All lookup rows, for filter and "add seat line" pickers. */
 export async function listAllLookups(db: Database, session: Session | null) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const entries = await Promise.all(
     (Object.keys(lookupTables) as LookupKind[]).map(async (k) => {
       const t = lookupTables[k];
@@ -313,7 +313,7 @@ export async function updateSeatCount(
   session: Session | null,
   input: { induction: number; key: SeatKey; seats: number; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const induction = inductionSchema.parse(input.induction);
   const key = seatKeySchema.parse(input.key);
   const seats = seatsSchema.parse(input.seats);
@@ -340,7 +340,7 @@ export async function addSeatLine(
   session: Session | null,
   input: { induction: number; key: SeatKey; seats: number; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const induction = inductionSchema.parse(input.induction);
   const key = seatKeySchema.parse(input.key);
   const seats = seatsSchema.parse(input.seats);
@@ -364,7 +364,7 @@ export async function addSeatLine(
 }
 
 export async function removeSeatLine(db: Database, session: Session | null, input: { induction: number; key: SeatKey; reason: string }) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const induction = inductionSchema.parse(input.induction);
   const key = seatKeySchema.parse(input.key);
   const reason = reasonFor(input.reason);
@@ -412,7 +412,7 @@ export async function saveReferenceDocument(
   session: Session | null,
   input: { kind: DocumentKind; induction?: number | null; data: unknown; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const { kind } = input;
   const inductionId = documentInduction(kind, input.induction);
   DOCUMENT_KINDS[kind].schema.parse(input.data); // validation only; store the input as written
@@ -441,7 +441,7 @@ export async function saveReferenceDocument(
 }
 
 export async function listDocumentVersions(db: Database, session: Session | null, kind: DocumentKind) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   return db
     .select({
       id: referenceDocuments.id,
@@ -458,13 +458,13 @@ export async function listDocumentVersions(db: Database, session: Session | null
 }
 
 export async function getDocumentVersion(db: Database, session: Session | null, id: string) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const [row] = await db.select().from(referenceDocuments).where(eq(referenceDocuments.id, id)).limit(1);
   return row ?? null;
 }
 
 export async function getCurrentDocument(db: Database, session: Session | null, kind: DocumentKind, induction?: number | null) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const inductionId = documentInduction(kind, induction);
   const [row] = await db
     .select()

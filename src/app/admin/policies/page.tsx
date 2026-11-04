@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { StatusPill } from "@/components/ui/page-header";
 import { AreaPage } from "@/components/area-page";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { formatUtc } from "@/lib/format";
 import { exportScoringPolicyFile, listPolicyVersions } from "@/lib/data/policies";
 import { checkDatabase, getDb } from "@/lib/db/client";
@@ -20,6 +20,7 @@ export const dynamic = "force-dynamic";
 const statusTone = { active: "current", draft: "neutral", retired: "historical" } as const;
 
 export default async function PoliciesPage() {
+  await requireSection("/admin/policies");
   const s = findSection("/admin/policies");
   const session = await getSession();
   const dbStatus = await checkDatabase();

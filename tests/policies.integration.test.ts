@@ -23,7 +23,7 @@ import * as schema from "@/lib/db/schema";
 const url = process.env.TEST_DATABASE_URL;
 const fixture = JSON.parse(readFileSync(path.join(__dirname, "fixtures/scoring_policy.json"), "utf8"));
 
-const admin: Session = { userId: "t-admin", email: "admin@test.local", role: "admin", isStub: false };
+const admin: Session = { userId: "t-admin", email: "admin@test.local", role: "owner", isStub: false };
 const candidate: Session = { userId: "t-cand", email: "cand@test.local", role: "candidate", isStub: false };
 
 describe.skipIf(!url)("policy data access (integration)", () => {

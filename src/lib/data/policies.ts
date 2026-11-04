@@ -1,6 +1,6 @@
 import "server-only";
 import { desc, eq } from "drizzle-orm";
-import { assertRole, type Session } from "@/lib/auth/roles";
+import { assertCan, type Session } from "@/lib/auth/roles";
 import { UserFacingError } from "@/lib/errors";
 import type { Database } from "@/lib/db/client";
 import { scoringPolicies, scoringPolicyFileMeta } from "@/lib/db/schema";
@@ -28,7 +28,7 @@ import {
 const reasonFor = (reason: string) => requireReason(reason, "policy changes");
 
 export async function listPolicyVersions(db: Database, session: Session | null) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   return db
     .select({
       id: scoringPolicies.id,
@@ -43,7 +43,7 @@ export async function listPolicyVersions(db: Database, session: Session | null) 
 }
 
 export async function getPolicyVersion(db: Database, session: Session | null, id: string) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const [row] = await db.select().from(scoringPolicies).where(eq(scoringPolicies.id, id)).limit(1);
   return row ?? null;
 }
@@ -107,7 +107,7 @@ export async function createPolicyDraft(
   session: Session | null,
   input: { policyKey: string; definition: unknown; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "policy.edit");
   const policyKey = policyKeySchema.parse(input.policyKey);
   policySchema.parse(input.definition); // validation only; store the input as written
   const definition = input.definition as Policy;
@@ -117,7 +117,7 @@ export async function createPolicyDraft(
 
 /** Make one version the active policy; the previously active version is retired. */
 export async function activatePolicyVersion(db: Database, session: Session | null, input: { id: string; reason: string }) {
-  assertRole(session, "admin");
+  assertCan(session, "policy.edit");
   const reason = reasonFor(input.reason);
   return db.transaction((tx) => activate(tx, session.email, input.id, reason));
 }
@@ -128,7 +128,7 @@ export async function activatePolicyVersion(db: Database, session: Session | nul
  * version (existing versions are kept), and the file's active_policy is activated.
  */
 export async function importScoringPolicyFile(db: Database, session: Session | null, input: { file: unknown; reason: string }) {
-  assertRole(session, "admin");
+  assertCan(session, "policy.edit");
   // Validate, then keep the input as written: the schema adds nothing, and its output reorders keys.
   scoringPolicyFileSchema.parse(input.file);
   const file = input.file as ScoringPolicyFile;
@@ -163,7 +163,7 @@ export type PolicyFileExport =
  * same schema as an import, so an export can always be imported again.
  */
 export async function exportScoringPolicyFile(db: Database, session: Session | null): Promise<PolicyFileExport> {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const [metaRow] = await db.select().from(scoringPolicyFileMeta).orderBy(desc(scoringPolicyFileMeta.id)).limit(1);
   if (!metaRow) return { ok: false, reason: "no_meta", issues: ["No scoring_policy.json has been imported yet."] };
 

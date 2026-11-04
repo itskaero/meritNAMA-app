@@ -1,7 +1,8 @@
 import "server-only";
 import { z } from "zod";
 
-const ROLES = ["candidate", "admin"] as const;
+// Role names accepted by the dev stub; "admin" is the legacy name for "owner".
+const ROLES = ["candidate", "data_editor", "policy_editor", "verifier", "moderator", "owner", "admin"] as const;
 
 export const envSchema = z
   .object({

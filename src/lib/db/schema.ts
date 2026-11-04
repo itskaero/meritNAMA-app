@@ -24,7 +24,8 @@ import {
  * contracts are mapped — see docs/DATA_CONTRACTS.md.
  */
 
-export const userRole = pgEnum("user_role", ["candidate", "admin"]);
+/** "admin" is legacy (read as "owner"); Postgres cannot drop enum values. */
+export const userRole = pgEnum("user_role", ["candidate", "admin", "data_editor", "policy_editor", "verifier", "moderator", "owner"]);
 export const inductionStatus = pgEnum("induction_status", ["planned", "active", "completed"]);
 export const policyStatus = pgEnum("policy_status", ["draft", "active", "retired"]);
 export const auditResult = pgEnum("audit_result", ["success", "failure"]);

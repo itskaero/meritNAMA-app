@@ -43,6 +43,13 @@
       "when": 1793811414685,
       "tag": "0005_shortlist",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793812216650,
+      "tag": "0006_staff_roles",
+      "breakpoints": true
     }
   ]
 }

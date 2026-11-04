@@ -1,6 +1,6 @@
 import "server-only";
 import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
-import { assertRole, type Session } from "@/lib/auth/roles";
+import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
   discussionPosts,
@@ -32,12 +32,12 @@ import { ensureUser } from "./users";
 const RATE = { perMinute: 5, perHour: 40 };
 
 export async function getMyProfile(db: Database, session: Session | null) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   return ensureUser(db, session);
 }
 
 export async function setDisplayName(db: Database, session: Session | null, name: string) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const displayName = displayNameSchema.parse(name);
   const me = await ensureUser(db, session);
   const [taken] = await db.select({ id: users.id }).from(users).where(and(sql`lower(${users.displayName}) = lower(${displayName})`, sql`${users.id} <> ${me.id}`)).limit(1);
@@ -98,8 +98,8 @@ export async function listThreads(
   session: Session | null,
   opts: { topic?: Topic; sort?: "active" | "helpful"; limit?: number } = {},
 ) {
-  assertRole(session, "candidate");
-  const isAdmin = session.role === "admin";
+  assertCan(session, "portal");
+  const isAdmin = can(session, "community.moderate");
   const topic = opts.topic ? topicSchema.parse(opts.topic) : null;
   const helpful = voteCount("thread", discussionThreads.id);
   const rows = await db
@@ -110,7 +110,7 @@ export async function listThreads(
       title: discussionThreads.title,
       excerpt: sql<string>`left(${discussionThreads.body}, 220)`,
       author: users.displayName,
-      authorIsAdmin: sql<boolean>`${users.role} = 'admin'`,
+      authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
       status: discussionThreads.status,
       locked: discussionThreads.locked,
       pinned: discussionThreads.pinned,
@@ -132,8 +132,8 @@ export async function listThreads(
 }
 
 export async function getThread(db: Database, session: Session | null, id: string) {
-  assertRole(session, "candidate");
-  const isAdmin = session.role === "admin";
+  assertCan(session, "portal");
+  const isAdmin = can(session, "community.moderate");
   const me = await ensureUser(db, session);
   const [t] = await db
     .select({
@@ -143,7 +143,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
       title: discussionThreads.title,
       body: discussionThreads.body,
       author: users.displayName,
-      authorIsAdmin: sql<boolean>`${users.role} = 'admin'`,
+      authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
       mine: sql<boolean>`${discussionThreads.authorId} = ${me.id}`,
       status: discussionThreads.status,
       locked: discussionThreads.locked,
@@ -162,7 +162,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
       id: discussionPosts.id,
       body: discussionPosts.body,
       author: users.displayName,
-      authorIsAdmin: sql<boolean>`${users.role} = 'admin'`,
+      authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
       mine: sql<boolean>`${discussionPosts.authorId} = ${me.id}`,
       status: discussionPosts.status,
       helpful: voteCount("post", discussionPosts.id),
@@ -180,7 +180,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
 // ── Writing ────────────────────────────────────────────────────────────────────
 
 export async function createThread(db: Database, session: Session | null, input: { topic: Topic; title: string; body: string }) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const v = threadInputSchema.parse(input);
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
@@ -194,13 +194,13 @@ export async function createThread(db: Database, session: Session | null, input:
 }
 
 export async function replyToThread(db: Database, session: Session | null, input: { threadId: string; body: string }) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const v = replyInputSchema.parse(input);
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
     const [t] = await tx.select({ status: discussionThreads.status, locked: discussionThreads.locked }).from(discussionThreads).where(eq(discussionThreads.id, input.threadId)).limit(1);
     if (!t || t.status === "hidden") throw new UserFacingError("This discussion is no longer available.");
-    if (t.locked && session.role !== "admin") throw new UserFacingError("This discussion is locked; new replies are closed.");
+    if (t.locked && !can(session, "community.moderate")) throw new UserFacingError("This discussion is locked; new replies are closed.");
     await checkRate(tx, me.id);
     const [row] = await tx.insert(discussionPosts).values({ threadId: input.threadId, authorId: me.id, body: v.body }).returning({ id: discussionPosts.id });
     await tx
@@ -213,7 +213,7 @@ export async function replyToThread(db: Database, session: Session | null, input
 
 /** Toggle a "helpful" vote. You cannot vote for your own post. */
 export async function toggleHelpful(db: Database, session: Session | null, input: { kind: "thread" | "post"; id: string }) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
     const table = input.kind === "thread" ? discussionThreads : discussionPosts;
@@ -229,7 +229,7 @@ export async function toggleHelpful(db: Database, session: Session | null, input
 }
 
 export async function reportContent(db: Database, session: Session | null, input: { kind: "thread" | "post"; id: string; reason: string }) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const { reason } = reportInputSchema.parse({ reason: input.reason });
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
@@ -249,7 +249,7 @@ export async function moderate(
   session: Session | null,
   input: { kind: "thread" | "post"; id: string; action: ModerationAction; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "community.moderate");
   const reason = requireReason(input.reason, "moderation");
   if (input.kind === "post" && !["hide", "show"].includes(input.action)) throw new UserFacingError("Replies can only be hidden or shown.");
   return db.transaction(async (tx) => {
@@ -273,7 +273,7 @@ export async function moderate(
 }
 
 export async function listOpenReports(db: Database, session: Session | null) {
-  assertRole(session, "admin");
+  assertCan(session, "community.moderate");
   const rows = (await db.execute(sql`
     select r.target_kind, r.target_id, count(*)::int as reports, min(r.created_at) as first_at,
            array_agg(r.reason order by r.created_at) as reasons,
@@ -294,7 +294,7 @@ export async function listOpenReports(db: Database, session: Session | null) {
 }
 
 export async function dismissReports(db: Database, session: Session | null, input: { kind: "thread" | "post"; id: string; reason: string }) {
-  assertRole(session, "admin");
+  assertCan(session, "community.moderate");
   const reason = requireReason(input.reason, "moderation");
   return db.transaction(async (tx) => {
     await tx
@@ -306,7 +306,7 @@ export async function dismissReports(db: Database, session: Session | null, inpu
 }
 
 export async function communityStats(db: Database, session: Session | null) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [[t], [p], [r]] = await Promise.all([
     db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(discussionThreads).where(eq(discussionThreads.status, "visible")),
     db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(discussionPosts).where(eq(discussionPosts.status, "visible")),

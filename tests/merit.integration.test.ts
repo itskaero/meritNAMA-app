@@ -28,7 +28,7 @@ const sample = JSON.parse(readFileSync(path.join(__dirname, "fixtures/merit_i20_
 const IND = 920;
 const withInduction = (f: typeof sample, rows = f.Table5) => ({ ...f, Table: [{ ...f.Table[0], inductionId: IND }], Table5: rows });
 
-const admin: Session = { userId: "t-admin", email: "admin@test.local", role: "admin", isStub: false };
+const admin: Session = { userId: "t-admin", email: "admin@test.local", role: "owner", isStub: false };
 const candidate: Session = { userId: "t-cand", email: "cand@test.local", role: "candidate", isStub: false };
 
 describe.skipIf(!url)("merit rounds (integration)", () => {

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { AreaPage } from "@/components/area-page";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { isUuid } from "@/lib/format";
 import { getPolicyVersion } from "@/lib/data/policies";
 import { getDb } from "@/lib/db/client";
@@ -17,6 +17,7 @@ export default async function PolicyVersionPage({ params, searchParams }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ saved?: string }>;
 }) {
+  await requireSection("/admin/policies");
   const { id } = await params;
   const { saved } = await searchParams;
   if (!isUuid(id)) notFound();

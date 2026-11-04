@@ -32,7 +32,7 @@ const disciplines = JSON.parse(raw("disciplines.json"));
 const groups = JSON.parse(raw("specialty_groups_induction21.json"));
 const cpsp = JSON.parse(raw("cpsp_accreditation_sample.json"));
 
-const admin: Session = { userId: "t-admin", email: "admin@test.local", role: "admin", isStub: false };
+const admin: Session = { userId: "t-admin", email: "admin@test.local", role: "owner", isStub: false };
 const candidate: Session = { userId: "t-cand", email: "cand@test.local", role: "candidate", isStub: false };
 const IND = 921;
 

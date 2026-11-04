@@ -18,7 +18,7 @@ import * as schema from "@/lib/db/schema";
 
 /** Runs against a DISPOSABLE database (TEST_DATABASE_URL); uses its own test users and removes them. */
 const url = process.env.TEST_DATABASE_URL;
-const admin: Session = { userId: "c-admin", email: "community-admin@test.local", role: "admin", isStub: false };
+const admin: Session = { userId: "c-admin", email: "community-admin@test.local", role: "owner", isStub: false };
 const alice: Session = { userId: "c-alice", email: "community-alice@test.local", role: "candidate", isStub: false };
 const bob: Session = { userId: "c-bob", email: "community-bob@test.local", role: "candidate", isStub: false };
 

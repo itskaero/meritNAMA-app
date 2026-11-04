@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray, isNull, max, min, sql } from "drizzle-orm";
 import { z } from "zod";
-import { assertRole, type Session } from "@/lib/auth/roles";
+import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
   hospitals,
@@ -59,7 +59,7 @@ export async function importMeritRound(
   session: Session | null,
   input: { roundNo: number; file: unknown; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const roundNo = roundNoSchema.parse(input.roundNo);
   const file = meritRoundFileSchema.parse(input.file);
   const reason = reasonFor(input.reason);
@@ -133,7 +133,7 @@ export async function importMeritRound(
 }
 
 export async function deleteMeritRound(db: Database, session: Session | null, input: { roundId: number; reason: string }) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const reason = reasonFor(input.reason);
   return db.transaction(async (tx) => {
     const [r] = await tx.delete(meritRounds).where(eq(meritRounds.id, input.roundId)).returning();
@@ -150,7 +150,7 @@ export async function deleteMeritRound(db: Database, session: Session | null, in
 
 /** Published names that matched no lookup, with how many allocations use them. */
 export async function listUnmatchedNames(db: Database, session: Session | null) {
-  assertRole(session, "admin");
+  assertCan(session, "staff");
   const [spec, hosp] = await Promise.all([
     db
       .select({ name: meritAllocations.speciality, rows: count() })
@@ -174,7 +174,7 @@ export async function saveNameAlias(
   session: Session | null,
   input: { kind: AliasKind; name: string; lookupId: number; reason: string },
 ) {
-  assertRole(session, "admin");
+  assertCan(session, "data.edit");
   const reason = reasonFor(input.reason);
   const key = nameKey(input.name);
   if (!key) throw new UserFacingError("The name is empty");
@@ -219,7 +219,7 @@ export async function inductionMaxMarks(db: Database): Promise<Record<number, nu
 }
 
 export async function listInductionsWithRounds(db: Database, session: Session | null) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [inds, rounds, maxMarks] = await Promise.all([
     db.select().from(inductions).orderBy(desc(inductions.id)),
     db
@@ -244,7 +244,7 @@ export async function listInductionsWithRounds(db: Database, session: Session | 
 }
 
 export async function getRound(db: Database, session: Session | null, induction: number, roundNo: number) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [r] = await db
     .select()
     .from(meritRounds)
@@ -260,7 +260,7 @@ export async function getRound(db: Database, session: Session | null, induction:
  * special quotas and barely moves.
  */
 export async function inductionTimeline(db: Database, session: Session | null, induction: number) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const ind = inductionSchema.parse(induction);
   const rows = (await db.execute(sql`
     with g as (
@@ -300,7 +300,7 @@ export type RoundFilters = { program?: string; quota?: string; speciality?: stri
  * with the same group's closing marks in the previous round for comparison.
  */
 export async function roundGroups(db: Database, session: Session | null, roundId: number, prevRoundId: number | null, f: RoundFilters = {}) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const where = (id: number) =>
     and(
       eq(meritAllocations.roundId, id),
@@ -335,7 +335,7 @@ export async function roundGroups(db: Database, session: Session | null, roundId
 
 /** Distinct values present in a round, for the filter pickers. */
 export async function roundFacets(db: Database, session: Session | null, roundId: number) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   type TextCol = typeof meritAllocations.program | typeof meritAllocations.quota | typeof meritAllocations.speciality | typeof meritAllocations.hospital;
   const distinct = async (col: TextCol) =>
     (await db.selectDistinct({ v: col }).from(meritAllocations).where(eq(meritAllocations.roundId, roundId)).orderBy(asc(col))).map((r) => r.v);
@@ -353,7 +353,7 @@ export async function roundFacets(db: Database, session: Session | null, roundId
  * quota and speciality, and how many applicants entered, left or moved seat line.
  */
 export async function compareRounds(db: Database, session: Session | null, induction: number, fromNo: number, toNo: number) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [a, b] = await Promise.all([getRound(db, session, induction, fromNo), getRound(db, session, induction, toNo)]);
   if (!a || !b) return null;
   const closing = (roundId: number) =>
@@ -394,7 +394,7 @@ export async function compareRounds(db: Database, session: Session | null, induc
 
 /** Lookup rows that appear in merit data or seat matrices, with counts, for the explore index. */
 export async function exploreIndex(db: Database, session: Session | null) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [spec, hosp] = await Promise.all([
     db
       .select({ id: specialities.id, name: specialities.name, allocations: count(meritAllocations.rowNo) })
@@ -417,7 +417,7 @@ export async function exploreIndex(db: Database, session: Session | null) {
  * programme, quota), plus the published names that mapped to it.
  */
 export async function specialityHistory(db: Database, session: Session | null, specialityId: number) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [s] = await db.select().from(specialities).where(eq(specialities.id, specialityId)).limit(1);
   if (!s) return null;
   const [rows, byHospital, maxMarks] = await Promise.all([
@@ -459,7 +459,7 @@ export async function specialityHistory(db: Database, session: Session | null, s
 
 /** A hospital: seats by speciality (latest seat matrix) and closing merit in its latest round. */
 export async function hospitalProfile(db: Database, session: Session | null, hospitalId: number) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [h] = await db.select().from(hospitals).where(eq(hospitals.id, hospitalId)).limit(1);
   if (!h) return null;
   const [seatRows, closing] = await Promise.all([
@@ -495,7 +495,7 @@ export async function hospitalProfile(db: Database, session: Session | null, hos
 
 /** Headline numbers for dashboards. */
 export async function meritOverview(db: Database, session: Session | null) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [[r], [a], [s]] = await Promise.all([
     db.select({ rounds: count(), inductions: sql<number>`count(distinct ${meritRounds.inductionId})`.mapWith(Number) }).from(meritRounds),
     db.select({ allocations: count() }).from(meritAllocations),

@@ -5,7 +5,8 @@ import { StatTiles } from "@/components/charts/stat-tiles";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Metric } from "@/components/ui/metric";
-import { getSession } from "@/lib/auth/session";
+import { can } from "@/lib/auth/roles";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
 import { listPolicyVersions } from "@/lib/data/policies";
 import { getReferenceOverview } from "@/lib/data/reference-data";
@@ -22,6 +23,7 @@ const dbBadge = {
 } as const;
 
 export default async function AdminOverviewPage() {
+  await requireSection("/admin");
   const s = findSection("/admin");
   const status = await checkDatabase();
   const frame = { area: "admin" as const, trail: [{ label: s.label }], isRoot: true, title: s.label, description: "System health, what has been imported, and what needs attention." };
@@ -44,10 +46,10 @@ export default async function AdminOverviewPage() {
   const active = policies.find((r) => r.status === "active");
   const toMap = unmatched.speciality.length + unmatched.hospital.length;
   const todo = [
-    !active && { href: "/admin/policies", text: "Import scoring_policy.json, so merit can be shown out of each induction's total" },
-    reference.seatMatrices.length === 0 && { href: "/admin/reference-data", text: "Import a seat matrix (induction<n>_seats.json)" },
-    inductions.length === 0 && { href: "/admin/inductions", text: "Import merit round files" },
-    toMap > 0 && { href: "/admin/inductions", text: `Map ${toMap} published names to hospitals and specialities` },
+    !active && can(session, "policy.edit") && { href: "/admin/policies", text: "Import scoring_policy.json, so merit can be shown out of each induction's total" },
+    reference.seatMatrices.length === 0 && can(session, "data.edit") && { href: "/admin/reference-data", text: "Import a seat matrix (induction<n>_seats.json)" },
+    inductions.length === 0 && can(session, "data.edit") && { href: "/admin/inductions", text: "Import merit round files" },
+    toMap > 0 && can(session, "data.edit") && { href: "/admin/inductions", text: `Map ${toMap} published names to hospitals and specialities` },
   ].filter(Boolean) as { href: string; text: string }[];
 
   return (

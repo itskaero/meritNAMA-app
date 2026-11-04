@@ -22,8 +22,8 @@ export default function SignInPage() {
           </div>
           {isDev ? (
             <p className="mt-4 text-xs text-muted">
-              Development: set <code className="font-mono text-ink">DEV_AUTH_STUB_ROLE=candidate</code> or{" "}
-              <code className="font-mono text-ink">admin</code> in <code className="font-mono text-ink">.env</code> to preview guarded routes.
+              Development: set <code className="font-mono text-ink">DEV_AUTH_STUB_ROLE</code> in <code className="font-mono text-ink">.env</code> to{" "}
+              <code className="font-mono text-ink">candidate</code>, <code className="font-mono text-ink">owner</code> or a staff role (data_editor, policy_editor, verifier, moderator) to preview guarded routes.
             </p>
           ) : null}
         </Card>

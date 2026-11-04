@@ -5,7 +5,7 @@ import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/page-header";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
 import { listAllLookups } from "@/lib/data/reference-data";
 import { getDb } from "@/lib/db/client";
@@ -17,6 +17,7 @@ export const metadata = { title: "Inductions & merit lists" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminInductionsPage() {
+  await requireSection("/admin/inductions");
   const s = findSection("/admin/inductions");
   const down = await whenDatabaseDown({ area: "admin", trail: [{ label: s.label }], title: s.label, description: s.description });
   if (down) return down;

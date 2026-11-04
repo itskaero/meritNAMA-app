@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { cn } from "@/components/ui/cn";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { listLookup, LOOKUP_LABELS } from "@/lib/data/reference-data";
 import { getDb } from "@/lib/db/client";
 import { LOOKUP_KINDS, type LookupKind } from "@/lib/domain/reference-data";
@@ -11,6 +11,7 @@ export const metadata = { title: "Reference lookups" };
 export const dynamic = "force-dynamic";
 
 export default async function LookupsPage({ searchParams }: { searchParams: Promise<{ kind?: string }> }) {
+  await requireSection("/admin/reference-data/lookups");
   const { kind: raw } = await searchParams;
   const kind: LookupKind = LOOKUP_KINDS.includes(raw as LookupKind) ? (raw as LookupKind) : "hospitals";
   const rows = await listLookup(getDb(), await getSession(), kind);

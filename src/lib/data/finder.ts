@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { assertRole, type Session } from "@/lib/auth/roles";
+import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import { meritAllocations, meritRounds, scoringPolicies, shortlistItems } from "@/lib/db/schema";
 import { classify, margin, toPercent, type FinderStatus } from "@/lib/domain/finder";
@@ -18,7 +18,7 @@ export type Track = { program: string; quota: string; allocations: number };
 
 /** Inductions that have rounds and a known total, with their programme/quota tracks. */
 export async function finderOptions(db: Database, session: Session | null) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [maxMarks, tracks, active] = await Promise.all([
     inductionMaxMarks(db),
     db
@@ -77,7 +77,7 @@ export type FinderOption = {
  * Options sorted by status, then by margin.
  */
 export async function findOptions(db: Database, session: Session | null, input: z.input<typeof inputSchema>) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const v = inputSchema.parse(input);
   if (v.marks > v.total) throw new UserFacingError(`Your marks cannot be more than the total (${v.total}).`);
   const maxMarks = await inductionMaxMarks(db);
@@ -132,7 +132,7 @@ export async function optionHistory(
   session: Session | null,
   o: { program: string; quota: string; speciality: string; hospital: string },
 ) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const [maxMarks, rows] = await Promise.all([
     inductionMaxMarks(db),
     db
@@ -159,7 +159,7 @@ const itemSchema = z.object({
 const SHORTLIST_MAX = 60;
 
 export async function listShortlist(db: Database, session: Session | null) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const me = await ensureUser(db, session);
   return db
     .select({ program: shortlistItems.program, quota: shortlistItems.quota, speciality: shortlistItems.speciality, hospital: shortlistItems.hospital, createdAt: shortlistItems.createdAt })
@@ -170,7 +170,7 @@ export async function listShortlist(db: Database, session: Session | null) {
 
 /** Add or remove an option. Returns whether it is now on the shortlist. */
 export async function toggleShortlist(db: Database, session: Session | null, input: z.input<typeof itemSchema>) {
-  assertRole(session, "candidate");
+  assertCan(session, "portal");
   const item = itemSchema.parse(input);
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);

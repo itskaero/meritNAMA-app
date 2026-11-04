@@ -2,7 +2,8 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { env } from "@/lib/env";
-import { hasRole, type Role, type Session } from "./roles";
+import { adminSections } from "@/lib/navigation";
+import { can, normalizeRole, type Capability, type Session } from "./roles";
 
 /**
  * Resolve the current user's session on the server.
@@ -16,16 +17,28 @@ export async function getSession(): Promise<Session | null> {
   await connection();
   const stubRole = env().DEV_AUTH_STUB_ROLE;
   if (stubRole && env().NODE_ENV !== "production") {
-    return { userId: "dev-stub", email: "dev@localhost", role: stubRole, isStub: true };
+    return { userId: "dev-stub", email: "dev@localhost", role: normalizeRole(stubRole) ?? "candidate", isStub: true };
   }
   // TODO(auth): read and verify the provider's session cookie here.
   return null;
 }
 
 /** Use in server layouts/pages. Redirects instead of rendering protected content. */
-export async function requireRole(required: Role): Promise<Session> {
+export async function requireCan(capability: Capability | "portal"): Promise<Session> {
   const session = await getSession();
   if (!session) redirect("/sign-in");
-  if (!hasRole(session, required)) redirect("/forbidden");
+  if (!can(session, capability)) redirect("/forbidden");
   return session;
+}
+
+/**
+ * For admin pages: require the capability of the section the page belongs to
+ * (the longest matching section href), so a page cannot be opened by typing its
+ * address when its menu entry is hidden.
+ */
+export async function requireSection(pathname: string): Promise<Session> {
+  const section = adminSections
+    .filter((x) => pathname === x.href || pathname.startsWith(`${x.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  return requireCan(section?.capability ?? "staff");
 }

@@ -1,4 +1,5 @@
 import type { IconName } from "@/components/icon";
+import { can, type Capability, type Session } from "@/lib/auth/roles";
 
 /**
  * Single source for app sections: drives the sidebar and the placeholder pages,
@@ -16,6 +17,8 @@ export type Section = {
   description: string;
   milestone: Milestone;
   planned: string[];
+  /** Admin sections: what a staff member needs to see and open it. */
+  capability?: Capability;
 };
 
 export const candidateSections: Section[] = [
@@ -105,6 +108,7 @@ export const candidateSections: Section[] = [
 export const adminSections: Section[] = [
   {
     href: "/admin",
+    capability: "staff",
     group: "Menu",
     icon: "dashboard",
     label: "Overview",
@@ -114,6 +118,7 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/candidates",
+    capability: "candidates.verify",
     group: "Menu",
     icon: "users",
     label: "Candidates",
@@ -123,6 +128,7 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/inductions",
+    capability: "data.edit",
     group: "Menu",
     icon: "calendar",
     label: "Inductions & merit lists",
@@ -132,6 +138,7 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/policies",
+    capability: "policy.edit",
     group: "Configuration",
     icon: "sliders",
     label: "Scoring policies",
@@ -141,6 +148,7 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/reference-data",
+    capability: "data.edit",
     group: "Configuration",
     icon: "database",
     label: "Reference data",
@@ -150,6 +158,7 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/processing",
+    capability: "data.edit",
     group: "Operations",
     icon: "cpu",
     label: "Processing & simulation",
@@ -159,6 +168,7 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/audit",
+    capability: "staff",
     group: "Operations",
     icon: "history",
     label: "Audit history",
@@ -168,6 +178,7 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/community",
+    capability: "community.moderate",
     group: "Operations",
     icon: "flag",
     label: "Community moderation",
@@ -177,30 +188,39 @@ export const adminSections: Section[] = [
   },
   {
     href: "/admin/settings",
+    capability: "roles.manage",
     group: "System",
     icon: "settings",
-    label: "Settings",
-    description: "Application settings and health.",
+    label: "Team & roles",
+    description: "Who is on the team and what each person may do.",
     milestone: "Delivery 3 · Admin MVP",
     planned: ["Feature toggles", "Data retention", "Backup status"],
   },
 ];
 
 /** Admin quick actions for the Ctrl K palette, beyond the sidebar pages. */
-export const adminCommands: { label: string; hint: string; href: string; icon: IconName; download?: boolean; keywords?: string }[] = [
-  { label: "Import merit rounds", hint: "Inductions", href: "/admin/inductions", icon: "upload", keywords: "merit list round_ file" },
-  { label: "Import a seat file", hint: "Reference data", href: "/admin/reference-data", icon: "upload", keywords: "seats matrix induction upload" },
-  { label: "Hospitals", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=hospitals", icon: "building", keywords: "rename add hospital" },
-  { label: "Specialities", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=specialities", icon: "target", keywords: "speciality specialty rename" },
-  { label: "Quotas", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=quotas", icon: "list" },
-  { label: "CPSP accreditation", hint: "Reference data · document", href: "/admin/reference-data/documents/cpsp_accreditation", icon: "folder" },
-  { label: "Specialty groups", hint: "Reference data · document", href: "/admin/reference-data/documents/specialty_groups", icon: "folder" },
-  { label: "Disciplines", hint: "Reference data · document", href: "/admin/reference-data/documents/disciplines", icon: "folder" },
-  { label: "Export scoring_policy.json", hint: "Download", href: "/admin/policies/export", icon: "download", download: true, keywords: "policy json calculator" },
+export const adminCommands: { label: string; hint: string; href: string; icon: IconName; download?: boolean; keywords?: string; capability: Capability }[] = [
+  { label: "Import merit rounds", hint: "Inductions", href: "/admin/inductions", icon: "upload", keywords: "merit list round_ file", capability: "data.edit" },
+  { label: "Import a seat file", hint: "Reference data", href: "/admin/reference-data", icon: "upload", keywords: "seats matrix induction upload", capability: "data.edit" },
+  { label: "Hospitals", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=hospitals", icon: "building", keywords: "rename add hospital", capability: "data.edit" },
+  { label: "Specialities", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=specialities", icon: "target", keywords: "speciality specialty rename", capability: "data.edit" },
+  { label: "Quotas", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=quotas", icon: "list", capability: "data.edit" },
+  { label: "CPSP accreditation", hint: "Reference data · document", href: "/admin/reference-data/documents/cpsp_accreditation", icon: "folder", capability: "data.edit" },
+  { label: "Specialty groups", hint: "Reference data · document", href: "/admin/reference-data/documents/specialty_groups", icon: "folder", capability: "data.edit" },
+  { label: "Disciplines", hint: "Reference data · document", href: "/admin/reference-data/documents/disciplines", icon: "folder", capability: "data.edit" },
+  { label: "Export scoring_policy.json", hint: "Download", href: "/admin/policies/export", icon: "download", download: true, keywords: "policy json calculator", capability: "policy.edit" },
 ];
 
 export function findSection(href: string): Section {
   const s = [...candidateSections, ...adminSections].find((x) => x.href === href);
   if (!s) throw new Error(`Unknown section ${href}`);
   return s;
+}
+
+/** Admin sections and quick actions this session may use. */
+export function sectionsFor(session: Session, sections: Section[]): Section[] {
+  return sections.filter((x) => !x.capability || can(session, x.capability));
+}
+export function commandsFor(session: Session) {
+  return adminCommands.filter((c) => can(session, c.capability));
 }

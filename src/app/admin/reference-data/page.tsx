@@ -4,7 +4,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/page-header";
 import { AreaPage } from "@/components/area-page";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { formatUtc } from "@/lib/format";
 import { getReferenceOverview, LOOKUP_LABELS } from "@/lib/data/reference-data";
 import { checkDatabase, getDb } from "@/lib/db/client";
@@ -17,6 +17,7 @@ export const dynamic = "force-dynamic";
 
 
 export default async function ReferenceDataPage() {
+  await requireSection("/admin/reference-data");
   const s = findSection("/admin/reference-data");
   const dbStatus = await checkDatabase();
   const overview = dbStatus === "ok" ? await getReferenceOverview(getDb(), await getSession()) : null;

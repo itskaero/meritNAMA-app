@@ -5,7 +5,7 @@ import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { communityStats, listOpenReports } from "@/lib/data/community";
 import { getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
@@ -15,6 +15,7 @@ export const metadata = { title: "Community moderation" };
 export const dynamic = "force-dynamic";
 
 export default async function ModerationPage() {
+  await requireSection("/admin/community");
   const s = findSection("/admin/community");
   const down = await whenDatabaseDown({ area: "admin", trail: [{ label: s.label }], title: s.label, description: s.description });
   if (down) return down;const db = getDb();

@@ -5,6 +5,7 @@ import { timeAgo } from "@/components/community/thread-list";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
+import { can } from "@/lib/auth/roles";
 import { getSession } from "@/lib/auth/session";
 import { getThread } from "@/lib/data/community";
 import { getDb } from "@/lib/db/client";
@@ -15,12 +16,12 @@ import { HelpfulButton, ReplyForm, ReportButton } from "../forms";
 export const metadata = { title: "Discussion" };
 export const dynamic = "force-dynamic";
 
-function Byline({ author, admin, at }: { author: string | null; admin: boolean; at: Date }) {
+function Byline({ author, team, at }: { author: string | null; team: boolean; at: Date }) {
   return (
     <p className="flex flex-wrap items-center gap-2 text-xs text-subtle">
       <span aria-hidden className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-ember/40 to-elevated text-[0.65rem] font-bold text-ink">{(author ?? "?").slice(0, 2).toUpperCase()}</span>
       <span className="font-semibold text-muted">{author}</span>
-      {admin ? <Badge tone="current">Admin</Badge> : null}
+      {team ? <Badge tone="current">Team</Badge> : null}
       <time dateTime={at.toISOString()}>{timeAgo(at)}</time>
     </p>
   );
@@ -38,7 +39,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
   const view = await getThread(getDb(), session, id);
   if (!view) notFound();
   const { thread: t, posts, topic } = view;
-  const isAdmin = session?.role === "admin";
+  const isAdmin = can(session, "community.moderate");
 
   return (
     <AreaPage area="portal" trail={[{ label: "Community", href: "/portal/community" }, { label: topic.label, href: `/portal/community?topic=${encodeURIComponent(`${topic.kind}|${topic.key}`)}` }, { label: "Discussion" }]} title={t.title}>
@@ -50,7 +51,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
             {t.pinned ? <Badge tone="current">Pinned</Badge> : null}
             {t.locked ? <Badge>Locked</Badge> : null}
           </div>
-          <Byline author={t.author} admin={t.authorIsAdmin} at={t.createdAt} />
+          <Byline author={t.author} team={t.authorIsTeam} at={t.createdAt} />
           <Body text={t.body} />
           <div className="flex flex-wrap items-center gap-2">
             <HelpfulButton kind="thread" id={t.id} threadId={t.id} count={t.helpful} voted={t.voted} disabled={t.mine} />
@@ -64,7 +65,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
           {posts.map((p, i) => (
             <li key={p.id} className="mn-rise" style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
               <article className={`grid gap-3 rounded-2xl border bg-surface p-4 ${p.status === "hidden" ? "border-danger/40 opacity-70" : "border-line"}`}>
-                <Byline author={p.author} admin={p.authorIsAdmin} at={p.createdAt} />
+                <Byline author={p.author} team={p.authorIsTeam} at={p.createdAt} />
                 {p.status === "hidden" ? <Badge tone="danger">Hidden from members</Badge> : null}
                 <Body text={p.body} />
                 <div className="flex flex-wrap items-center gap-2">

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AreaPage } from "@/components/area-page";
 import { selectClass } from "@/components/ui/styles";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { intParam } from "@/lib/params";
 import { listAllLookups, listSeats, type SeatFilters } from "@/lib/data/reference-data";
 import { getDb } from "@/lib/db/client";
@@ -25,6 +25,7 @@ export default async function SeatMatrixPage({ params, searchParams }: {
   params: Promise<{ induction: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireSection("/admin/reference-data/seats");
   const induction = intParam((await params).induction);
   if (induction === null) notFound();
   const sp = await searchParams;

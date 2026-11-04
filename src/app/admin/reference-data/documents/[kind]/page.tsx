@@ -4,7 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { AreaPage } from "@/components/area-page";
-import { getSession } from "@/lib/auth/session";
+import { getSession, requireSection } from "@/lib/auth/session";
 import { formatUtc, isUuid } from "@/lib/format";
 import { getDocumentVersion, listDocumentVersions } from "@/lib/data/reference-data";
 import { getDb } from "@/lib/db/client";
@@ -77,6 +77,7 @@ export default async function DocumentPage({ params, searchParams }: {
   params: Promise<{ kind: string }>;
   searchParams: Promise<{ version?: string }>;
 }) {
+  await requireSection("/admin/reference-data/documents");
   const parsed = documentKindSchema.safeParse((await params).kind);
   if (!parsed.success) notFound();
   const kind = parsed.data;
