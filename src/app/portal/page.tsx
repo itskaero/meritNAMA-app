@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { LineChart } from "@/components/charts/line-chart";
 import { RoundFunnel } from "@/components/charts/round-funnel";
+import { CycleGauge, gaugeProps } from "@/components/charts/cycle-gauge";
 import { InductionTimeline } from "@/components/charts/induction-timeline";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
@@ -33,6 +34,7 @@ export default async function PortalDashboard() {
   const session = await getSession();
   const [inductions, change] = await Promise.all([listInductionsWithRounds(db, session), latestRoundChange(db, session)]);
   const latest = inductions[0];
+  const gauge = latest ? gaugeProps(latest, inductions[1]?.rounds.length) : null;
   const [timeline, settling] = latest
     ? await Promise.all([inductionTimeline(db, session, latest.id), roundSettling(db, session, latest.id)])
     : [[], null];
@@ -48,6 +50,12 @@ export default async function PortalDashboard() {
         ))}
       </div>
       {change ? <StatTiles stats={latestRoundStats(change, latest?.maxMarks ?? undefined)} /> : null}
+      {latest && gauge ? (
+        <Card>
+          <CardHeader title="Cycle progress" description={`Induction ${latest.id}: how far the cycle is through its published schedule, and which round comes next.`} />
+          <CycleGauge {...gauge} />
+        </Card>
+      ) : null}
       {inductions.length ? (
         <Card>
           <CardHeader title="Timeline" description="Induction cycles and their rounds. Select a round to open it." />

@@ -16,6 +16,7 @@ import { formatMarks } from "@/lib/format";
 import { intParam, oneOf } from "@/lib/params";
 import { inductionTracks, roundSettling } from "@/lib/data/insights";
 import { RoundFunnel } from "@/components/charts/round-funnel";
+import { CycleGauge, gaugeProps } from "@/components/charts/cycle-gauge";
 
 export const metadata = { title: "Induction" };
 export const dynamic = "force-dynamic";
@@ -30,6 +31,8 @@ export default async function InductionPage({ params, searchParams }: { params: 
   const ind = all.find((i) => i.id === induction);
   if (!ind) notFound();
   const max = maxMarks[induction];
+  const prev = all.find((i) => i.id < induction);
+  const gauge = gaugeProps(ind, prev?.rounds.length);
   const tracks = await inductionTracks(db, session, induction);
   const track = oneOf((await searchParams).track, tracks.map((t) => t.value));
   const settling = ind.rounds.length > 1 ? await roundSettling(db, session, induction, track) : null;
@@ -42,6 +45,12 @@ export default async function InductionPage({ params, searchParams }: { params: 
       title={`Induction ${induction} · ${ind.rounds[0]!.cycleName}`}
       description={`${ind.rounds[0]!.cycleCode} · ${ind.rounds.length} rounds published${max ? ` · scored out of ${max}` : ""}. Open a round to see closing merit by speciality and hospital.`}
     >
+      {gauge ? (
+        <Card>
+          <CardHeader title="Cycle progress" description="How far this cycle is through its published schedule." />
+          <CycleGauge {...gauge} />
+        </Card>
+      ) : null}
       <Card>
         <RoundBeam rounds={ind.rounds.map((r) => r.roundNo)} hrefFor={(r) => `/portal/history/${induction}/rounds/${r}`} />
       </Card>
