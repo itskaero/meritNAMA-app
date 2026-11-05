@@ -1,6 +1,9 @@
 import { AreaPage } from "@/components/area-page";
 import { Card } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
+import Link from "next/link";
+import { Notice } from "@/components/ui/notice";
+import { mayPost } from "@/lib/data/candidates";
 import { describeTopics } from "@/lib/data/community";
 import { listInductionsWithRounds } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
@@ -26,9 +29,17 @@ export default async function NewThreadPage({ searchParams }: { searchParams: Pr
   }
   return (
     <AreaPage area="portal" trail={[{ label: "Community", href: "/portal/community" }, { label: "Start a discussion" }]} title="Start a discussion" description="Ask a clear question. Pick the topic it belongs to so others find it on that page.">
-      <Card className="max-w-3xl">
-        <NewThreadForm topics={topics} defaultTopic={pre ? topicParam(pre) : "general|"} />
-      </Card>
+      {(await mayPost(db, session)) ? (
+        <Card className="max-w-3xl">
+          <NewThreadForm topics={topics} defaultTopic={pre ? topicParam(pre) : "general|"} />
+        </Card>
+      ) : (
+        <div className="max-w-3xl">
+          <Notice title="Verify your account to post">
+            Discussions are started by candidates whose account is linked to their merit record, so answers come from people who went through the rounds. Reading stays open to everyone. <Link href="/portal/profile" className="font-semibold text-signal hover:underline">Verify on your profile →</Link>
+          </Notice>
+        </div>
+      )}
     </AreaPage>
   );
 }

@@ -47,6 +47,10 @@ services:
       APP_URL: ${APP_URL:-http://localhost:3000}
       PUBLIC_SITE_ORIGIN: ${PUBLIC_SITE_ORIGIN:-}
       APP_STORAGE_DIR: /app/storage
+      SMTP_URL: ${SMTP_URL:?set SMTP_URL in .env (sign-in links are emailed)}
+      MAIL_FROM: ${MAIL_FROM:-}
+      OWNER_EMAILS: ${OWNER_EMAILS:-}
+      CANDIDATE_INDEX_SECRET: ${CANDIDATE_INDEX_SECRET:?set CANDIDATE_INDEX_SECRET in .env}
     volumes:
       - ${MERITNAMA_DATA_DIR:-./var}/storage:/app/storage
     ports:

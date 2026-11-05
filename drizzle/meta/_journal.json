@@ -57,6 +57,13 @@
       "when": 1793812449369,
       "tag": "0007_staged_changes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793870578797,
+      "tag": "0008_candidate_accounts",
+      "breakpoints": true
     }
   ]
 }

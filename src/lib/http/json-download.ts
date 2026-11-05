@@ -1,4 +1,5 @@
 import { AuthorizationError } from "@/lib/auth/roles";
+import { UserFacingError } from "@/lib/errors";
 
 /** Shared responses for the admin export routes. */
 
@@ -23,12 +24,13 @@ export function jsonProblem(status: number, error: string, extra?: Record<string
  * Route handlers are not covered by layout guards; the data layer throws
  * AuthorizationError instead. Turn that into 401/403 rather than a 500.
  */
-export function withAuthErrors(handler: (request: Request) => Promise<Response>) {
-  return async (request: Request) => {
+export function withAuthErrors<A extends unknown[]>(handler: (request: Request, ...rest: A) => Promise<Response>) {
+  return async (request: Request, ...rest: A) => {
     try {
-      return await handler(request);
+      return await handler(request, ...rest);
     } catch (err) {
       if (err instanceof AuthorizationError) return jsonProblem(err.reason === "unauthenticated" ? 401 : 403, err.reason);
+      if (err instanceof UserFacingError) return jsonProblem(404, err.message);
       throw err;
     }
   };

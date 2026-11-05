@@ -40,10 +40,45 @@ Three layers, none of which trusts the one before it:
 
 Hidden buttons and client route checks are never relied on.
 
-## Authentication — not yet integrated
+## Authentication
 
-`src/lib/auth/session.ts#getSession` is the single integration point. Today it
-returns `null` (or the dev stub outside production).
+`src/lib/auth/session.ts#getSession` is the single integration point. It reads the
+`mn_session` cookie (or, outside production only, the `DEV_AUTH_STUB_ROLE` stub).
+
+**Email one-time links** (`src/lib/auth/login.ts`), implemented in-house rather than
+with Auth.js, which does not yet support Next 16; the flow is small enough to own:
+
+1. `/sign-in` asks for an email. `requestLoginLink` stores the SHA-256 of a random
+   token (15 minutes, single use) and emails `/auth/verify?token=…` through
+   `SMTP_URL`. The answer is the same whether or not an account exists. Limits are
+   3 links per email and 10 per IP every 15 minutes.
+2. `/auth/verify` shows a *Continue* button. Only the POST uses the token, so mail
+   scanners that open links do not sign anyone in.
+3. `consumeLoginLink` marks the token used, creates the user on first sign-in (owner
+   when listed in `OWNER_EMAILS`, otherwise candidate), tries the automatic record
+   link (below) and opens a session. The cookie holds a random id; only its SHA-256
+   is stored. It is `HttpOnly; SameSite=Lax`, `Secure` in production, lasts 30 days
+   and slides once a day.
+4. Sign out deletes the session row and the cookie.
+
+Without `SMTP_URL` in development, mail is written to `dev_outbox` and shown at
+`/dev/mailbox` (404 in production).
+
+### Candidate records
+
+- **Index.** When a merit round is imported, `indexCandidates` stores
+  `HMAC(CANDIDATE_INDEX_SECRET, email)` and `HMAC(…, PMDC number)` per applicant in
+  `candidate_identities`. Raw values are read once in memory and never written.
+  `npm run index:candidates -- <folder>` backfills rounds imported earlier.
+- **Automatic link.** At sign-in, if the email's HMAC matches exactly one applicant
+  that no one else has claimed, the account is linked (`method = email`).
+- **Manual link.** Otherwise the candidate sends their applicant ID, PMDC number and
+  a proof document (PDF/JPG/PNG, at most 5 MB, type checked from the bytes, stored as
+  `storage/evidence/<uuid>`). The app notes whether the PMDC number matches the
+  record. A verifier approves or rejects it at `/admin/candidates`, with an audited reason.
+- One verified link per account and per applicant (partial unique indexes).
+- Verification unlocks *My merit* on `/portal/profile` (only the person's own rows),
+  marks pre-filled in the score finder, posting in the community, and a *Verified* badge.
 
 **Decision on Firebase.** The legacy app's "auth" is an email + PIN checked in the
 browser against a world-readable Firestore collection. It cannot be made secure

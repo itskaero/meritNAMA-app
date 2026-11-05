@@ -14,6 +14,7 @@ import {
   setDisplayName,
   toggleHelpful,
 } from "@/lib/data/community";
+import { ensureUser } from "@/lib/data/users";
 import * as schema from "@/lib/db/schema";
 
 /** Runs against a DISPOSABLE database (TEST_DATABASE_URL); uses its own test users and removes them. */
@@ -21,11 +22,13 @@ const url = process.env.TEST_DATABASE_URL;
 const admin: Session = { userId: "c-admin", email: "community-admin@test.local", role: "owner", isStub: false };
 const alice: Session = { userId: "c-alice", email: "community-alice@test.local", role: "candidate", isStub: false };
 const bob: Session = { userId: "c-bob", email: "community-bob@test.local", role: "candidate", isStub: false };
+/** Signed in but not linked to a merit record. */
+const carol: Session = { userId: "c-carol", email: "community-carol@test.local", role: "candidate", isStub: false };
 
 describe.skipIf(!url)("community (integration)", () => {
   const sql = postgres(url ?? "postgres://unused", { max: 2, onnotice: () => {} });
   const db = drizzle(sql, { schema });
-  const emails = [admin.email, alice.email, bob.email];
+  const emails = [admin.email, alice.email, bob.email, carol.email];
 
   const wipe = async () => {
     const ids = (await db.select({ id: schema.users.id }).from(schema.users).where(inArray(schema.users.email, emails))).map((u) => u.id);
@@ -36,7 +39,14 @@ describe.skipIf(!url)("community (integration)", () => {
     await db.delete(schema.discussionThreads).where(inArray(schema.discussionThreads.authorId, ids));
     await db.delete(schema.users).where(inArray(schema.users.id, ids));
   };
-  beforeAll(wipe);
+  beforeAll(async () => {
+    await wipe();
+    // Posting needs a verified record (or a staff role): link alice and bob.
+    for (const [who, applicantId] of [[alice, "T-COMM-ALICE"], [bob, "T-COMM-BOB"]] as const) {
+      const me = await ensureUser(db, who);
+      await db.insert(schema.candidateLinks).values({ userId: me.id, applicantId, status: "verified", method: "manual", reviewedBy: "test" });
+    }
+  });
   afterAll(async () => {
     await wipe();
     await sql.end();
@@ -46,6 +56,11 @@ describe.skipIf(!url)("community (integration)", () => {
 
   it("needs a signed-in user", async () => {
     await expect(listThreads(db, null)).rejects.toThrow("unauthenticated");
+  });
+
+  it("lets only verified candidates and staff post; everyone reads", async () => {
+    await expect(createThread(db, carol, { topic: { kind: "general", key: "" }, title: "Can I post yet?", body: "Asking before verifying my record." })).rejects.toThrow("linked to your merit record");
+    await expect(listThreads(db, carol)).resolves.toBeInstanceOf(Array);
   });
 
   it("starts a thread under an anonymous name and refuses personal data", async () => {

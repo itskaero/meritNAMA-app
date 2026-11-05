@@ -1,27 +1,37 @@
 import "server-only";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
+import { cache } from "react";
+import { getDb } from "@/lib/db/client";
 import { env } from "@/lib/env";
+import { SESSION_COOKIE, sessionFromId } from "./login";
 import { adminSections } from "@/lib/navigation";
 import { can, normalizeRole, type Capability, type Session } from "./roles";
 
 /**
- * Resolve the current user's session on the server.
- *
- * NOT YET INTEGRATED: no authentication provider is wired up, so outside the
- * development stub this always returns null and every guarded route redirects
- * to /sign-in. See docs/ARCHITECTURE.md → "Authentication" for the plan.
+ * Resolve the current user's session on the server, from the mn_session cookie
+ * (see ./login.ts). Outside production, DEV_AUTH_STUB_ROLE pretends a user with
+ * that role is signed in. Cached per request.
  */
-export async function getSession(): Promise<Session | null> {
+export const getSession = cache(async (): Promise<Session | null> => {
   // Always resolve per request: a session must never be baked into a prerendered page.
   await connection();
   const stubRole = env().DEV_AUTH_STUB_ROLE;
   if (stubRole && env().NODE_ENV !== "production") {
     return { userId: "dev-stub", email: "dev@localhost", role: normalizeRole(stubRole) ?? "candidate", isStub: true };
   }
-  // TODO(auth): read and verify the provider's session cookie here.
-  return null;
-}
+  if (!env().DATABASE_URL) return null;
+  const id = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!id) return null;
+  try {
+    return await sessionFromId(getDb(), id);
+  } catch (e) {
+    // A database outage reads as signed out rather than crashing every page.
+    console.error("session lookup failed", (e as Error).message);
+    return null;
+  }
+});
 
 /** Use in server layouts/pages. Redirects instead of rendering protected content. */
 export async function requireCan(capability: Capability | "portal"): Promise<Session> {

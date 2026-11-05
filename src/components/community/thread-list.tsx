@@ -8,6 +8,7 @@ export type ThreadSummary = {
   excerpt: string;
   author: string | null;
   authorIsTeam: boolean;
+  authorVerified: boolean;
   status: "visible" | "hidden";
   locked: boolean;
   pinned: boolean;
@@ -47,7 +48,7 @@ export function ThreadList({ threads, showTopic = true }: { threads: ThreadSumma
               </h3>
               <p className="mt-1 line-clamp-2 text-sm text-muted">{t.excerpt}</p>
               <p className="mt-2 text-xs text-subtle">
-                {t.author}{t.authorIsTeam ? " · team" : ""} · active {timeAgo(t.lastActivityAt)}
+                {t.author}{t.authorIsTeam ? " · team" : t.authorVerified ? " · verified" : ""} · active {timeAgo(t.lastActivityAt)}
               </p>
             </div>
             <div className="flex gap-4 text-sm text-muted sm:flex-col sm:items-end sm:gap-1">

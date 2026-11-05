@@ -20,6 +20,17 @@ export const envSchema = z
      * routes can be built before real authentication exists. Rejected in production.
      */
     DEV_AUTH_STUB_ROLE: z.enum(ROLES).optional(),
+    /** SMTP server for sign-in links, e.g. smtps://user:pass@smtp.example.org:465. Required in production. */
+    SMTP_URL: z.url({ protocol: /^smtps?$/ }).optional(),
+    /** Sender of sign-in links, e.g. "meritNAMA <no-reply@example.org>". */
+    MAIL_FROM: z.string().min(3).default("meritNAMA <no-reply@localhost>"),
+    /** Comma-separated emails that become owners on their first sign-in. */
+    OWNER_EMAILS: z.string().default(""),
+    /**
+     * Key for the HMACs of candidates' emails and PMDC numbers (32+ characters).
+     * Required in production; changing it means re-indexing (npm run index:candidates).
+     */
+    CANDIDATE_INDEX_SECRET: z.string().min(32).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production" && env.DEV_AUTH_STUB_ROLE) {
@@ -28,6 +39,12 @@ export const envSchema = z
         path: ["DEV_AUTH_STUB_ROLE"],
         message: "DEV_AUTH_STUB_ROLE must not be set in production",
       });
+    }
+    if (env.NODE_ENV === "production" && !env.SMTP_URL) {
+      ctx.addIssue({ code: "custom", path: ["SMTP_URL"], message: "SMTP_URL is required in production (sign-in links are sent by email)" });
+    }
+    if (env.NODE_ENV === "production" && !env.CANDIDATE_INDEX_SECRET) {
+      ctx.addIssue({ code: "custom", path: ["CANDIDATE_INDEX_SECRET"], message: "CANDIDATE_INDEX_SECRET is required in production" });
     }
   });
 

@@ -20,12 +20,26 @@ Edit `.env`:
 | `APP_URL` | The URL users will open, e.g. `https://app.example.org` |
 | `PUBLIC_SITE_ORIGIN` | `https://itskaero.github.io` (lets the public site probe `/api/health`) |
 | `APP_PORT` | Host port, default `3000` (bound to 127.0.0.1) |
+| `SMTP_URL` | Your mail provider, e.g. `smtps://user:pass@smtp.example.org:465` (sign-in links) |
+| `MAIL_FROM` | Sender shown on sign-in emails, e.g. `meritNAMA <no-reply@example.org>` |
+| `OWNER_EMAILS` | Your own email: it becomes owner on first sign-in. Owners give others roles on Team & roles. |
+| `CANDIDATE_INDEX_SECRET` | `openssl rand -base64 48 \| tr -d '/+='`. Keep it with your backups; changing it needs a re-index. |
 | `DEV_AUTH_STUB_ROLE` | **leave empty** — the app will not serve pages with it set |
 
 ```bash
 docker compose up -d --build
 docker compose ps                     # db healthy, migrate exited 0, app healthy
 curl -s http://127.0.0.1:3000/api/health   # {"status":"ok","database":"ok"}
+```
+
+If merit rounds were imported before candidate accounts existed, index them once so
+sign-in emails can be matched (the files moved to `storage/inbox/processed/` work;
+run it from the folder with `.env`, after `set -a; . ./.env; set +a`):
+
+```bash
+docker compose run --rm \
+  -e CANDIDATE_INDEX_SECRET -v "$MERITNAMA_DATA_DIR/storage:/storage:ro" \
+  migrate node scripts/index-candidates.mjs /storage/inbox/processed
 ```
 
 Startup order is enforced: `db` (healthy) → `migrate` (one-shot, must exit 0) → `app`.
@@ -36,6 +50,7 @@ State on disk:
 $MERITNAMA_DATA_DIR/
   postgres/   database files   (only the db container touches these)
   storage/    approved data files, generated reports
+    evidence/   proof documents from candidates (verifiers only)
     inbox/      drop new data files here (see "Importing from the inbox")
   backups/    output of scripts/backup.sh
   caddy/      certificates (only with the proxy profile)

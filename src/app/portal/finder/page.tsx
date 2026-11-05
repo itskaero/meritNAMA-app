@@ -13,6 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { selectClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
+import { myMerit } from "@/lib/data/candidates";
 import { findOptions, finderOptions, listShortlist, optionHistory, type FinderOption } from "@/lib/data/finder";
 import { getDb } from "@/lib/db/client";
 import { optionKey, parseOptionKey, STATUS_LABEL, type FinderStatus } from "@/lib/domain/finder";
@@ -56,7 +57,9 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   const sp = await searchParams;
   const db = getDb();
   const session = await getSession();
-  const opts = await finderOptions(db, session);
+  const [opts, mine] = await Promise.all([finderOptions(db, session), myMerit(db, session).catch(() => null)]);
+  // A verified candidate's latest official marks fill the form when nothing is entered yet.
+  const own = !sp.marks ? mine?.rows[0] : undefined;
   if (opts.inductions.length === 0) {
     return (
       <AreaPage {...frame}>
@@ -68,9 +71,10 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   // Inputs (all from the URL, so a search can be bookmarked or shared).
   const induction = opts.inductions.find((i) => i.id === intParam(sp.induction)) ?? opts.inductions[0]!;
   const trackValues = induction.tracks.map((t) => `${t.program}|${t.quota}`);
-  const trackValue = oneOf(sp.track, trackValues) ?? trackValues[0]!;
+  const trackValue = oneOf(sp.track, trackValues) ?? oneOf(own ? `${own.program}|${own.quota}` : undefined, trackValues) ?? trackValues[0]!;
   const [program, quota] = trackValue.split("|") as [string, string];
-  const total = num(sp.total) ?? opts.defaultTotal ?? induction.total;
+  const ownTotal = own ? opts.inductions.find((i) => i.id === own.induction)?.total : undefined;
+  const total = num(sp.total) ?? ownTotal ?? opts.defaultTotal ?? induction.total;
   const marks = num(sp.marks);
   const view = sp.view === "grid" ? "grid" : "list";
   const show = oneOf(sp.show, STATUSES);
@@ -123,7 +127,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
           <label className="grid gap-1.5 text-sm font-medium">
             Your marks
             <span className="flex items-center gap-2">
-              <input name="marks" inputMode="decimal" required defaultValue={sp.marks ?? ""} placeholder="e.g. 22.5" className={cn(selectClass, "font-mono")} />
+              <input name="marks" inputMode="decimal" required defaultValue={sp.marks ?? (own ? own.marks.toFixed(4) : "")} placeholder="e.g. 22.5" className={cn(selectClass, "font-mono")} />
               <span className="whitespace-nowrap text-sm text-muted">of</span>
               <input name="total" inputMode="decimal" defaultValue={String(total)} aria-label="Out of (total marks)" className={cn(selectClass, "w-20 font-mono")} />
             </span>
@@ -143,6 +147,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
           <input type="hidden" name="view" value={view} />
           <Button type="submit" className="md:self-end">Find options</Button>
         </form>
+        {own ? <p className="mt-3 text-xs font-medium text-success">Filled in from your verified record: induction {own.induction}, round {own.roundNo} (out of {total}).</p> : null}
         <p className="mt-3 text-xs text-subtle">
           {opts.activePolicy ? `Your marks are on the current policy (${opts.activePolicy}, out of ${opts.defaultTotal}). ` : ""}
           Inductions are compared in percent of their total, so a score out of 30 lines up with one out of 35. Weights of the parts differ between years, so treat this as a guide, not a guarantee.

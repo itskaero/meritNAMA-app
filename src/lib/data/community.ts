@@ -10,6 +10,7 @@ import {
   hospitals,
   specialities,
   users,
+  candidateLinks,
 } from "@/lib/db/schema";
 import {
   displayNameSchema,
@@ -22,6 +23,7 @@ import {
 } from "@/lib/domain/community";
 import { UserFacingError } from "@/lib/errors";
 import { requireReason, writeAudit, type Db } from "./shared";
+import { mayPost } from "./candidates";
 import { ensureUser } from "./users";
 
 /**
@@ -93,6 +95,11 @@ export async function describeTopics(db: Database, topics: Topic[]): Promise<Map
 const voteCount = (kind: "thread" | "post", id: typeof discussionThreads.id | typeof discussionPosts.id) =>
   sql<number>`(select count(*) from ${discussionVotes} v where v.target_kind = ${kind} and v.target_id = ${id})`.mapWith(Number);
 
+/** The author holds a verified candidate record (shown as a "Verified" badge). */
+const authorVerified = sql<boolean>`exists (select 1 from ${candidateLinks} l where l.user_id = ${users.id} and l.status = 'verified')`;
+
+const POSTING_LOCKED = "Posting opens once your account is linked to your merit record. Verify it on your profile; reading stays open to everyone.";
+
 export async function listThreads(
   db: Database,
   session: Session | null,
@@ -111,6 +118,7 @@ export async function listThreads(
       excerpt: sql<string>`left(${discussionThreads.body}, 220)`,
       author: users.displayName,
       authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
+      authorVerified,
       status: discussionThreads.status,
       locked: discussionThreads.locked,
       pinned: discussionThreads.pinned,
@@ -144,6 +152,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
       body: discussionThreads.body,
       author: users.displayName,
       authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
+      authorVerified,
       mine: sql<boolean>`${discussionThreads.authorId} = ${me.id}`,
       status: discussionThreads.status,
       locked: discussionThreads.locked,
@@ -163,6 +172,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
       body: discussionPosts.body,
       author: users.displayName,
       authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
+      authorVerified,
       mine: sql<boolean>`${discussionPosts.authorId} = ${me.id}`,
       status: discussionPosts.status,
       helpful: voteCount("post", discussionPosts.id),
@@ -174,7 +184,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
     .where(and(eq(discussionPosts.threadId, id), isAdmin ? undefined : eq(discussionPosts.status, "visible")))
     .orderBy(discussionPosts.createdAt);
   const topic = (await describeTopics(db, [{ kind: t.topicKind, key: t.topicKey }])).get(`${t.topicKind}:${t.topicKey}`)!;
-  return { thread: t, posts, topic, me: { displayName: me.displayName } };
+  return { thread: t, posts, topic, me: { displayName: me.displayName, mayPost: await mayPost(db, session) } };
 }
 
 // ── Writing ────────────────────────────────────────────────────────────────────
@@ -184,6 +194,7 @@ export async function createThread(db: Database, session: Session | null, input:
   const v = threadInputSchema.parse(input);
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
+    if (!(await mayPost(tx, session))) throw new UserFacingError(POSTING_LOCKED);
     await checkRate(tx, me.id);
     const [row] = await tx
       .insert(discussionThreads)
@@ -198,6 +209,7 @@ export async function replyToThread(db: Database, session: Session | null, input
   const v = replyInputSchema.parse(input);
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
+    if (!(await mayPost(tx, session))) throw new UserFacingError(POSTING_LOCKED);
     const [t] = await tx.select({ status: discussionThreads.status, locked: discussionThreads.locked }).from(discussionThreads).where(eq(discussionThreads.id, input.threadId)).limit(1);
     if (!t || t.status === "hidden") throw new UserFacingError("This discussion is no longer available.");
     if (t.locked && !can(session, "community.moderate")) throw new UserFacingError("This discussion is locked; new replies are closed.");

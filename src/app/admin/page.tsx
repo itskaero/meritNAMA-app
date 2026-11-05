@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Metric } from "@/components/ui/metric";
 import { can } from "@/lib/auth/roles";
+import { pendingLinkCount } from "@/lib/data/candidates";
 import { getSession, requireSection } from "@/lib/auth/session";
 import { latestRoundChange, listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
 import { latestRoundStats } from "@/lib/round-stats";
@@ -56,6 +57,7 @@ export default async function AdminOverviewPage() {
   const toMap = unmatched.speciality.length + unmatched.hospital.length;
   const inbox = can(session, "data.edit") || can(session, "policy.edit") ? await listInbox(db, session).catch(() => null) : null;
   const inboxWaiting = inbox?.filter((i) => i.kind !== "unrecognised").length ?? 0;
+  const toVerify = can(session, "candidates.verify") ? await pendingLinkCount(db) : null;
   const queues: Queue[] = [
     { title: "Changes to review", count: pendingChanges, icon: "history", href: "/admin/changes", cta: pendingChanges ? "Review" : "Open", text: pendingChanges ? "Staged changes wait for a decision before they go live." : "Nothing is waiting to be published." },
     ...(inbox ? [{ title: "Files in the inbox", count: inboxWaiting, icon: "upload" as const, href: "/admin/inductions#inbox", cta: inboxWaiting ? "Import" : "Open", text: inboxWaiting ? "New files on the server, checked and ready to import." : "Drop round, seat or policy files into the server's inbox folder." }] : []),
@@ -63,7 +65,7 @@ export default async function AdminOverviewPage() {
     ...(can(session, "community.moderate") ? [{ title: "Community reports", count: reports, icon: "flag" as const, href: "/admin/community", cta: "Moderate", text: reports ? "Posts members reported for review." : "No reports waiting." }] : []),
     ...(can(session, "data.edit") && reference.seatMatrices.length === 0 ? [{ title: "Seat matrix", count: 1, icon: "database" as const, href: "/admin/reference-data", cta: "Import", text: "No seat matrix yet: import induction<n>_seats.json." }] : []),
     ...(can(session, "policy.edit") && !active ? [{ title: "Scoring policy", count: 1, icon: "sliders" as const, href: "/admin/policies", cta: "Import", text: "No active policy: import scoring_policy.json so merit shows out of each total." }] : []),
-    ...(can(session, "candidates.verify") ? [{ title: "Records to verify", count: null, icon: "users" as const, text: "Arrives with candidate accounts." }] : []),
+    ...(toVerify !== null ? [{ title: "Records to verify", count: toVerify, icon: "users" as const, href: "/admin/candidates", cta: toVerify ? "Verify" : "Open", text: toVerify ? "Candidates asking to link their account to a merit record." : "No requests waiting. Matching emails link automatically." }] : []),
   ];
 
   return (

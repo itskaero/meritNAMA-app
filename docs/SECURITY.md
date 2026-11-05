@@ -22,6 +22,15 @@
   once the page inventory settles (delivery 5).
 - `/api/health` is the only unauthenticated API. It returns coarse states only and
   allows cross-origin reads for `PUBLIC_SITE_ORIGIN` only.
+- Sign-in: one-time email links (15 min, single use, used by POST only), rate-limited
+  per email and IP, with an answer that never reveals whether an account exists. Tokens
+  and session ids are stored only as SHA-256. Session cookies are `HttpOnly`,
+  `SameSite=Lax` and `Secure` in production.
+- Candidate emails and PMDC numbers from merit files are kept only as keyed HMACs
+  (`CANDIDATE_INDEX_SECRET`); merit allocations never store them. Matching emails link
+  accounts automatically; any other claim needs a verifier. Proof documents are
+  checked by their bytes, stored under generated names, and served only to verifiers
+  with `no-store`, `nosniff` and a sandboxing CSP.
 - Uploads (delivery 3): size limits, extension + content sniffing, schema validation
   before anything is stored, files written under `APP_STORAGE_DIR` with generated names.
 - Processing jobs run fixed, server-defined code paths. Nothing executes

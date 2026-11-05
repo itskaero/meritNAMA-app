@@ -15,6 +15,7 @@ import { meritRoundFileSchema, type MeritRoundFile } from "@/lib/domain/merit-ro
 import { seatFileSchema, seatKey, type SeatRow } from "@/lib/domain/reference-data";
 import { policySchema, scoringPolicyFileSchema, type Policy, type ScoringPolicyFile } from "@/lib/domain/scoring-policy";
 import { UserFacingError } from "@/lib/errors";
+import { indexCandidates } from "./candidates";
 import { deleteMeritRound, importMeritRound } from "./merit";
 import { activatePolicyVersion, importScoringPolicyFile } from "./policies";
 import { exportSeatFile, importSeatFile } from "./reference-data";
@@ -189,6 +190,10 @@ export async function proposeMeritRound(db: Database, session: Session | null, i
   const file = meritRoundFileSchema.parse(input.file);
   const reason = reasonFor(input.reason);
   const induction = file.Table[0]!.inductionId;
+  // The raw file is only in hand here: index the applicants' email/PMDC HMACs now
+  // (identities are facts about applicants, not part of the round, so a staged
+  // replacement does not wait for them). The staged payload stays stripped.
+  await indexCandidates(db, file);
   const existing = await roundRow(db, induction, input.roundNo);
   if (!existing) {
     const r = await importMeritRound(db, session, { roundNo: input.roundNo, file: input.file, reason });

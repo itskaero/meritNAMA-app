@@ -16,12 +16,13 @@ import { HelpfulButton, ReplyForm, ReportButton } from "../forms";
 export const metadata = { title: "Discussion" };
 export const dynamic = "force-dynamic";
 
-function Byline({ author, team, at }: { author: string | null; team: boolean; at: Date }) {
+function Byline({ author, team, verified, at }: { author: string | null; team: boolean; verified: boolean; at: Date }) {
   return (
     <p className="flex flex-wrap items-center gap-2 text-xs text-subtle">
       <span aria-hidden className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-ember/40 to-elevated text-[0.65rem] font-bold text-ink">{(author ?? "?").slice(0, 2).toUpperCase()}</span>
       <span className="font-semibold text-muted">{author}</span>
       {team ? <Badge tone="current">Team</Badge> : null}
+      {verified && !team ? <Badge tone="success">Verified</Badge> : null}
       <time dateTime={at.toISOString()}>{timeAgo(at)}</time>
     </p>
   );
@@ -51,7 +52,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
             {t.pinned ? <Badge tone="current">Pinned</Badge> : null}
             {t.locked ? <Badge>Locked</Badge> : null}
           </div>
-          <Byline author={t.author} team={t.authorIsTeam} at={t.createdAt} />
+          <Byline author={t.author} team={t.authorIsTeam} verified={t.authorVerified} at={t.createdAt} />
           <Body text={t.body} />
           <div className="flex flex-wrap items-center gap-2">
             <HelpfulButton kind="thread" id={t.id} threadId={t.id} count={t.helpful} voted={t.voted} disabled={t.mine} />
@@ -65,7 +66,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
           {posts.map((p, i) => (
             <li key={p.id} className="mn-rise" style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
               <article className={`grid gap-3 rounded-2xl border bg-surface p-4 ${p.status === "hidden" ? "border-danger/40 opacity-70" : "border-line"}`}>
-                <Byline author={p.author} team={p.authorIsTeam} at={p.createdAt} />
+                <Byline author={p.author} team={p.authorIsTeam} verified={p.authorVerified} at={p.createdAt} />
                 {p.status === "hidden" ? <Badge tone="danger">Hidden from members</Badge> : null}
                 <Body text={p.body} />
                 <div className="flex flex-wrap items-center gap-2">
@@ -80,8 +81,12 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
 
         {t.locked && !isAdmin ? (
           <Notice title="Replies are closed">A moderator locked this discussion.</Notice>
-        ) : (
+        ) : view.me.mayPost ? (
           <Card><ReplyForm threadId={t.id} /></Card>
+        ) : (
+          <Notice title="Verify your account to reply">
+            Replies come from candidates whose account is linked to their merit record. <Link href="/portal/profile" className="font-semibold text-signal hover:underline">Verify on your profile →</Link>
+          </Notice>
         )}
       </div>
     </AreaPage>

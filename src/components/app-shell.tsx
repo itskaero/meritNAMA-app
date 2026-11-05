@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { Session } from "@/lib/auth/roles";
+import { signOutAction } from "@/app/_actions/auth";
+import { ROLE_LABELS, type Session } from "@/lib/auth/roles";
+import { myLink } from "@/lib/data/candidates";
 import type { Section } from "@/lib/navigation";
 import { whatsNew } from "@/lib/data/whats-new";
 import { getDb } from "@/lib/db/client";
@@ -14,7 +16,7 @@ import { SideNav, type NavItem } from "./side-nav";
 import { Badge } from "./ui/badge";
 import { cn } from "./ui/cn";
 
-function ProfileCard({ session, mode }: { session: Session; mode: UiMode }) {
+function ProfileCard({ session, mode, verified }: { session: Session; mode: UiMode; verified: boolean }) {
   const initials = session.email.slice(0, 2).toUpperCase();
   const pro = mode === "pro";
   return (
@@ -28,9 +30,15 @@ function ProfileCard({ session, mode }: { session: Session; mode: UiMode }) {
       <div className={cn("min-w-0", pro && "lg:sr-only")}>
         <p className="truncate text-sm font-semibold" title={session.email}>{session.email}</p>
         <div className="mt-1 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-ink px-2 py-px text-[0.68rem] font-bold capitalize text-canvas">{session.role}</span>
+          <span className="rounded-full bg-ink px-2 py-px text-[0.68rem] font-bold text-canvas">{ROLE_LABELS[session.role]}</span>
+          {verified ? <Badge tone="success" className="py-px text-[0.7rem]">Verified</Badge> : null}
           {session.isStub ? <Badge tone="warning" className="py-px text-[0.7rem]">Dev stub</Badge> : null}
         </div>
+        {session.isStub ? null : (
+          <form action={signOutAction} className="mt-1.5">
+            <button type="submit" className="text-xs font-semibold text-muted underline-offset-4 hover:text-ink hover:underline">Sign out</button>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -55,6 +63,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
   const mode = parseUiMode(jar.get(UI_MODE_COOKIE)?.value);
   // "What's new": newest events after the last dismissal; quietly empty if the database is down.
   const seen = Number(jar.get(WHATS_NEW_COOKIE)?.value ?? 0) || 0;
+  const verified = session.role === "candidate" && (await myLink(getDb(), session).catch(() => null))?.status === "verified";
   const news = (await whatsNew(getDb(), session).catch(() => []))
     .filter((n) => n.at.getTime() > seen)
     .map((n) => ({ text: n.text, href: n.href, at: n.at.toISOString() }));
@@ -77,7 +86,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
             <Wordmark className={pro ? "lg:hidden" : undefined} />
           </Link>
         }
-        profile={<ProfileCard session={session} mode={mode} />}
+        profile={<ProfileCard session={session} mode={mode} verified={verified} />}
         tools={
           <div className={cn("grid gap-2", pro && "lg:justify-items-center")}>
             {pro ? (

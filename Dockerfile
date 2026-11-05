@@ -20,7 +20,8 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY drizzle ./drizzle
-COPY scripts/migrate.mjs ./scripts/migrate.mjs
+COPY scripts/migrate.mjs scripts/index-candidates.mjs ./scripts/
+COPY scripts/lib ./scripts/lib
 USER node
 CMD ["node", "scripts/migrate.mjs"]
 

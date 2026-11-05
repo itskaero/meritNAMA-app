@@ -376,3 +376,91 @@ export const auditLog = pgTable(
   },
   (t) => [index("audit_log_entity_idx").on(t.entityType, t.entityId), index("audit_log_created_idx").on(t.createdAt)],
 );
+
+// ── Sign-in (email one-time links) ─────────────────────────────────────────────
+
+/** One-time sign-in links. Only the SHA-256 of the token is stored. */
+export const loginTokens = pgTable(
+  "login_tokens",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    tokenHash: text("token_hash").notNull().unique(),
+    email: text("email").notNull(),
+    ipHash: text("ip_hash"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("login_tokens_email_idx").on(t.email, t.createdAt), index("login_tokens_ip_idx").on(t.ipHash, t.createdAt)],
+);
+
+/** Signed-in sessions. The cookie carries a random id; only its SHA-256 is stored. */
+export const sessions = pgTable(
+  "sessions",
+  {
+    idHash: text("id_hash").primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("sessions_user_idx").on(t.userId)],
+);
+
+/** Development only: mail that would have been sent, shown at /dev/mailbox. */
+export const devOutbox = pgTable("dev_outbox", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  to: text("to").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ── Candidate identities and account links ─────────────────────────────────────
+
+/**
+ * Keyed HMACs of each applicant's email and PMDC number, taken from merit-round
+ * files at import. Raw values are never stored; the key is CANDIDATE_INDEX_SECRET.
+ */
+export const candidateIdentities = pgTable(
+  "candidate_identities",
+  {
+    applicantId: text("applicant_id").primaryKey(),
+    emailHmac: text("email_hmac"),
+    pmdcHmac: text("pmdc_hmac"),
+    lastInduction: integer("last_induction").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("candidate_identities_email_idx").on(t.emailHmac)],
+);
+
+export const candidateLinkStatus = pgEnum("candidate_link_status", ["pending", "verified", "rejected"]);
+export const candidateLinkMethod = pgEnum("candidate_link_method", ["email", "manual"]);
+
+/** An account's claim to an applicant record, verified automatically or by a verifier. */
+export const candidateLinks = pgTable(
+  "candidate_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    applicantId: text("applicant_id").notNull(),
+    status: candidateLinkStatus("status").notNull(),
+    method: candidateLinkMethod("method").notNull(),
+    /** File name under <APP_STORAGE_DIR>/evidence/ (manual requests). */
+    evidenceFile: text("evidence_file"),
+    evidenceType: text("evidence_type"),
+    /** The PMDC number entered matches the record's. A hint for the verifier, not proof. */
+    pmdcMatches: boolean("pmdc_matches"),
+    reviewedBy: text("reviewed_by"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reason: text("reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("candidate_links_verified_user_uq").on(t.userId).where(sql`status = 'verified'`),
+    uniqueIndex("candidate_links_verified_applicant_uq").on(t.applicantId).where(sql`status = 'verified'`),
+    uniqueIndex("candidate_links_pending_user_uq").on(t.userId).where(sql`status = 'pending'`),
+    index("candidate_links_status_idx").on(t.status, t.createdAt),
+  ],
+);
