@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { acceptAnswer, createThread, reportContent, replyToThread, setDisplayName, toggleHelpful } from "@/lib/data/community";
+import { acceptAnswer, createThread, reportContent, replyToThread, setDisplayName, toggleHelpful, votePoll, type ContentKind } from "@/lib/data/community";
+import { pollInputSchema } from "@/lib/domain/community";
 import { parseFollowTarget, setFollow } from "@/lib/data/notifications";
 import { snippetChoices } from "@/lib/data/snippets";
 import { parseSnippetParam } from "@/lib/domain/community";
@@ -23,7 +24,15 @@ const snippetOf = (f: FormData) => {
   return s;
 };
 
-const kindOf = (f: FormData) => (formText(f, "kind") === "thread" ? "thread" : "post") as "thread" | "post";
+/** The optional poll from the composer: question, option_0…5, closes (days). */
+const pollOf = (f: FormData) => {
+  if (formText(f, "poll") !== "1") return null;
+  const options = [0, 1, 2, 3, 4, 5].map((i) => formText(f, `option_${i}`)).filter(Boolean);
+  const days = Number(formText(f, "closesInDays"));
+  return pollInputSchema.parse({ question: formText(f, "pollQuestion"), options, closesInDays: days > 0 ? days : undefined });
+};
+
+const kindOf = (f: FormData): ContentKind => (["thread", "post", "review"].includes(formText(f, "kind")) ? formText(f, "kind") : "post") as ContentKind;
 const idOf = (f: FormData, k = "id") => {
   const v = formText(f, k);
   if (!isUuid(v)) throw new UserFacingError("That post no longer exists.");
@@ -39,6 +48,7 @@ export async function createThreadAction(_prev: ActionState, form: FormData): Pr
       title: formText(form, "title"),
       body: formText(form, "body"),
       snippet: snippetOf(form),
+      poll: pollOf(form),
     });
     id = t.id;
   } catch (err) {
@@ -66,7 +76,8 @@ export async function helpfulAction(form: FormData) {
   } catch {
     // Voting for your own post or a removed one is a no-op in the UI.
   }
-  revalidatePath(`/portal/community/${formText(form, "threadId")}`);
+  const back = formText(form, "path");
+  revalidatePath(/^\/portal\//.test(back) ? back : `/portal/community/${formText(form, "threadId")}`);
 }
 
 export async function reportAction(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -119,4 +130,17 @@ export async function snippetChoicesAction(input: { induction?: number; round?: 
     track: typeof input.track === "string" ? input.track.slice(0, 160) : undefined,
     speciality: typeof input.speciality === "string" ? input.speciality.slice(0, 160) : undefined,
   });
+}
+
+export async function voteAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const threadId = idOf(form, "threadId");
+    const optionId = Number(formText(form, "optionId"));
+    if (!Number.isSafeInteger(optionId)) throw new UserFacingError("Pick one of the poll's options.");
+    await votePoll(getDb(), await getSession(), { threadId, optionId });
+    revalidatePath(`/portal/community/${threadId}`);
+    return { status: "success", message: "Vote saved." };
+  } catch (err) {
+    return toActionState(err);
+  }
 }

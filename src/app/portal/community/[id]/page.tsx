@@ -12,6 +12,7 @@ import { getDb } from "@/lib/db/client";
 import { isUuid } from "@/lib/format";
 import { ModerationControls } from "@/app/admin/community/forms";
 import { FollowButton } from "@/components/community/follow-button";
+import { PollCard } from "@/components/community/poll-card";
 import { MeritSnippetCard } from "@/components/community/merit-snippet";
 import { Icon } from "@/components/icon";
 import { snippetParam, type Snippet } from "@/lib/domain/community";
@@ -69,6 +70,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
           <Byline author={t.author} team={t.authorIsTeam} verified={t.authorVerified} at={t.createdAt} />
           <Body text={t.body} />
           {card(t.snippet)}
+          {view.poll ? <PollCard threadId={t.id} poll={view.poll} mayVote={me.mayPost} /> : null}
           <div className="flex flex-wrap items-center gap-2">
             <HelpfulButton kind="thread" id={t.id} threadId={t.id} count={t.helpful} voted={t.voted} disabled={t.mine} />
             {!t.mine ? <ReportButton kind="thread" id={t.id} /> : null}

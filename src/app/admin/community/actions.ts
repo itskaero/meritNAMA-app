@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { dismissReports, markDuplicate, moderate, searchThreads, type ModerationAction } from "@/lib/data/community";
+import { dismissReports, markDuplicate, moderate, searchThreads, type ContentKind, type ModerationAction } from "@/lib/data/community";
 import { getDb } from "@/lib/db/client";
 import { isUuid } from "@/lib/format";
 import { UserFacingError } from "@/lib/errors";
@@ -15,10 +15,10 @@ export async function moderateAction(_prev: ActionState, form: FormData): Promis
     const id = formText(form, "id");
     const action = formText(form, "action") as ModerationAction;
     if (!isUuid(id) || !ACTIONS.includes(action)) throw new UserFacingError("Unknown moderation request.");
-    const kind = form.get("kind") === "thread" ? "thread" : "post";
+    const kind = (["thread", "post", "review"].includes(String(form.get("kind"))) ? form.get("kind") : "post") as ContentKind;
     await moderate(getDb(), await getSession(), { kind, id, action, reason: formText(form, "reason") });
     revalidatePath("/admin/community");
-    revalidatePath("/portal/community", "layout");
+    revalidatePath("/portal", "layout");
     return { status: "success", message: `Done: ${action}.` };
   } catch (err) {
     return toActionState(err);
@@ -29,7 +29,7 @@ export async function dismissAction(_prev: ActionState, form: FormData): Promise
   try {
     const id = formText(form, "id");
     if (!isUuid(id)) throw new UserFacingError("Unknown report.");
-    await dismissReports(getDb(), await getSession(), { kind: form.get("kind") === "thread" ? "thread" : "post", id, reason: formText(form, "reason") });
+    await dismissReports(getDb(), await getSession(), { kind: (["thread", "post", "review"].includes(String(form.get("kind"))) ? form.get("kind") : "post") as ContentKind, id, reason: formText(form, "reason") });
     revalidatePath("/admin/community");
     return { status: "success", message: "Reports dismissed." };
   } catch (err) {

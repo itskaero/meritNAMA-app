@@ -7,6 +7,7 @@ import { cn } from "@/components/ui/cn";
 import { ActionResult, Field, fieldClass } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
 import { SnippetPicker } from "@/components/community/snippet-picker";
+import { PollBuilder } from "@/components/community/poll-builder";
 import type { Snippet } from "@/lib/domain/community";
 import { acceptAction, createThreadAction, displayNameAction, helpfulAction, replyAction, reportAction } from "./actions";
 
@@ -31,6 +32,7 @@ export function NewThreadForm({ topics, defaultTopic, snippet = null }: { topics
         {(id) => <textarea id={id} name="body" required minLength={10} maxLength={5000} rows={7} value={v.body} onChange={(e) => setV({ ...v, body: e.target.value })} className={cn(fieldClass, "leading-relaxed")} />}
       </Field>
       <SnippetPicker initial={snippet} />
+      <PollBuilder />
       <div><Button type="submit" disabled={pending}>{pending ? "Posting…" : "Post question"}</Button></div>
       <ActionResult state={state} />
     </form>
@@ -83,12 +85,13 @@ export function AcceptButton({ threadId, postId, accepted }: { threadId: string;
 }
 
 /** "Helpful" toggle. Works without JavaScript (plain form post). */
-export function HelpfulButton({ kind, id, threadId, count, voted, disabled }: { kind: "thread" | "post"; id: string; threadId: string; count: number; voted: boolean; disabled?: boolean }) {
+export function HelpfulButton({ kind, id, threadId = "", path, count, voted, disabled }: { kind: "thread" | "post" | "review"; id: string; threadId?: string; path?: string; count: number; voted: boolean; disabled?: boolean }) {
   return (
     <form action={helpfulAction}>
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="threadId" value={threadId} />
+      {path ? <input type="hidden" name="path" value={path} /> : null}
       <button
         type="submit"
         disabled={disabled}
@@ -107,7 +110,7 @@ export function HelpfulButton({ kind, id, threadId, count, voted, disabled }: { 
   );
 }
 
-export function ReportButton({ kind, id }: { kind: "thread" | "post"; id: string }) {
+export function ReportButton({ kind, id }: { kind: "thread" | "post" | "review"; id: string }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [state, action, pending] = useActionState(reportAction, idleState);

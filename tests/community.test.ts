@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultDisplayName, displayNameSchema, findPersonalData, threadInputSchema, topicSchema } from "@/lib/domain/community";
-import { parseSnippetParam, snippetParam, snippetSchema, storedSnippet } from "@/lib/domain/community";
+import { parseSnippetParam, pollInputSchema, pollPercents, REVIEW_DIMENSIONS, reviewInputSchema, snippetParam, snippetSchema, storedSnippet } from "@/lib/domain/community";
 
 describe("community rules", () => {
   it("spots personal data", () => {
@@ -54,5 +54,30 @@ describe("merit snippets", () => {
     expect(parseSnippetParam("{not json")).toBeNull();
     expect(parseSnippetParam(undefined)).toBeNull();
     expect(storedSnippet(null)).toBeNull();
+  });
+});
+
+describe("polls and reviews", () => {
+  it("validates polls: distinct options, 2–6 of them, no personal data", () => {
+    expect(pollInputSchema.parse({ question: "Which round will Paeds close lowest?", options: [" R5 ", "R6"] }).options).toEqual(["R5", "R6"]);
+    expect(pollInputSchema.safeParse({ question: "Which round will close lowest?", options: ["R5"] }).success).toBe(false);
+    expect(pollInputSchema.safeParse({ question: "Which round will close lowest?", options: ["R5", "r5"] }).success).toBe(false);
+    expect(pollInputSchema.safeParse({ question: "Call me on 0300-1234567 please", options: ["a", "b"] }).success).toBe(false);
+  });
+
+  it("rounds poll percentages to exactly 100", () => {
+    expect(pollPercents([1, 1, 1])).toEqual([34, 33, 33]);
+    expect(pollPercents([2, 1])).toEqual([67, 33]);
+    expect(pollPercents([0, 0])).toEqual([0, 0]);
+    expect(pollPercents([7, 0, 3]).reduce((a, b) => a + b)).toBe(100);
+  });
+
+  it("validates reviews: four 1–5 ratings and a real text", () => {
+    const ok = { hospitalId: 1, induction: 20, training: 4, workload: 2, hostel: 3, stipend: 1, body: "Good teaching on rounds, but the stipend is often two months late." };
+    expect(reviewInputSchema.parse(ok).specialityId).toBeUndefined();
+    expect(reviewInputSchema.safeParse({ ...ok, hostel: 6 }).success).toBe(false);
+    expect(reviewInputSchema.safeParse({ ...ok, body: "Too short" }).success).toBe(false);
+    expect(reviewInputSchema.safeParse({ ...ok, body: "Email me at someone@example.org for details about this." }).success).toBe(false);
+    expect(REVIEW_DIMENSIONS.map((d) => d.key)).toEqual(["training", "workload", "hostel", "stipend"]);
   });
 });

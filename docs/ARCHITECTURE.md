@@ -115,6 +115,15 @@ record. An applicant ID alone is never proof of identity.
   import (followers of the induction, round, specialities and hospitals in it).
   Read notifications are pruned after 90 days. Every query is scoped to the
   signed-in user.
+- Polls: `discussion_polls` (one per thread), `discussion_poll_options`, and
+  `discussion_poll_votes` (one row per member, updated on a change of mind). Counts
+  leave the database only when the member may see results (voted, closed, or
+  moderator).
+- Reviews: `hospital_reviews`, with four 1–5 ratings checked by the database and a
+  unique (author, hospital, speciality) key. "Allocated here" is an `exists` over
+  `candidate_links` → `merit_allocations` evaluated in SQL; applicant ids never
+  reach the page. Reports, helpful votes and moderation share the community
+  tables, with `target_kind = 'review'`.
 
 ## Data model (delivery 1)
 

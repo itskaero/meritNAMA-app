@@ -105,3 +105,57 @@ export const storedSnippet = (v: unknown): Snippet | null => {
 
 export const THREAD_FILTERS = ["all", "unanswered", "answered"] as const;
 export type ThreadFilter = (typeof THREAD_FILTERS)[number];
+
+// ── Polls ──────────────────────────────────────────────────────────────────────
+
+export const pollInputSchema = z.object({
+  question: text(8, 140, "The poll question"),
+  options: z
+    .array(text(1, 80, "Each option"))
+    .min(2, "A poll needs at least 2 options")
+    .max(6, "A poll can have at most 6 options")
+    .refine((o) => new Set(o.map((x) => x.toLowerCase())).size === o.length, "Each option must be different"),
+  closesInDays: z.number().int().min(1).max(30).optional(),
+});
+export type PollInput = z.infer<typeof pollInputSchema>;
+
+/** Whole percentages that add up to 100 (largest remainder), or all 0 with no votes. */
+export function pollPercents(counts: number[]): number[] {
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total === 0) return counts.map(() => 0);
+  const raw = counts.map((c) => (c / total) * 100);
+  const out = raw.map(Math.floor);
+  let left = 100 - out.reduce((a, b) => a + b, 0);
+  const order = raw.map((v, i) => [v - Math.floor(v), i] as const).sort((a, b) => b[0] - a[0]);
+  for (const [, i] of order) {
+    if (left <= 0) break;
+    out[i]! += 1;
+    left -= 1;
+  }
+  return out;
+}
+
+// ── Hospital reviews ───────────────────────────────────────────────────────────
+
+/** The four rated parts of a review. Every one reads higher = better. */
+export const REVIEW_DIMENSIONS = [
+  { key: "training", label: "Training and teaching", low: "Little teaching", high: "Excellent teaching" },
+  { key: "workload", label: "Workload", low: "Crushing", high: "Manageable" },
+  { key: "hostel", label: "Hostel and facilities", low: "Poor", high: "Good" },
+  { key: "stipend", label: "Stipend paid on time", low: "Months late", high: "Always on time" },
+] as const;
+export type ReviewDimension = (typeof REVIEW_DIMENSIONS)[number]["key"];
+
+const rating = z.number().int().min(1, "Rate every part from 1 to 5").max(5, "Rate every part from 1 to 5");
+
+export const reviewInputSchema = z.object({
+  hospitalId: z.number().int().positive(),
+  specialityId: z.number().int().positive().nullable().optional(),
+  induction: z.number().int().min(1).max(999),
+  training: rating,
+  workload: rating,
+  hostel: rating,
+  stipend: rating,
+  body: text(20, 2000, "The review"),
+});
+export type ReviewInput = z.infer<typeof reviewInputSchema>;

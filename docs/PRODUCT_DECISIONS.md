@@ -41,7 +41,11 @@ email), rate limits, reports and audited moderation.
 4. ✅ **Candidate accounts and verification.** Email one-time-link sign-in (`/sign-in`); `OWNER_EMAILS` bootstraps owners. Merit imports keep HMACs of each applicant's email and PMDC number; a sign-in email that matches links the record automatically, otherwise the candidate sends applicant ID + PMDC number + proof and a verifier decides at `/admin/candidates`. Verified candidates see *My merit* on `/portal/profile`, get their marks filled in on the finder, can post in the community and carry a *Verified* badge.
 5. **Community.**
    - ✅ **5a: Q&A, merit cards, follow + inbox.** Questions have accepted answers (asker or moderator; the accepted answer leads, answered questions rank first, filters for answered/unanswered); moderators close duplicates with a link to the original. A post can carry a live merit card (programme, quota, speciality, hospital in one round) whose closing/opening merit, % of total, seats and change since the previous round are read from the database. Members follow inductions, rounds, specialities, hospitals and questions (asking or answering follows automatically); new answers, accepted answers, new questions and new rounds arrive in the in-app inbox (bell in the header, `/portal/inbox`). No email.
-   - **5b: polls, and hospital/speciality reviews** (any verified candidate may review).
+   - ✅ **5b: polls and hospital reviews.**
+     - **Polls.** A question can carry a poll (2–6 options, optional close in 3–30 days). Verified candidates and staff vote, and can change their vote until the poll closes. Results show after you vote or once the poll closes (staff always see them), so early votes don't steer later ones.
+     - **Reviews.** Any verified candidate (or staff) reviews a hospital, optionally for one speciality there, on four 1–5 scales where higher is always better: training, workload (5 = manageable), hostel, and stipend paid on time. One review per person per hospital and speciality; saving again edits it.
+     - **"Allocated here."** The badge shows when the reviewer's verified record has a seat at that hospital.
+     - **Where they show.** Reviews and averages are on the hospital page; the speciality page summarises them per hospital. Followers of the hospital are notified. Reviews can be marked helpful, reported and hidden like posts.
 6. **Predictions** (ranges) once two or more inductions of the same policy exist per track.
 
 ## Merit visuals (Nov 2026, from the concepts page)

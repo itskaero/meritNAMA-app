@@ -10,7 +10,7 @@ import { dismissAction, duplicateAction, moderateAction, searchThreadsAction } f
 type State = { hidden: boolean; locked?: boolean; pinned?: boolean };
 
 /** Admin-only moderation row: pick an action, give a reason (audited), apply. */
-export function ModerationControls({ kind, id, state, allowDismiss = false }: { kind: "thread" | "post"; id: string; state: State; allowDismiss?: boolean }) {
+export function ModerationControls({ kind, id, state, allowDismiss = false }: { kind: "thread" | "post" | "review"; id: string; state: State; allowDismiss?: boolean }) {
   const [res, action, pending] = useActionState(moderateAction, idleState);
   const [dres, dismiss, dpending] = useActionState(dismissAction, idleState);
   const options = [

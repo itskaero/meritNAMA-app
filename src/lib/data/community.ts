@@ -11,6 +11,10 @@ import {
   specialities,
   users,
   candidateLinks,
+  discussionPolls,
+  discussionPollOptions,
+  discussionPollVotes,
+  hospitalReviews,
 } from "@/lib/db/schema";
 import {
   displayNameSchema,
@@ -18,6 +22,9 @@ import {
   reportInputSchema,
   snippetSchema,
   storedSnippet,
+  pollInputSchema,
+  pollPercents,
+  type PollInput,
   threadInputSchema,
   type Snippet,
   type ThreadFilter,
@@ -98,7 +105,16 @@ export async function describeTopics(db: Database, topics: Topic[]): Promise<Map
 
 // ── Reading ────────────────────────────────────────────────────────────────────
 
-const voteCount = (kind: "thread" | "post", id: typeof discussionThreads.id | typeof discussionPosts.id) =>
+/** What members can mark helpful, report, and moderators can hide. */
+export type ContentKind = "thread" | "post" | "review";
+
+async function authorOf(db: Db, kind: ContentKind, id: string) {
+  const table = kind === "thread" ? discussionThreads : kind === "post" ? discussionPosts : hospitalReviews;
+  const [row] = await db.select({ authorId: table.authorId }).from(table).where(eq(table.id, id)).limit(1);
+  return row ?? null;
+}
+
+export const voteCount = (kind: ContentKind, id: typeof discussionThreads.id | typeof discussionPosts.id | typeof hospitalReviews.id) =>
   sql<number>`(select count(*) from ${discussionVotes} v where v.target_kind = ${kind} and v.target_id = ${id})`.mapWith(Number);
 
 /** The author holds a verified candidate record (shown as a "Verified" badge). */
@@ -133,6 +149,7 @@ export async function listThreads(
       answered: sql<boolean>`${discussionThreads.acceptedPostId} is not null`,
       duplicateOf: discussionThreads.duplicateOf,
       hasSnippet: sql<boolean>`${discussionThreads.snippet} is not null`,
+      hasPoll: sql<boolean>`exists (select 1 from ${discussionPolls} pl where pl.thread_id = ${discussionThreads.id})`,
       createdAt: discussionThreads.createdAt,
       lastActivityAt: discussionThreads.lastActivityAt,
     })
@@ -211,7 +228,9 @@ export async function getThread(db: Database, session: Session | null, id: strin
     ? await db.select({ id: discussionThreads.id, title: discussionThreads.title }).from(discussionThreads).where(eq(discussionThreads.id, t.duplicateOf)).limit(1)
     : [];
   const snippets = [storedSnippet(t.snippet), ...posts.map((p) => storedSnippet(p.snippet))].filter((x): x is Snippet => Boolean(x));
+  const poll = await readPoll(db, t.id, me.id, isAdmin);
   return {
+    poll,
     thread: { ...t, snippet: storedSnippet(t.snippet) },
     posts: ordered.map((p) => ({ ...p, snippet: storedSnippet(p.snippet), accepted: p.id === t.acceptedPostId })),
     topic,
@@ -228,9 +247,10 @@ export async function getThread(db: Database, session: Session | null, id: strin
 
 // ── Writing ────────────────────────────────────────────────────────────────────
 
-export async function createThread(db: Database, session: Session | null, input: { topic: Topic; title: string; body: string; snippet?: Snippet | null }) {
+export async function createThread(db: Database, session: Session | null, input: { topic: Topic; title: string; body: string; snippet?: Snippet | null; poll?: PollInput | null }) {
   assertCan(session, "portal");
   const v = threadInputSchema.parse(input);
+  const poll = input.poll ? pollInputSchema.parse(input.poll) : null;
   const snippet = input.snippet ? snippetSchema.parse(input.snippet) : null;
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
@@ -241,6 +261,10 @@ export async function createThread(db: Database, session: Session | null, input:
       .insert(discussionThreads)
       .values({ topicKind: v.topic.kind, topicKey: v.topic.key, title: v.title, body: v.body, authorId: me.id, snippet })
       .returning({ id: discussionThreads.id });
+    if (poll) {
+      await tx.insert(discussionPolls).values({ threadId: row!.id, question: poll.question, closesAt: poll.closesInDays ? new Date(Date.now() + poll.closesInDays * 86_400_000) : null });
+      await tx.insert(discussionPollOptions).values(poll.options.map((label, position) => ({ threadId: row!.id, position, label })));
+    }
     await autoFollow(tx, me.id, { kind: "thread", key: row!.id });
     if (v.topic.kind !== "general") {
       await notifyFollowers(tx, [{ kind: v.topic.kind, key: v.topic.key }], { kind: "new_thread", title: `New question: ${v.title}`, href: `/portal/community/${row!.id}` }, me.id);
@@ -329,13 +353,54 @@ export async function searchThreads(db: Database, session: Session | null, q: st
     .limit(8);
 }
 
-/** Toggle a "helpful" vote. You cannot vote for your own post. */
-export async function toggleHelpful(db: Database, session: Session | null, input: { kind: "thread" | "post"; id: string }) {
+/** A thread's poll: counts only once the member has voted, the poll has closed, or for moderators. */
+async function readPoll(db: Db, threadId: string, userId: string, isMod: boolean) {
+  const [p] = await db.select().from(discussionPolls).where(eq(discussionPolls.threadId, threadId)).limit(1);
+  if (!p) return null;
+  const [options, [mine]] = await Promise.all([
+    db.select({ id: discussionPollOptions.id, label: discussionPollOptions.label, votes: sql<number>`(select count(*) from ${discussionPollVotes} v where v.option_id = ${discussionPollOptions.id})`.mapWith(Number) })
+      .from(discussionPollOptions).where(eq(discussionPollOptions.threadId, threadId)).orderBy(discussionPollOptions.position),
+    db.select({ optionId: discussionPollVotes.optionId }).from(discussionPollVotes).where(and(eq(discussionPollVotes.threadId, threadId), eq(discussionPollVotes.userId, userId))).limit(1),
+  ]);
+  const closed = Boolean(p.closesAt && p.closesAt.getTime() <= Date.now());
+  const showResults = Boolean(mine) || closed || isMod;
+  const pct = pollPercents(options.map((o) => o.votes));
+  return {
+    question: p.question,
+    closesAt: p.closesAt,
+    closed,
+    showResults,
+    total: options.reduce((n, o) => n + o.votes, 0),
+    myOptionId: mine?.optionId ?? null,
+    options: options.map((o, i) => ({ id: o.id, label: o.label, votes: showResults ? o.votes : null, pct: showResults ? pct[i]! : null })),
+  };
+}
+
+/** Vote, or change your vote, while the poll is open. Needs a verified record or a staff role. */
+export async function votePoll(db: Database, session: Session | null, input: { threadId: string; optionId: number }) {
   assertCan(session, "portal");
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
-    const table = input.kind === "thread" ? discussionThreads : discussionPosts;
-    const [target] = await tx.select({ authorId: table.authorId }).from(table).where(eq(table.id, input.id)).limit(1);
+    if (!(await mayPost(tx, session))) throw new UserFacingError("Voting opens once your account is linked to your merit record. Verify it on your profile.");
+    const [p] = await tx.select({ closesAt: discussionPolls.closesAt, status: discussionThreads.status })
+      .from(discussionPolls).innerJoin(discussionThreads, eq(discussionThreads.id, discussionPolls.threadId))
+      .where(eq(discussionPolls.threadId, input.threadId)).limit(1);
+    if (!p || p.status === "hidden") throw new UserFacingError("This poll is no longer available.");
+    if (p.closesAt && p.closesAt.getTime() <= Date.now()) throw new UserFacingError("This poll has closed.");
+    const [opt] = await tx.select({ id: discussionPollOptions.id }).from(discussionPollOptions)
+      .where(and(eq(discussionPollOptions.id, input.optionId), eq(discussionPollOptions.threadId, input.threadId))).limit(1);
+    if (!opt) throw new UserFacingError("Pick one of the poll's options.");
+    await tx.insert(discussionPollVotes).values({ threadId: input.threadId, userId: me.id, optionId: opt.id })
+      .onConflictDoUpdate({ target: [discussionPollVotes.threadId, discussionPollVotes.userId], set: { optionId: opt.id, createdAt: new Date() } });
+  });
+}
+
+/** Toggle a "helpful" vote. You cannot vote for your own post. */
+export async function toggleHelpful(db: Database, session: Session | null, input: { kind: ContentKind; id: string }) {
+  assertCan(session, "portal");
+  return db.transaction(async (tx) => {
+    const me = await ensureUser(tx, session);
+    const target = await authorOf(tx, input.kind, input.id);
     if (!target) throw new UserFacingError("That post no longer exists.");
     if (target.authorId === me.id) throw new UserFacingError("You cannot mark your own post as helpful.");
     const where = and(eq(discussionVotes.targetKind, input.kind), eq(discussionVotes.targetId, input.id), eq(discussionVotes.userId, me.id));
@@ -346,7 +411,7 @@ export async function toggleHelpful(db: Database, session: Session | null, input
   });
 }
 
-export async function reportContent(db: Database, session: Session | null, input: { kind: "thread" | "post"; id: string; reason: string }) {
+export async function reportContent(db: Database, session: Session | null, input: { kind: ContentKind; id: string; reason: string }) {
   assertCan(session, "portal");
   const { reason } = reportInputSchema.parse({ reason: input.reason });
   return db.transaction(async (tx) => {
@@ -365,11 +430,11 @@ export type ModerationAction = "hide" | "show" | "lock" | "unlock" | "pin" | "un
 export async function moderate(
   db: Database,
   session: Session | null,
-  input: { kind: "thread" | "post"; id: string; action: ModerationAction; reason: string },
+  input: { kind: ContentKind; id: string; action: ModerationAction; reason: string },
 ) {
   assertCan(session, "community.moderate");
   const reason = requireReason(input.reason, "moderation");
-  if (input.kind === "post" && !["hide", "show"].includes(input.action)) throw new UserFacingError("Replies can only be hidden or shown.");
+  if (input.kind !== "thread" && !["hide", "show"].includes(input.action)) throw new UserFacingError("Replies and reviews can only be hidden or shown.");
   return db.transaction(async (tx) => {
     const set =
       input.action === "hide" ? { status: "hidden" as const } :
@@ -377,7 +442,7 @@ export async function moderate(
       input.action === "lock" ? { locked: true } :
       input.action === "unlock" ? { locked: false } :
       input.action === "pin" ? { pinned: true } : { pinned: false };
-    const table = input.kind === "thread" ? discussionThreads : discussionPosts;
+    const table = input.kind === "thread" ? discussionThreads : input.kind === "post" ? discussionPosts : hospitalReviews;
     const res = await tx.update(table).set(set as never).where(eq(table.id, input.id)).returning({ id: table.id });
     if (!res.length) throw new UserFacingError("That post no longer exists.");
     if (input.action === "hide") {
@@ -386,7 +451,7 @@ export async function moderate(
         .set({ status: "resolved", resolvedBy: session.email })
         .where(and(eq(discussionReports.targetKind, input.kind), eq(discussionReports.targetId, input.id), eq(discussionReports.status, "open")));
     }
-    await writeAudit(tx, session.email, { action: `community.${input.action}`, entityType: `discussion_${input.kind}`, entityId: input.id, after: set, reason });
+    await writeAudit(tx, session.email, { action: `community.${input.action}`, entityType: input.kind === "review" ? "hospital_review" : `discussion_${input.kind}`, entityId: input.id, after: set, reason });
   });
 }
 
@@ -395,23 +460,26 @@ export async function listOpenReports(db: Database, session: Session | null) {
   const rows = (await db.execute(sql`
     select r.target_kind, r.target_id, count(*)::int as reports, min(r.created_at) as first_at,
            array_agg(r.reason order by r.created_at) as reasons,
-           coalesce(t.title, pt.title) as thread_title,
+           coalesce(t.title, pt.title, 'Review of ' || h.name) as thread_title,
            coalesce(t.id, p.thread_id) as thread_id,
-           left(coalesce(t.body, p.body), 280) as excerpt,
-           coalesce(t.status, p.status)::text as status
+           hr.hospital_id as review_hospital_id,
+           left(coalesce(t.body, p.body, hr.body), 280) as excerpt,
+           coalesce(t.status, p.status, hr.status)::text as status
     from discussion_reports r
     left join discussion_threads t on r.target_kind = 'thread' and t.id = r.target_id
     left join discussion_posts p on r.target_kind = 'post' and p.id = r.target_id
     left join discussion_threads pt on pt.id = p.thread_id
+    left join hospital_reviews hr on r.target_kind = 'review' and hr.id = r.target_id
+    left join hospitals h on h.id = hr.hospital_id
     where r.status = 'open'
-    group by r.target_kind, r.target_id, t.title, pt.title, t.id, p.thread_id, t.body, p.body, t.status, p.status
+    group by r.target_kind, r.target_id, t.title, pt.title, h.name, t.id, p.thread_id, hr.hospital_id, t.body, p.body, hr.body, t.status, p.status, hr.status
     order by count(*) desc, min(r.created_at)`)) as unknown as {
-    target_kind: "thread" | "post"; target_id: string; reports: number; first_at: string; reasons: string[]; thread_title: string | null; thread_id: string | null; excerpt: string | null; status: string | null;
+    target_kind: ContentKind; target_id: string; reports: number; first_at: string; reasons: string[]; thread_title: string | null; thread_id: string | null; review_hospital_id: number | null; excerpt: string | null; status: string | null;
   }[];
   return rows;
 }
 
-export async function dismissReports(db: Database, session: Session | null, input: { kind: "thread" | "post"; id: string; reason: string }) {
+export async function dismissReports(db: Database, session: Session | null, input: { kind: ContentKind; id: string; reason: string }) {
   assertCan(session, "community.moderate");
   const reason = requireReason(input.reason, "moderation");
   return db.transaction(async (tx) => {
@@ -419,7 +487,7 @@ export async function dismissReports(db: Database, session: Session | null, inpu
       .update(discussionReports)
       .set({ status: "dismissed", resolvedBy: session.email })
       .where(and(eq(discussionReports.targetKind, input.kind), eq(discussionReports.targetId, input.id), eq(discussionReports.status, "open")));
-    await writeAudit(tx, session.email, { action: "community.dismiss_reports", entityType: `discussion_${input.kind}`, entityId: input.id, reason });
+    await writeAudit(tx, session.email, { action: "community.dismiss_reports", entityType: input.kind === "review" ? "hospital_review" : `discussion_${input.kind}`, entityId: input.id, reason });
   });
 }
 

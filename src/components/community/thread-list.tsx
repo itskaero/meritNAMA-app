@@ -12,6 +12,7 @@ export type ThreadSummary = {
   answered: boolean;
   duplicateOf: string | null;
   hasSnippet: boolean;
+  hasPoll: boolean;
   status: "visible" | "hidden";
   locked: boolean;
   pinned: boolean;
@@ -45,6 +46,7 @@ export function ThreadList({ threads, showTopic = true }: { threads: ThreadSumma
                 {t.answered ? <Badge tone="success">Answered</Badge> : null}
                 {t.duplicateOf ? <Badge>Duplicate</Badge> : t.locked ? <Badge>Locked</Badge> : null}
                 {t.hasSnippet ? <Badge tone="historical">Merit card</Badge> : null}
+                {t.hasPoll ? <Badge tone="current">Poll</Badge> : null}
                 {t.status === "hidden" ? <Badge tone="danger">Hidden</Badge> : null}
                 {showTopic ? <span className="text-ember-hot">{t.topic.label}</span> : null}
               </div>

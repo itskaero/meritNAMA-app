@@ -10,6 +10,10 @@ import { selectClass } from "@/components/ui/styles";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { closingLadder, seatFlow } from "@/lib/data/insights";
+import { specialityReviewSummary } from "@/lib/data/reviews";
+import { RatingMeter } from "@/components/community/rating-meter";
+import { REVIEW_DIMENSIONS } from "@/lib/domain/community";
+import Link from "next/link";
 import { SeatFlow } from "@/components/charts/seat-flow";
 import { specialityHistory } from "@/lib/data/merit";
 import { MeritLadder } from "@/components/charts/merit-ladder";
@@ -48,6 +52,7 @@ export default async function SpecialityPage({ params, searchParams }: {
         seatFlow(getDb(), await getSession(), { induction: latest.induction_id, specialityId: id, limit: 6 }),
       ])
     : [null, []];
+  const said = await specialityReviewSummary(getDb(), await getSession(), id);
 
   return (
     <AreaPage
@@ -94,6 +99,30 @@ export default async function SpecialityPage({ params, searchParams }: {
             <Card>
               <CardHeader title={`Seat flow · induction ${latest.induction_id}`} description="Seats accepted, and seats declined or not taken that go back into the pool for the next round." />
               <SeatFlow panels={flow} caption={`${h.speciality.name}, induction ${latest.induction_id}: accepted and released seats per round by programme and quota`} />
+            </Card>
+          ) : null}
+          {said.length ? (
+            <Card>
+              <CardHeader title="What trainees say" description={`Reviews of ${h.speciality.name} by verified candidates, per hospital. Higher is better. Not official.`} />
+              <div className="relative overflow-x-auto">
+                <table className="w-full min-w-[640px] text-sm">
+                  <caption className="sr-only">Average review ratings per hospital</caption>
+                  <thead className="text-left text-xs text-muted">
+                    <tr><th scope="col" className="py-2 pr-3 font-medium">Hospital</th>{REVIEW_DIMENSIONS.map((d) => <th key={d.key} scope="col" className="px-2 py-2 font-medium">{d.label}</th>)}</tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {said.map((r) => (
+                      <tr key={r.hospitalId}>
+                        <th scope="row" className="py-2.5 pr-3 text-left font-normal">
+                          <Link href={`/portal/explore/hospitals/${r.hospitalId}?spec=${id}#reviews`} className="hover:underline">{r.hospital}</Link>
+                          <span className="block text-xs text-subtle">{r.count} {r.count === 1 ? "review" : "reviews"}</span>
+                        </th>
+                        {REVIEW_DIMENSIONS.map((d) => <td key={d.key} className="px-2 py-2.5"><RatingMeter value={r[d.key]} size="sm" label={`${r.hospital}, ${d.label}`} /></td>)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </Card>
           ) : null}
           {latest ? (

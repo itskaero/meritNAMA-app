@@ -288,7 +288,7 @@ export const discussionVotes = pgTable(
     userId: uuid("user_id").notNull().references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.targetKind, t.targetId, t.userId] }), check("discussion_votes_kind", sql`${t.targetKind} in ('thread', 'post')`)],
+  (t) => [primaryKey({ columns: [t.targetKind, t.targetId, t.userId] }), check("discussion_votes_kind", sql`${t.targetKind} in ('thread', 'post', 'review')`)],
 );
 
 export const discussionReports = pgTable(
@@ -306,7 +306,7 @@ export const discussionReports = pgTable(
   (t) => [
     index("discussion_reports_status_idx").on(t.status, t.createdAt),
     uniqueIndex("discussion_reports_once_uq").on(t.targetKind, t.targetId, t.reporterId),
-    check("discussion_reports_kind", sql`${t.targetKind} in ('thread', 'post')`),
+    check("discussion_reports_kind", sql`${t.targetKind} in ('thread', 'post', 'review')`),
   ],
 );
 
@@ -477,7 +477,7 @@ export const candidateLinks = pgTable(
 // ── Follows and the in-app inbox ───────────────────────────────────────────────
 
 export const followKind = pgEnum("follow_kind", ["induction", "round", "speciality", "hospital", "thread"]);
-export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round"]);
+export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round", "new_review"]);
 
 /** What a member follows: a topic (same keys as discussion topics) or a thread (its id). */
 export const follows = pgTable(
@@ -504,4 +504,66 @@ export const notifications = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("notifications_user_idx").on(t.userId, t.readAt, t.createdAt)],
+);
+
+// ── Polls and hospital reviews ─────────────────────────────────────────────────
+
+/** A poll attached to a question: one question, 2–6 options, one vote per member (changeable until it closes). */
+export const discussionPolls = pgTable("discussion_polls", {
+  threadId: uuid("thread_id").primaryKey().references(() => discussionThreads.id, { onDelete: "cascade" }),
+  question: text("question").notNull(),
+  closesAt: timestamp("closes_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const discussionPollOptions = pgTable(
+  "discussion_poll_options",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    threadId: uuid("thread_id").notNull().references(() => discussionPolls.threadId, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    label: text("label").notNull(),
+  },
+  (t) => [uniqueIndex("discussion_poll_options_pos_uq").on(t.threadId, t.position)],
+);
+
+export const discussionPollVotes = pgTable(
+  "discussion_poll_votes",
+  {
+    threadId: uuid("thread_id").notNull().references(() => discussionPolls.threadId, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    optionId: integer("option_id").notNull().references(() => discussionPollOptions.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.threadId, t.userId] }), index("discussion_poll_votes_option_idx").on(t.optionId)],
+);
+
+/**
+ * Structured reviews of a hospital (optionally one speciality there) by verified
+ * candidates: four 1–5 ratings (higher is better) and a short text. One per
+ * author per hospital + speciality; editing replaces it.
+ */
+export const hospitalReviews = pgTable(
+  "hospital_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    hospitalId: integer("hospital_id").notNull().references(() => hospitals.id),
+    specialityId: integer("speciality_id").references(() => specialities.id),
+    authorId: uuid("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    induction: integer("induction").notNull(),
+    training: integer("training").notNull(),
+    workload: integer("workload").notNull(),
+    hostel: integer("hostel").notNull(),
+    stipend: integer("stipend").notNull(),
+    body: text("body").notNull(),
+    status: discussionStatus("status").notNull().default("visible"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("hospital_reviews_author_uq").on(t.authorId, t.hospitalId, sql`coalesce(${t.specialityId}, 0)`),
+    index("hospital_reviews_hospital_idx").on(t.hospitalId, t.status),
+    index("hospital_reviews_speciality_idx").on(t.specialityId, t.status),
+    check("hospital_reviews_ratings", sql`${t.training} between 1 and 5 and ${t.workload} between 1 and 5 and ${t.hostel} between 1 and 5 and ${t.stipend} between 1 and 5`),
+  ],
 );
