@@ -14,7 +14,9 @@ import { inductionMaxMarks, inductionTimeline, listInductionsWithRounds } from "
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
 import { intParam, oneOf } from "@/lib/params";
-import { inductionTracks, roundSettling } from "@/lib/data/insights";
+import { closingLadder, inductionTracks, roundSettling } from "@/lib/data/insights";
+import { MeritLadder } from "@/components/charts/merit-ladder";
+import { MeritMoveHeat } from "@/components/charts/merit-move-heat";
 import { RoundFunnel } from "@/components/charts/round-funnel";
 import { CycleGauge, gaugeProps } from "@/components/charts/cycle-gauge";
 
@@ -35,7 +37,12 @@ export default async function InductionPage({ params, searchParams }: { params: 
   const gauge = gaugeProps(ind, prev?.rounds.length);
   const tracks = await inductionTracks(db, session, induction);
   const track = oneOf((await searchParams).track, tracks.map((t) => t.value));
-  const settling = ind.rounds.length > 1 ? await roundSettling(db, session, induction, track) : null;
+  const ladderTrack = track ?? tracks[0]?.value;
+  const [settling, ladder] = await Promise.all([
+    ind.rounds.length > 1 ? roundSettling(db, session, induction, track) : Promise.resolve(null),
+    ladderTrack ? closingLadder(db, session, { induction, track: ladderTrack }) : Promise.resolve(null),
+  ]);
+  const ladderLabel = ladderTrack?.replace("|", " · ");
   const last = ind.rounds[ind.rounds.length - 1]!;
 
   return (
@@ -71,6 +78,18 @@ export default async function InductionPage({ params, searchParams }: { params: 
             }
           />
           <RoundFunnel final={settling.final} rounds={settling.rounds} caption={`Induction ${induction}${track ? `, ${track.replace("|", " ")}` : ""}: candidates still moving by round`} />
+        </Card>
+      ) : null}
+      {ladder && ladder.rows.length ? (
+        <Card id="ladder">
+          <CardHeader title={`Merit ladder · ${ladderLabel}`} description={`Each speciality's lowest closing merit${max ? ` as percent of ${max}` : ""}. Step through the rounds to see where merit fell.${track ? "" : " Pick a programme above to change it."}`} />
+          <MeritLadder rows={ladder.rows} rounds={ladder.rounds} total={max ?? null} caption={`Induction ${induction}, ${ladderLabel}: lowest closing merit per speciality by round`} />
+        </Card>
+      ) : null}
+      {ladder && ladder.rows.length && ladder.rounds.length > 1 ? (
+        <Card>
+          <CardHeader title="Where merit moved" description={`Change in each speciality's lowest closing marks between rounds, ${ladderLabel}. Teal: fell (easier). Amber: rose. A dot: no change.`} />
+          <MeritMoveHeat rows={ladder.rows} rounds={ladder.rounds} caption={`Induction ${induction}, ${ladderLabel}: change in closing merit between rounds per speciality`} />
         </Card>
       ) : null}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">

@@ -86,3 +86,40 @@ export async function inductionTracks(db: Database, session: Session | null, ind
     group by m.program, m.quota order by n desc`)) as unknown as { program: string; quota: string; n: number }[];
   return rows.map((r) => ({ value: `${r.program}|${r.quota}`, label: `${r.program} · ${r.quota}`, allocations: r.n }));
 }
+
+export type LadderRow = { key: string; label: string; specialityId: number | null; marks: (number | null)[] };
+
+/**
+ * Lowest closing merit per row per round, for the merit ladder and the heat grid.
+ * Rows are specialities within one programme·quota, or (with `speciality`) the
+ * programme·quotas of one speciality. Only rows present in every round are kept,
+ * so each row's movement is comparable.
+ */
+export async function closingLadder(
+  db: Database,
+  session: Session | null,
+  input: { induction: number; track?: string; specialityId?: number },
+) {
+  assertCan(session, "portal");
+  const ind = inductionSchema.parse(input.induction);
+  const tr = trackSchema.parse(input.track || undefined);
+  const spec = input.specialityId === undefined ? undefined : z.number().int().positive().parse(input.specialityId);
+  const bySpeciality = spec === undefined;
+  const rows = (await db.execute(sql`
+    select r.round_no, ${bySpeciality ? sql`m.speciality` : sql`m.program || '|' || m.quota`} as key,
+           max(m.speciality_id) as speciality_id, min(m.marks) as closing
+    from merit_rounds r join merit_allocations m on m.round_id = r.id
+    where r.induction_id = ${ind} ${trackWhere(tr)} ${spec === undefined ? sql`` : sql`and m.speciality_id = ${spec}`}
+    group by r.round_no, 2
+    order by 2, r.round_no`)) as unknown as { round_no: number; key: string; speciality_id: number | null; closing: number }[];
+  const rounds = [...new Set(rows.map((r) => r.round_no))].sort((a, b) => a - b);
+  const byKey = new Map<string, LadderRow>();
+  for (const r of rows) {
+    const row = byKey.get(r.key) ?? { key: r.key, label: bySpeciality ? r.key : r.key.replace("|", " · "), specialityId: r.speciality_id == null ? null : Number(r.speciality_id), marks: rounds.map(() => null) };
+    row.marks[rounds.indexOf(r.round_no)] = Number(r.closing);
+    byKey.set(r.key, row);
+  }
+  const complete = [...byKey.values()].filter((r) => r.marks.every((m) => m !== null));
+  complete.sort((a, b) => (b.marks.at(-1) ?? 0) - (a.marks.at(-1) ?? 0));
+  return { rounds, rows: complete };
+}

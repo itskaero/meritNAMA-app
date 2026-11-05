@@ -5,7 +5,7 @@ import { eq, inArray } from "drizzle-orm";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
-import { inductionTracks, roundSettling } from "@/lib/data/insights";
+import { closingLadder, inductionTracks, roundSettling } from "@/lib/data/insights";
 import { importMeritRound } from "@/lib/data/merit";
 import * as schema from "@/lib/db/schema";
 
@@ -64,5 +64,21 @@ describe.skipIf(!url)("merit insights (integration)", () => {
     expect(one.final).toBeLessThanOrEqual(applicants(r2));
     await expect(roundSettling(db, null, IND)).rejects.toThrow("unauthenticated");
     await expect(roundSettling(db, reader, IND, "no-pipe")).rejects.toThrow();
+  });
+
+  it("gives each speciality's lowest closing per round, highest first, for the merit ladder", async () => {
+    const [top] = await inductionTracks(db, reader, IND);
+    const [program, quota] = top!.value.split("|");
+    const l = await closingLadder(db, reader, { induction: IND, track: top!.value });
+    expect(l.rounds).toEqual([1, 2]);
+    const inTrack = (rows: Row[]) => rows.filter((r) => r.type === program && r.quota === quota);
+    for (const row of l.rows) {
+      const min = (rows: Row[]) => Math.min(...inTrack(rows).filter((r) => r.speciality === row.key).map((r) => r.marks));
+      expect(row.marks[0]).toBeCloseTo(min(r1));
+      expect(row.marks[1]).toBeCloseTo(min(r2));
+    }
+    const finals = l.rows.map((r) => r.marks[1]!);
+    expect([...finals].sort((a, b) => b - a)).toEqual(finals);
+    expect((await closingLadder(db, reader, { induction: IND, specialityId: 999999 })).rows).toEqual([]);
   });
 });
