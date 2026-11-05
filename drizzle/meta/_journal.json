@@ -64,6 +64,13 @@
       "when": 1793870578797,
       "tag": "0008_candidate_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793872291551,
+      "tag": "0009_community_qa",
+      "breakpoints": true
     }
   ]
 }

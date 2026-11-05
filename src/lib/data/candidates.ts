@@ -161,7 +161,7 @@ const EVIDENCE_TYPES = [
 ] as const;
 export const EVIDENCE_MAX_BYTES = 5 * 1024 * 1024;
 
-const evidenceDir = (root?: string) => path.resolve(root ?? env().APP_STORAGE_DIR, "evidence");
+const evidenceDir = (root?: string) => path.resolve(/* turbopackIgnore: true */ root ?? env().APP_STORAGE_DIR, "evidence");
 
 /** The document type from its first bytes; the browser's claimed type is not trusted. */
 export function sniffEvidence(bytes: Uint8Array) {
@@ -200,7 +200,7 @@ export async function requestLink(
   const dir = evidenceDir(opts.root);
   await mkdir(dir, { recursive: true });
   const fileName = `${randomUUID()}.${kind.ext}`;
-  await writeFile(path.join(dir, fileName), input.evidence, { flag: "wx", mode: 0o600 });
+  await writeFile(path.join(/* turbopackIgnore: true */ dir, fileName), input.evidence, { flag: "wx", mode: 0o600 });
 
   await db.transaction(async (tx) => {
     await tx.insert(candidateLinks).values({ userId: me.id, applicantId, status: "pending", method: "manual", evidenceFile: fileName, evidenceType: kind.type, pmdcMatches });
@@ -271,7 +271,7 @@ export async function readEvidence(db: Database, session: Session | null, id: st
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw new UserFacingError("Unknown request.");
   const [link] = await db.select({ file: candidateLinks.evidenceFile, type: candidateLinks.evidenceType }).from(candidateLinks).where(eq(candidateLinks.id, id)).limit(1);
   if (!link?.file || !link.type || path.basename(link.file) !== link.file) throw new UserFacingError("This request has no document.");
-  return { bytes: await readFile(path.join(evidenceDir(opts.root), link.file)), type: link.type };
+  return { bytes: await readFile(path.join(/* turbopackIgnore: true */ evidenceDir(opts.root), link.file)), type: link.type };
 }
 
 // ── What verification unlocks ──────────────────────────────────────────────────

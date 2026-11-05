@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { dismissReports, moderate, type ModerationAction } from "@/lib/data/community";
+import { dismissReports, markDuplicate, moderate, searchThreads, type ModerationAction } from "@/lib/data/community";
 import { getDb } from "@/lib/db/client";
 import { isUuid } from "@/lib/format";
 import { UserFacingError } from "@/lib/errors";
@@ -34,5 +34,26 @@ export async function dismissAction(_prev: ActionState, form: FormData): Promise
     return { status: "success", message: "Reports dismissed." };
   } catch (err) {
     return toActionState(err);
+  }
+}
+
+export async function duplicateAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const threadId = formText(form, "threadId"), originalId = formText(form, "originalId");
+    if (!isUuid(threadId) || !isUuid(originalId)) throw new UserFacingError("Pick the original question from the list.");
+    await markDuplicate(getDb(), await getSession(), { threadId, originalId, reason: formText(form, "reason") });
+    revalidatePath("/portal/community", "layout");
+    return { status: "success", message: "Closed as a duplicate." };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+/** Title search for the duplicate picker. */
+export async function searchThreadsAction(q: string, excludeId: string) {
+  try {
+    return await searchThreads(getDb(), await getSession(), String(q), isUuid(excludeId) ? excludeId : undefined);
+  } catch {
+    return [];
   }
 }

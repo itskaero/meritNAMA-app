@@ -4,12 +4,24 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { createThread, reportContent, replyToThread, setDisplayName, toggleHelpful } from "@/lib/data/community";
+import { acceptAnswer, createThread, reportContent, replyToThread, setDisplayName, toggleHelpful } from "@/lib/data/community";
+import { parseFollowTarget, setFollow } from "@/lib/data/notifications";
+import { snippetChoices } from "@/lib/data/snippets";
+import { parseSnippetParam } from "@/lib/domain/community";
 import { getDb } from "@/lib/db/client";
 import { isUuid } from "@/lib/format";
 import { UserFacingError } from "@/lib/errors";
 
 /** Community Server Actions. The data layer checks the session and validates content. */
+
+/** The optional merit card from the composer's hidden field. */
+const snippetOf = (f: FormData) => {
+  const raw = formText(f, "snippet");
+  if (!raw) return null;
+  const s = parseSnippetParam(raw);
+  if (!s) throw new UserFacingError("The merit card is not valid. Pick it again.");
+  return s;
+};
 
 const kindOf = (f: FormData) => (formText(f, "kind") === "thread" ? "thread" : "post") as "thread" | "post";
 const idOf = (f: FormData, k = "id") => {
@@ -26,6 +38,7 @@ export async function createThreadAction(_prev: ActionState, form: FormData): Pr
       topic: { kind: kind as never, key },
       title: formText(form, "title"),
       body: formText(form, "body"),
+      snippet: snippetOf(form),
     });
     id = t.id;
   } catch (err) {
@@ -38,7 +51,7 @@ export async function createThreadAction(_prev: ActionState, form: FormData): Pr
 export async function replyAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
     const threadId = idOf(form, "threadId");
-    await replyToThread(getDb(), await getSession(), { threadId, body: formText(form, "body") });
+    await replyToThread(getDb(), await getSession(), { threadId, body: formText(form, "body"), snippet: snippetOf(form) });
     revalidatePath(`/portal/community/${threadId}`);
     revalidatePath("/portal/community");
     return { status: "success", message: "Reply posted." };
@@ -73,4 +86,37 @@ export async function displayNameAction(_prev: ActionState, form: FormData): Pro
   } catch (err) {
     return toActionState(err);
   }
+}
+
+export async function acceptAction(form: FormData) {
+  const threadId = formText(form, "threadId");
+  try {
+    await acceptAnswer(getDb(), await getSession(), { threadId: idOf(form, "threadId"), postId: idOf(form, "postId") });
+  } catch {
+    // Not allowed or gone: the page re-renders with the current state.
+  }
+  revalidatePath(`/portal/community/${threadId}`);
+  revalidatePath("/portal/community");
+}
+
+/** Follow or unfollow a topic or thread; the button re-renders from the server. */
+export async function followAction(form: FormData) {
+  try {
+    await setFollow(getDb(), await getSession(), parseFollowTarget(formText(form, "kind"), formText(form, "key")), formText(form, "on") === "1");
+  } catch {
+    // Unknown target: nothing to change.
+  }
+  const back = formText(form, "path");
+  if (/^\/portal(\/|$)/.test(back)) revalidatePath(back);
+}
+
+/** Lists for the "Attach a merit card" picker. */
+export async function snippetChoicesAction(input: { induction?: number; round?: number; track?: string; speciality?: string }) {
+  if (!(await getSession())) return null;
+  return snippetChoices(getDb(), {
+    induction: Number.isInteger(input.induction) ? input.induction : undefined,
+    round: Number.isInteger(input.round) ? input.round : undefined,
+    track: typeof input.track === "string" ? input.track.slice(0, 160) : undefined,
+    speciality: typeof input.speciality === "string" ? input.speciality.slice(0, 160) : undefined,
+  });
 }

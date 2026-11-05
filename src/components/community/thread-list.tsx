@@ -9,6 +9,9 @@ export type ThreadSummary = {
   author: string | null;
   authorIsTeam: boolean;
   authorVerified: boolean;
+  answered: boolean;
+  duplicateOf: string | null;
+  hasSnippet: boolean;
   status: "visible" | "hidden";
   locked: boolean;
   pinned: boolean;
@@ -39,7 +42,9 @@ export function ThreadList({ threads, showTopic = true }: { threads: ThreadSumma
             <div className="min-w-0">
               <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
                 {t.pinned ? <Badge tone="current">Pinned</Badge> : null}
-                {t.locked ? <Badge>Locked</Badge> : null}
+                {t.answered ? <Badge tone="success">Answered</Badge> : null}
+                {t.duplicateOf ? <Badge>Duplicate</Badge> : t.locked ? <Badge>Locked</Badge> : null}
+                {t.hasSnippet ? <Badge tone="historical">Merit card</Badge> : null}
                 {t.status === "hidden" ? <Badge tone="danger">Hidden</Badge> : null}
                 {showTopic ? <span className="text-ember-hot">{t.topic.label}</span> : null}
               </div>

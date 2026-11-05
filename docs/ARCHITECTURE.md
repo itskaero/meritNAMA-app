@@ -93,6 +93,20 @@ Postgres, `HttpOnly; Secure; SameSite=Lax` cookies. Candidate-record linking is 
 separate, explicit step: the user proves control of the email address on the official
 record. An applicant ID alone is never proof of identity.
 
+## Community
+
+- `discussion_threads` are questions: `accepted_post_id`/`answered_at` record the
+  accepted answer (asker or moderator), `duplicate_of` links a closed duplicate.
+- `snippet` (threads and posts) names a merit group in one round. It is validated
+  against `merit_allocations` when posted, and its figures are computed when shown
+  (`src/lib/data/snippets.ts`), so a card can never carry typed numbers.
+- `follows` (user, kind, key) and `notifications` drive the in-app inbox. Notifications
+  are written in the same transaction as the event: a reply (thread followers), an
+  accepted answer (its author), a new question (topic followers), a merit-round
+  import (followers of the induction, round, specialities and hospitals in it).
+  Read notifications are pruned after 90 days. Every query is scoped to the
+  signed-in user.
+
 ## Data model (delivery 1)
 
 Only entities whose shape is already known:

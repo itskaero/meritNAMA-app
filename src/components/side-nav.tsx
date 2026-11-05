@@ -13,11 +13,13 @@ export type NavItem = { href: string; label: string; group: string; icon: IconNa
  * an icon rail: labels stay in the DOM for screen readers and show as tooltips.
  * The phone drawer always shows full labels.
  */
-export function SideNav({ area, items, pro = false, brand, profile, tools, footer }: {
+export function SideNav({ area, items, pro = false, brand, bell, profile, tools, footer }: {
   area: string;
   items: NavItem[];
   pro?: boolean;
   brand: ReactNode;
+  /** Inbox bell: in the phone header and beside the brand on wide screens. */
+  bell?: ReactNode;
   profile: ReactNode;
   tools?: ReactNode;
   footer: ReactNode;
@@ -63,6 +65,8 @@ export function SideNav({ area, items, pro = false, brand, profile, tools, foote
     <>
       <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden">
         {brand}
+        <div className="flex items-center gap-2">
+          {bell}
         <button
           ref={toggleRef}
           type="button"
@@ -74,6 +78,7 @@ export function SideNav({ area, items, pro = false, brand, profile, tools, foote
         >
           <Icon name={open ? "close" : "menu"} />
         </button>
+        </div>
       </div>
 
       <aside
@@ -83,7 +88,7 @@ export function SideNav({ area, items, pro = false, brand, profile, tools, foote
           open ? "fixed inset-x-0 top-16 bottom-0 z-20 flex flex-col overflow-y-auto" : "hidden",
         )}
       >
-        <div className={cn("hidden h-16 items-center lg:flex", pro ? "justify-center" : "px-6")}>{brand}</div>
+        <div className={cn("hidden h-16 items-center lg:flex", pro ? "flex-col justify-center gap-2 pt-3 h-auto" : "justify-between px-6")}>{brand}{bell}</div>
         <div className="grid gap-3 px-4 pt-2">
           {profile}
           {tools}

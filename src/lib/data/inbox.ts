@@ -47,17 +47,17 @@ export type InboxItem = {
   canImport: boolean;
 };
 
-const inboxRoot = (root?: string) => path.resolve(root ?? env().APP_STORAGE_DIR, "inbox");
+const inboxRoot = (root?: string) => path.resolve(/* turbopackIgnore: true */ root ?? env().APP_STORAGE_DIR, "inbox");
 
 async function ensureFolders(root: string) {
-  for (const f of [...Object.values(INBOX_KINDS).map((k) => k.folder), "processed"]) await mkdir(path.join(root, f), { recursive: true });
+  for (const f of [...Object.values(INBOX_KINDS).map((k) => k.folder), "processed"]) await mkdir(path.join(/* turbopackIgnore: true */ root, f), { recursive: true });
 }
 
 /** A file inside a kind's folder, by basename only. Refuses traversal, symlinks and non-files. */
 async function safeFile(root: string, kind: InboxKind, name: string) {
   const k = INBOX_KINDS[kind];
   if (path.basename(name) !== name || !k.pattern.test(name)) throw new UserFacingError("That is not a file name the inbox accepts.");
-  const file = path.join(root, k.folder, name);
+  const file = path.join(/* turbopackIgnore: true */ root, k.folder, name);
   const st = await lstat(file).catch(() => null);
   if (!st) throw new UserFacingError("That file is no longer in the inbox.");
   if (!st.isFile() || st.isSymbolicLink()) throw new UserFacingError("Only regular files are read from the inbox.");
@@ -83,10 +83,10 @@ export async function listInbox(db: Database, session: Session | null, opts: { r
   await ensureFolders(root);
   const items: InboxItem[] = [];
   for (const [kind, k] of Object.entries(INBOX_KINDS) as [InboxKind, (typeof INBOX_KINDS)[InboxKind]][]) {
-    const names = (await readdir(path.join(root, k.folder), { withFileTypes: true })).filter((d) => !d.name.startsWith("."));
+    const names = (await readdir(path.join(/* turbopackIgnore: true */ root, k.folder), { withFileTypes: true })).filter((d) => !d.name.startsWith("."));
     for (const d of names) {
       const base = { folder: k.folder, name: d.name, target: null, replaces: false, issues: [] as string[] };
-      const st = await lstat(path.join(root, k.folder, d.name));
+      const st = await lstat(path.join(/* turbopackIgnore: true */ root, k.folder, d.name));
       if (!k.pattern.test(d.name) || !st.isFile() || st.isSymbolicLink()) {
         items.push({ ...base, kind: "unrecognised", size: st.size, modifiedAt: st.mtime, canImport: false, issues: [`Not opened: names in ${k.folder}/ must look like ${kind === "merit" ? "round_<n>.json" : kind === "seats" ? "induction<n>_seats.json" : "scoring_policy.json"}${st.isSymbolicLink() ? " (symlinks are refused)" : ""}.`] });
         continue;
@@ -95,7 +95,7 @@ export async function listInbox(db: Database, session: Session | null, opts: { r
       if (st.size > MAX_BYTES) item.issues.push("Larger than 3 MB.");
       else {
         try {
-          const data = await readJson(path.join(root, k.folder, d.name));
+          const data = await readJson(path.join(/* turbopackIgnore: true */ root, k.folder, d.name));
           if (kind === "merit") {
             const r = meritRoundFileSchema.safeParse(data);
             item.issues = issuesOf(r);
@@ -137,7 +137,7 @@ export async function listInbox(db: Database, session: Session | null, opts: { r
 
 async function moveToProcessed(root: string, kind: InboxKind, file: string, name: string, note: "imported" | "skipped") {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  await rename(file, path.join(root, "processed", `${stamp}-${note}-${kind}-${name}`));
+  await rename(file, path.join(/* turbopackIgnore: true */ root, "processed", `${stamp}-${note}-${kind}-${name}`));
 }
 
 /**

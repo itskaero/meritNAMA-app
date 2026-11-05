@@ -32,6 +32,15 @@ export const candidateSections: Section[] = [
     planned: ["Programme and induction", "Merit score and breakdown", "Record-verification state", "Preference-plan summary", "Data-source and update timestamps"],
   },
   {
+    href: "/portal/inbox",
+    group: "Menu",
+    icon: "inbox",
+    label: "Inbox",
+    description: "New answers, accepted answers, new questions and new rounds for what you follow.",
+    milestone: "Delivery 4 · Candidate MVP",
+    planned: [],
+  },
+  {
     href: "/portal/finder",
     group: "Menu",
     icon: "target",

@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
+import { snippetParam } from "@/lib/domain/community";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { BarList } from "@/components/charts/bar-list";
 import { RoundBeam } from "@/components/charts/round-beam";
@@ -126,6 +128,20 @@ export default async function RoundPage({ params, searchParams }: {
                   header: `vs R${prev?.roundNo ?? "–"}`,
                   align: "right",
                   cell: (g) => (prev ? <MeritDelta value={g.prevClosing == null ? null : (g.closing ?? 0) - g.prevClosing} /> : <span className="text-subtle">—</span>),
+                },
+                {
+                  key: "ask",
+                  header: <span className="sr-only">Ask</span>,
+                  align: "right",
+                  cell: (g) => (
+                    <Link
+                      href={`/portal/community/new?${new URLSearchParams({ topic: `round|${induction}:${roundNo}`, snippet: snippetParam({ induction, round: roundNo, program: g.program, quota: g.quota, speciality: g.speciality, hospital: g.hospital }) })}`}
+                      className="whitespace-nowrap text-xs font-semibold text-signal hover:underline"
+                      aria-label={`Ask about ${g.speciality} at ${g.hospital}`}
+                    >
+                      Ask
+                    </Link>
+                  ),
                 },
               ]}
             />

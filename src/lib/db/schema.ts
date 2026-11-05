@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   bigserial,
   boolean,
   check,
@@ -248,6 +249,13 @@ export const discussionThreads = pgTable(
     locked: boolean("locked").notNull().default(false),
     pinned: boolean("pinned").notNull().default(false),
     replyCount: integer("reply_count").notNull().default(0),
+    /** The reply the asker (or a moderator) accepted as the answer. */
+    acceptedPostId: uuid("accepted_post_id").references((): AnyPgColumn => discussionPosts.id, { onDelete: "set null" }),
+    answeredAt: timestamp("answered_at", { withTimezone: true }),
+    /** Closed as a duplicate of this thread. */
+    duplicateOf: uuid("duplicate_of").references((): AnyPgColumn => discussionThreads.id, { onDelete: "set null" }),
+    /** A live merit card (see MeritSnippet): rendered from the database, never typed numbers. */
+    snippet: json("snippet"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -264,6 +272,7 @@ export const discussionPosts = pgTable(
     threadId: uuid("thread_id").notNull().references(() => discussionThreads.id, { onDelete: "cascade" }),
     authorId: uuid("author_id").notNull().references(() => users.id),
     body: text("body").notNull(),
+    snippet: json("snippet"),
     status: discussionStatus("status").notNull().default("visible"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -463,4 +472,36 @@ export const candidateLinks = pgTable(
     uniqueIndex("candidate_links_pending_user_uq").on(t.userId).where(sql`status = 'pending'`),
     index("candidate_links_status_idx").on(t.status, t.createdAt),
   ],
+);
+
+// ── Follows and the in-app inbox ───────────────────────────────────────────────
+
+export const followKind = pgEnum("follow_kind", ["induction", "round", "speciality", "hospital", "thread"]);
+export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round"]);
+
+/** What a member follows: a topic (same keys as discussion topics) or a thread (its id). */
+export const follows = pgTable(
+  "follows",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: followKind("kind").notNull(),
+    key: text("key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.kind, t.key] }), index("follows_target_idx").on(t.kind, t.key)],
+);
+
+/** In-app inbox. No email is sent. */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    kind: notificationKind("kind").notNull(),
+    title: text("title").notNull(),
+    href: text("href").notNull(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("notifications_user_idx").on(t.userId, t.readAt, t.createdAt)],
 );

@@ -14,6 +14,7 @@ import { Notice } from "@/components/ui/notice";
 import { selectClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
 import { myMerit } from "@/lib/data/candidates";
+import { snippetParam } from "@/lib/domain/community";
 import { findOptions, finderOptions, listShortlist, optionHistory, type FinderOption } from "@/lib/data/finder";
 import { getDb } from "@/lib/db/client";
 import { optionKey, parseOptionKey, STATUS_LABEL, type FinderStatus } from "@/lib/domain/finder";
@@ -209,6 +210,16 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                           <span>Final round {pct(o.lastPct)} <span className="text-subtle">({o.lastClosing.toFixed(2)} / {induction.total})</span></span>
                         </div>
                       ) : <p className="mt-3 text-sm text-subtle">Not offered in induction {induction.id}.</p>}
+                      {(() => {
+                        const last = histories[i]!.at(-1);
+                        if (!last) return null;
+                        const card = snippetParam({ induction: last.inductionId, round: last.roundNo, program, quota, speciality: p.speciality, hospital: p.hospital });
+                        return (
+                          <Link href={`/portal/community/new?${new URLSearchParams({ topic: `round|${last.inductionId}:${last.roundNo}`, snippet: card })}`} className="mt-3 inline-block text-sm font-semibold text-signal hover:underline">
+                            Ask about this →
+                          </Link>
+                        );
+                      })()}
                     </div>
                   );
                 })}

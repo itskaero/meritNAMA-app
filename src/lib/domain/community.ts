@@ -70,3 +70,38 @@ export const displayNameSchema = z
   .max(32, "At most 32 characters")
   .regex(/^[\p{L}\p{N} ._-]+$/u, "Letters, numbers, spaces, dots, dashes and underscores only")
   .superRefine(noPersonalData);
+
+/**
+ * A live merit card attached to a question or reply: which group of which round.
+ * The figures are always read from the database when shown, never typed.
+ */
+export const snippetSchema = z.strictObject({
+  induction: z.number().int().min(1).max(999),
+  round: z.number().int().min(1).max(99),
+  program: z.string().trim().min(1).max(40),
+  quota: z.string().trim().min(1).max(80),
+  speciality: z.string().trim().min(1).max(160),
+  hospital: z.string().trim().min(1).max(200),
+});
+export type Snippet = z.infer<typeof snippetSchema>;
+
+/** Snippet carried in a URL (?snippet=…), or null when absent or malformed. */
+export function parseSnippetParam(value: string | string[] | undefined | null): Snippet | null {
+  if (typeof value !== "string" || value.length > 800) return null;
+  try {
+    const r = snippetSchema.safeParse(JSON.parse(value));
+    return r.success ? r.data : null;
+  } catch {
+    return null;
+  }
+}
+export const snippetParam = (s: Snippet) => JSON.stringify(s);
+
+/** Read a stored snippet defensively (older rows have none). */
+export const storedSnippet = (v: unknown): Snippet | null => {
+  const r = snippetSchema.safeParse(v);
+  return r.success ? r.data : null;
+};
+
+export const THREAD_FILTERS = ["all", "unanswered", "answered"] as const;
+export type ThreadFilter = (typeof THREAD_FILTERS)[number];

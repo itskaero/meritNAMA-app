@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultDisplayName, displayNameSchema, findPersonalData, threadInputSchema, topicSchema } from "@/lib/domain/community";
+import { parseSnippetParam, snippetParam, snippetSchema, storedSnippet } from "@/lib/domain/community";
 
 describe("community rules", () => {
   it("spots personal data", () => {
@@ -35,5 +36,23 @@ describe("community rules", () => {
     expect(displayNameSchema.safeParse("Dr Ayesha_K").success).toBe(true);
     expect(displayNameSchema.safeParse("<script>").success).toBe(false);
     expect(displayNameSchema.safeParse("me@mail.com").success).toBe(false);
+  });
+});
+
+describe("merit snippets", () => {
+  const ok = { induction: 20, round: 6, program: "FCPS", quota: "Punjab", speciality: "Anaesthesia", hospital: "Jinnah Hospital, Lahore" };
+
+  it("accepts a well-formed group and round-trips through the URL form", () => {
+    expect(snippetSchema.parse(ok)).toEqual(ok);
+    expect(parseSnippetParam(snippetParam(ok))).toEqual(ok);
+  });
+
+  it("refuses typed numbers, extra fields and bad rounds", () => {
+    expect(snippetSchema.safeParse({ ...ok, closing: 19.2 }).success).toBe(false);
+    expect(snippetSchema.safeParse({ ...ok, round: 0 }).success).toBe(false);
+    expect(snippetSchema.safeParse({ ...ok, induction: "20" }).success).toBe(false);
+    expect(parseSnippetParam("{not json")).toBeNull();
+    expect(parseSnippetParam(undefined)).toBeNull();
+    expect(storedSnippet(null)).toBeNull();
   });
 });

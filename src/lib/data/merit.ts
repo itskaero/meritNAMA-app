@@ -15,6 +15,7 @@ import {
 } from "@/lib/db/schema";
 import { isoDay, meritRoundFileSchema, nameKey } from "@/lib/domain/merit-round";
 import { UserFacingError } from "@/lib/errors";
+import { notifyFollowers } from "./notifications";
 import { requireReason, writeAudit, type Db } from "./shared";
 
 /**
@@ -115,6 +116,18 @@ export async function importMeritRound(
     }));
     // Chunked: one statement per 1,000 rows keeps well under the bind-parameter limit.
     for (let i = 0; i < rows.length; i += 1000) await tx.insert(meritAllocations).values(rows.slice(i, i + 1000));
+
+    // Tell followers of the induction, the round, and the specialities/hospitals in it.
+    await notifyFollowers(
+      tx,
+      [
+        { kind: "induction", key: String(inductionId) },
+        { kind: "round", key: `${inductionId}:${roundNo}` },
+        ...[...new Set(rows.map((r) => r.specialityId).filter((x): x is number => x !== null))].map((id) => ({ kind: "speciality" as const, key: String(id) })),
+        ...[...new Set(rows.map((r) => r.hospitalId).filter((x): x is number => x !== null))].map((id) => ({ kind: "hospital" as const, key: String(id) })),
+      ],
+      { kind: "new_round", title: `Induction ${inductionId}, round ${roundNo} ${prev ? "was updated" : "is out"}`, href: `/portal/history/${inductionId}/rounds/${roundNo}` },
+    );
 
     const unmatched = {
       specialities: [...new Set(rows.filter((r) => r.specialityId === null).map((r) => r.speciality))],

@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { ActionResult, Field, fieldClass } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
-import { createThreadAction, displayNameAction, helpfulAction, replyAction, reportAction } from "./actions";
+import { SnippetPicker } from "@/components/community/snippet-picker";
+import type { Snippet } from "@/lib/domain/community";
+import { acceptAction, createThreadAction, displayNameAction, helpfulAction, replyAction, reportAction } from "./actions";
 
 const PRIVACY = "Everyone signed in can read this. Do not share CNIC, phone numbers or email addresses; posts containing them are refused.";
 
-export function NewThreadForm({ topics, defaultTopic }: { topics: { value: string; label: string }[]; defaultTopic: string }) {
+export function NewThreadForm({ topics, defaultTopic, snippet = null }: { topics: { value: string; label: string }[]; defaultTopic: string; snippet?: Snippet | null }) {
   const [state, action, pending] = useActionState(createThreadAction, idleState);
   const [v, setV] = useState({ topic: defaultTopic, title: "", body: "" });
   return (
@@ -22,13 +24,14 @@ export function NewThreadForm({ topics, defaultTopic }: { topics: { value: strin
           </select>
         )}
       </Field>
-      <Field label="Title" hint={`${v.title.trim().length}/140 · a question or a clear summary works best`}>
+      <Field label="Your question" hint={`${v.title.trim().length}/140 · one clear question works best`}>
         {(id) => <input id={id} name="title" required minLength={8} maxLength={140} value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} className={fieldClass} placeholder="e.g. Will anaesthesia close lower in round 7?" />}
       </Field>
-      <Field label="Message" hint={PRIVACY}>
+      <Field label="Details" hint={PRIVACY}>
         {(id) => <textarea id={id} name="body" required minLength={10} maxLength={5000} rows={7} value={v.body} onChange={(e) => setV({ ...v, body: e.target.value })} className={cn(fieldClass, "leading-relaxed")} />}
       </Field>
-      <div><Button type="submit" disabled={pending}>{pending ? "Posting…" : "Start discussion"}</Button></div>
+      <SnippetPicker initial={snippet} />
+      <div><Button type="submit" disabled={pending}>{pending ? "Posting…" : "Post question"}</Button></div>
       <ActionResult state={state} />
     </form>
   );
@@ -36,19 +39,45 @@ export function NewThreadForm({ topics, defaultTopic }: { topics: { value: strin
 
 export function ReplyForm({ threadId }: { threadId: string }) {
   const [body, setBody] = useState("");
+  const [round, setRound] = useState(0);
   const [state, action, pending] = useActionState(async (prev: typeof idleState, form: FormData) => {
     const r = await replyAction(prev, form);
-    if (r.status === "success") setBody("");
+    if (r.status === "success") {
+      setBody("");
+      setRound((n) => n + 1); // clears the attached card
+    }
     return r;
   }, idleState);
   return (
     <form action={action} className="grid gap-3">
       <input type="hidden" name="threadId" value={threadId} />
-      <Field label="Your reply" hint={PRIVACY}>
+      <Field label="Your answer" hint={PRIVACY}>
         {(id) => <textarea id={id} name="body" required minLength={2} maxLength={5000} rows={4} value={body} onChange={(e) => setBody(e.target.value)} className={cn(fieldClass, "leading-relaxed")} />}
       </Field>
-      <div><Button type="submit" disabled={pending || body.trim().length < 2}>{pending ? "Posting…" : "Post reply"}</Button></div>
+      <SnippetPicker key={round} />
+      <div><Button type="submit" disabled={pending || body.trim().length < 2}>{pending ? "Posting…" : "Post answer"}</Button></div>
       <ActionResult state={state} />
+    </form>
+  );
+}
+
+/** Accept (or un-accept) a reply as the answer. Shown to the asker and moderators. */
+export function AcceptButton({ threadId, postId, accepted }: { threadId: string; postId: string; accepted: boolean }) {
+  return (
+    <form action={acceptAction}>
+      <input type="hidden" name="threadId" value={threadId} />
+      <input type="hidden" name="postId" value={postId} />
+      <button
+        type="submit"
+        aria-pressed={accepted}
+        className={cn(
+          "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors",
+          accepted ? "border-success/50 bg-success/15 text-success" : "border-line-strong text-muted hover:border-success/50 hover:text-ink",
+        )}
+      >
+        <Icon name="check" className="h-3.5 w-3.5" />
+        {accepted ? "Accepted · undo" : "Accept answer"}
+      </button>
     </form>
   );
 }

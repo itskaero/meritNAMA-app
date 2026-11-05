@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { signOutAction } from "@/app/_actions/auth";
 import { ROLE_LABELS, type Session } from "@/lib/auth/roles";
 import { myLink } from "@/lib/data/candidates";
+import { unreadCount } from "@/lib/data/notifications";
+import { Icon } from "./icon";
 import type { Section } from "@/lib/navigation";
 import { whatsNew } from "@/lib/data/whats-new";
 import { getDb } from "@/lib/db/client";
@@ -64,6 +66,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
   // "What's new": newest events after the last dismissal; quietly empty if the database is down.
   const seen = Number(jar.get(WHATS_NEW_COOKIE)?.value ?? 0) || 0;
   const verified = session.role === "candidate" && (await myLink(getDb(), session).catch(() => null))?.status === "verified";
+  const unread = await unreadCount(getDb(), session).catch(() => 0);
   const news = (await whatsNew(getDb(), session).catch(() => []))
     .filter((n) => n.at.getTime() > seen)
     .map((n) => ({ text: n.text, href: n.href, at: n.at.toISOString() }));
@@ -84,6 +87,20 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
           <Link href="/" className="flex items-center gap-2.5 rounded-lg text-ink" aria-label="meritNAMA home">
             <LogoMark className={pro ? "h-8 w-8" : "h-7 w-7"} />
             <Wordmark className={pro ? "lg:hidden" : undefined} />
+          </Link>
+        }
+        bell={
+          <Link
+            href="/portal/inbox"
+            aria-label={unread ? `Inbox, ${unread} unread` : "Inbox"}
+            className="relative grid h-11 w-11 place-items-center rounded-full border border-muted/60 text-ink hover:bg-hover lg:h-9 lg:w-9"
+          >
+            <Icon name="bell" className="h-5 w-5" />
+            {unread ? (
+              <span aria-hidden className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-ember px-1 font-mono text-[0.65rem] font-bold text-canvas">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            ) : null}
           </Link>
         }
         profile={<ProfileCard session={session} mode={mode} verified={verified} />}
