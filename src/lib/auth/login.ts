@@ -79,15 +79,28 @@ export async function consumeLoginLink(db: Database, input: { token: string; use
     .returning({ email: loginTokens.email });
   if (!used) throw new UserFacingError("This sign-in link has expired or was already used. Ask for a new one.");
 
-  const owner = parseEmailList(env().OWNER_EMAILS).has(used.email);
+  return createSessionFor(db, { email: used.email, userAgent: input.userAgent, now });
+}
+
+/**
+ * Sign a verified email in, however it was verified (one-time link or Google):
+ * create the account on first sign-in (owner when listed in OWNER_EMAILS), link
+ * it to a candidate record when the email matches one, and open a session.
+ * Returns the session id for the cookie.
+ */
+export async function createSessionFor(db: Database, input: { email: string; userAgent?: string | null; now?: Date; via?: "link" | "google" }) {
+  const now = input.now ?? new Date();
+  const email = normalizeEmail(input.email);
+  if (!email) throw new UserFacingError("That account has no usable email address.");
+  const owner = parseEmailList(env().OWNER_EMAILS).has(email);
   const [created] = await db
     .insert(users)
-    .values({ email: used.email, role: owner ? "owner" : "candidate", displayName: defaultDisplayName(used.email) })
+    .values({ email, role: owner ? "owner" : "candidate", displayName: defaultDisplayName(email) })
     .onConflictDoNothing({ target: users.email })
     .returning({ id: users.id });
-  const [user] = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.email, used.email)).limit(1);
+  const [user] = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.email, email)).limit(1);
   if (!user) throw new Error("user row missing after upsert");
-  if (created) await writeAudit(db, user.email, { action: "user.create", entityType: "user", entityId: user.id, after: { role: owner ? "owner" : "candidate" }, reason: "First sign-in" });
+  if (created) await writeAudit(db, user.email, { action: "user.create", entityType: "user", entityId: user.id, after: { role: owner ? "owner" : "candidate", via: input.via ?? "link" }, reason: "First sign-in" });
 
   await autoLink(db, user);
 

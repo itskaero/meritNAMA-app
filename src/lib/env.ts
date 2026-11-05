@@ -31,6 +31,9 @@ export const envSchema = z
      * Required in production; changing it means re-indexing (npm run index:candidates).
      */
     CANDIDATE_INDEX_SECRET: z.string().min(32).optional(),
+    /** Google sign-in (optional). Both or neither; the button shows only when set. */
+    GOOGLE_CLIENT_ID: z.string().regex(/^[\w.-]+\.apps\.googleusercontent\.com$/, "must be a Google OAuth client ID").optional(),
+    GOOGLE_CLIENT_SECRET: z.string().min(10).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === "production" && env.DEV_AUTH_STUB_ROLE) {
@@ -42,6 +45,9 @@ export const envSchema = z
     }
     if (env.NODE_ENV === "production" && !env.SMTP_URL) {
       ctx.addIssue({ code: "custom", path: ["SMTP_URL"], message: "SMTP_URL is required in production (sign-in links are sent by email)" });
+    }
+    if (Boolean(env.GOOGLE_CLIENT_ID) !== Boolean(env.GOOGLE_CLIENT_SECRET)) {
+      ctx.addIssue({ code: "custom", path: ["GOOGLE_CLIENT_SECRET"], message: "Set both GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or neither" });
     }
     if (env.NODE_ENV === "production" && !env.CANDIDATE_INDEX_SECRET) {
       ctx.addIssue({ code: "custom", path: ["CANDIDATE_INDEX_SECRET"], message: "CANDIDATE_INDEX_SECRET is required in production" });

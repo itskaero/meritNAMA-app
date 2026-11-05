@@ -23,6 +23,7 @@ Edit `.env`:
 | `SMTP_URL` | Your mail provider, e.g. `smtps://user:pass@smtp.example.org:465` (sign-in links) |
 | `MAIL_FROM` | Sender shown on sign-in emails, e.g. `meritNAMA <no-reply@example.org>` |
 | `OWNER_EMAILS` | Your own email: it becomes owner on first sign-in. Owners give others roles on Team & roles. |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional "Continue with Google". In Google Cloud Console → APIs & Services → Credentials, create an OAuth client of type *Web application* with the redirect URI `<APP_URL>/auth/google/callback`. Leave both empty to offer email links only. |
 | `CANDIDATE_INDEX_SECRET` | `openssl rand -base64 48 \| tr -d '/+='`. Keep it with your backups; changing it needs a re-index. |
 | `DEV_AUTH_STUB_ROLE` | **leave empty** — the app will not serve pages with it set |
 

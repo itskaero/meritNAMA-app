@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { consumeLoginLink, endSession, requestLoginLink, SESSION_COOKIE, sessionFromId } from "@/lib/auth/login";
 import { getDb } from "@/lib/db/client";
-import { env } from "@/lib/env";
+import { setSessionCookie } from "@/lib/auth/session-cookie";
 
 /** Sign-in Server Actions: ask for a link, use it, sign out. */
 
@@ -29,13 +29,7 @@ export async function verifyLinkAction(_prev: ActionState, form: FormData): Prom
   try {
     const h = await headers();
     const s = await consumeLoginLink(getDb(), { token: formText(form, "token"), userAgent: h.get("user-agent") });
-    (await cookies()).set(SESSION_COOKIE, s.sessionId, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: env().NODE_ENV === "production" || env().APP_URL.startsWith("https:"),
-      path: "/",
-      expires: s.expiresAt,
-    });
+    await setSessionCookie(s.sessionId, s.expiresAt);
     const session = await sessionFromId(getDb(), s.sessionId);
     staff = Boolean(session && session.role !== "candidate");
   } catch (err) {

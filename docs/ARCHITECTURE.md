@@ -61,6 +61,15 @@ with Auth.js, which does not yet support Next 16; the flow is small enough to ow
    and slides once a day.
 4. Sign out deletes the session row and the cookie.
 
+**Continue with Google** (optional, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`;
+`src/lib/auth/google.ts`, routes under `/auth/google/`): authorisation code flow with
+PKCE and a `state` value, both kept in a 10-minute HttpOnly cookie scoped to
+`/auth/google`. The callback checks `state`, exchanges the code with Google over TLS,
+checks the ID token's issuer, audience and expiry, and accepts only an email Google
+marks as verified. From there it is the same `createSessionFor` as a one-time link:
+owner bootstrap, automatic record linking and the session cookie. No password is
+ever stored.
+
 Without `SMTP_URL` in development, mail is written to `dev_outbox` and shown at
 `/dev/mailbox` (404 in production).
 

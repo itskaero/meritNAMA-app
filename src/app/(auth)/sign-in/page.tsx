@@ -1,38 +1,41 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { SignInForm } from "@/components/auth/auth-forms";
-import { BrandLockup } from "@/components/brand";
-import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
+import { googleConfig } from "@/lib/auth/google";
 import { getSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default async function SignInPage({ searchParams }: { searchParams: Promise<{ signedOut?: string }> }) {
+const ERRORS: Record<string, string> = {
+  google: "Google sign-in did not complete. Try again, or use an email link.",
+  "google-cancelled": "Google sign-in was cancelled.",
+  "google-expired": "That Google sign-in took too long. Try again.",
+  "google-unverified": "Google has not verified that email address. Use an email link instead.",
+};
+
+export default async function SignInPage({ searchParams }: { searchParams: Promise<{ signedOut?: string; error?: string }> }) {
   const session = await getSession();
   if (session && !session.isStub) redirect(session.role === "candidate" ? "/portal" : "/admin");
-  const { signedOut } = await searchParams;
+  const { signedOut, error } = await searchParams;
   const isDev = process.env.NODE_ENV !== "production";
   return (
-    <main id="main" className="grid min-h-screen place-items-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <Link href="/" aria-label="meritNAMA home"><BrandLockup className="mb-8 text-xl" markClassName="h-9 w-9" /></Link>
-        <Card className="p-6">
-          <h1 className="text-2xl font-bold tracking-tight">Sign in</h1>
-          <p className="mt-2 text-sm text-muted">
-            Use the email address you gave in your PHF application: your merit record is then linked to your account automatically.
-          </p>
-          {signedOut ? <div className="mt-4"><Notice title="You are signed out." /></div> : null}
-          <div className="mt-6"><SignInForm /></div>
-          {isDev ? (
-            <p className="mt-6 text-xs text-muted">
-              Development: without SMTP_URL, links are not emailed; open <Link href="/dev/mailbox" className="font-semibold text-signal hover:underline">the dev mailbox</Link> to use them.
-            </p>
-          ) : null}
-        </Card>
-        <p className="mt-6 text-center text-xs text-subtle">meritNAMA is independent and not an official admissions authority.</p>
+    <AuthShell step={1}>
+      <div className="grid gap-2 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight">Sign in to meritNAMA</h2>
+        <p className="text-sm text-muted">Use the email from your PHF application and your merit record links itself.</p>
       </div>
-    </main>
+      {signedOut ? <Notice title="You are signed out." /> : null}
+      {error && ERRORS[error] ? <Notice tone="warning" title={ERRORS[error]} /> : null}
+      <SignInForm google={Boolean(googleConfig())} />
+      <p className="text-center text-xs text-subtle">No password. meritNAMA is independent and not an official admissions authority.</p>
+      {isDev ? (
+        <p className="text-center text-xs text-muted">
+          Development: links are not emailed without SMTP_URL; open <Link href="/dev/mailbox" className="font-semibold text-signal hover:underline">the dev mailbox</Link>.
+        </p>
+      ) : null}
+    </AuthShell>
   );
 }

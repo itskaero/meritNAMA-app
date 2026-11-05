@@ -26,6 +26,9 @@
   per email and IP, with an answer that never reveals whether an account exists. Tokens
   and session ids are stored only as SHA-256. Session cookies are `HttpOnly`,
   `SameSite=Lax` and `Secure` in production.
+- Google sign-in (optional) uses the authorisation code flow with PKCE and `state`;
+  only Google-verified emails are accepted, and the ID token's issuer, audience and
+  expiry are checked. Errors return to the sign-in page without detail.
 - Candidate emails and PMDC numbers from merit files are kept only as keyed HMACs
   (`CANDIDATE_INDEX_SECRET`); merit allocations never store them. Matching emails link
   accounts automatically; any other claim needs a verifier. Proof documents are
