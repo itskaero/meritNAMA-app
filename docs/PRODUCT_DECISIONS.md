@@ -43,3 +43,17 @@ email), rate limits, reports and audited moderation.
    - ✅ **5a: Q&A, merit cards, follow + inbox.** Questions have accepted answers (asker or moderator; the accepted answer leads, answered questions rank first, filters for answered/unanswered); moderators close duplicates with a link to the original. A post can carry a live merit card (programme, quota, speciality, hospital in one round) whose closing/opening merit, % of total, seats and change since the previous round are read from the database. Members follow inductions, rounds, specialities, hospitals and questions (asking or answering follows automatically); new answers, accepted answers, new questions and new rounds arrive in the in-app inbox (bell in the header, `/portal/inbox`). No email.
    - **5b: polls, and hospital/speciality reviews** (any verified candidate may review).
 6. **Predictions** (ranges) once two or more inductions of the same policy exist per track.
+
+## Merit visuals (Nov 2026, from the concepts page)
+
+Built one by one from the concepts the owner approved. Real data only; aggregates only.
+
+| Visual | What it shows | Where |
+|---|---|---|
+| Round funnel ("Who is still moving") | Candidates not yet in the seat they keep in the final round, narrowing to 0; entered / moved / left per round | Dashboard; induction page (by programme·quota) |
+| Cycle progress gauge | Segmented arc filled to today against the cycle's published dates; rounds in order; next round as an estimate | Dashboard; induction page |
+| Split sign-in | Teal steps panel with Google (optional) or a one-time email link | `/sign-in`, `/auth/verify` |
+| Merit ladder | Glowing segments per speciality, closing % by round; ember = ground lost since R1 | Induction page; speciality page (per programme·quota) |
+| Where merit moved | Heat grid of round-to-round changes in closing merit | Induction page |
+| Seat flow | Accepted vs released seats per round | Induction page (six largest); speciality page; finder hint on Borderline options |
+| Your chance dial | Safe / Borderline / Out of reach arc for one option with the score as a needle | Finder comparison cards; shortlist in the workspace (verified or typed marks) |

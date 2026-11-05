@@ -15,6 +15,7 @@ import { selectClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
 import { myMerit } from "@/lib/data/candidates";
 import { releasedBeforeFinal } from "@/lib/data/insights";
+import { ChanceDial } from "@/components/charts/chance-dial";
 import { snippetParam } from "@/lib/domain/community";
 import { findOptions, finderOptions, listShortlist, optionHistory, type FinderOption } from "@/lib/data/finder";
 import { getDb } from "@/lib/db/client";
@@ -207,10 +208,9 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: i === 0 ? "var(--mn-ember-hot)" : "var(--mn-text-muted)" }}>Option {i === 0 ? "A" : "B"}</p>
                       <p className="mt-1 font-semibold">{p.speciality}</p>
                       <p className="text-sm text-muted">{p.hospital}</p>
-                      {o ? (
-                        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-                          <StatusPill status={o.status} />
-                          <span>Final round {pct(o.lastPct)} <span className="text-subtle">({o.lastClosing.toFixed(2)} / {induction.total})</span></span>
+                      {o && result ? (
+                        <div className="mt-3">
+                          <ChanceDial mePct={result.mePct} firstPct={o.firstPct} lastPct={o.lastPct} firstRound={o.firstRound} lastRound={o.lastRound} note={`Induction ${induction.id}: R${o.firstRound} ${o.firstClosing.toFixed(2)} → R${o.lastRound} ${o.lastClosing.toFixed(2)} of ${induction.total}`} />
                         </div>
                       ) : <p className="mt-3 text-sm text-subtle">Not offered in induction {induction.id}.</p>}
                       {(() => {
