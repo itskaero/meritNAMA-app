@@ -3,20 +3,22 @@ import { AreaPage } from "@/components/area-page";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Card, CardHeader } from "@/components/ui/card";
+import { Notice } from "@/components/ui/notice";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/page-header";
 import { getSession, requireSection } from "@/lib/auth/session";
 import { listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
 import { listAllLookups } from "@/lib/data/reference-data";
 import { getDb } from "@/lib/db/client";
-import { formatUtc } from "@/lib/format";
+import { formatUtc, isUuid } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
-import { AliasForm, DeleteRoundForm, ImportRoundsForm } from "./forms";
+import { AliasForm, DeleteRoundForm, ImportRoundsForm, InboxRow } from "./forms";
+import { listInbox } from "@/lib/data/inbox";
 
 export const metadata = { title: "Inductions & merit lists" };
 export const dynamic = "force-dynamic";
 
-export default async function AdminInductionsPage() {
+export default async function AdminInductionsPage({ searchParams }: { searchParams: Promise<{ inbox?: string; change?: string; skipped?: string }> }) {
   await requireSection("/admin/inductions");
   const s = findSection("/admin/inductions");
   const down = await whenDatabaseDown({ area: "admin", trail: [{ label: s.label }], title: s.label, description: s.description });
@@ -29,6 +31,9 @@ export default async function AdminInductionsPage() {
     listUnmatchedNames(db, session),
     listAllLookups(db, session),
   ]);
+  const inbox = await listInbox(db, session).catch(() => null);
+  const sp = await searchParams;
+  const changeId = isUuid(sp.change) ? sp.change : null;
   const toMap = unmatched.speciality.length + unmatched.hospital.length;
 
   return (
@@ -47,6 +52,30 @@ export default async function AdminInductionsPage() {
           { label: "Names to map", value: toMap, hint: "Published names with no hospital or speciality" },
         ]}
       />
+      <Card id="inbox">
+        <CardHeader
+          title={`Inbox · ${inbox?.length ?? 0}`}
+          description="Files dropped into the inbox folder on the server (inbox/merit, inbox/seats, inbox/policy). New data imports directly; anything that replaces existing data is staged for review. Imported or skipped files move to inbox/processed."
+        />
+        {sp.inbox ? (
+          <div className="mb-4">
+            <Notice title={changeId ? `${sp.inbox} replaces existing data, so it was staged for review` : `${sp.inbox} imported`}>
+              {changeId ? <Link href={`/admin/changes/${changeId}`} className="font-semibold text-signal hover:underline">Review and publish →</Link> : "The file moved to inbox/processed."}
+            </Notice>
+          </div>
+        ) : sp.skipped ? (
+          <div className="mb-4"><Notice title={`${sp.skipped} set aside`}>Moved to inbox/processed without importing.</Notice></div>
+        ) : null}
+        {inbox === null ? (
+          <p className="text-sm text-danger">The inbox folder could not be read. Check that APP_STORAGE_DIR is mounted and writable.</p>
+        ) : inbox.length === 0 ? (
+          <p className="text-sm text-muted">Nothing waiting. Drop round_&lt;n&gt;.json files into inbox/merit on the server, or upload below.</p>
+        ) : (
+          <ul className="grid gap-2">
+            {inbox.map((i) => <InboxRow key={`${i.folder}/${i.name}`} item={{ ...i, needsYear: i.kind === "seats" && !i.replaces }} />)}
+          </ul>
+        )}
+      </Card>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <Card className="min-w-0">
           <CardHeader title="Imported rounds" />

@@ -37,7 +37,7 @@ email), rate limits, reports and audited moderation.
 
 1. ✅ **Score-first finder** with % units, heatmap, comparison and shortlist: `/portal/finder`, shortlist in `/portal/workspace`. Status per option: *Safe* if the score reaches its first-round closing, *Borderline* if it only reaches the final-round closing, *Out of reach* otherwise.
 2. ✅ **Split roles + preview/publish.** Roles map to capabilities (`src/lib/auth/roles.ts`); owners manage them on Team & roles. Replacing a seat matrix or merit round, removing a round, activating a policy and re-importing the policy file are staged at `/admin/changes` with a before/after preview; publishing is refused if the data changed since the preview, and keeps a snapshot for rollback. First-time imports apply directly.
-3. **Admin work-queue home + watched-folder intake.**
+3. ✅ **Admin work-queue home + watched-folder intake.** The admin home opens with queues for the person's role (changes to review, files in the inbox, names to map, reports, policy and seat-matrix gaps). `storage/inbox/{merit,seats,policy}` on the NAS is listed with validation; Import applies new data or stages replacements; files move to `inbox/processed`.
 4. **Candidate accounts and verification**: unlocks verified posting.
 5. **Community Q&A, snippets, polls, reviews, follow/inbox.**
 6. **Predictions** (ranges) once two or more inductions of the same policy exist per track.

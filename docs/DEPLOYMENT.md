@@ -36,11 +36,36 @@ State on disk:
 $MERITNAMA_DATA_DIR/
   postgres/   database files   (only the db container touches these)
   storage/    approved data files, generated reports
+    inbox/      drop new data files here (see "Importing from the inbox")
   backups/    output of scripts/backup.sh
   caddy/      certificates (only with the proxy profile)
 ```
 
 Containers themselves are disposable; nothing important lives in image layers.
+
+### Importing from the inbox
+
+New data files can be copied onto the NAS instead of uploaded through a browser.
+The app creates these folders on first use of the admin pages:
+
+```
+$MERITNAMA_DATA_DIR/storage/inbox/
+  merit/      round_<n>.json (also i20_round_6.json …): merit rounds; the induction is read from the file
+  seats/      induction<n>_seats.json: seat matrices
+  policy/     scoring_policy.json
+  processed/  where files go after Import or Skip, prefixed with a UTC timestamp
+```
+
+- Admin home → **Files in the inbox** (or Inductions & merit lists → Inbox) lists every
+  file with its validation result. **Import** applies new data at once; a file that
+  would replace existing data is staged under **Changes to review** for a preview first.
+- Only names matching a folder's pattern are opened; anything else is listed as "not
+  recognised". Symlinks and files over 3 MB are refused.
+- The app runs as the image's `node` user (uid 1000). It must be able to read the
+  files and move them to `processed/`:
+  `sudo chown -R 1000:1000 "$MERITNAMA_DATA_DIR/storage"`.
+- `processed/` is kept, and backed up with the rest of `storage/`. Delete old files
+  from it whenever you like.
 
 ## 2. Network exposure
 

@@ -39,6 +39,11 @@ describe("design token contrast", () => {
     expect(contrast(token("mn-ember-hot"), token(bg))).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("names both byte-identical copies in its header", () => {
+    expect(css).toContain("assets/css/tokens.css in the public site");
+    expect(css).toContain("src/styles/tokens.css in the app");
+  });
+
   it("subtle text meets AA on the page background", () => {
     expect(contrast(token("mn-text-subtle"), token("mn-navy-950"))).toBeGreaterThanOrEqual(4.5);
   });

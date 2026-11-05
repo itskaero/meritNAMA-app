@@ -1,10 +1,11 @@
 /*
- * MeritNama design tokens — v1
+ * meritNAMA design tokens — v1.1
  *
- * Shared with the public site, which keeps a byte-identical copy. If you change
- * one, change the other. No build step, no cross-repo package.
- * v1.1 (Nov 2026): surfaces moved from navy to neutral charcoal, teal refreshed,
- * ember added for the brand beam. The public site's copy still needs this update.
+ * Two byte-identical copies: assets/css/tokens.css in the public site
+ * (itskaero/meritnama) and src/styles/tokens.css in the app (itskaero/meritnama-app).
+ * Change both together; the app's tests/tokens.test.ts checks contrast.
+ * v1.1 (Nov 2026): surfaces moved from navy to neutral charcoal ("navy" token names
+ * kept for compatibility), teal refreshed, ember added for the brand beam.
  */
 :root {
   /* Surfaces */

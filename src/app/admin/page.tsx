@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { BarList } from "@/components/charts/bar-list";
 import { StatTiles } from "@/components/charts/stat-tiles";
@@ -10,7 +9,10 @@ import { getSession, requireSection } from "@/lib/auth/session";
 import { latestRoundChange, listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
 import { latestRoundStats } from "@/lib/round-stats";
 import { InductionTimeline } from "@/components/charts/induction-timeline";
+import { WorkQueues, type Queue } from "@/components/work-queues";
 import { pendingChangeCount } from "@/lib/data/changes";
+import { communityStats } from "@/lib/data/community";
+import { listInbox } from "@/lib/data/inbox";
 import { listPolicyVersions } from "@/lib/data/policies";
 import { getReferenceOverview } from "@/lib/data/reference-data";
 import { checkDatabase, getDb } from "@/lib/db/client";
@@ -39,7 +41,7 @@ export default async function AdminOverviewPage() {
   }
   const db = getDb();
   const session = await getSession();
-  const [policies, merit, inductions, unmatched, reference, pendingChanges, change] = await Promise.all([
+  const [policies, merit, inductions, unmatched, reference, pendingChanges, change, community] = await Promise.all([
     listPolicyVersions(db, session),
     meritOverview(db, session),
     listInductionsWithRounds(db, session),
@@ -47,19 +49,26 @@ export default async function AdminOverviewPage() {
     getReferenceOverview(db, session),
     pendingChangeCount(db, session),
     latestRoundChange(db, session),
+    communityStats(db, session),
   ]);
+  const reports = community.openReports;
   const active = policies.find((r) => r.status === "active");
   const toMap = unmatched.speciality.length + unmatched.hospital.length;
-  const todo = [
-    pendingChanges > 0 && { href: "/admin/changes", text: `Review ${pendingChanges} staged ${pendingChanges === 1 ? "change" : "changes"} before they go live` },
-    !active && can(session, "policy.edit") && { href: "/admin/policies", text: "Import scoring_policy.json, so merit can be shown out of each induction's total" },
-    reference.seatMatrices.length === 0 && can(session, "data.edit") && { href: "/admin/reference-data", text: "Import a seat matrix (induction<n>_seats.json)" },
-    inductions.length === 0 && can(session, "data.edit") && { href: "/admin/inductions", text: "Import merit round files" },
-    toMap > 0 && can(session, "data.edit") && { href: "/admin/inductions", text: `Map ${toMap} published names to hospitals and specialities` },
-  ].filter(Boolean) as { href: string; text: string }[];
+  const inbox = can(session, "data.edit") || can(session, "policy.edit") ? await listInbox(db, session).catch(() => null) : null;
+  const inboxWaiting = inbox?.filter((i) => i.kind !== "unrecognised").length ?? 0;
+  const queues: Queue[] = [
+    { title: "Changes to review", count: pendingChanges, icon: "history", href: "/admin/changes", cta: pendingChanges ? "Review" : "Open", text: pendingChanges ? "Staged changes wait for a decision before they go live." : "Nothing is waiting to be published." },
+    ...(inbox ? [{ title: "Files in the inbox", count: inboxWaiting, icon: "upload" as const, href: "/admin/inductions#inbox", cta: inboxWaiting ? "Import" : "Open", text: inboxWaiting ? "New files on the server, checked and ready to import." : "Drop round, seat or policy files into the server's inbox folder." }] : []),
+    ...(can(session, "data.edit") ? [{ title: "Names to map", count: toMap, icon: "list" as const, href: "/admin/inductions", cta: "Map names", text: toMap ? "Published names that match no hospital or speciality yet." : "Every published name is mapped." }] : []),
+    ...(can(session, "community.moderate") ? [{ title: "Community reports", count: reports, icon: "flag" as const, href: "/admin/community", cta: "Moderate", text: reports ? "Posts members reported for review." : "No reports waiting." }] : []),
+    ...(can(session, "data.edit") && reference.seatMatrices.length === 0 ? [{ title: "Seat matrix", count: 1, icon: "database" as const, href: "/admin/reference-data", cta: "Import", text: "No seat matrix yet: import induction<n>_seats.json." }] : []),
+    ...(can(session, "policy.edit") && !active ? [{ title: "Scoring policy", count: 1, icon: "sliders" as const, href: "/admin/policies", cta: "Import", text: "No active policy: import scoring_policy.json so merit shows out of each total." }] : []),
+    ...(can(session, "candidates.verify") ? [{ title: "Records to verify", count: null, icon: "users" as const, text: "Arrives with candidate accounts." }] : []),
+  ];
 
   return (
     <AreaPage {...frame}>
+      <WorkQueues queues={queues} />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Database" value="Online" badge={dbBadge.ok} hint="Live check" />
         <Metric label="Active scoring policy" value={active ? active.policyKey : null} unit={active ? `v${active.version}` : undefined} hint={active ? "Manage under Scoring policies" : "Not imported yet"} />
@@ -81,17 +90,7 @@ export default async function AdminOverviewPage() {
           <InductionTimeline inductions={inductions} />
         </Card>
       ) : null}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <Card>
-          <CardHeader title="Needs attention" />
-          {todo.length ? (
-            <ul className="grid gap-2">
-              {todo.map((t) => (
-                <li key={t.text}><Link href={t.href} className="flex items-center justify-between gap-3 rounded-xl bg-elevated px-4 py-3 text-sm hover:bg-hover"><span>{t.text}</span><span aria-hidden className="text-subtle">→</span></Link></li>
-              ))}
-            </ul>
-          ) : <p className="text-sm text-muted">Nothing outstanding.</p>}
-        </Card>
+      <div className="grid grid-cols-1 gap-5">
         <Card>
           <CardHeader title="Allocations per induction" description="Latest round of each." />
           {inductions.length ? (

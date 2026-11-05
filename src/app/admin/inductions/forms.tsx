@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Field, fieldClass, ReasonField } from "@/components/ui/form";
 import { cn } from "@/components/ui/cn";
 import { idleState } from "@/lib/action-state";
-import { deleteRoundAction, importRoundsAction, saveAliasAction } from "./actions";
+import { deleteRoundAction, importInboxAction, importRoundsAction, saveAliasAction, skipInboxAction } from "./actions";
 
 type FileResult = { name: string; state: "waiting" | "importing" | "done" | "failed"; message?: string; href?: string };
 
@@ -129,5 +129,55 @@ export function AliasForm({ kind, name, rows, options }: { kind: "speciality" | 
       <Button type="submit" size="sm" disabled={pending || !lookupId || !reason.trim()}>{pending ? "…" : "Map"}</Button>
       {state.status !== "idle" ? <p role={state.status === "error" ? "alert" : "status"} className={cn("text-xs sm:col-span-4", state.status === "error" ? "text-danger" : "text-success")}>{state.message}</p> : null}
     </form>
+  );
+}
+
+/** One inbox file: Import (new data applies, a replacement is staged) or Skip, with a reason. */
+export function InboxRow({ item }: { item: { kind: string; name: string; target: string | null; replaces: boolean; issues: string[]; canImport: boolean; folder: string; needsYear: boolean } }) {
+  const [imp, importAction, importing] = useActionState(importInboxAction, idleState);
+  const [skip, skipAction, skipping] = useActionState(skipInboxAction, idleState);
+  const [reason, setReason] = useState("");
+  const [year, setYear] = useState("");
+  const done = imp.status === "success" ? imp : skip.status === "success" ? skip : null;
+  const err = imp.status === "error" ? imp : skip.status === "error" ? skip : null;
+  const recognised = item.kind !== "unrecognised";
+  return (
+    <li className="grid gap-2 rounded-xl border border-line bg-canvas p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="min-w-0">
+          <span className="block font-mono text-xs text-muted">{item.folder}/{item.name}</span>
+          <span className="block text-sm font-medium">{item.target ?? (recognised ? "Cannot be read" : "Not a recognised file")}</span>
+        </span>
+        {item.issues.length ? (
+          <span className="rounded-full border border-danger/40 bg-danger/10 px-2 py-0.5 text-xs font-semibold text-danger">Problem</span>
+        ) : item.replaces ? (
+          <span className="rounded-full border border-amber/40 bg-amber/10 px-2 py-0.5 text-xs font-semibold text-amber">Replaces existing · review first</span>
+        ) : (
+          <span className="rounded-full border border-success/40 bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">New</span>
+        )}
+      </div>
+      {item.issues.length ? <ul className="list-disc pl-5 font-mono text-xs text-muted">{item.issues.map((i) => <li key={i}>{i}</li>)}</ul> : null}
+      {done ? (
+        <p role="status" className="text-xs text-success">
+          {done.message} {done.href ? <a href={done.href} className="font-semibold text-signal hover:underline">{done.hrefLabel} →</a> : null}
+        </p>
+      ) : recognised ? (
+        <form className="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="kind" value={item.kind} />
+          <input type="hidden" name="name" value={item.name} />
+          <label className="sr-only" htmlFor={`ir-${item.folder}-${item.name}`}>Reason for {item.name}</label>
+          <input id={`ir-${item.folder}-${item.name}`} name="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason" className={cn(fieldClass, "h-9 w-48 py-1")} />
+          {item.needsYear ? (
+            <>
+              <label className="sr-only" htmlFor={`iy-${item.name}`}>Calendar year</label>
+              <input id={`iy-${item.name}`} name="calendarYear" inputMode="numeric" value={year} onChange={(e) => setYear(e.target.value)} placeholder="Year" className={cn(fieldClass, "h-9 w-20 py-1")} />
+            </>
+          ) : null}
+          {item.canImport ? <Button formAction={importAction} size="sm" disabled={importing || !reason.trim()}>{importing ? "…" : item.replaces ? "Stage for review" : "Import"}</Button> : null}
+          <Button formAction={skipAction} size="sm" variant="ghost" disabled={skipping || !reason.trim()}>Skip</Button>
+        </form>
+      ) : null}
+      {err ? <p role="alert" className="text-xs text-danger">{err.message}</p> : null}
+    </li>
   );
 }

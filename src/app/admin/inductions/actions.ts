@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { formInt, formText, proposalState, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
+import { redirect } from "next/navigation";
+import { formInt, formOptionalInt, formText, proposalState, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
+import { importFromInbox, INBOX_KINDS, skipInboxFile, type InboxKind } from "@/lib/data/inbox";
 import { getSession } from "@/lib/auth/session";
 import { proposeDeleteRound, proposeMeritRound } from "@/lib/data/changes";
 import { saveNameAlias } from "@/lib/data/merit";
@@ -71,4 +73,42 @@ export async function saveAliasAction(_prev: ActionState, form: FormData): Promi
   } catch (err) {
     return toActionState(err);
   }
+}
+
+export async function importInboxAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  let target: string;
+  try {
+    const kind = formText(form, "kind") as InboxKind;
+    if (!(kind in INBOX_KINDS)) throw new UserFacingError("Unknown inbox folder.");
+    const name = formText(form, "name");
+    const p = await importFromInbox(getDb(), await getSession(), {
+      kind,
+      name,
+      reason: formText(form, "reason"),
+      calendarYear: formOptionalInt(form, "calendarYear", "Calendar year"),
+    });
+    revalidatePath("/admin", "layout");
+    revalidatePath("/portal", "layout");
+    // The file leaves the inbox, so its row disappears: report the outcome on the page instead.
+    const q = new URLSearchParams({ inbox: name, ...(p.applied ? {} : { change: p.changeId }) });
+    target = `/admin/inductions?${q.toString()}#inbox`;
+  } catch (err) {
+    return toActionState(err);
+  }
+  redirect(target);
+}
+
+export async function skipInboxAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  let target: string;
+  try {
+    const kind = formText(form, "kind") as InboxKind;
+    if (!(kind in INBOX_KINDS)) throw new UserFacingError("Unknown inbox folder.");
+    const name = formText(form, "name");
+    await skipInboxFile(getDb(), await getSession(), { kind, name, reason: formText(form, "reason") });
+    revalidatePath("/admin", "layout");
+    target = `/admin/inductions?${new URLSearchParams({ skipped: name }).toString()}#inbox`;
+  } catch (err) {
+    return toActionState(err);
+  }
+  redirect(target);
 }
