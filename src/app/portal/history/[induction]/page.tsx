@@ -13,13 +13,15 @@ import { getSession } from "@/lib/auth/session";
 import { inductionMaxMarks, inductionTimeline, listInductionsWithRounds } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
-import { intParam } from "@/lib/params";
+import { intParam, oneOf } from "@/lib/params";
+import { inductionTracks, roundSettling } from "@/lib/data/insights";
+import { RoundFunnel } from "@/components/charts/round-funnel";
 
 export const metadata = { title: "Induction" };
 export const dynamic = "force-dynamic";
 
 
-export default async function InductionPage({ params }: { params: Promise<{ induction: string }> }) {
+export default async function InductionPage({ params, searchParams }: { params: Promise<{ induction: string }>; searchParams: Promise<{ track?: string }> }) {
   const induction = intParam((await params).induction);
   if (induction === null) notFound();
   const db = getDb();
@@ -28,6 +30,9 @@ export default async function InductionPage({ params }: { params: Promise<{ indu
   const ind = all.find((i) => i.id === induction);
   if (!ind) notFound();
   const max = maxMarks[induction];
+  const tracks = await inductionTracks(db, session, induction);
+  const track = oneOf((await searchParams).track, tracks.map((t) => t.value));
+  const settling = ind.rounds.length > 1 ? await roundSettling(db, session, induction, track) : null;
   const last = ind.rounds[ind.rounds.length - 1]!;
 
   return (
@@ -40,6 +45,25 @@ export default async function InductionPage({ params }: { params: Promise<{ indu
       <Card>
         <RoundBeam rounds={ind.rounds.map((r) => r.roundNo)} hrefFor={(r) => `/portal/history/${induction}/rounds/${r}`} />
       </Card>
+      {settling ? (
+        <Card id="settling">
+          <CardHeader
+            title="Who is still moving"
+            description="Candidates not yet in the seat they keep in the final round. The list has settled when this reaches zero."
+            action={
+              <form method="get" className="flex flex-wrap items-center gap-2">
+                <label className="sr-only" htmlFor="settle-track">Programme and quota</label>
+                <select id="settle-track" name="track" defaultValue={track ?? ""} className={`${selectClass} w-auto`}>
+                  <option value="">All programmes</option>
+                  {tracks.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+                <Button type="submit" variant="secondary" size="sm">Show</Button>
+              </form>
+            }
+          />
+          <RoundFunnel final={settling.final} rounds={settling.rounds} caption={`Induction ${induction}${track ? `, ${track.replace("|", " ")}` : ""}: candidates still moving by round`} />
+        </Card>
+      ) : null}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Card>
           <CardHeader title="Allocations and consent by round" description="Seats free up as candidates reject or are not available." />

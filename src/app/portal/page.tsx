@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { LineChart } from "@/components/charts/line-chart";
+import { RoundFunnel } from "@/components/charts/round-funnel";
 import { InductionTimeline } from "@/components/charts/induction-timeline";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Icon, type IconName } from "@/components/icon";
 import { Card, CardHeader } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
+import { roundSettling } from "@/lib/data/insights";
 import { inductionTimeline, latestRoundChange, listInductionsWithRounds } from "@/lib/data/merit";
 import { latestRoundStats } from "@/lib/round-stats";
 import { getDb } from "@/lib/db/client";
@@ -31,7 +33,9 @@ export default async function PortalDashboard() {
   const session = await getSession();
   const [inductions, change] = await Promise.all([listInductionsWithRounds(db, session), latestRoundChange(db, session)]);
   const latest = inductions[0];
-  const timeline = latest ? await inductionTimeline(db, session, latest.id) : [];
+  const [timeline, settling] = latest
+    ? await Promise.all([inductionTimeline(db, session, latest.id), roundSettling(db, session, latest.id)])
+    : [[], null];
 
   return (
     <AreaPage {...frame}>
@@ -48,6 +52,16 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader title="Timeline" description="Induction cycles and their rounds. Select a round to open it." />
           <InductionTimeline inductions={inductions} />
+        </Card>
+      ) : null}
+      {latest && settling && latest.rounds.length > 1 ? (
+        <Card>
+          <CardHeader
+            title="Who is still moving"
+            description={`Induction ${latest.id}: candidates not yet in the seat they keep in the final round. Hover a round for who entered, moved or left.`}
+            action={<Link href={`/portal/history/${latest.id}#settling`} className="text-sm font-semibold text-signal hover:underline">By programme →</Link>}
+          />
+          <RoundFunnel final={settling.final} rounds={settling.rounds} caption={`Induction ${latest.id}: candidates still moving by round`} />
         </Card>
       ) : null}
       {latest ? (
