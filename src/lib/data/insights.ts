@@ -123,3 +123,50 @@ export async function closingLadder(
   complete.sort((a, b) => (b.marks.at(-1) ?? 0) - (a.marks.at(-1) ?? 0));
   return { rounds, rows: complete };
 }
+
+export type FlowPanel = { key: string; label: string; rounds: { roundNo: number; accepted: number; released: number }[]; released: number };
+
+/**
+ * Seats accepted vs released (declined or not available) per round. Panels are
+ * specialities (largest first, up to `limit`) or, with `specialityId`, that
+ * speciality's programme·quotas. Released seats are offered again next round.
+ */
+export async function seatFlow(db: Database, session: Session | null, input: { induction: number; specialityId?: number; limit?: number }) {
+  assertCan(session, "portal");
+  const ind = inductionSchema.parse(input.induction);
+  const spec = input.specialityId === undefined ? undefined : z.number().int().positive().parse(input.specialityId);
+  const bySpeciality = spec === undefined;
+  const rows = (await db.execute(sql`
+    select ${bySpeciality ? sql`m.speciality` : sql`m.program || '|' || m.quota`} as key, r.round_no,
+           (count(*) filter (where m.consent = 'Accepted'))::int as accepted,
+           (count(*) filter (where m.consent <> 'Accepted'))::int as released
+    from merit_rounds r join merit_allocations m on m.round_id = r.id
+    where r.induction_id = ${ind} ${spec === undefined ? sql`` : sql`and m.speciality_id = ${spec}`}
+    group by 1, r.round_no order by 1, r.round_no`)) as unknown as { key: string; round_no: number; accepted: number; released: number }[];
+  const panels = new Map<string, FlowPanel>();
+  for (const r of rows) {
+    const p = panels.get(r.key) ?? { key: r.key, label: bySpeciality ? r.key : r.key.replace("|", " · "), rounds: [], released: 0 };
+    p.rounds.push({ roundNo: r.round_no, accepted: r.accepted, released: r.released });
+    p.released += r.released;
+    panels.set(r.key, p);
+  }
+  const size = (p: FlowPanel) => p.rounds[0] ? p.rounds[0].accepted + p.rounds[0].released : 0;
+  return [...panels.values()].sort((a, b) => size(b) - size(a)).slice(0, input.limit ?? 6);
+}
+
+/**
+ * For the score finder: seats each speciality·hospital released before the final
+ * round of an induction (programme·quota), keyed "speciality|hospital".
+ */
+export async function releasedBeforeFinal(db: Database, session: Session | null, input: { induction: number; track: string }) {
+  assertCan(session, "portal");
+  const ind = inductionSchema.parse(input.induction);
+  const tr = trackSchema.parse(input.track);
+  const rows = (await db.execute(sql`
+    select m.speciality, m.hospital, (count(*) filter (where m.consent <> 'Accepted'))::int as released
+    from merit_rounds r join merit_allocations m on m.round_id = r.id
+    where r.induction_id = ${ind} ${trackWhere(tr)}
+      and r.round_no < (select max(round_no) from merit_rounds where induction_id = ${ind})
+    group by m.speciality, m.hospital`)) as unknown as { speciality: string; hospital: string; released: number }[];
+  return new Map(rows.map((r) => [`${r.speciality}|${r.hospital}`, r.released]));
+}

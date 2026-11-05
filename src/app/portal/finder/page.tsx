@@ -14,6 +14,7 @@ import { Notice } from "@/components/ui/notice";
 import { selectClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
 import { myMerit } from "@/lib/data/candidates";
+import { releasedBeforeFinal } from "@/lib/data/insights";
 import { snippetParam } from "@/lib/domain/community";
 import { findOptions, finderOptions, listShortlist, optionHistory, type FinderOption } from "@/lib/data/finder";
 import { getDb } from "@/lib/db/client";
@@ -115,6 +116,8 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   const isPicked = (o: FinderOption) => [sp.a, sp.b].includes(optionKey(o));
 
   const options = result?.options ?? [];
+  // Seats declined or not taken before the final round: why waiting can pay for Borderline options.
+  const released = result ? await releasedBeforeFinal(db, session, { induction: induction.id, track: trackValue }) : new Map<string, number>();
   const counts = Object.fromEntries(STATUSES.map((st) => [st, options.filter((o) => o.status === st).length])) as Record<FinderStatus, number>;
   const visible = show ? options.filter((o) => o.status === show) : options;
   const bySpeciality = new Map<string, FinderOption[]>();
@@ -276,9 +279,14 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                     <ul className="divide-y divide-line">
                       {rows.map((o) => (
                         <li key={o.hospital} className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm sm:grid-cols-[minmax(0,1fr)_7rem_9rem_auto]", isPicked(o) && "bg-ember/10")}>
-                          <Link href={pickHref(o)} className="min-w-0 truncate hover:text-signal hover:underline" aria-label={`${isPicked(o) ? "Remove from comparison" : "Compare"}: ${o.hospital}`}>
-                            {o.hospital}
-                          </Link>
+                          <span className="min-w-0">
+                            <Link href={pickHref(o)} className="block truncate hover:text-signal hover:underline" aria-label={`${isPicked(o) ? "Remove from comparison" : "Compare"}: ${o.hospital}`}>
+                              {o.hospital}
+                            </Link>
+                            {o.status === "borderline" && released.get(`${o.speciality}|${o.hospital}`) ? (
+                              <span className="block text-[0.7rem] text-amber">{released.get(`${o.speciality}|${o.hospital}`)} {released.get(`${o.speciality}|${o.hospital}`) === 1 ? "seat" : "seats"} freed before the final round</span>
+                            ) : null}
+                          </span>
                           <span className="sm:order-none"><StatusPill status={o.status} /></span>
                           <span className="col-span-2 text-xs text-muted sm:col-span-1 sm:text-right" title={`Round ${o.firstRound}: ${o.firstClosing.toFixed(2)} · round ${o.lastRound}: ${o.lastClosing.toFixed(2)} (out of ${induction.total})`}>
                             R{o.firstRound} {pct(o.firstPct)} → R{o.lastRound} <span className="font-semibold text-ink">{pct(o.lastPct)}</span>

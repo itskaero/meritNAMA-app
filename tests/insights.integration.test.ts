@@ -5,7 +5,7 @@ import { eq, inArray } from "drizzle-orm";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
-import { closingLadder, inductionTracks, roundSettling } from "@/lib/data/insights";
+import { closingLadder, inductionTracks, releasedBeforeFinal, roundSettling, seatFlow } from "@/lib/data/insights";
 import { importMeritRound } from "@/lib/data/merit";
 import * as schema from "@/lib/db/schema";
 
@@ -80,5 +80,21 @@ describe.skipIf(!url)("merit insights (integration)", () => {
     const finals = l.rows.map((r) => r.marks[1]!);
     expect([...finals].sort((a, b) => b - a)).toEqual(finals);
     expect((await closingLadder(db, reader, { induction: IND, specialityId: 999999 })).rows).toEqual([]);
+  });
+
+  it("counts accepted and released seats per round, and what was freed before the final round", async () => {
+    const panels = await seatFlow(db, reader, { induction: IND, limit: 50 });
+    const count = (rows: Row[], spec: string, accepted: boolean) => rows.filter((r) => r.speciality.trim() === spec && (r.consent.trim() === "Accepted") === accepted).length;
+    for (const p of panels) {
+      expect(p.rounds.map((r) => [r.accepted, r.released])).toEqual([r1, r2].map((rows) => [count(rows, p.key, true), count(rows, p.key, false)]));
+      expect(p.released).toBe(count(r1, p.key, false) + count(r2, p.key, false));
+    }
+    expect(panels.reduce((n, p) => n + p.rounds[0]!.accepted + p.rounds[0]!.released, 0)).toBe(r1.length);
+
+    const [top] = await inductionTracks(db, reader, IND);
+    const [program, quota] = top!.value.split("|");
+    const freed = await releasedBeforeFinal(db, reader, { induction: IND, track: top!.value });
+    const expected = r1.filter((r) => r.type === program && r.quota === quota && r.consent.trim() !== "Accepted").length;
+    expect([...freed.values()].reduce((a, b) => a + b, 0)).toBe(expected);
   });
 });

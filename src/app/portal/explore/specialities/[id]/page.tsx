@@ -9,7 +9,8 @@ import { EntityLink } from "@/components/entity-link";
 import { selectClass } from "@/components/ui/styles";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
-import { closingLadder } from "@/lib/data/insights";
+import { closingLadder, seatFlow } from "@/lib/data/insights";
+import { SeatFlow } from "@/components/charts/seat-flow";
 import { specialityHistory } from "@/lib/data/merit";
 import { MeritLadder } from "@/components/charts/merit-ladder";
 import { getDb } from "@/lib/db/client";
@@ -41,7 +42,12 @@ export default async function SpecialityPage({ params, searchParams }: {
   // Percent of the induction's total when known: totals differ (60 vs 35 marks).
   const value = (p: (typeof points)[number]) => (allKnown ? ((p.closing ?? 0) / h.maxMarks[p.inductionId]!) * 100 : p.closing);
   const latest = h.byHospital[0];
-  const ladder = latest ? await closingLadder(getDb(), await getSession(), { induction: latest.induction_id, specialityId: id }) : null;
+  const [ladder, flow] = latest
+    ? await Promise.all([
+        closingLadder(getDb(), await getSession(), { induction: latest.induction_id, specialityId: id }),
+        seatFlow(getDb(), await getSession(), { induction: latest.induction_id, specialityId: id, limit: 6 }),
+      ])
+    : [null, []];
 
   return (
     <AreaPage
@@ -82,6 +88,12 @@ export default async function SpecialityPage({ params, searchParams }: {
             <Card>
               <CardHeader title={`Merit ladder · induction ${latest.induction_id}`} description="Lowest closing merit for each programme and quota, round by round." />
               <MeritLadder rows={ladder.rows} rounds={ladder.rounds} total={h.maxMarks[latest.induction_id] ?? null} linkRows={false} caption={`${h.speciality.name}, induction ${latest.induction_id}: lowest closing merit per programme and quota by round`} />
+            </Card>
+          ) : null}
+          {latest && flow.length ? (
+            <Card>
+              <CardHeader title={`Seat flow · induction ${latest.induction_id}`} description="Seats accepted, and seats declined or not taken that go back into the pool for the next round." />
+              <SeatFlow panels={flow} caption={`${h.speciality.name}, induction ${latest.induction_id}: accepted and released seats per round by programme and quota`} />
             </Card>
           ) : null}
           {latest ? (

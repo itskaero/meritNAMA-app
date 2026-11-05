@@ -14,7 +14,8 @@ import { inductionMaxMarks, inductionTimeline, listInductionsWithRounds } from "
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
 import { intParam, oneOf } from "@/lib/params";
-import { closingLadder, inductionTracks, roundSettling } from "@/lib/data/insights";
+import { closingLadder, inductionTracks, roundSettling, seatFlow } from "@/lib/data/insights";
+import { SeatFlow } from "@/components/charts/seat-flow";
 import { MeritLadder } from "@/components/charts/merit-ladder";
 import { MeritMoveHeat } from "@/components/charts/merit-move-heat";
 import { RoundFunnel } from "@/components/charts/round-funnel";
@@ -38,9 +39,10 @@ export default async function InductionPage({ params, searchParams }: { params: 
   const tracks = await inductionTracks(db, session, induction);
   const track = oneOf((await searchParams).track, tracks.map((t) => t.value));
   const ladderTrack = track ?? tracks[0]?.value;
-  const [settling, ladder] = await Promise.all([
+  const [settling, ladder, flow] = await Promise.all([
     ind.rounds.length > 1 ? roundSettling(db, session, induction, track) : Promise.resolve(null),
     ladderTrack ? closingLadder(db, session, { induction, track: ladderTrack }) : Promise.resolve(null),
+    seatFlow(db, session, { induction, limit: 6 }),
   ]);
   const ladderLabel = ladderTrack?.replace("|", " · ");
   const last = ind.rounds[ind.rounds.length - 1]!;
@@ -90,6 +92,12 @@ export default async function InductionPage({ params, searchParams }: { params: 
         <Card>
           <CardHeader title="Where merit moved" description={`Change in each speciality's lowest closing marks between rounds, ${ladderLabel}. Teal: fell (easier). Amber: rose. A dot: no change.`} />
           <MeritMoveHeat rows={ladder.rows} rounds={ladder.rounds} caption={`Induction ${induction}, ${ladderLabel}: change in closing merit between rounds per speciality`} />
+        </Card>
+      ) : null}
+      {flow.length ? (
+        <Card>
+          <CardHeader title="Seat flow" description="The six largest specialities: seats accepted, and seats declined or not taken that are offered again next round." />
+          <SeatFlow panels={flow} caption={`Induction ${induction}: accepted and released seats per round, six largest specialities`} />
         </Card>
       ) : null}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
