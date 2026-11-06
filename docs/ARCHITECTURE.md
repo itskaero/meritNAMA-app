@@ -264,8 +264,8 @@ against round r), which is what the simulation has to beat.
   carried forward). Without the carried bans this collapses (7,868), which is why a
   plain "any programme" rule failed.
 
-Tried and rejected (no gain or worse): letting seated candidates enter any listed (without the bans)
-programme (65% in R1→R2), offering seats already empty at the start of the round (no
+Tried and rejected (no gain or worse): letting seated candidates enter any listed
+programme without the bans (65% in R1→R2), offering seats already empty at the start of the round (no
 change), and filling freed seats in global merit order instead of seat by seat (no
 change). Joining happens only after the final round.
 
