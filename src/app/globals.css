@@ -91,3 +91,14 @@ svg.mn-spark { animation: mn-glow 5s ease-in-out infinite; }
   .mn-hand-left, .mn-hand-right, span.mn-spark, div.mn-spark, svg.mn-spark { animation: none; }
   span.mn-spark { transform: translate(-50%, -50%); }
 }
+
+/* Printing a preference list: only the page content, dark on white. */
+@media print {
+  #app-nav, [data-print-hide] { display: none !important; }
+  /* The shell is a two-column grid; with the sidebar gone the content takes the page. */
+  [data-mode] { display: block !important; }
+  html, body, main, [data-mode], [data-mode] > div { background: #fff !important; }
+  main, main * { color: #111 !important; background: transparent !important; box-shadow: none !important; text-shadow: none !important; }
+  main { border: 0 !important; }
+  main li { break-inside: avoid; border-color: #bbb !important; }
+}

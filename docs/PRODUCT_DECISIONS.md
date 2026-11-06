@@ -59,6 +59,17 @@ email), rate limits, reports and audited moderation.
      - the dashboard
    - **The next induction's first round** (raw marks) still needs two earlier inductions under the same scoring policy. None qualify today: inductions 19, 20 and 21 each use a different policy, and the page says so.
 
+## Preference planner (Nov 2026)
+
+- **What a list is.** Private drafts at `/portal/preferences`: up to 10 lists of up to 150 options, each for one programme · quota, in the order a candidate would submit to PHF. A list can be created from the shortlist, renamed, duplicated, deleted, compared side by side, exported as CSV and printed (labelled "planning aid, not an official PHF submission").
+- **How a list is read** (PHF places candidates in merit order into their highest reachable preference):
+  - the first **Safe** option is the likely placement
+  - **Borderline** options above it may come in later rounds
+  - options below it are marked "unlikely to be used"
+  - lists with no Safe option, every option Out of reach, or options not offered in the latest induction get warnings
+- **Marks.** Checked against the latest induction with a known total, in percent. The list's own marks are used, else the verified record's. While a cycle runs, the predicted next-round range is shown per option.
+- **Reordering.** Drag, ↑/↓ buttons, or Alt + arrow keys. The order saves automatically, and a failed save puts the previous order back.
+
 ## Merit visuals (Nov 2026, from the concepts page)
 
 Built one by one from the concepts the owner approved. Real data only; aggregates only.

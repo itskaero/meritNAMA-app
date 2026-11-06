@@ -63,9 +63,9 @@ export const candidateSections: Section[] = [
     group: "Menu",
     icon: "list",
     label: "Preference planner",
-    description: "Draft and compare preference lists.",
+    description: "Put your options in order and see where the list is likely to place you.",
     milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Search specialties and hospitals", "Programme and quota filters", "Duplicate and eligibility warnings", "Save, duplicate, rename and compare drafts"],
+    planned: [],
   },
   {
     href: "/portal/simulation",

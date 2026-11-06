@@ -63,7 +63,7 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
 
   return (
     <>
-      <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden">
+      <div data-print-hide className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden">
         {brand}
         <div className="flex items-center gap-2">
           {bell}

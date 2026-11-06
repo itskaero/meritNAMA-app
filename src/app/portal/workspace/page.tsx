@@ -82,7 +82,12 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
               <CardHeader
                 title={track}
                 description={`${rows.length} saved ${rows.length === 1 ? "option" : "options"}`}
-                action={<ButtonLink href={`/portal/finder?track=${encodeURIComponent(`${program}|${quota}`)}`} variant="ghost" size="sm">Check in the finder</ButtonLink>}
+                action={
+                  <div className="flex flex-wrap gap-2">
+                    <ButtonLink href={`/portal/finder?track=${encodeURIComponent(`${program}|${quota}`)}`} variant="ghost" size="sm">Check in the finder</ButtonLink>
+                    <ButtonLink href="/portal/preferences" size="sm">Make a preference list</ButtonLink>
+                  </div>
+                }
               />
               <ul className="divide-y divide-line rounded-2xl border border-line">
                 {rows.map((x) => {

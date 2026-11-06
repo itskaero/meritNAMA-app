@@ -567,3 +567,40 @@ export const hospitalReviews = pgTable(
     check("hospital_reviews_ratings", sql`${t.training} between 1 and 5 and ${t.workload} between 1 and 5 and ${t.hostel} between 1 and 5 and ${t.stipend} between 1 and 5`),
   ],
 );
+
+// ── Preference planner ─────────────────────────────────────────────────────────
+
+/** A member's draft preference list for one programme and quota. Private to its owner. */
+export const preferenceLists = pgTable(
+  "preference_lists",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    program: text("program").notNull(),
+    quota: text("quota").notNull(),
+    /** Marks to check the list against; when empty, the verified record's are used. */
+    marks: doublePrecision("marks"),
+    total: doublePrecision("total"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("preference_lists_name_uq").on(t.userId, sql`lower(${t.name})`), index("preference_lists_user_idx").on(t.userId, t.updatedAt)],
+);
+
+/** Options on a list, in order. The same speciality at the same hospital appears once. */
+export const preferenceItems = pgTable(
+  "preference_items",
+  {
+    listId: uuid("list_id").notNull().references(() => preferenceLists.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    speciality: text("speciality").notNull(),
+    hospital: text("hospital").notNull(),
+    note: text("note"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.listId, t.speciality, t.hospital] }),
+    uniqueIndex("preference_items_position_uq").on(t.listId, t.position),
+    check("preference_items_position_positive", sql`${t.position} > 0`),
+  ],
+);

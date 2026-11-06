@@ -125,6 +125,10 @@ record. An applicant ID alone is never proof of identity.
   reach the page. Reports, helpful votes and moderation share the community
   tables, with `target_kind = 'review'`.
 
+## Preference lists
+
+`preference_lists` and `preference_items` (primary key: list + speciality + hospital, so an option appears once; positions unique per list). Every function in `src/lib/data/preferences.ts` loads the list through `ownList`, which filters by the signed-in user, so another member's list reads as "does not exist". Reordering rewrites the list in one transaction after checking the new order names exactly the current options.
+
 ## Predictions
 
 `src/lib/domain/prediction.ts` holds the pure maths: quantiles, the 20th–80th percentile range rounded outwards, confidence levels, coverage, and the policy-range parser. `src/lib/data/predictions.ts` reads the history.
