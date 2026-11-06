@@ -16,6 +16,7 @@
  * the legacy code walked an object keyed by id.
  */
 import { marksContext, preferenceMark, type Certificate, type EngineCandidate, type MarksContext, type Preference } from "./marks";
+import { quotaTrack } from "./placement";
 import type { ResolvedRules } from "./rules";
 
 /** Speciality ids that the legacy discipline file lacks; these names win over the input map. */
@@ -84,6 +85,11 @@ export type CascadeInput = {
   profileStatus: ProfileStatusFn;
   /** Candidates rejected in earlier simulated rounds (carried forward). */
   extraRejected?: ReadonlySet<number>;
+  /**
+   * Tracks a candidate may no longer enter, from earlier rounds: held seats in both
+   * tracks and consented to one (see trackBansFromRound). Only used with tracks "phf".
+   */
+  trackBans?: ReadonlyMap<number, ReadonlySet<string>>;
   onWave?: (p: { wave: number; changesThisPass: number; totalPlacements: number; totalUpgrades: number }) => void;
 };
 
@@ -342,8 +348,28 @@ export function runCascade(input: CascadeInput): CascadeResult {
 
   const initialVacancies = vacantQueue.length;
 
+  // PHF tracks: civilian and Armed Forces are separate. A candidate seated in both tracks
+  // in this round keeps the track they consented to and is out of the other for good;
+  // one seated in a single track may still enter the other (in any programme).
+  const phfTracks = rules.cascade.tracks === "phf";
+  const trackOfSeat = (sk: string) => quotaTrack(rules, part(sk, 3));
+  const bans = new Map<number, Set<string>>();
+  if (phfTracks) {
+    for (const [cid, t] of input.trackBans ?? []) bans.set(cid, new Set(t));
+    for (const [cid, t] of trackBansFromRound(rules, input.merit, consentApproved)) {
+      const b = bans.get(cid) ?? new Set<string>();
+      for (const x of t) b.add(x);
+      bans.set(cid, b);
+    }
+  }
   const canTake = (cid: number, sk: string) => {
     if (!candidatePrefMap.get(cid)?.has(sk)) return false;
+    if (phfTracks) {
+      const track = trackOfSeat(sk);
+      if (bans.get(cid)?.has(track)) return false;
+      // Not seated in this track: a newcomer to it, whatever they hold in the other.
+      if (![...(candidateState.get(cid)?.keys() ?? [])].some((h) => trackOfSeat(h) === track)) return true;
+    }
     const allowed = allowedPrograms.get(cid);
     if (allowed && allowed.size > 0 && !allowed.has(part(sk, 0))) return false;
     const allowedQ = allowedQuotas.get(cid);
@@ -506,6 +532,45 @@ export function runCascade(input: CascadeInput): CascadeResult {
     consentRejected,
     consentAwaited,
   };
+}
+
+/**
+ * Track bans arising in one round: candidates allocated seats in both tracks who
+ * consented to one are out of the other track from then on. Pass `accepted` as the
+ * candidate's accepted consent row (lowest preference number), keyed by applicant.
+ */
+export function trackBansFromRound(
+  rules: ResolvedRules,
+  merit: readonly CascadeMeritEntry[],
+  accepted: ReadonlyMap<number, CascadeConsentRow>,
+): Map<number, Set<string>> {
+  const tracksHeld = new Map<number, Set<string>>();
+  for (const e of merit) {
+    const cid = Number(e.applicantId);
+    (tracksHeld.get(cid) ?? tracksHeld.set(cid, new Set()).get(cid)!).add(quotaTrack(rules, e.quotaName));
+  }
+  const out = new Map<number, Set<string>>();
+  for (const [cid, tracks] of tracksHeld) {
+    if (tracks.size < 2) continue;
+    const row = accepted.get(cid);
+    const sk = row ? consentSeatKey(row) : null;
+    if (!sk) continue;
+    const kept = quotaTrack(rules, part(sk, 3));
+    out.set(cid, new Set([...tracks].filter((t) => t !== kept)));
+  }
+  return out;
+}
+
+/** The accepted consent row per candidate (lowest preference number), as the cascade reads consent. */
+export function acceptedConsent(consent: readonly CascadeConsentRow[]): Map<number, CascadeConsentRow> {
+  const out = new Map<number, CascadeConsentRow>();
+  for (const r of consent) {
+    if (r.status !== "Accepted") continue;
+    const cid = Number(r.applicantId);
+    const seen = out.get(cid);
+    if (!seen || r.preferenceNo < seen.preferenceNo) out.set(cid, r);
+  }
+  return out;
 }
 
 /** How a simulated round compares with the one PHF actually published. */

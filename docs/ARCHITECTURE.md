@@ -251,6 +251,13 @@ against round r), which is what the simulation has to beat.
   earlier published list and is not on the round being simulated from does not come
   back. PHF re-seated 0–1 such candidates per round; the legacy cascade re-seated dozens.
 
+- **Civilian and Armed Forces tracks** (`cascade.tracks`, default `"phf"`), as the
+  operator describes PHF practice: seated in one track, a candidate may also get a seat
+  in the other (any programme) in a later round; seated in both in one round, they
+  consent to one and are out of the other for good (`trackBansFromRound`, carried
+  forward from every earlier round); no consent drops them from all tracks; rejected
+  is never considered again.
+
 Tried and rejected (no gain or worse): letting seated candidates enter any listed
 programme (65% in R1→R2), offering seats already empty at the start of the round (no
 change), and filling freed seats in global merit order instead of seat by seat (no
@@ -259,11 +266,14 @@ change). Joining happens only after the final round.
 | | R1→2 | R2→3 | R3→4 | R4→5 | R5→6 | R6→7 | R7→8 | reproduced |
 |---|---|---|---|---|---|---|---|---|
 | legacy rules | 93.1 | 97.0 | 81.9 | 94.8 | 92.3 | 91.8 | 91.0 | 7,952 |
-| **tuned** | **93.5** | **97.3** | **95.7** | **97.3** | **96.0** | **96.0** | **96.6** | **8,330** |
+| awaited + dropped out | 93.5 | 97.3 | 95.7 | 97.3 | 96.0 | 96.0 | 96.6 | 8,330 |
+| **+ PHF tracks** | **93.5** | **98.5** | **97.1** | **97.7** | **96.5** | **97.2** | **97.9** | **8,404** |
 | nobody moved | 57.3 | 88.4 | 94.5 | 90.6 | 85.9 | 86.6 | 89.0 | |
 
 With round 1 at 98.9%, the simulation reproduces 98.9% of PHF's first list and 93–97%
-of each later one.
+of each later one (96.5–98.5% from round 3 on). The largest remaining gap is in R1→R2:
+candidates who move into a seat in another programme of the same track (e.g. MD → FCPS),
+which a general "any programme" rule over-predicts.
 
 Still to do: `app-predict-calc.js` (the scoring calculator).
 

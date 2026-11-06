@@ -88,6 +88,14 @@ export const allocationRulesSchema = z.strictObject({
      */
     awaitedConsent: z.enum(["vacate", "keep", "yield"]).default("yield"),
     /**
+     * Civilian and Armed Forces tracks in later rounds.
+     * - phf: a candidate seated in one track may also get a seat in the other (any
+     *   programme); one seated in both must consent to one and is out of the other for
+     *   good. (The operator's account of PHF practice.)
+     * - legacy: only programmes and quotas the candidate already holds seats in.
+     */
+    tracks: z.enum(["legacy", "phf"]).default("phf"),
+    /**
      * Candidates who were on an earlier list and dropped off it (rejected, did not reply,
      * lost their profile) do not come back. Induction 21: PHF re-seated 0–1 per round.
      */
@@ -113,7 +121,7 @@ export const DEFAULT_RULES: AllocationRules = {
   parentBonus: { enabled: "auto", component: "parent_institute" },
   tracks: { separate: [{ id: "armed", quotaContains: ["armed force"] }], defaultTrack: "civilian" },
   placement: { displaceWhen: "strictlyHigher", orderBy: "bestMark", maxPasses: 1000, eligibleProfileStatus: [1], unknownStatus: "include" },
-  cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100, awaitedConsent: "yield", droppedStayOut: true },
+  cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100, awaitedConsent: "yield", tracks: "phf", droppedStayOut: true },
 };
 
 /**
@@ -126,7 +134,7 @@ export const LEGACY_FIRST_ROUND_RULES: AllocationRules = {
   certificateBonus: { ...DEFAULT_RULES.certificateBonus, enabled: true, combine: "first" },
   parentBonus: { ...DEFAULT_RULES.parentBonus, enabled: false },
   placement: { ...DEFAULT_RULES.placement, orderBy: "bestMarkWithoutParentBonus" },
-  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", droppedStayOut: false },
+  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", tracks: "legacy", droppedStayOut: false },
 };
 
 export const LEGACY_CASCADE_RULES: AllocationRules = {
@@ -142,7 +150,7 @@ export const LEGACY_CASCADE_RULES: AllocationRules = {
     fallback: "none",
   },
   parentBonus: { ...DEFAULT_RULES.parentBonus, enabled: false },
-  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", droppedStayOut: false },
+  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", tracks: "legacy", droppedStayOut: false },
 };
 
 /** What the engines run with: rules plus the scoring policy's switches and caps. */

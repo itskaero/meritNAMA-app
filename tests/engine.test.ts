@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { marksContext, effectiveMark, programAliases, programBonus, type EngineCandidate, type Preference } from "@/lib/engine/marks";
 import { buildSeatTree, candidatePool, preferenceOutcomes, quotaTrack, runPlacement, type SeatLine } from "@/lib/engine/placement";
-import { consentSeatKey, parseConsentTitle, runCascade, type CascadeInput } from "@/lib/engine/cascade";
+import { acceptedConsent, consentSeatKey, parseConsentTitle, runCascade, trackBansFromRound, type CascadeInput } from "@/lib/engine/cascade";
 import { allocationRulesSchema, DEFAULT_RULES, describeRules, LEGACY_CASCADE_RULES, policyForInduction, resolveRules, rulesDiff, RulesError, type AllocationRules } from "@/lib/engine/rules";
 import { policyInductions } from "@/lib/domain/scoring-policy";
 import type { Policy } from "@/lib/domain/scoring-policy";
@@ -258,6 +258,47 @@ describe("cascade", () => {
     it("vacate frees the seat for good; keep never frees it", () => {
       expect(seated(awaited("vacate", false))).toEqual([[20, "Surgery"]]);
       expect(seated(awaited("keep"))).toEqual([[10, "Medicine"], [20, "Surgery"]]);
+    });
+  });
+
+  describe("civilian and Armed Forces tracks", () => {
+    // 10 holds Medicine (civilian); 30's rejection frees an MS Armed Forces seat at CMH.
+    it("phf: seated in one track, a candidate can enter the other, in any programme", () => {
+      const seats = [line("Medicine", 1), { typeName: "MS", quotaName: "Armed Forces", specialityName: "Surgery", hospitalName: "CMH", seats: 1 }];
+      const res = runCascade(scenario({
+        rules,
+        seats,
+        candidates: {
+          "10": { marksTotal: 80, preferences: [...prefs([1, 1]), { typeName: "MS", specialityId: 2, hospitalName: "CMH", quotaName: "Armed Forces", preferenceNo: 2 }] },
+          "30": { marksTotal: 90, preferences: [{ typeName: "MS", specialityId: 2, hospitalName: "CMH", quotaName: "Armed Forces", preferenceNo: 1 }] },
+        },
+        merit: [
+          { applicantId: 10, typeName: "FCPS", specialityName: "Medicine", hospitalName: "Mayo Hospital", quotaName: "Punjab" },
+          { applicantId: 30, typeName: "MS", specialityName: "Surgery", hospitalName: "CMH", quotaName: "Armed Forces" },
+        ],
+        consent: [{ applicantId: 30, status: "Rejected", preferenceNo: 1, seatKey: "MS|Surgery|CMH|Armed Forces" }],
+      }));
+      expect(res.placements.map((p) => [p.applicantId, p.typeName])).toEqual([[10, "FCPS"], [10, "MS"]]);
+      // A ban from an earlier round (chose civilian over Armed Forces) keeps them out.
+      const banned = runCascade({ ...scenario({ rules, seats }), candidates: { "10": { marksTotal: 80, preferences: [...prefs([1, 1]), { typeName: "MS", specialityId: 2, hospitalName: "CMH", quotaName: "Armed Forces", preferenceNo: 2 }] }, "30": { marksTotal: 90, preferences: [] } },
+        merit: [{ applicantId: 10, typeName: "FCPS", specialityName: "Medicine", hospitalName: "Mayo Hospital", quotaName: "Punjab" }, { applicantId: 30, typeName: "MS", specialityName: "Surgery", hospitalName: "CMH", quotaName: "Armed Forces" }],
+        consent: [{ applicantId: 30, status: "Rejected", preferenceNo: 1, seatKey: "MS|Surgery|CMH|Armed Forces" }],
+        trackBans: new Map([[10, new Set(["armed"])]]) });
+      expect(banned.placements.map((p) => [p.applicantId, p.typeName])).toEqual([[10, "FCPS"]]);
+    });
+
+    it("seated in both tracks and consenting to one bans the other", () => {
+      const merit = [
+        { applicantId: 1, typeName: "FCPS", specialityName: "Medicine", hospitalName: "Mayo Hospital", quotaName: "Punjab" },
+        { applicantId: 1, typeName: "FCPS", specialityName: "Medicine", hospitalName: "CMH", quotaName: "Armed Forces" },
+        { applicantId: 2, typeName: "FCPS", specialityName: "Surgery", hospitalName: "Mayo Hospital", quotaName: "Punjab" },
+      ];
+      const accepted = acceptedConsent([
+        { applicantId: 1, status: "Accepted", preferenceNo: 2, seatKey: "FCPS|Medicine|CMH|Armed Forces" },
+        { applicantId: 1, status: "Rejected", preferenceNo: 1, seatKey: "FCPS|Medicine|Mayo Hospital|Punjab" },
+        { applicantId: 2, status: "Accepted", preferenceNo: 1, seatKey: "FCPS|Surgery|Mayo Hospital|Punjab" },
+      ]);
+      expect(trackBansFromRound(rules, merit, accepted)).toEqual(new Map([[1, new Set(["civilian"])]]));
     });
   });
 
