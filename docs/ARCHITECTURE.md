@@ -231,9 +231,24 @@ seat groups identical. Profile status was the decisive input: without it 92.9%.
 Of the remaining differences, 4 are allocations where PHF's published mark differs
 from the computed one. Best vs first certificate made 1 allocation of difference.
 
-Still to do: the cascade (later rounds) on imported consent data, the current
-induction's simulation from members' preference lists on `/portal/simulation`, and
-`app-predict-calc.js` (the scoring calculator).
+**Later rounds (Nov 2026).** Consent replies, fetched from the portal per round, are
+imported from `consent_round<r>.json` into `sim_consent` (name and marks dropped). A
+`next_round` run starts from published round r (names resolved through the lookups
+and whitespace-normalised, since the seat file pads some hospital names), resolves
+each reply to the seat it was given in round r, keeps out everyone who rejected all
+offers in an earlier round, and runs the cascade over the portal preferences. It is
+compared with published round r+1 and with the "nobody moved" baseline (round r+1
+against round r), which is what the simulation has to beat.
+
+Back-test, induction 21, default rules: R1→R2 93.5% (baseline 57.3%), R2→R3 96.6%
+(88.4%), R3→R4 82.3% (94.5%), R4→R5 94.6% (90.6%), R5→R6 92.3% (85.9%), R6→R7 91.8%
+(86.6%), R7→R8 91.0% (89.0%). Round 3 is the exception: PHF kept candidates whose
+consent was "Awaited"; with `cascade.awaitedConsent: "keep"` R3→R4 reaches 95.3%
+(but R4→R5 drops to 94.0%), so that setting is per induction and may need changing
+between rounds.
+
+Still to do: what drives the remaining later-round differences (joining status is the
+likely next input), and `app-predict-calc.js` (the scoring calculator).
 
 ## Storage
 

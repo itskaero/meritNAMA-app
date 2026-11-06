@@ -39,8 +39,8 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
     <AreaPage
       area="admin"
       trail={[{ label: "Processing & simulation", href: "/admin/processing" }, { label: `Induction ${run.inductionId} run` }]}
-      title={`Induction ${run.inductionId} · round 1 simulation`}
-      description={`Started ${formatUtc(run.createdAt)} UTC by ${run.createdBy} · rules ${run.rulesOrigin} · scoring policy ${run.policy ?? "none"} · data imported ${formatUtc(run.datasetImportedAt)} UTC`}
+      title={`Induction ${run.inductionId} · round ${run.kind === "next_round" ? run.fromRound! + 1 : 1} simulation`}
+      description={`${run.kind === "next_round" ? `From published round ${run.fromRound} and its consent replies · ` : "From preferences · "}Started ${formatUtc(run.createdAt)} UTC by ${run.createdBy} · rules ${run.rulesOrigin} · scoring policy ${run.policy ?? "none"} · data imported ${formatUtc(run.datasetImportedAt)} UTC`}
       status={<Badge tone={RUN_TONE[run.status]} className="mx-2">{run.status}</Badge>}
     >
       <Badge tone="simulated">Simulated — not an official result</Badge>
@@ -52,9 +52,20 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Figure label="Candidates taking part" value={n(s.eligible)} hint={`of ${n(s.candidates)} imported, by profile status`} />
             <Figure label="Placed" value={n(s.placed)} hint={`${n(s.byProgram.reduce((t, p) => t + p.seats, 0))} seats`} />
-            <Figure label="Same as published" value={c ? `${c.agreement}%` : "—"} hint={c ? `${n(c.same)} of ${n(c.published)} published allocations` : "Round 1 is not imported for this induction"} />
-            <Figure label="Seat groups identical" value={c ? `${n(c.groupsExact)} / ${n(c.groupsTotal)}` : "—"} />
+            <Figure label="Same as published" value={c ? `${c.agreement}%` : "—"} hint={c ? `${n(c.same)} of ${n(c.published)} published allocations` : `Round ${run.kind === "next_round" ? run.fromRound! + 1 : 1} is not published yet`} />
+            {s.baseline != null ? (
+              <Figure label="If nobody moved" value={`${s.baseline}%`} hint={`Published round ${run.fromRound! + 1} vs round ${run.fromRound}: what the simulation has to beat`} />
+            ) : (
+              <Figure label="Seat groups identical" value={c ? `${n(c.groupsExact)} / ${n(c.groupsTotal)}` : "—"} />
+            )}
           </div>
+          {s.cascade ? (
+            <Notice title={`Cascade: ${n(s.cascade.totalUpgrades)} upgrades, ${n(s.cascade.totalPlacements - s.cascade.totalUpgrades)} new placements in ${n(s.cascade.waves)} waves`}>
+              Round {run.fromRound} consent: {s.cascade.consent ? `${n(s.cascade.consent.accepted)} accepted, ${n(s.cascade.consent.rejected)} rejected, ${n(s.cascade.consent.awaited)} awaited` : "none"}.{" "}
+              {n(s.cascade.initialVacancies)} seats were freed by consent and profile status; {n(s.cascade.locked)} candidates accepted their first preference and stay in their programme;{" "}
+              {n(s.cascade.carriedRejected)} who rejected everything earlier stay out; {n(s.cascade.finalUnfilled)} seats remain empty.
+            </Notice>
+          ) : null}
           {s.unnamedPreferences ? <Notice tone="warning" title={`${n(s.unnamedPreferences)} preferences skipped`}>Their speciality id has no name under Reference data → Lookups, so they could not be matched to seats.</Notice> : null}
 
           <Card>

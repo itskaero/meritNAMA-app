@@ -98,6 +98,7 @@ $MERITNAMA_DATA_DIR/storage/simulation/induction22/
   certificates.json   optional: certificate marks
   ProfileStatus.json  optional but needed for realistic results (or profile_status.json)
   components.json     optional: corrected marks (override marks.json)
+  consent_round1.json consent replies fetched from the portal after round 1, then round 2 …
 ```
 
 Names may carry the induction (`induction22_marks.json` …). Field names are the
@@ -129,6 +130,16 @@ mkdir -p "$MERITNAMA_DATA_DIR/storage/simulation/induction22"
 sudo chown -R 1000:1000 "$MERITNAMA_DATA_DIR/storage/simulation"
 chmod -R go-rwx "$MERITNAMA_DATA_DIR/storage/simulation"
 ```
+
+```jsonc
+// consent_round<r>.json (as fetched from the portal; name and marks are ignored)
+[{ "applicantId": 27267, "program": "FCPS", "quota": "Punjab", "preferenceNo": 3,
+   "infoTitle": "FCPS - Punjab - Medicine - Mayo Hospital, Lahore", "status": "Accepted" }]  // or Rejected / Awaited
+```
+
+After the portal publishes a round's consent, drop its file in the folder and click
+**Import consent files** (the large files are not re-read). Each round with consent
+and its published list imported offers **Simulate round r+1**.
 
 Then **Processing & simulation** → Import. Only marks, preferences, certificate marks
 and profile status are stored in the database; names, PMDC numbers, emails, phone

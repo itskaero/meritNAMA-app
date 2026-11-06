@@ -8,7 +8,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
 import { createPolicyDraft } from "@/lib/data/policies";
 import { importSeatFile } from "@/lib/data/reference-data";
-import { executeRun, getRun, importSimulationDataset, listDatasets, listSimulationFolders, queueFirstRoundRun } from "@/lib/data/simulation";
+import { executeRun, getRun, importConsentRounds, importSimulationDataset, listDatasets, listSimulationFolders, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
+import { importMeritRound } from "@/lib/data/merit";
 import * as schema from "@/lib/db/schema";
 
 /** DISPOSABLE database only (TEST_DATABASE_URL). Uses induction 970 and policy key "1996". Synthetic candidates. */
@@ -40,6 +41,8 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
 
   const wipe = async () => {
     await db.delete(schema.simulationRuns).where(eq(schema.simulationRuns.inductionId, IND));
+    const rs = await db.select({ id: schema.meritRounds.id }).from(schema.meritRounds).where(eq(schema.meritRounds.inductionId, IND));
+    if (rs.length) await db.delete(schema.meritRounds).where(inArray(schema.meritRounds.id, rs.map((r) => r.id)));
     await db.delete(schema.simDatasets).where(eq(schema.simDatasets.inductionId, IND));
     await db.delete(schema.inductionSeats).where(eq(schema.inductionSeats.inductionId, IND));
     await db.delete(schema.inductions).where(eq(schema.inductions.id, IND));
@@ -112,5 +115,40 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
     // A run executes once.
     await executeRun(db, id);
     expect((await db.select().from(schema.simulationPlacements).where(eq(schema.simulationPlacements.runId, id))).length).toBe(placements.length);
+  });
+
+  it("simulates the next round from a published round and its consent replies", async () => {
+    // Publish the simulated round 1 as round 1, then reply: every 4th rejects, every 7th has not answered.
+    const [first] = await db.select().from(schema.simulationRuns).where(eq(schema.simulationRuns.inductionId, IND)).limit(1);
+    const placed = await db.select().from(schema.simulationPlacements).where(eq(schema.simulationPlacements.runId, first!.id));
+    const round = {
+      Table: [{ inductionId: IND, name: "PHF/30/JAN/01", displayName: "Synthetic", startDate: null, endDate: null }],
+      Table5: placed.map((p, i) => ({ rowNo: i + 1, type: p.program, quota: p.quota, specialityJobId: 0, speciality: p.speciality, hospital: p.hospital, institute: "", seats: 1, marks: p.mark, applicantId: p.applicantId, preferenceNo: p.preferenceNo, consent: "" })),
+    };
+    await importMeritRound(db, owner, { roundNo: 1, file: round, reason: "synthetic round 1" });
+    await expect(queueNextRoundRun(db, editor, { induction: IND, fromRound: 1 })).rejects.toThrow(/no consent replies/);
+
+    const replies = placed.map((p, i) => ({
+      applicantId: Number(p.applicantId), name: "Synthetic", program: p.program, quota: p.quota, preferenceNo: p.preferenceNo, marks: p.mark,
+      infoTitle: `${p.program} - ${p.quota} - ${p.speciality} - ${p.hospital}`, status: i % 4 === 0 ? "Rejected" : i % 7 === 0 ? "Awaited" : "Accepted",
+    }));
+    writeFileSync(path.join(root, "simulation", `induction${IND}`, "consent_round1.json"), JSON.stringify(replies));
+    const rounds = await importConsentRounds(db, editor, { induction: IND, reason: "round 1 consent" }, { root });
+    expect(rounds).toMatchObject([{ round: 1, replies: placed.length }]);
+    expect(JSON.stringify(await db.select().from(schema.simConsent).where(eq(schema.simConsent.inductionId, IND)))).not.toContain("Synthetic");
+
+    const id = await queueNextRoundRun(db, editor, { induction: IND, fromRound: 1 });
+    await executeRun(db, id);
+    const run = (await getRun(db, editor, id))!;
+    expect(run).toMatchObject({ status: "done", kind: "next_round", fromRound: 1, error: null });
+    const s = run.summary!;
+    expect(s.comparison).toBeNull(); // round 2 is not published
+    expect(s.cascade!.consent).toMatchObject({ round: 1, rejected: replies.filter((r) => r.status === "Rejected").length });
+    expect(s.cascade!.initialVacancies).toBeGreaterThan(0);
+    const next = await db.select().from(schema.simulationPlacements).where(eq(schema.simulationPlacements.runId, id));
+    // Nobody who rejected keeps a seat.
+    const rejected = new Set(replies.filter((r) => r.status === "Rejected").map((r) => String(r.applicantId)));
+    expect(next.some((p) => rejected.has(p.applicantId))).toBe(false);
+    expect(next.length).toBe(s.placed);
   });
 });

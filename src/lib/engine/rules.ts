@@ -76,6 +76,12 @@ export const allocationRulesSchema = z.strictObject({
     /** Seats held at once: one per quota (one per programme for candidates seated in two quotas of it), or one per programme. */
     seatHolding: z.enum(["perQuota", "perProgramme"]),
     maxWaves: z.number().int().positive().max(1000),
+    /**
+     * A candidate whose consent replies are all "Awaited": loses their seats (vacate), or
+     * keeps them as if they had not replied (keep). PHF has done both (induction 21
+     * round 3 kept them). Defaults keep rules saved before this setting valid.
+     */
+    awaitedConsent: z.enum(["vacate", "keep"]).default("vacate"),
   }),
 });
 
@@ -97,7 +103,7 @@ export const DEFAULT_RULES: AllocationRules = {
   parentBonus: { enabled: "auto", component: "parent_institute" },
   tracks: { separate: [{ id: "armed", quotaContains: ["armed force"] }], defaultTrack: "civilian" },
   placement: { displaceWhen: "strictlyHigher", orderBy: "bestMark", maxPasses: 1000, eligibleProfileStatus: [1], unknownStatus: "include" },
-  cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100 },
+  cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100, awaitedConsent: "vacate" },
 };
 
 /**
@@ -220,7 +226,7 @@ export function describeRules(r: ResolvedRules): { topic: string; text: string }
     },
     {
       topic: "Later rounds",
-      text: `profile status ${r.cascade.eligibleProfileStatus.join(" or ")} may hold seats; ${r.cascade.lockAcceptedFirstPreference === "programme" ? "accepting the 1st preference blocks moving to another programme" : "nobody is locked"}; one seat per ${r.cascade.seatHolding === "perProgramme" ? "programme" : "quota"}; at most ${r.cascade.maxWaves} waves`,
+      text: `profile status ${r.cascade.eligibleProfileStatus.join(" or ")} may hold seats; ${r.cascade.lockAcceptedFirstPreference === "programme" ? "accepting the 1st preference blocks moving to another programme" : "nobody is locked"}; one seat per ${r.cascade.seatHolding === "perProgramme" ? "programme" : "quota"}; consent “Awaited” ${r.cascade.awaitedConsent === "keep" ? "keeps" : "loses"} the seat; at most ${r.cascade.maxWaves} waves`,
     },
   ];
 }

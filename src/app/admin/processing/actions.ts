@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { formInt, formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { executeRun, importSimulationDataset, queueFirstRoundRun } from "@/lib/data/simulation";
+import { executeRun, importConsentRounds, importSimulationDataset, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
 import { getDb } from "@/lib/db/client";
 
 /** Reachable by direct POST: the data layer checks the caller's capability. */
@@ -23,11 +23,25 @@ export async function importDatasetAction(_prev: ActionState, form: FormData): P
   }
 }
 
+export async function importConsentAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const rounds = await importConsentRounds(getDb(), await getSession(), { induction: formInt(form, "induction", "Induction"), reason: formText(form, "reason") });
+    revalidatePath("/admin/processing");
+    return { status: "success", message: `Imported consent for round${rounds.length > 1 ? "s" : ""} ${rounds.map((r) => r.round).join(", ")} (${rounds.reduce((n, r) => n + r.replies, 0).toLocaleString("en-US")} replies).` };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
 export async function startRunAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   let id: string;
   try {
     const db = getDb();
-    id = await queueFirstRoundRun(db, await getSession(), { induction: formInt(form, "induction", "Induction") });
+    const induction = formInt(form, "induction", "Induction");
+    const from = formText(form, "fromRound").trim();
+    id = from
+      ? await queueNextRoundRun(db, await getSession(), { induction, fromRound: formInt(form, "fromRound", "Round") })
+      : await queueFirstRoundRun(db, await getSession(), { induction });
     // Runs after the response is sent; the run page shows its progress.
     after(() => executeRun(db, id));
   } catch (err) {

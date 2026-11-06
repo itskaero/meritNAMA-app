@@ -686,7 +686,31 @@ export const simPreferences = pgTable(
   ],
 );
 
+/**
+ * Consent replies of one round, as fetched from the portal (consent_round<r>.json).
+ * Names and marks are not kept; the seat is kept as published in the reply's title.
+ */
+export const simConsent = pgTable(
+  "sim_consent",
+  {
+    inductionId: integer("induction_id").notNull().references(() => simDatasets.inductionId, { onDelete: "cascade" }),
+    roundNo: integer("round_no").notNull(),
+    applicantId: text("applicant_id").notNull(),
+    /** "Accepted", "Rejected" or "Awaited". */
+    status: text("status").notNull(),
+    program: text("program").notNull(),
+    quota: text("quota").notNull(),
+    preferenceNo: integer("preference_no").notNull(),
+    /** Parsed from the reply's title ("Programme - Quota - Speciality - … - Hospital"); null when it cannot be parsed. */
+    speciality: text("speciality"),
+    hospital: text("hospital"),
+  },
+  (t) => [index("sim_consent_round_idx").on(t.inductionId, t.roundNo)],
+);
+
 export const simulationRunStatus = pgEnum("simulation_run_status", ["queued", "running", "done", "failed"]);
+/** first_round: round 1 from preferences; next_round: round r+1 from published round r and its consent. */
+export const simulationRunKind = pgEnum("simulation_run_kind", ["first_round", "next_round"]);
 
 /**
  * One simulation run, with exactly what it ran with: the resolved rules, which rules
@@ -697,6 +721,9 @@ export const simulationRuns = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     inductionId: integer("induction_id").notNull(),
+    kind: simulationRunKind("kind").notNull().default("first_round"),
+    /** next_round: the published round it starts from (it simulates fromRound + 1). */
+    fromRound: integer("from_round"),
     status: simulationRunStatus("status").notNull().default("queued"),
     /** "v2" or "default". */
     rulesOrigin: text("rules_origin").notNull(),

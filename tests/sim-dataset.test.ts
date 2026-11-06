@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compareRounds, type Allocation } from "@/lib/domain/sim-compare";
-import { effectiveProfileStatus, sanitizeSimDataset } from "@/lib/domain/sim-dataset";
+import { consentRoundFromName, effectiveProfileStatus, sanitizeConsent, sanitizeSimDataset } from "@/lib/domain/sim-dataset";
 
 const pref = (n: number, extra: Record<string, unknown> = {}) => ({
   specialityId: 2,
@@ -115,6 +115,27 @@ describe("simulation dataset import", () => {
   it("rejects malformed files and duplicate applicants", () => {
     expect(() => sanitizeSimDataset({ candidates: { "1": { applicantId: 1, marksTotal: 50 } } })).toThrow();
     expect(() => sanitizeSimDataset({ candidates: [candidates["101"], candidates["101"]] })).toThrow(/twice/);
+  });
+});
+
+describe("consent replies", () => {
+  it("keeps the reply and its seat, never the name or marks", () => {
+    const { rows, counts } = sanitizeConsent([
+      { rowNo: 1, totalCount: 2, applicantId: 101, name: "Synthetic Person", quota: "Punjab ", program: "FCPS", preferenceNo: 3, marks: 61.5, infoTitle: "FCPS - Punjab - Medicine - Unit II - Mayo Hospital, Lahore", status: "Accepted" },
+      { applicantId: "102", quota: "Punjab", program: "MS", preferenceNo: 1, infoTitle: "bad title", status: "Awaited" },
+    ]);
+    expect(rows).toEqual([
+      { applicantId: "101", status: "Accepted", program: "FCPS", quota: "Punjab", preferenceNo: 3, speciality: "Medicine", hospital: "Mayo Hospital, Lahore" },
+      { applicantId: "102", status: "Awaited", program: "MS", quota: "Punjab", preferenceNo: 1, speciality: null, hospital: null },
+    ]);
+    expect(JSON.stringify(rows)).not.toMatch(/Synthetic|61\.5/);
+    expect(counts).toEqual({ Accepted: 1, Awaited: 1 });
+  });
+
+  it("reads the round from the file name", () => {
+    expect(consentRoundFromName("consent_round3.json")).toBe(3);
+    expect(consentRoundFromName("induction21_consent_round12.json")).toBe(12);
+    expect(consentRoundFromName("consent.json")).toBeNull();
   });
 });
 

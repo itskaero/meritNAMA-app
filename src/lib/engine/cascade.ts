@@ -211,7 +211,7 @@ export function runCascade(input: CascadeInput): CascadeResult {
     const accepted = rows.filter((r) => r.status === "Accepted").sort((a, b) => a.preferenceNo - b.preferenceNo);
     if (accepted[0]) consentApproved.set(cid, accepted[0]);
     if (rows.every((r) => r.status === "Rejected")) consentRejected.add(cid);
-    if (rows.every((r) => r.status === "Awaited")) consentAwaited.add(cid);
+    if (rules.cascade.awaitedConsent === "vacate" && rows.every((r) => r.status === "Awaited")) consentAwaited.add(cid);
   }
   for (const cid of input.extraRejected ?? []) consentRejected.add(cid);
 

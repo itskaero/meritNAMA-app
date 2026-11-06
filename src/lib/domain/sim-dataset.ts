@@ -292,3 +292,52 @@ export function sanitizeSimDataset(files: {
     },
   };
 }
+
+// ── Consent replies (one file per round, fetched from the portal) ──────────────
+
+const consentRowSchema = z.looseObject({
+  applicantId,
+  status: z.string().min(1),
+  program: z.string().min(1),
+  quota: z.string().min(1),
+  preferenceNo: z.number().int().min(0),
+  infoTitle: z.string().nullish(),
+});
+/** consent_round<r>.json: rows (name and marks fields are ignored), or { rows: [...] }-style wrappers with one array. */
+export const consentFileSchema = z.union([z.array(consentRowSchema), z.looseObject({ Table5: z.array(consentRowSchema) })]);
+
+export type SimConsentRow = {
+  applicantId: string;
+  status: string;
+  program: string;
+  quota: string;
+  preferenceNo: number;
+  speciality: string | null;
+  hospital: string | null;
+};
+
+/** "Programme - Quota - Speciality - … - Hospital" → speciality and hospital; null when it has fewer than 4 parts. */
+export function seatFromConsentTitle(title: string | null | undefined): { speciality: string; hospital: string } | null {
+  const parts = String(title ?? "").split(" - ").map((p) => p.trim());
+  if (parts.length < 4) return null;
+  return { speciality: parts[2]!, hospital: parts[parts.length - 1]! };
+}
+
+export function sanitizeConsent(file: unknown): { rows: SimConsentRow[]; counts: Record<string, number> } {
+  const parsed = consentFileSchema.parse(file);
+  const list = Array.isArray(parsed) ? parsed : parsed.Table5;
+  const counts: Record<string, number> = {};
+  const rows = list.map((r) => {
+    const status = r.status.trim();
+    counts[status] = (counts[status] ?? 0) + 1;
+    const seat = seatFromConsentTitle(r.infoTitle);
+    return { applicantId: r.applicantId, status, program: r.program.trim(), quota: r.quota.trim(), preferenceNo: r.preferenceNo, speciality: seat?.speciality ?? null, hospital: seat?.hospital ?? null };
+  });
+  return { rows, counts };
+}
+
+/** consent_round<r>.json (also induction21_consent_round3.json) → r, else null. */
+export function consentRoundFromName(name: string): number | null {
+  const m = /^(?:induction\d{1,3}_)?consent_?round_?(\d{1,2})\.json$/i.exec(name);
+  return m ? Number(m[1]) : null;
+}

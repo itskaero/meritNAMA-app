@@ -11,7 +11,7 @@ import { failInterruptedRuns, importProblem, listDatasets, listRuns, listSimulat
 import { checkDatabase, getDb } from "@/lib/db/client";
 import { formatUtc } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
-import { ImportDatasetForm, StartRunForm } from "./forms";
+import { ImportConsentForm, ImportDatasetForm, StartRunForm } from "./forms";
 import { RUN_TONE } from "./status";
 
 export const metadata = { title: "Processing & simulation" };
@@ -44,7 +44,8 @@ export default async function ProcessingPage() {
         Put the files your backend exports in <code>simulation/induction&lt;n&gt;/</code> on the storage volume (in Docker:{" "}
         <code>$MERITNAMA_DATA_DIR/storage/simulation/induction22/</code>): <code>marks.json</code> (candidate marks),{" "}
         <code>preferences.json</code> (portal preferences) and optionally <code>certificates.json</code> and <code>profile_status.json</code>.
-        A combined legacy <code>candidates.json</code> works instead of the first two. Importing keeps only marks, preferences,
+        A combined legacy <code>candidates.json</code> works instead of the first two. After each round, add the consent replies
+        fetched from the portal as <code>consent_round&lt;r&gt;.json</code>. Importing keeps only marks, preferences,
         certificate marks and profile status: names, PMDC numbers, emails, phone numbers and CNICs are never stored.
       </Notice>
 
@@ -71,6 +72,9 @@ export default async function ProcessingPage() {
                       ))}
                     </ul>
                   ) : <p className="text-sm text-muted">No files found.</p>}
+                  {folder?.consent.length ? (
+                    <p className="text-sm">Consent files: rounds {folder.consent.map((c) => c.round).join(", ")}</p>
+                  ) : null}
                   {folder?.ignored.length ? <p className="text-xs text-amber">Not used: {folder.ignored.join(", ")}</p> : null}
                   {folder && !folder.files.some((f) => f.role === "profileStatus") ? <p className="text-xs text-amber">No profile status file: everyone takes part, so rejected profiles may take seats.</p> : null}
                   {folder ? (importProblem(folder.files) ? <p className="text-xs text-amber">{importProblem(folder.files)}</p> : <ImportDatasetForm induction={n} replaces={Boolean(ds)} />) : null}
@@ -89,6 +93,26 @@ export default async function ProcessingPage() {
                         <dt className="text-muted">Corrected marks</dt><dd className="tabular-nums">{ds.summary.correctedMarks.toLocaleString("en-US")}</dd>
                       </dl>
                       <StartRunForm induction={n} />
+                      <h3 className="mt-2 text-sm font-semibold">Later rounds</h3>
+                      <p className="text-xs text-muted">Each simulates the next list from a published round and its consent replies.</p>
+                      {ds.consent.length ? (
+                        <ul className="grid gap-2">
+                          {ds.consent.map((c) => (
+                            <li key={c.round} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-elevated px-3 py-2 text-sm">
+                              <span>
+                                Round {c.round} consent: <span className="tabular-nums">{c.accepted.toLocaleString("en-US")}</span> accepted,{" "}
+                                <span className="tabular-nums">{c.rejected.toLocaleString("en-US")}</span> rejected, <span className="tabular-nums">{c.awaited.toLocaleString("en-US")}</span> awaited
+                              </span>
+                              {ds.publishedRounds.includes(c.round) ? (
+                                <StartRunForm induction={n} fromRound={c.round} variant="secondary" />
+                              ) : (
+                                <span className="text-xs text-amber">Round {c.round} itself is not imported</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <p className="text-sm text-muted">No consent replies imported.</p>}
+                      {folder?.consent.length ? <ImportConsentForm induction={n} /> : null}
                     </>
                   ) : <p className="text-sm text-muted">Import the files to simulate this induction.</p>}
                 </div>
@@ -99,7 +123,7 @@ export default async function ProcessingPage() {
       )}
 
       <Card>
-        <CardHeader title="Runs" description="Each run records the allocation rules and scoring policy it used. Agreement is the share of PHF's published round-1 allocations the simulation reproduced exactly." />
+        <CardHeader title="Runs" description="Each run records the allocation rules and scoring policy it used. Agreement is the share of the simulated round's published allocations reproduced exactly; for later rounds, compare it with “if nobody moved” (the published round against the one before)." />
         <DataTable
           caption="Simulation runs"
           rows={runs}
@@ -108,10 +132,12 @@ export default async function ProcessingPage() {
           columns={[
             { key: "when", header: "Started (UTC)", cell: (r) => <Link href={`/admin/processing/runs/${r.id}`} className="font-medium text-signal underline-offset-4 hover:underline">{formatUtc(r.createdAt)}</Link> },
             { key: "n", header: "Induction", cell: (r) => r.inductionId },
+            { key: "kind", header: "Simulates", cell: (r) => (r.kind === "next_round" ? `Round ${r.fromRound! + 1} (from ${r.fromRound})` : "Round 1") },
             { key: "status", header: "Status", cell: (r) => <Badge tone={RUN_TONE[r.status]}>{r.status}</Badge> },
             { key: "rules", header: "Rules · policy", cell: (r) => `${r.rulesOrigin} · ${r.policy ?? "no policy"}` },
             { key: "placed", header: "Placed", align: "right", cell: (r) => r.summary?.placed.toLocaleString("en-US") ?? "—" },
             { key: "agree", header: "Agreement", align: "right", cell: (r) => (r.summary?.comparison ? `${r.summary.comparison.agreement}%` : "—") },
+            { key: "base", header: "If nobody moved", align: "right", cell: (r) => (r.summary?.baseline != null ? `${r.summary.baseline}%` : "—") },
           ]}
         />
       </Card>
