@@ -6,6 +6,7 @@ import {
   check,
   date,
   doublePrecision,
+  foreignKey,
   index,
   integer,
   primaryKey,
@@ -632,4 +633,100 @@ export const preferenceItems = pgTable(
     uniqueIndex("preference_items_position_uq").on(t.listId, t.position),
     check("preference_items_position_positive", sql`${t.position} > 0`),
   ],
+);
+
+// ── Simulation ─────────────────────────────────────────────────────────────────
+
+/**
+ * Restricted simulation inputs of one induction, imported from files on the storage
+ * volume (src/lib/domain/sim-dataset.ts). Only engine fields are stored: no names,
+ * PMDC numbers, emails, phone numbers or CNICs. Re-importing replaces the dataset.
+ */
+export const simDatasets = pgTable("sim_datasets", {
+  inductionId: integer("induction_id").primaryKey(),
+  summary: json("summary").notNull(),
+  /** File names, sizes and SHA-256 hashes the dataset was built from. */
+  sources: json("sources").notNull(),
+  importedBy: text("imported_by").notNull(),
+  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const simCandidates = pgTable(
+  "sim_candidates",
+  {
+    inductionId: integer("induction_id").notNull().references(() => simDatasets.inductionId, { onDelete: "cascade" }),
+    applicantId: text("applicant_id").notNull(),
+    baseMarks: doublePrecision("base_marks").notNull(),
+    programMarks: json("program_marks").notNull(),
+    appliedIn: json("applied_in").notNull(),
+    certificates: json("certificates").notNull(),
+    profileStatus: integer("profile_status"),
+  },
+  (t) => [primaryKey({ columns: [t.inductionId, t.applicantId] })],
+);
+
+export const simPreferences = pgTable(
+  "sim_preferences",
+  {
+    inductionId: integer("induction_id").notNull(),
+    applicantId: text("applicant_id").notNull(),
+    program: text("program").notNull(),
+    preferenceNo: integer("preference_no").notNull(),
+    quota: text("quota").notNull(),
+    specialityId: integer("speciality_id").notNull(),
+    hospital: text("hospital").notNull(),
+    typeId: integer("type_id"),
+    disciplineIds: integer("discipline_ids").array().notNull(),
+    programMarks: doublePrecision("program_marks"),
+    parentMarks: doublePrecision("parent_marks"),
+  },
+  (t) => [
+    index("sim_preferences_candidate_idx").on(t.inductionId, t.applicantId),
+    foreignKey({ columns: [t.inductionId, t.applicantId], foreignColumns: [simCandidates.inductionId, simCandidates.applicantId] }).onDelete("cascade"),
+  ],
+);
+
+export const simulationRunStatus = pgEnum("simulation_run_status", ["queued", "running", "done", "failed"]);
+
+/**
+ * One simulation run, with exactly what it ran with: the resolved rules, which rules
+ * version and scoring policy they came from, and when the dataset was imported.
+ */
+export const simulationRuns = pgTable(
+  "simulation_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    inductionId: integer("induction_id").notNull(),
+    status: simulationRunStatus("status").notNull().default("queued"),
+    /** "v2" or "default". */
+    rulesOrigin: text("rules_origin").notNull(),
+    rules: json("rules").notNull(),
+    /** "2026 v1", or null when none covers the induction. */
+    policy: text("policy"),
+    datasetImportedAt: timestamp("dataset_imported_at", { withTimezone: true }).notNull(),
+    /** Counts and the comparison with the published round. */
+    summary: json("summary"),
+    error: text("error"),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (t) => [index("simulation_runs_induction_idx").on(t.inductionId, t.createdAt)],
+);
+
+export const simulationPlacements = pgTable(
+  "simulation_placements",
+  {
+    runId: uuid("run_id").notNull().references(() => simulationRuns.id, { onDelete: "cascade" }),
+    applicantId: text("applicant_id").notNull(),
+    program: text("program").notNull(),
+    quota: text("quota").notNull(),
+    speciality: text("speciality").notNull(),
+    hospital: text("hospital").notNull(),
+    preferenceNo: integer("preference_no").notNull(),
+    mark: doublePrecision("mark").notNull(),
+    track: text("track").notNull(),
+  },
+  (t) => [index("simulation_placements_run_idx").on(t.runId, t.program, t.quota, t.speciality)],
 );

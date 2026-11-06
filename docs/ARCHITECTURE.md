@@ -212,11 +212,28 @@ of the golden inputs:
 - The legacy "marks option" and candidate-revision switches (admin-configurable
   formulas) are not ported: the engine takes `baseMarks` already resolved.
 
-**Not yet wired to data.** Both engines need every candidate's full preference list
-(`induction21_candidates.json`), which is restricted and not imported yet. Next steps:
-a restricted-data importer from `APP_STORAGE_DIR`, then the background worker, then
-`/admin/processing` and `/portal/simulation` on top. `app-predict-calc.js` (the
-scoring calculator) is still to port.
+**Wired to data (Nov 2026).** `/admin/processing` imports an induction's restricted
+files from `<APP_STORAGE_DIR>/simulation/induction<n>/` (`src/lib/domain/sim-dataset.ts`
+keeps only engine fields: marks, preferences, certificate marks, effective profile
+status) into `sim_datasets` / `sim_candidates` / `sim_preferences`, and runs round 1
+under the induction's resolved rules. A run is queued in `simulation_runs` with the
+rules, rules version and scoring policy it used, executed after the response
+(`after()`), and its placements are stored in `simulation_placements`. When the
+induction's published round 1 is imported, the run compares with it per seat group
+(`src/lib/domain/sim-compare.ts`, no applicant ids in the result). Runs left queued
+or running by a restart are marked failed when the page is next opened. A separate
+worker container can take over queued runs later without schema changes.
+
+**Back-test, induction 21 (real data, default rules, scoring policy 2026):** 3,289
+eligible of 3,474 candidates; 1,307 of PHF's 1,322 round-1 allocations reproduced
+exactly (98.9%; MS, MDS and FCPS Dentistry 100%, MD 99.3%, FCPS 98.2%); 780 of 797
+seat groups identical. Profile status was the decisive input: without it 92.9%.
+Of the remaining differences, 4 are allocations where PHF's published mark differs
+from the computed one. Best vs first certificate made 1 allocation of difference.
+
+Still to do: the cascade (later rounds) on imported consent data, the current
+induction's simulation from members' preference lists on `/portal/simulation`, and
+`app-predict-calc.js` (the scoring calculator).
 
 ## Storage
 

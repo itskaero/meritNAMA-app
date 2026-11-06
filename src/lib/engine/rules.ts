@@ -60,6 +60,13 @@ export const allocationRulesSchema = z.strictObject({
      */
     orderBy: z.enum(["bestMark", "bestMarkWithoutParentBonus"]),
     maxPasses: z.number().int().positive().max(10_000),
+    /**
+     * Who takes part: candidates whose profile status (1 = Accepted) is in this list.
+     * Candidates with no known status are included or left out per `unknownStatus`.
+     * Defaults keep rules saved before this setting existed valid.
+     */
+    eligibleProfileStatus: z.array(z.number().int()).min(1).default([1]),
+    unknownStatus: z.enum(["include", "exclude"]).default("include"),
   }),
   cascade: z.strictObject({
     /** Profile statuses that may keep and take seats (1 = Accepted). A known other status loses its seats. */
@@ -89,7 +96,7 @@ export const DEFAULT_RULES: AllocationRules = {
   },
   parentBonus: { enabled: "auto", component: "parent_institute" },
   tracks: { separate: [{ id: "armed", quotaContains: ["armed force"] }], defaultTrack: "civilian" },
-  placement: { displaceWhen: "strictlyHigher", orderBy: "bestMark", maxPasses: 1000 },
+  placement: { displaceWhen: "strictlyHigher", orderBy: "bestMark", maxPasses: 1000, eligibleProfileStatus: [1], unknownStatus: "include" },
   cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100 },
 };
 
@@ -209,7 +216,7 @@ export function describeRules(r: ResolvedRules): { topic: string; text: string }
     },
     {
       topic: "First round",
-      text: `best mark first${r.placement.orderBy === "bestMarkWithoutParentBonus" ? " (ordered without the parent bonus, as the legacy simulator did)" : ""}; a full seat changes hands only on a strictly higher mark; at most ${r.placement.maxPasses} passes`,
+      text: `profile status ${r.placement.eligibleProfileStatus.join(" or ")} takes part${r.placement.unknownStatus === "include" ? " (unknown status too)" : ""}; best mark first${r.placement.orderBy === "bestMarkWithoutParentBonus" ? " (ordered without the parent bonus, as the legacy simulator did)" : ""}; a full seat changes hands only on a strictly higher mark; at most ${r.placement.maxPasses} passes`,
     },
     {
       topic: "Later rounds",

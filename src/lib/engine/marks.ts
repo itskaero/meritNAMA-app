@@ -49,6 +49,8 @@ export type EngineCandidate = {
   /** Legacy `applied_in`: explicit per-programme application flags. */
   appliedIn?: Record<string, boolean | null | undefined> | null;
   certificates?: readonly Certificate[] | null;
+  /** Profile verification status (1 Accepted, 2 Rejected, 11 Pending); null or absent when unknown. */
+  profileStatus?: number | null;
   /** Preferences per programme name, in any order. */
   preferences: Record<string, Preference[] | undefined>;
 };

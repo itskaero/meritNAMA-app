@@ -85,6 +85,33 @@ $MERITNAMA_DATA_DIR/storage/inbox/
 - `processed/` is kept, and backed up with the rest of `storage/`. Delete old files
   from it whenever you like.
 
+### Simulation data (restricted)
+
+Full candidate preference lists are personal data and never go through the inbox,
+a browser upload or the repository. Copy them onto the NAS, one folder per induction:
+
+```
+$MERITNAMA_DATA_DIR/storage/simulation/induction21/
+  induction21_candidates.json     required (or candidates.json)
+  induction21_components.json     optional: corrected marks
+  induction21_certificates.json   optional: certificate marks
+  ProfileStatus.json              optional but needed for realistic results (or profile_status.json)
+```
+
+```bash
+mkdir -p "$MERITNAMA_DATA_DIR/storage/simulation/induction21"
+cp induction21_*.json ProfileStatus.json "$MERITNAMA_DATA_DIR/storage/simulation/induction21/"
+sudo chown -R 1000:1000 "$MERITNAMA_DATA_DIR/storage/simulation"
+chmod -R go-rwx "$MERITNAMA_DATA_DIR/storage/simulation"
+```
+
+Then **Processing & simulation** → Import. Only marks, preferences, certificate marks
+and profile status are stored in the database; names, PMDC numbers, emails, phone
+numbers and CNICs are dropped. The files stay in the folder (and in backups of
+`storage/`); delete them once imported if you do not need to re-import. Files up to
+200 MB are accepted. **Simulate round 1** runs in the background (seconds for one
+induction) and compares the result with the published round 1 when it is imported.
+
 ## 2. Network exposure
 
 **Do not port-forward the app straight to the internet.** The compose file binds the

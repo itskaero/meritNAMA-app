@@ -104,9 +104,15 @@ export function seatTreeFromPreferences(candidates: readonly EngineCandidate[], 
   return tree;
 }
 
-/** Candidates who applied to `program` (the legacy simulation pool before status filters). */
+/** Whether a candidate takes part, by profile status. */
+export function isEligible(rules: ResolvedRules, c: EngineCandidate): boolean {
+  if (c.profileStatus == null) return rules.placement.unknownStatus === "include";
+  return rules.placement.eligibleProfileStatus.includes(c.profileStatus);
+}
+
+/** Eligible candidates who applied to `program`. */
 export function candidatePool(rules: ResolvedRules, ctx: MarksContext, candidates: readonly EngineCandidate[], program: string): EngineCandidate[] {
-  return candidates.filter((c) => effectiveMark(rules, ctx, c, program) != null);
+  return candidates.filter((c) => isEligible(rules, c) && effectiveMark(rules, ctx, c, program) != null);
 }
 
 function trackPrefs(rules: ResolvedRules, c: EngineCandidate, program: string, track: Track): Preference[] {
