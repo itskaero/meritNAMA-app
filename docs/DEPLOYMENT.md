@@ -87,20 +87,45 @@ $MERITNAMA_DATA_DIR/storage/inbox/
 
 ### Simulation data (restricted)
 
-Full candidate preference lists are personal data and never go through the inbox,
-a browser upload or the repository. Copy them onto the NAS, one folder per induction:
+Candidate marks and portal preferences are personal data and never go through the
+inbox, a browser upload or the repository. Your backend writes them onto the NAS,
+one folder per induction:
 
 ```
-$MERITNAMA_DATA_DIR/storage/simulation/induction21/
-  induction21_candidates.json     required (or candidates.json)
-  induction21_components.json     optional: corrected marks
-  induction21_certificates.json   optional: certificate marks
-  ProfileStatus.json              optional but needed for realistic results (or profile_status.json)
+$MERITNAMA_DATA_DIR/storage/simulation/induction22/
+  marks.json          required: one row per candidate
+  preferences.json    required: one row per preference (as set on the official portal)
+  certificates.json   optional: certificate marks
+  ProfileStatus.json  optional but needed for realistic results (or profile_status.json)
+  components.json     optional: corrected marks (override marks.json)
 ```
+
+Names may carry the induction (`induction22_marks.json` …). Field names are the
+portal's:
+
+```jsonc
+// marks.json
+[{ "applicantId": 27267, "marksTotal": 21.85,
+   "programMarks": { "FCPS": 5 },                  // optional, per-programme marks
+   "applied_in": { "FCPS": true, "MS": false },    // optional
+   "profileStatus": 1 }]                           // optional: 1 Accepted, 2 Rejected, 11 Pending
+// preferences.json
+[{ "applicantId": 27267, "typeName": "FCPS", "typeId": 1, "preferenceNo": 1,
+   "quotaName": "Punjab", "specialityId": 2, "hospitalName": "Mayo Hospital, Lahore",
+   "disciplineIds": [2], "programMarks": 5, "marks": 0 }]   // marks = parent-institute bonus
+// certificates.json
+{ "27267": [{ "disciplineId": 2, "typeId": 1, "status": "Pass",
+              "certificateMarks": 5, "computerizedMarks": 4 }] }
+```
+
+Both marks.json and preferences.json may instead be objects keyed by applicant id;
+certificates.json may be a list of rows with `applicantId`. Extra fields (names,
+emails …) are ignored and never stored. A legacy combined `candidates.json` is still
+accepted in place of marks.json + preferences.json. Preferences of applicants missing
+from marks.json are left out and counted on the page.
 
 ```bash
-mkdir -p "$MERITNAMA_DATA_DIR/storage/simulation/induction21"
-cp induction21_*.json ProfileStatus.json "$MERITNAMA_DATA_DIR/storage/simulation/induction21/"
+mkdir -p "$MERITNAMA_DATA_DIR/storage/simulation/induction22"
 sudo chown -R 1000:1000 "$MERITNAMA_DATA_DIR/storage/simulation"
 chmod -R go-rwx "$MERITNAMA_DATA_DIR/storage/simulation"
 ```

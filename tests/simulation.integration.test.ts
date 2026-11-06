@@ -55,7 +55,10 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
     await wipe();
     const dir = path.join(root, "simulation", `induction${IND}`);
     mkdirSync(dir, { recursive: true });
-    writeFileSync(path.join(dir, `induction${IND}_candidates.json`), JSON.stringify(candidates));
+    // The split format the backend writes: marks, preferences (one row each), status.
+    const all = Object.values(candidates) as { applicantId: number; preferences: object[]; [k: string]: unknown }[];
+    writeFileSync(path.join(dir, "marks.json"), JSON.stringify(all.map((c) => Object.fromEntries(Object.entries(c).filter(([k]) => k !== "preferences")))));
+    writeFileSync(path.join(dir, "preferences.json"), JSON.stringify(all.flatMap((c) => c.preferences.map((p) => ({ applicantId: c.applicantId, ...p })))));
     writeFileSync(path.join(dir, "ProfileStatus.json"), JSON.stringify(status));
     writeFileSync(path.join(dir, "notes.txt"), "ignored");
   });
@@ -67,7 +70,7 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
 
   it("lists the induction folder with its recognised files", async () => {
     const [f] = (await listSimulationFolders(viewer, { root })).filter((x) => x.induction === IND);
-    expect(f!.files.map((x) => x.role).sort()).toEqual(["candidates", "profileStatus"]);
+    expect(f!.files.map((x) => x.role).sort()).toEqual(["marks", "preferences", "profileStatus"]);
     expect(f!.ignored).toEqual(["notes.txt"]);
   });
 
@@ -83,7 +86,9 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
     expect(stored).not.toMatch(/Synthetic Name|example\.test|PMDC-|private/);
     await importSimulationDataset(db, editor, { induction: IND, reason: "again" }, { root });
     expect((await db.select().from(schema.simCandidates).where(eq(schema.simCandidates.inductionId, IND))).length).toBe(60);
-    expect((await listDatasets(db, editor)).find((d) => d.inductionId === IND)!.sources.map((x) => x.role).sort()).toEqual(["candidates", "profileStatus"]);
+    const ds = (await listDatasets(db, editor)).find((d) => d.inductionId === IND)!;
+    expect(ds.sources.map((x) => x.role).sort()).toEqual(["marks", "preferences", "profileStatus"]);
+    expect(ds.summary.format).toBe("split");
   });
 
   it("refuses to run without seats or a policy for auto bonuses", async () => {

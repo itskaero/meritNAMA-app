@@ -1,12 +1,24 @@
 import { z } from "zod";
 
 /**
- * Restricted simulation inputs for one induction, as exported by the legacy site:
+ * Restricted simulation inputs for one induction. The split format (what the
+ * operator's backend writes; field names as on the official portal):
+ *
+ *   marks.json           [ { applicantId, marksTotal, programMarks?, applied_in?, profileStatus? } ]
+ *   preferences.json     [ { applicantId, typeName, typeId?, preferenceNo, quotaName, specialityId, hospitalName,
+ *                            disciplineIds?, programMarks?, marks? } ]                 (marks = parent-institute bonus)
+ *   certificates.json    { "<applicantId>": [ { disciplineId, typeId, status, certificateMarks, computerizedMarks } ] }
+ *                        or [ { applicantId, disciplineId, … } ]                      (optional)
+ *
+ * marks.json and preferences.json may also be objects keyed by applicant id. The legacy
+ * combined export is still accepted instead of marks.json + preferences.json:
  *
  *   candidates.json      { "<applicantId>": { applicantId, marksTotal, applied_in, preferences[], …personal fields } }
- *   components.json      { "<applicantId>": { marksTotal, programMarks, … } }        (optional; corrected marks)
- *   certificates.json    { "<applicantId>": [ { disciplineId, typeId, status, certificateMarks, computerizedMarks, … } ] } (optional)
- *   profile_status.json  { statusTypes, entries: [ { applicantId, statusId, statusTypeId } ] } (optional; ProfileStatus.json)
+ *
+ * Optional overrides in either format:
+ *   components.json      { "<applicantId>": { marksTotal, programMarks, … } }        (corrected marks)
+ *   profile_status.json  { statusTypes, entries: [ { applicantId, statusId, statusTypeId } ] } (ProfileStatus.json;
+ *                        wins over a marks row's profileStatus)
  *
  * Only what the simulation engine needs is kept. Names, PMDC numbers, emails, phone
  * numbers, CNICs and remarks are never read into the result, so they cannot be stored.
@@ -45,6 +57,23 @@ export const candidatesFileSchema = z.union([
   z.looseObject({ candidates: z.array(candidateSchema) }),
 ]);
 
+const applicantId = z.union([z.number().int(), z.string().regex(/^\d+$/)]).transform(String);
+const programMarksRecord = z.record(z.string(), z.union([z.number(), z.string(), z.null()])).nullish();
+
+const marksRowSchema = z.looseObject({
+  applicantId: applicantId.optional(),
+  marksTotal: num,
+  programMarks: programMarksRecord,
+  applied_in: z.record(z.string(), z.boolean().nullish()).nullish(),
+  appliedIn: z.record(z.string(), z.boolean().nullish()).nullish(),
+  profileStatus: z.number().int().nullish(),
+});
+/** marks.json: rows, or an object keyed by applicant id. */
+export const marksFileSchema = z.union([z.array(marksRowSchema.extend({ applicantId })), z.record(z.string(), marksRowSchema)]);
+
+/** preferences.json: rows with applicantId, or { "<applicantId>": [preference…] }. */
+export const preferencesFileSchema = z.union([z.array(preferenceSchema.extend({ applicantId })), z.record(z.string(), z.array(preferenceSchema))]);
+
 export const componentsFileSchema = z.record(
   z.string(),
   z.looseObject({ marksTotal: optNum, programMarks: z.record(z.string(), z.union([z.number(), z.string(), z.null()])).nullish() }),
@@ -60,7 +89,7 @@ const certificateSchema = z.looseObject({
   certificateMarks: optNum,
   computerizedMarks: optNum,
 });
-export const certificatesFileSchema = z.record(z.string(), z.array(certificateSchema));
+export const certificatesFileSchema = z.union([z.record(z.string(), z.array(certificateSchema)), z.array(certificateSchema.extend({ applicantId }))]);
 
 export const profileStatusFileSchema = z.looseObject({
   entries: z.array(z.looseObject({ applicantId: z.union([z.number().int(), z.string().regex(/^\d+$/)]), statusId: z.number().int(), statusTypeId: z.number().int() })),
@@ -107,6 +136,10 @@ export type SimDatasetSummary = {
   withStatus: number;
   eligible: number;
   correctedMarks: number;
+  /** Preferences of applicants with no row in the marks file (split format; left out). */
+  preferencesWithoutMarks: number;
+  /** "split" (marks + preferences files) or "combined" (legacy candidates file). */
+  format: "split" | "combined";
 };
 
 const programMarksOf = (o: Record<string, unknown> | null | undefined) => {
@@ -134,23 +167,78 @@ export function effectiveProfileStatus(file: z.infer<typeof profileStatusFileSch
   return new Map([...best].map(([id, v]) => [id, v.status]));
 }
 
-/** Validate the files and reduce them to what the engine needs. Throws a ZodError on bad input. */
-export function sanitizeSimDataset(files: { candidates: unknown; components?: unknown; certificates?: unknown; profileStatus?: unknown }): {
+type RawCandidate = {
+  id: string;
+  marksTotal: number;
+  programMarks: Record<string, unknown> | null | undefined;
+  appliedIn: Record<string, boolean | null | undefined> | null | undefined;
+  profileStatus: number | null;
+  preferences: z.infer<typeof preferenceSchema>[];
+};
+
+const duplicate = (id: string, file: string) => new z.ZodError([{ code: "custom", path: [file, id], message: "applicant appears twice", input: undefined }]);
+
+/** The legacy combined file → raw candidates. */
+function fromCombined(file: unknown): RawCandidate[] {
+  const parsed = candidatesFileSchema.parse(file);
+  const list = Array.isArray(parsed) ? parsed : "candidates" in parsed && Array.isArray(parsed.candidates) ? parsed.candidates : Object.values(parsed as Record<string, z.infer<typeof candidateSchema>>);
+  return list.map((c) => ({ id: String(c.applicantId), marksTotal: c.marksTotal, programMarks: c.programMarks, appliedIn: c.applied_in, profileStatus: null, preferences: c.preferences }));
+}
+
+/** marks.json + preferences.json → raw candidates (in the marks file's order). */
+function fromSplit(marksFile: unknown, preferencesFile: unknown): { list: RawCandidate[]; orphans: number } {
+  const marks = marksFileSchema.parse(marksFile);
+  const rows = Array.isArray(marks) ? marks.map((r) => [r.applicantId, r] as const) : Object.entries(marks).map(([k, r]) => [r.applicantId ?? k, r] as const);
+  const byId = new Map<string, RawCandidate>();
+  for (const [id, r] of rows) {
+    if (byId.has(id)) throw duplicate(id, "marks");
+    byId.set(id, { id, marksTotal: r.marksTotal, programMarks: r.programMarks, appliedIn: r.applied_in ?? r.appliedIn, profileStatus: r.profileStatus ?? null, preferences: [] });
+  }
+  const prefs = preferencesFileSchema.parse(preferencesFile);
+  const pairs = Array.isArray(prefs) ? prefs.map((p) => [p.applicantId, p] as const) : Object.entries(prefs).flatMap(([k, ps]) => ps.map((p) => [k, p] as const));
+  let orphans = 0;
+  for (const [id, p] of pairs) {
+    const c = byId.get(id);
+    if (c) c.preferences.push(p);
+    else orphans++;
+  }
+  return { list: [...byId.values()], orphans };
+}
+
+/**
+ * Validate the files and reduce them to what the engine needs. Give either `marks` +
+ * `preferences` (split format) or `candidates` (legacy combined). Throws a ZodError
+ * (or Error) on bad input.
+ */
+export function sanitizeSimDataset(files: {
+  candidates?: unknown;
+  marks?: unknown;
+  preferences?: unknown;
+  components?: unknown;
+  certificates?: unknown;
+  profileStatus?: unknown;
+}): {
   candidates: SimCandidate[];
   summary: SimDatasetSummary;
 } {
-  const parsed = candidatesFileSchema.parse(files.candidates);
-  const list = Array.isArray(parsed) ? parsed : "candidates" in parsed && Array.isArray(parsed.candidates) ? parsed.candidates : Object.values(parsed as Record<string, z.infer<typeof candidateSchema>>);
+  const split = files.marks != null || files.preferences != null;
+  if (split && files.candidates != null) throw new Error("Use either marks.json + preferences.json or candidates.json, not both.");
+  if (split && (files.marks == null || files.preferences == null)) throw new Error("The split format needs both marks.json and preferences.json.");
+  if (!split && files.candidates == null) throw new Error("No marks.json + preferences.json (or legacy candidates.json) to import.");
+  const { list, orphans } = split ? fromSplit(files.marks, files.preferences) : { list: fromCombined(files.candidates), orphans: 0 };
   const components = files.components == null ? {} : componentsFileSchema.parse(files.components);
-  const certificates = files.certificates == null ? {} : certificatesFileSchema.parse(files.certificates);
+  const certParsed = files.certificates == null ? {} : certificatesFileSchema.parse(files.certificates);
+  const certificates: Record<string, z.infer<typeof certificateSchema>[]> = {};
+  if (Array.isArray(certParsed)) for (const c of certParsed) (certificates[c.applicantId] ??= []).push(c);
+  else Object.assign(certificates, certParsed);
   const status = files.profileStatus == null ? new Map<string, number>() : effectiveProfileStatus(profileStatusFileSchema.parse(files.profileStatus));
 
   const seen = new Set<string>();
   const out: SimCandidate[] = [];
   let correctedMarks = 0;
   for (const c of list) {
-    const id = String(c.applicantId);
-    if (seen.has(id)) throw new z.ZodError([{ code: "custom", path: [id], message: "applicant appears twice", input: undefined }]);
+    const id = c.id;
+    if (seen.has(id)) throw duplicate(id, "candidates");
     seen.add(id);
     const comp = components[id];
     // Corrected marks from the components file win, as on the legacy site.
@@ -160,7 +248,7 @@ export function sanitizeSimDataset(files: { candidates: unknown; components?: un
     const programMarks = programMarksOf(c.programMarks);
     for (const [k, v] of Object.entries(programMarksOf(comp?.programMarks))) if (v !== 0 && !programMarks[k]) programMarks[k] = v;
     const appliedIn: Record<string, boolean> = {};
-    for (const [k, v] of Object.entries(c.applied_in ?? {})) if (v != null) appliedIn[k] = v;
+    for (const [k, v] of Object.entries(c.appliedIn ?? {})) if (v != null) appliedIn[k] = v;
     out.push({
       applicantId: id,
       baseMarks,
@@ -176,8 +264,8 @@ export function sanitizeSimDataset(files: { candidates: unknown; components?: un
         certificateMarks: x.certificateMarks,
         computerizedMarks: x.computerizedMarks,
       })),
-      profileStatus: status.get(id) ?? null,
-      preferences: c.preferences.map((p) => ({
+      profileStatus: status.get(id) ?? c.profileStatus,
+      preferences: c.preferences.slice().sort((a, b) => a.preferenceNo - b.preferenceNo || a.typeName.localeCompare(b.typeName)).map((p) => ({
         program: p.typeName,
         preferenceNo: p.preferenceNo,
         quota: p.quotaName,
@@ -199,6 +287,8 @@ export function sanitizeSimDataset(files: { candidates: unknown; components?: un
       withStatus: out.filter((c) => c.profileStatus != null).length,
       eligible: out.filter((c) => c.profileStatus === 1).length,
       correctedMarks,
+      preferencesWithoutMarks: orphans,
+      format: split ? "split" : "combined",
     },
   };
 }

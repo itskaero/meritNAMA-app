@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { StatusPill } from "@/components/ui/page-header";
 import { getSession, requireSection } from "@/lib/auth/session";
-import { failInterruptedRuns, listDatasets, listRuns, listSimulationFolders } from "@/lib/data/simulation";
+import { failInterruptedRuns, importProblem, listDatasets, listRuns, listSimulationFolders } from "@/lib/data/simulation";
 import { checkDatabase, getDb } from "@/lib/db/client";
 import { formatUtc } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
@@ -17,7 +17,7 @@ import { RUN_TONE } from "./status";
 export const metadata = { title: "Processing & simulation" };
 export const dynamic = "force-dynamic";
 
-const ROLE_LABEL = { candidates: "Candidates", components: "Corrected marks", certificates: "Certificates", profileStatus: "Profile status" } as const;
+const ROLE_LABEL = { marks: "Candidate marks", preferences: "Preferences", candidates: "Candidates (combined, legacy)", components: "Corrected marks", certificates: "Certificates", profileStatus: "Profile status" } as const;
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 
 export default async function ProcessingPage() {
@@ -41,10 +41,11 @@ export default async function ProcessingPage() {
       status={db ? <StatusPill tone="live">Live data</StatusPill> : <StatusPill tone="warning">Database unavailable</StatusPill>}
     >
       <Notice title="Restricted data stays on the server">
-        Put the files in <code>simulation/induction&lt;n&gt;/</code> on the storage volume (in Docker: <code>$MERITNAMA_DATA_DIR/storage/simulation/induction21/</code>):
-        <code> candidates.json</code>, and optionally <code>components.json</code>, <code>certificates.json</code> and <code>profile_status.json</code> (the legacy
-        <code> induction21_candidates.json</code> and <code>ProfileStatus.json</code> names work too). Importing keeps only marks, preferences, certificate marks and
-        profile status: names, PMDC numbers, emails, phone numbers and CNICs are never stored.
+        Put the files your backend exports in <code>simulation/induction&lt;n&gt;/</code> on the storage volume (in Docker:{" "}
+        <code>$MERITNAMA_DATA_DIR/storage/simulation/induction22/</code>): <code>marks.json</code> (candidate marks),{" "}
+        <code>preferences.json</code> (portal preferences) and optionally <code>certificates.json</code> and <code>profile_status.json</code>.
+        A combined legacy <code>candidates.json</code> works instead of the first two. Importing keeps only marks, preferences,
+        certificate marks and profile status: names, PMDC numbers, emails, phone numbers and CNICs are never stored.
       </Notice>
 
       {inductions.length === 0 ? (
@@ -72,7 +73,7 @@ export default async function ProcessingPage() {
                   ) : <p className="text-sm text-muted">No files found.</p>}
                   {folder?.ignored.length ? <p className="text-xs text-amber">Not used: {folder.ignored.join(", ")}</p> : null}
                   {folder && !folder.files.some((f) => f.role === "profileStatus") ? <p className="text-xs text-amber">No profile status file: everyone takes part, so rejected profiles may take seats.</p> : null}
-                  {folder?.files.some((f) => f.role === "candidates") ? <ImportDatasetForm induction={n} replaces={Boolean(ds)} /> : null}
+                  {folder ? (importProblem(folder.files) ? <p className="text-xs text-amber">{importProblem(folder.files)}</p> : <ImportDatasetForm induction={n} replaces={Boolean(ds)} />) : null}
                 </div>
                 <div className="grid content-start gap-3">
                   <h3 className="text-sm font-semibold">Stored data</h3>
@@ -83,6 +84,8 @@ export default async function ProcessingPage() {
                         <dt className="text-muted">Preferences</dt><dd className="tabular-nums">{ds.summary.preferences.toLocaleString("en-US")}</dd>
                         <dt className="text-muted">Accepted profiles</dt><dd className="tabular-nums">{ds.summary.eligible.toLocaleString("en-US")} of {ds.summary.withStatus.toLocaleString("en-US")} with a status</dd>
                         <dt className="text-muted">With certificates</dt><dd className="tabular-nums">{ds.summary.withCertificates.toLocaleString("en-US")}</dd>
+                        <dt className="text-muted">Format</dt><dd>{ds.summary.format === "combined" ? "combined candidates file" : "marks + preferences"}</dd>
+                        {ds.summary.preferencesWithoutMarks ? <><dt className="text-amber">Left out</dt><dd className="text-amber tabular-nums">{ds.summary.preferencesWithoutMarks.toLocaleString("en-US")} preferences of applicants missing from marks.json</dd></> : null}
                         <dt className="text-muted">Corrected marks</dt><dd className="tabular-nums">{ds.summary.correctedMarks.toLocaleString("en-US")}</dd>
                       </dl>
                       <StartRunForm induction={n} />

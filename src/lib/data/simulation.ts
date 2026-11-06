@@ -34,11 +34,13 @@ import { requireReason, writeAudit } from "./shared";
  * Simulation: restricted inputs, runs and their results.
  *
  * Inputs live on the storage volume, one folder per induction:
- *   <APP_STORAGE_DIR>/simulation/induction<n>/candidates.json        (required)
- *                                           components.json        (optional, corrected marks)
+ *   <APP_STORAGE_DIR>/simulation/induction<n>/marks.json             candidate marks       } required (split format,
+ *                                           preferences.json       portal preferences    } written by the backend)
  *                                           certificates.json      (optional)
  *                                           profile_status.json    (optional, ProfileStatus.json)
- * The legacy names (induction21_candidates.json, ProfileStatus.json …) are accepted too.
+ *                                           components.json        (optional, corrected marks)
+ * or, instead of marks + preferences, the legacy combined candidates.json. Names may
+ * carry an induction prefix (induction22_marks.json …). Formats: src/lib/domain/sim-dataset.ts.
  * Importing keeps only what the engine needs (src/lib/domain/sim-dataset.ts); the
  * files themselves stay where they are, on the server's volume, never in the database
  * or the repository.
@@ -49,6 +51,8 @@ import { requireReason, writeAudit } from "./shared";
 
 const MAX_BYTES = 200 * 1024 * 1024;
 const ROLES = {
+  marks: /^(?:induction\d{1,3}_)?(?:candidate_?)?marks\.json$/i,
+  preferences: /^(?:induction\d{1,3}_)?preferences\.json$/i,
   candidates: /^(?:induction\d{1,3}_)?candidates\.json$/i,
   components: /^(?:induction\d{1,3}_)?components\.json$/i,
   certificates: /^(?:induction\d{1,3}_)?certificates\.json$/i,
@@ -58,6 +62,16 @@ type Role = keyof typeof ROLES;
 
 const simRoot = (root?: string) => path.resolve(/* turbopackIgnore: true */ root ?? env().APP_STORAGE_DIR, "simulation");
 const folderFor = (root: string, induction: number) => path.join(/* turbopackIgnore: true */ root, `induction${induction}`);
+
+/** Why a folder cannot be imported yet, or null when it can. */
+export function importProblem(files: { role: Role }[]): string | null {
+  const has = (r: Role) => files.some((f) => f.role === r);
+  if (has("candidates") && (has("marks") || has("preferences"))) return "The folder has both the split files and a combined candidates.json; keep one format.";
+  if (has("marks") !== has("preferences")) return has("marks") ? "preferences.json is missing (marks.json needs it)." : "marks.json is missing (preferences.json needs it).";
+  if (!has("candidates") && !has("marks")) return "Put marks.json and preferences.json (or a combined candidates.json) here.";
+  return null;
+}
+const canImport = (files: { role: Role }[]) => importProblem(files) === null;
 
 export type SimFolder = {
   induction: number;
@@ -111,7 +125,7 @@ export async function importSimulationDataset(db: Database, session: Session | n
   const st = await lstat(dir).catch(() => null);
   if (!st?.isDirectory()) throw new UserFacingError(`There is no simulation/induction${input.induction}/ folder on the storage volume.`);
   const scan = await scanFolder(dir);
-  if (!scan.files.some((f) => f.role === "candidates")) throw new UserFacingError("The folder has no candidates.json.");
+  if (!canImport(scan.files)) throw new UserFacingError(importProblem(scan.files) ?? "The folder cannot be imported.");
 
   const data: Partial<Record<Role, unknown>> = {};
   const sources: { role: Role; name: string; size: number; sha256: string }[] = [];
@@ -126,6 +140,8 @@ export async function importSimulationDataset(db: Database, session: Session | n
     }
   }
   const { candidates, summary } = sanitizeSimDataset({
+    marks: data.marks,
+    preferences: data.preferences,
     candidates: data.candidates,
     components: data.components,
     certificates: data.certificates,

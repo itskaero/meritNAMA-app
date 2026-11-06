@@ -68,7 +68,43 @@ describe("simulation dataset import", () => {
     expect(out[0]!.certificates).toEqual([{ disciplineId: 2, typeId: 1, typeName: null, program: null, specialty: null, status: "Pass", certificateMarks: 5, computerizedMarks: 4 }]);
     expect(JSON.stringify(out)).not.toMatch(/secret-ref|private remark/);
     expect(out[1]!.profileStatus).toBe(2);
-    expect(summary).toEqual({ candidates: 2, preferences: 3, withCertificates: 1, withStatus: 2, eligible: 1, correctedMarks: 1 });
+    expect(summary).toEqual({ candidates: 2, preferences: 3, withCertificates: 1, withStatus: 2, eligible: 1, correctedMarks: 1, preferencesWithoutMarks: 0, format: "combined" });
+  });
+
+  it("reads the split format: marks rows, preference rows and certificate rows", () => {
+    const marks = [
+      { applicantId: 101, marksTotal: 61.5, applied_in: { FCPS: true }, programMarks: { FCPS: 5 }, profileStatus: 1, nameFull: "Synthetic Person" },
+      { applicantId: "102", marksTotal: 58.25, appliedIn: { FCPS: true }, profileStatus: 2 },
+    ];
+    const preferences = [
+      { applicantId: 101, ...pref(2, { hospitalName: "Services Hospital" }) },
+      { applicantId: 101, ...pref(1) },
+      { applicantId: 102, ...pref(1) },
+      { applicantId: 999, ...pref(1) },
+    ];
+    const certificates = [{ applicantId: 101, disciplineId: 2, typeId: 1, certificateMarks: 5, status: "Pass" }];
+    const { candidates: out, summary } = sanitizeSimDataset({ marks, preferences, certificates, profileStatus: { entries: [{ applicantId: 102, statusId: 1, statusTypeId: 132 }] } });
+    expect(out.map((c) => [c.applicantId, c.baseMarks, c.profileStatus, c.preferences.map((p) => p.preferenceNo), c.certificates.length])).toEqual([
+      ["101", 61.5, 1, [1, 2], 1],
+      // The status file wins over the marks row.
+      ["102", 58.25, 1, [1], 0],
+    ]);
+    expect(out[0]).toMatchObject({ programMarks: { FCPS: 5 }, appliedIn: { FCPS: true } });
+    expect(out[1]!.appliedIn).toEqual({ FCPS: true });
+    expect(JSON.stringify(out)).not.toContain("Synthetic Person");
+    expect(summary).toMatchObject({ candidates: 2, preferences: 3, preferencesWithoutMarks: 1, format: "split", eligible: 2 });
+  });
+
+  it("accepts marks and preferences keyed by applicant id", () => {
+    const { candidates: out } = sanitizeSimDataset({ marks: { "7": { marksTotal: 50 } }, preferences: { "7": [pref(1)] } });
+    expect(out).toMatchObject([{ applicantId: "7", baseMarks: 50, preferences: [{ preferenceNo: 1 }] }]);
+  });
+
+  it("refuses mixed or incomplete formats", () => {
+    expect(() => sanitizeSimDataset({ marks: [], preferences: [], candidates })).toThrow(/not both/);
+    expect(() => sanitizeSimDataset({ marks: [] })).toThrow(/both marks/);
+    expect(() => sanitizeSimDataset({})).toThrow(/No marks/);
+    expect(() => sanitizeSimDataset({ marks: [{ applicantId: 1, marksTotal: 1 }, { applicantId: 1, marksTotal: 2 }], preferences: [] })).toThrow(/twice/);
   });
 
   it("lets a later status type override an earlier one", () => {
