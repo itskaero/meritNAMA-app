@@ -147,3 +147,73 @@ export function resolveRules(rules: AllocationRules, policy?: Policy | null): Re
     parent: resolveBonus(parsed.parentBonus.enabled, parsed.parentBonus.component, policy, "parentBonus.enabled"),
   };
 }
+
+// ── Helpers for storing, choosing and reviewing rules ──────────────────────────
+
+type PolicyVersionLike = { policyKey: string; version: number; status: string; definition: Policy };
+
+/**
+ * The scoring policy that applies to an induction: per policy key the active version,
+ * else the newest; then the key whose `induction` covers it (the active key wins if
+ * two do). Null when no policy covers the induction.
+ */
+export function policyForInduction<T extends PolicyVersionLike>(versions: readonly T[], induction: number, covers: (p: Policy) => number[]): T | null {
+  const current = new Map<string, T>();
+  for (const v of versions) {
+    const seen = current.get(v.policyKey);
+    if (!seen || (v.status === "active" && seen.status !== "active") || (seen.status !== "active" && v.version > seen.version)) current.set(v.policyKey, v);
+  }
+  const matching = [...current.values()].filter((v) => covers(v.definition).includes(induction));
+  return matching.find((v) => v.status === "active") ?? matching.sort((a, b) => b.version - a.version || a.policyKey.localeCompare(b.policyKey))[0] ?? null;
+}
+
+function flatten(value: unknown, prefix = "", out = new Map<string, string>()) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    for (const [k, v] of Object.entries(value)) flatten(v, prefix ? `${prefix}.${k}` : k, out);
+  } else {
+    out.set(prefix, JSON.stringify(value));
+  }
+  return out;
+}
+
+/** Settings that differ between two rule sets, as dotted paths with JSON values. */
+export function rulesDiff(before: AllocationRules, after: AllocationRules) {
+  const a = flatten(before);
+  const b = flatten(after);
+  const rows: { setting: string; from: string; to: string }[] = [];
+  for (const k of new Set([...a.keys(), ...b.keys()])) {
+    if (k === "label") continue;
+    const x = a.get(k) ?? "—";
+    const y = b.get(k) ?? "—";
+    if (x !== y) rows.push({ setting: k, from: x, to: y });
+  }
+  return rows;
+}
+
+/** One line per rule, in words, for admin pages and previews. */
+export function describeRules(r: ResolvedRules): { topic: string; text: string }[] {
+  const c = r.certificateBonus;
+  const onOff = (x: { on: boolean; cap: number | null }, enabled: boolean | "auto", component: string) =>
+    `${x.on ? `counted${x.cap != null ? `, at most ${x.cap} marks` : ""}` : "not counted"} (${enabled === "auto" ? `follows the scoring policy's ${component}` : `set ${enabled ? "on" : "off"} here`})`;
+  const sourceName = { certificateMarks: "portal certificate marks", computerizedMarks: "computerised marks", preferenceProgramMarks: "the preference's programme marks" } as const;
+  return [
+    { topic: "Certificate bonus", text: onOff(r.certificate, c.enabled, c.component) },
+    {
+      topic: "Which certificate",
+      text: `${c.combine === "max" ? "the best" : "the first"} matching certificate, matched by discipline${c.matchByName ? " (or by speciality name when a preference has no discipline)" : ""}, ${c.typeMatch === "strict" ? "same programme type only" : "programme type ignored when missing"}${c.requirePass ? ", passed only" : ""}; worth the first of ${c.sources.map((s) => sourceName[s]).join(", ")}${c.fallback === "programMarks" ? "; otherwise the candidate's per-programme marks" : ""}`,
+    },
+    { topic: "Parent-institute bonus", text: onOff(r.parent, r.parentBonus.enabled, r.parentBonus.component) },
+    {
+      topic: "Tracks",
+      text: `${r.tracks.separate.map((t) => `${t.id} (quotas containing ${t.quotaContains.map((q) => `“${q}”`).join(" or ")})`).join(", ") || "none"} separate from ${r.tracks.defaultTrack}; one seat per track`,
+    },
+    {
+      topic: "First round",
+      text: `best mark first${r.placement.orderBy === "bestMarkWithoutParentBonus" ? " (ordered without the parent bonus, as the legacy simulator did)" : ""}; a full seat changes hands only on a strictly higher mark; at most ${r.placement.maxPasses} passes`,
+    },
+    {
+      topic: "Later rounds",
+      text: `profile status ${r.cascade.eligibleProfileStatus.join(" or ")} may hold seats; ${r.cascade.lockAcceptedFirstPreference === "programme" ? "accepting the 1st preference blocks moving to another programme" : "nobody is locked"}; one seat per ${r.cascade.seatHolding === "perProgramme" ? "programme" : "quota"}; at most ${r.cascade.maxWaves} waves`,
+    },
+  ];
+}

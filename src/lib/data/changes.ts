@@ -3,6 +3,7 @@ import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { assertCan, can, type Capability, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
+  allocationRules,
   discussionThreads,
   inductionSeats,
   meritAllocations,
@@ -18,6 +19,8 @@ import { UserFacingError } from "@/lib/errors";
 import { indexCandidates } from "./candidates";
 import { deleteMeritRound, importMeritRound } from "./merit";
 import { activatePolicyVersion, importScoringPolicyFile } from "./policies";
+import { activateRulesVersion, loadInductionRules, resolveFor, retireActiveRules, rulesBaseline } from "./allocation-rules";
+import { allocationRulesSchema, describeRules, rulesDiff } from "@/lib/engine/rules";
 import { exportSeatFile, importSeatFile } from "./reference-data";
 import { requireReason, writeAudit, type Db } from "./shared";
 
@@ -36,6 +39,7 @@ export const CHANGE_CAPABILITY: Record<ChangeKind, Capability> = {
   seat_matrix_replace: "data.edit",
   merit_round_replace: "data.edit",
   merit_round_delete: "data.edit",
+  rules_activate: "policy.edit",
 };
 
 export type Proposal = { applied: true; message: string } | { applied: false; changeId: string; message: string };
@@ -272,6 +276,35 @@ export async function proposePolicyFile(db: Database, session: Session | null, i
   return { applied: false, changeId: id, message: "A policy is already active, so this import is staged. Review and publish it." };
 }
 
+/** Activating an induction's allocation rules is always staged, with the settings that change. */
+export async function proposeRulesActivation(db: Database, session: Session | null, input: { id: string; reason: string }): Promise<Proposal> {
+  assertCan(session, "policy.edit");
+  const reason = reasonFor(input.reason);
+  const [target] = await db.select().from(allocationRules).where(eq(allocationRules.id, input.id)).limit(1);
+  if (!target) throw new UserFacingError("Rules version not found");
+  if (target.status === "active") return { applied: true, message: "This version is already active." };
+  const after = allocationRulesSchema.parse(target.definition);
+  const current = await loadInductionRules(db, target.inductionId);
+  const policy = current.policy?.definition ?? null;
+  const next = resolveFor(after, policy);
+  const id = await stage(db, session, {
+    kind: "rules_activate", target: `rules:${target.inductionId}`, title: `Activate induction ${target.inductionId} allocation rules v${target.version}`,
+    payload: { id: target.id, induction: target.inductionId },
+    preview: {
+      induction: target.inductionId,
+      from: current.origin.kind === "stored" ? `v${current.origin.version}` : "default rules",
+      to: `v${target.version}`,
+      policy: current.policy ? `${current.policy.policyKey} v${current.policy.version}` : null,
+      settings: rulesDiff(current.rules, after),
+      before: current.resolved ? describeRules(current.resolved) : null,
+      after: next.resolved ? describeRules(next.resolved) : null,
+      problem: next.problem,
+    },
+    baseline: await rulesBaseline(db, target.inductionId), reason,
+  });
+  return { applied: false, changeId: id, message: "Activation staged. Review the differences and publish." };
+}
+
 // ── Reading ────────────────────────────────────────────────────────────────────
 
 export async function listChanges(db: Database, session: Session | null) {
@@ -317,6 +350,7 @@ async function currentBaseline(db: Db, c: typeof stagedChanges.$inferSelect) {
     }
     case "policy_activate":
     case "policy_file_import": return policyBaseline(db);
+    case "rules_activate": return rulesBaseline(db, (c.payload as { induction: number }).induction);
   }
 }
 
@@ -379,6 +413,13 @@ export async function publishChange(db: Database, sessionIn: Session | null, inp
       else await importScoringPolicyFile(db, session, { file: (c.payload as { file: unknown }).file, reason: why });
       break;
     }
+    case "rules_activate": {
+      const p = c.payload as { id: string; induction: number };
+      const current = await loadInductionRules(db, p.induction);
+      snapshot = { induction: p.induction, activeId: current.origin.kind === "stored" ? current.origin.id : null };
+      await activateRulesVersion(db, session, { id: p.id, reason: why });
+      break;
+    }
   }
   await db.update(stagedChanges).set({ status: "published", snapshot, decidedBy: session.email, decidedAt: new Date(), decisionReason: reason }).where(eq(stagedChanges.id, c.id));
   await writeAudit(db, session.email, { action: "change.publish", entityType: "staged_change", entityId: c.id, after: { kind: c.kind, target: c.target }, reason });
@@ -416,6 +457,13 @@ export async function rollbackChange(db: Database, sessionIn: Session | null, in
       const s = c.snapshot as { activeId: string | null };
       if (!s.activeId) throw new UserFacingError("No policy was active before this change, so there is nothing to return to.");
       await activatePolicyVersion(db, session, { id: s.activeId, reason: why });
+      break;
+    }
+    case "rules_activate": {
+      // Back to the version that was active before, or to the default rules.
+      const s = c.snapshot as { induction: number; activeId: string | null };
+      if (s.activeId) await activateRulesVersion(db, session, { id: s.activeId, reason: why });
+      else await retireActiveRules(db, session, { induction: s.induction, reason: why });
       break;
     }
   }

@@ -186,9 +186,18 @@ induction's simulation:
 `resolveRules(rules, policy)` combines them. Each setting chooses among behaviours
 implemented in code, so an edit can never inject code; a new kind of rule needs code
 and a test. `DEFAULT_RULES` (for new inductions) counts the **best** matching
-certificate in both rounds and orders candidates by their full mark. Storing rules
-per induction with drafts, preview, publish and audit (as for scoring policies) is
-the next step.
+certificate in both rounds and orders candidates by their full mark.
+
+Rules are stored per induction in `allocation_rules` (versioned, at most one active
+version per induction; no foreign key, so rules can be prepared before an induction's
+data arrives) and managed at `/admin/rules` by policy editors. Saving creates a
+draft; activation is a staged change (`rules_activate`) whose preview lists the
+settings that change and the rules in words before and after; publishing keeps the
+previous state, so a rollback returns to the earlier version or to the defaults.
+`loadInductionRules(db, n)` gives the engines what an induction runs with: its active
+rules (else `DEFAULT_RULES`), the scoring policy covering it (per key the active
+version, else the newest) and the resolved result, or the problem when `"auto"`
+has no policy to follow.
 
 **Parity.** `scripts/golden/legacy-engine.mjs` runs the legacy files in a Node sandbox
 on seeded synthetic inputs (with frequent tied marks) and writes inputs + outputs to

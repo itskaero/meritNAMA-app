@@ -1,0 +1,40 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { formInt, formText, proposalState, toActionState, type ActionState } from "@/lib/action-state";
+import { getSession } from "@/lib/auth/session";
+import { createRulesDraft } from "@/lib/data/allocation-rules";
+import { proposeRulesActivation } from "@/lib/data/changes";
+import { getDb } from "@/lib/db/client";
+
+/**
+ * Server Actions for allocation rules. Reachable by direct POST, so authorization is
+ * enforced by the data layer, not by the page.
+ */
+
+export async function saveRulesDraftAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  let id: string;
+  try {
+    const row = await createRulesDraft(getDb(), await getSession(), {
+      induction: formInt(form, "induction", "Induction"),
+      definition: JSON.parse(formText(form, "definition")),
+      reason: formText(form, "reason"),
+    });
+    id = row.id;
+  } catch (err) {
+    return toActionState(err);
+  }
+  revalidatePath("/admin/rules");
+  redirect(`/admin/rules/${id}?saved=1`);
+}
+
+export async function activateRulesAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const p = await proposeRulesActivation(getDb(), await getSession(), { id: formText(form, "id"), reason: formText(form, "reason") });
+    revalidatePath("/admin/changes");
+    return proposalState(p);
+  } catch (err) {
+    return toActionState(err);
+  }
+}

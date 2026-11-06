@@ -156,6 +156,16 @@ export const adminSections: Section[] = [
     planned: ["Schema-validated editor", "Totals check", "Impact preview via the calculation engine", "Explicit activation and rollback"],
   },
   {
+    href: "/admin/rules",
+    capability: "policy.edit",
+    group: "Configuration",
+    icon: "target",
+    label: "Allocation rules",
+    description: "How each induction's seats are allocated in the simulation: certificate and parent bonuses, tracks, later rounds.",
+    milestone: "Delivery 3 · Admin MVP",
+    planned: ["Per-induction rules with drafts", "Bonuses follow the scoring policy", "Preview, publish and rollback", "Impact preview through the simulation"],
+  },
+  {
     href: "/admin/reference-data",
     capability: "data.edit",
     group: "Configuration",

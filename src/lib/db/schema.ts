@@ -80,6 +80,34 @@ export const scoringPolicies = pgTable(
 );
 
 /**
+ * Allocation rules per induction (src/lib/engine/rules.ts): how seats are allocated
+ * and how preference-level bonuses are applied. Versioned like scoring policies; at
+ * most one active version per induction, and an induction without one uses the
+ * built-in default rules. No foreign key to `inductions`, so rules can be prepared
+ * before an induction's data is imported.
+ */
+export const allocationRules = pgTable(
+  "allocation_rules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    inductionId: integer("induction_id").notNull(),
+    version: integer("version").notNull(),
+    status: policyStatus("status").notNull().default("draft"),
+    /** Validated against allocationRulesSchema before every write; stored as written. */
+    definition: json("definition").notNull(),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    activatedAt: timestamp("activated_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("allocation_rules_induction_version_uq").on(t.inductionId, t.version),
+    uniqueIndex("allocation_rules_single_active_uq").on(t.inductionId).where(sql`${t.status} = 'active'`),
+    check("allocation_rules_version_positive", sql`${t.version} > 0`),
+    check("allocation_rules_induction_positive", sql`${t.inductionId} > 0`),
+  ],
+);
+
+/**
  * File-level fields of scoring_policy.json — everything except `policies`
  * (`active_policy`, `_induction_max`, `year_total_max`, `_note`…). Append-only:
  * the newest row is current. Kept so the file can be exported without loss.
@@ -335,6 +363,7 @@ export const changeKind = pgEnum("change_kind", [
   "seat_matrix_replace",
   "merit_round_replace",
   "merit_round_delete",
+  "rules_activate",
 ]);
 export const changeStatus = pgEnum("change_status", ["pending", "published", "discarded", "rolled_back"]);
 

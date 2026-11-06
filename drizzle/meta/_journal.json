@@ -85,6 +85,13 @@
       "when": 1793944933452,
       "tag": "0011_preference_lists",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793991241282,
+      "tag": "0012_allocation_rules",
+      "breakpoints": true
     }
   ]
 }

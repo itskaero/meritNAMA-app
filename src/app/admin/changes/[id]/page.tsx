@@ -52,6 +52,26 @@ type PolicyPreview = {
   keys?: { key: string; state: "new" | "changed" | "unchanged" }[];
 };
 
+type RulesPreview = {
+  induction: number; from: string; to: string; policy: string | null;
+  settings: { setting: string; from: string; to: string }[];
+  before: { topic: string; text: string }[] | null; after: { topic: string; text: string }[] | null;
+  problem: string | null;
+};
+
+function RulesWords({ title, lines }: { title: string; lines: { topic: string; text: string }[] | null }) {
+  return (
+    <Card>
+      <CardHeader title={title} />
+      {lines ? (
+        <dl className="grid gap-2 text-sm">
+          {lines.map((l) => <div key={l.topic}><dt className="font-medium">{l.topic}</dt><dd className="text-muted">{l.text}</dd></div>)}
+        </dl>
+      ) : <p className="text-sm text-muted">Cannot be resolved without a scoring policy.</p>}
+    </Card>
+  );
+}
+
 function Preview({ kind, preview }: { kind: ChangeKind; preview: unknown }) {
   switch (kind) {
     case "seat_matrix_replace": {
@@ -102,6 +122,32 @@ function Preview({ kind, preview }: { kind: ChangeKind; preview: unknown }) {
         <Notice tone="warning" title={`Removes ${p.allocations.toLocaleString("en-US")} allocations`}>
           {p.cycle}. Merit pages, the score finder and comparisons stop using this round. {p.discussions ? `${p.discussions} community discussions about this round stay, but their page will be empty.` : ""} A snapshot is kept, so it can be rolled back.
         </Notice>
+      );
+    }
+    case "rules_activate": {
+      const p = preview as RulesPreview;
+      return (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FromTo label={`Induction ${p.induction} rules`} from={p.from} to={p.to} />
+            <FromTo label="Scoring policy (unchanged)" from={p.policy ?? "none"} to={p.policy ?? "none"} />
+          </div>
+          {p.problem ? <Notice tone="warning" title="These rules cannot be applied yet">{p.problem}</Notice> : null}
+          <Card>
+            <CardHeader title="Settings that change" description={p.settings.length ? undefined : "No setting changes (only the label may differ)."} />
+            {p.settings.length ? (
+              <DataTable caption="Rule changes" rows={p.settings} rowKey={(r) => r.setting} columns={[
+                { key: "s", header: "Setting", tone: "mono", cell: (r) => r.setting },
+                { key: "f", header: "Now", tone: "mono", cell: (r) => r.from },
+                { key: "t", header: "After", tone: "mono", cell: (r) => r.to },
+              ]} />
+            ) : null}
+          </Card>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <RulesWords title="Now" lines={p.before} />
+            <RulesWords title="After publishing" lines={p.after} />
+          </div>
+        </>
       );
     }
     case "policy_activate":

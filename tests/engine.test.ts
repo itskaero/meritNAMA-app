@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { marksContext, effectiveMark, programAliases, programBonus, type EngineCandidate, type Preference } from "@/lib/engine/marks";
 import { buildSeatTree, candidatePool, preferenceOutcomes, quotaTrack, runPlacement, type SeatLine } from "@/lib/engine/placement";
 import { consentSeatKey, parseConsentTitle, runCascade, type CascadeInput } from "@/lib/engine/cascade";
-import { allocationRulesSchema, DEFAULT_RULES, LEGACY_CASCADE_RULES, resolveRules, RulesError, type AllocationRules } from "@/lib/engine/rules";
+import { allocationRulesSchema, DEFAULT_RULES, describeRules, LEGACY_CASCADE_RULES, policyForInduction, resolveRules, rulesDiff, RulesError, type AllocationRules } from "@/lib/engine/rules";
+import { policyInductions } from "@/lib/domain/scoring-policy";
 import type { Policy } from "@/lib/domain/scoring-policy";
 
 const ctx = marksContext();
@@ -64,6 +65,29 @@ describe("allocation rules", () => {
   it("rejects unknown settings", () => {
     expect(allocationRulesSchema.safeParse({ ...DEFAULT_RULES, extra: 1 }).success).toBe(false);
     expect(allocationRulesSchema.safeParse({ ...DEFAULT_RULES, placement: { ...DEFAULT_RULES.placement, displaceWhen: "higherOrEqual" } }).success).toBe(false);
+  });
+});
+
+describe("rules helpers", () => {
+  const v = (policyKey: string, version: number, status: string, induction: number | string) => ({ policyKey, version, status, definition: { ...policy([]), induction } as Policy });
+
+  it("picks the policy covering an induction: active version of its key, else the newest", () => {
+    const versions = [v("2025", 1, "retired", "17-19"), v("2025", 2, "draft", "17-19"), v("2026", 1, "active", 21), v("2026", 2, "draft", 22)];
+    expect(policyForInduction(versions, 18, policyInductions)).toMatchObject({ policyKey: "2025", version: 2 });
+    // The active version of "2026" covers 21; its newer draft (covering 22) does not count.
+    expect(policyForInduction(versions, 21, policyInductions)).toMatchObject({ policyKey: "2026", version: 1 });
+    expect(policyForInduction(versions, 22, policyInductions)).toBeNull();
+  });
+
+  it("lists only the settings that differ, ignoring the label", () => {
+    const after = { ...DEFAULT_RULES, label: "x", cascade: { ...DEFAULT_RULES.cascade, maxWaves: 50 } };
+    expect(rulesDiff(DEFAULT_RULES, after)).toEqual([{ setting: "cascade.maxWaves", from: "100", to: "50" }]);
+  });
+
+  it("describes resolved rules in words", () => {
+    const lines = describeRules(resolveRules(DEFAULT_RULES, policy([{ key: "fcps_jcat", max_marks: 5 }])));
+    expect(lines.find((l) => l.topic === "Certificate bonus")?.text).toBe("counted, at most 5 marks (follows the scoring policy's fcps_jcat)");
+    expect(lines.find((l) => l.topic === "Parent-institute bonus")?.text).toMatch(/^not counted/);
   });
 });
 
