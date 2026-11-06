@@ -40,7 +40,11 @@ export async function startRunAction(_prev: ActionState, form: FormData): Promis
     const induction = formInt(form, "induction", "Induction");
     const from = formText(form, "fromRound").trim();
     id = from
-      ? await queueNextRoundRun(db, await getSession(), { induction, fromRound: formInt(form, "fromRound", "Round") })
+      ? await queueNextRoundRun(db, await getSession(), {
+          induction,
+          fromRound: formInt(form, "fromRound", "Round"),
+          awaitedConsent: (["vacate", "keep", "yield"] as const).find((v) => v === formText(form, "awaited")),
+        })
       : await queueFirstRoundRun(db, await getSession(), { induction });
     // Runs after the response is sent; the run page shows its progress.
     after(() => executeRun(db, id));

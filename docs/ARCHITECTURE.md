@@ -240,29 +240,30 @@ offers in an earlier round, and runs the cascade over the portal preferences. It
 compared with published round r+1 and with the "nobody moved" baseline (round r+1
 against round r), which is what the simulation has to beat.
 
-**Awaited replies** (`cascade.awaitedConsent`). The operator's account of PHF
-practice: an Awaited seat is filled only if an appropriate candidate exists. That is
-`"yield"` (the default for new inductions): the Awaited candidate keeps their place in
-the merit order for their own seat, so only someone ranked above them who wants it can
-take it; otherwise it stays theirs. `"vacate"` (the legacy behaviour) frees it for
-anyone, `"keep"` never does.
+**Tuned against induction 21** (rounds 1–8, real data). Two rules close most of the gap:
 
-Back-test, induction 21 (agreement with the published next round; "nobody moved" in
-brackets):
+- **Awaited replies** (`cascade.awaitedConsent`, default `"yield"`): the seat goes to
+  whoever is next in line; it stays with the holder only if nobody claims it (the
+  operator's account of PHF practice). In every round but one, all all-Awaited
+  candidates were gone from PHF's next list. Round 3 is the exception (68 of 78 kept
+  their seats), so a run can override the setting: **R3→R4 runs with "keep"**.
+- **Dropped off stays out** (`cascade.droppedStayOut`, default on): anyone who was on an
+  earlier published list and is not on the round being simulated from does not come
+  back. PHF re-seated 0–1 such candidates per round; the legacy cascade re-seated dozens.
 
-| | vacate | keep | **yield** | nobody moved |
-|---|---|---|---|---|
-| R1→R2 | 93.1% | 91.1% | 91.7% | 57.3% |
-| R2→R3 | 97.0% | 95.7% | 95.9% | 88.4% |
-| R3→R4 | 81.9% | 95.3% | 95.0% | 94.5% |
-| R4→R5 | 94.8% | 94.5% | 94.5% | 90.6% |
-| R5→R6 | 92.3% | 89.9% | 90.8% | 85.9% |
-| R6→R7 | 91.8% | 91.0% | 91.2% | 86.6% |
-| R7→R8 | 91.0% | 90.1% | 90.2% | 89.0% |
-| allocations reproduced, all rounds | 7,952 | 8,027 | **8,045** | |
+Tried and rejected (no gain or worse): letting seated candidates enter any listed
+programme (65% in R1→R2), offering seats already empty at the start of the round (no
+change), and filling freed seats in global merit order instead of seat by seat (no
+change). Joining happens only after the final round.
 
-Only "yield" beats "nobody moved" in every round. Joining happens only after the final
-round, so it does not explain the remaining later-round differences.
+| | R1→2 | R2→3 | R3→4 | R4→5 | R5→6 | R6→7 | R7→8 | reproduced |
+|---|---|---|---|---|---|---|---|---|
+| legacy rules | 93.1 | 97.0 | 81.9 | 94.8 | 92.3 | 91.8 | 91.0 | 7,952 |
+| **tuned** | **93.5** | **97.3** | **95.7** | **97.3** | **96.0** | **96.0** | **96.6** | **8,330** |
+| nobody moved | 57.3 | 88.4 | 94.5 | 90.6 | 85.9 | 86.6 | 89.0 | |
+
+With round 1 at 98.9%, the simulation reproduces 98.9% of PHF's first list and 93–97%
+of each later one.
 
 Still to do: `app-predict-calc.js` (the scoring calculator).
 

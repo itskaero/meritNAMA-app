@@ -112,7 +112,7 @@ export type CascadeStats = {
   multiTrackFm: number;
   locked: number;
   simPlaced: number;
-  /** awaitedConsent "yield": seats that stayed with Awaited candidates because no one ranked above them took them. */
+  /** awaitedConsent "yield": seats that stayed with Awaited candidates because nobody else claimed them. */
   awaitedReturned?: number;
 };
 
@@ -271,9 +271,7 @@ export function runCascade(input: CascadeInput): CascadeResult {
     }
   };
   const awaitedSeats = new Map<number, [string, number][]>();
-  /** "yield": seat → Awaited candidates who held it → their preference number there. */
-  const yielded = new Map<string, Map<number, number>>();
-  let awaitedKept = 0;
+
   const vacateAll = (cid: number) => {
     for (const sk of [...(candidateState.get(cid)?.keys() ?? [])]) vacate(cid, sk);
   };
@@ -292,9 +290,7 @@ export function runCascade(input: CascadeInput): CascadeResult {
     if (consentRejected.has(cid) || consentAwaited.has(cid)) {
       // "yield": remember the seats, to give back any that nobody else takes.
       if (!consentRejected.has(cid) && rules.cascade.awaitedConsent === "yield") {
-        const held = [...(candidateState.get(cid) ?? [])];
-        awaitedSeats.set(cid, held);
-        for (const [sk, prefNo] of held) (yielded.get(sk) ?? yielded.set(sk, new Map()).get(sk)!).set(cid, prefNo);
+        awaitedSeats.set(cid, [...(candidateState.get(cid) ?? [])]);
       }
       vacateAll(cid);
       continue;
@@ -399,16 +395,6 @@ export function runCascade(input: CascadeInput): CascadeResult {
       for (let v = 0; v < vacancies; v++) {
         let placed = false;
         for (const cid of ranked) {
-          // "yield": reached an Awaited holder of this seat before anyone ranked above them took it: it stays theirs.
-          const own = yielded.get(sk);
-          if (own?.has(cid) && !seat.occupants.has(cid)) {
-            seat.occupants.set(cid, own.get(cid)!);
-            stateOf(cid).set(sk, own.get(cid)!);
-            own.delete(cid);
-            awaitedKept++;
-            placed = true;
-            break;
-          }
           if (!isEligible(cid) || !canTake(cid, sk) || seat.occupants.has(cid)) continue;
           const newPref = candidatePrefMap.get(cid)?.get(sk);
           if (newPref == null) continue;
@@ -465,8 +451,8 @@ export function runCascade(input: CascadeInput): CascadeResult {
     input.onWave?.({ wave, changesThisPass: changes, totalPlacements, totalUpgrades });
   }
 
-  // "yield": also give back any yielded seat still empty (e.g. nobody was ranked for it).
-  let awaitedReturned = awaitedKept;
+  // "yield": an Awaited candidate keeps each of their seats that nobody else claimed.
+  let awaitedReturned = 0;
   for (const [cid, held] of [...awaitedSeats].sort((a, b) => a[0] - b[0])) {
     for (const [sk, prefNo] of held) {
       const seat = seats.get(sk);

@@ -80,12 +80,18 @@ export const allocationRulesSchema = z.strictObject({
      * A candidate whose consent replies are all "Awaited":
      * - vacate: loses their seats;
      * - keep: keeps them, as if they had not replied;
-     * - yield: their seats are offered on, but only a candidate ranked above them on merit
-     *   for that seat can take one; otherwise it stays theirs (PHF's practice, as the
-     *   operator describes it). They are not upgraded themselves.
+     * - yield: their seats go to whoever is next in line; a seat nobody claims stays
+     *   theirs. They are not upgraded themselves. This is PHF's practice as the operator
+     *   describes it, and what induction 21 shows in every round but round 3 (where
+     *   Awaited candidates kept their seats, as with "keep").
      * Defaults keep rules saved before this setting valid.
      */
     awaitedConsent: z.enum(["vacate", "keep", "yield"]).default("yield"),
+    /**
+     * Candidates who were on an earlier list and dropped off it (rejected, did not reply,
+     * lost their profile) do not come back. Induction 21: PHF re-seated 0–1 per round.
+     */
+    droppedStayOut: z.boolean().default(true),
   }),
 });
 
@@ -107,7 +113,7 @@ export const DEFAULT_RULES: AllocationRules = {
   parentBonus: { enabled: "auto", component: "parent_institute" },
   tracks: { separate: [{ id: "armed", quotaContains: ["armed force"] }], defaultTrack: "civilian" },
   placement: { displaceWhen: "strictlyHigher", orderBy: "bestMark", maxPasses: 1000, eligibleProfileStatus: [1], unknownStatus: "include" },
-  cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100, awaitedConsent: "yield" },
+  cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100, awaitedConsent: "yield", droppedStayOut: true },
 };
 
 /**
@@ -120,7 +126,7 @@ export const LEGACY_FIRST_ROUND_RULES: AllocationRules = {
   certificateBonus: { ...DEFAULT_RULES.certificateBonus, enabled: true, combine: "first" },
   parentBonus: { ...DEFAULT_RULES.parentBonus, enabled: false },
   placement: { ...DEFAULT_RULES.placement, orderBy: "bestMarkWithoutParentBonus" },
-  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate" },
+  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", droppedStayOut: false },
 };
 
 export const LEGACY_CASCADE_RULES: AllocationRules = {
@@ -136,7 +142,7 @@ export const LEGACY_CASCADE_RULES: AllocationRules = {
     fallback: "none",
   },
   parentBonus: { ...DEFAULT_RULES.parentBonus, enabled: false },
-  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate" },
+  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", droppedStayOut: false },
 };
 
 /** What the engines run with: rules plus the scoring policy's switches and caps. */
@@ -232,7 +238,7 @@ export function describeRules(r: ResolvedRules): { topic: string; text: string }
     },
     {
       topic: "Later rounds",
-      text: `profile status ${r.cascade.eligibleProfileStatus.join(" or ")} may hold seats; ${r.cascade.lockAcceptedFirstPreference === "programme" ? "accepting the 1st preference blocks moving to another programme" : "nobody is locked"}; one seat per ${r.cascade.seatHolding === "perProgramme" ? "programme" : "quota"}; consent “Awaited” ${r.cascade.awaitedConsent === "keep" ? "keeps the seat" : r.cascade.awaitedConsent === "yield" ? "keeps the seat unless a candidate ranked above them takes it" : "loses the seat"}; at most ${r.cascade.maxWaves} waves`,
+      text: `profile status ${r.cascade.eligibleProfileStatus.join(" or ")} may hold seats; ${r.cascade.lockAcceptedFirstPreference === "programme" ? "accepting the 1st preference blocks moving to another programme" : "nobody is locked"}; one seat per ${r.cascade.seatHolding === "perProgramme" ? "programme" : "quota"}; consent “Awaited” ${r.cascade.awaitedConsent === "keep" ? "keeps the seat" : r.cascade.awaitedConsent === "yield" ? "keeps the seat only if nobody claims it" : "loses the seat"}; ${r.cascade.droppedStayOut ? "candidates who dropped off an earlier list stay out" : "candidates who dropped off an earlier list may come back"}; at most ${r.cascade.maxWaves} waves`,
     },
   ];
 }

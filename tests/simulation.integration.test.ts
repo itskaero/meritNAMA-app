@@ -150,5 +150,12 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
     const rejected = new Set(replies.filter((r) => r.status === "Rejected").map((r) => String(r.applicantId)));
     expect(next.some((p) => rejected.has(p.applicantId))).toBe(false);
     expect(next.length).toBe(s.placed);
+    // A run can read Awaited replies differently from the induction's rules, and records it.
+    const keepId = await queueNextRoundRun(db, editor, { induction: IND, fromRound: 1, awaitedConsent: "keep" });
+    await executeRun(db, keepId);
+    const keep = (await getRun(db, editor, keepId))!;
+    expect(keep.status).toBe("done");
+    expect((keep.rules as { cascade: { awaitedConsent: string } }).cascade.awaitedConsent).toBe("keep");
+    expect(keep.summary!.resolved.cascade.awaitedConsent).toBe("keep");
   });
 });

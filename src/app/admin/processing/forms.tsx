@@ -30,7 +30,20 @@ export function StartRunForm({ induction, fromRound, variant = "primary" }: { in
     <form action={action} className="grid gap-2">
       <input type="hidden" name="induction" value={induction} />
       {fromRound ? <input type="hidden" name="fromRound" value={fromRound} /> : null}
-      <div><Button type="submit" size="sm" variant={variant} disabled={pending}>{pending ? "Starting…" : label}</Button></div>
+      <div className="flex flex-wrap items-center gap-2">
+        {fromRound ? (
+          <label className="flex items-center gap-1.5 text-xs text-muted">
+            Awaited replies
+            <select name="awaited" defaultValue="" className="rounded-lg border border-line bg-surface px-2 py-1 text-xs text-ink">
+              <option value="">as in the rules</option>
+              <option value="yield">seat goes to the next in line</option>
+              <option value="keep">keep their seat (treated as accepted)</option>
+              <option value="vacate">lose their seat</option>
+            </select>
+          </label>
+        ) : null}
+        <Button type="submit" size="sm" variant={variant} disabled={pending}>{pending ? "Starting…" : label}</Button>
+      </div>
       <ActionResult state={state} />
     </form>
   );

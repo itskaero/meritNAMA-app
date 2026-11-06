@@ -234,24 +234,30 @@ describe("cascade", () => {
   });
 
   describe("an Awaited reply", () => {
-    // 10 holds Medicine and has not replied; 20 holds Surgery but prefers Medicine.
-    const awaited = (marks20: number, mode: "vacate" | "keep" | "yield") =>
+    // 10 holds Medicine and has not replied; 20 holds Surgery and may prefer Medicine.
+    const awaited = (mode: "vacate" | "keep" | "yield", twentyWantsMedicine = true) =>
       runCascade(
         scenario({
           rules: on({ cascade: { ...rules.cascade, awaitedConsent: mode } }),
-          candidates: { "10": { marksTotal: 80, preferences: prefs([1, 1]) }, "20": { marksTotal: marks20, preferences: prefs([1, 1], [2, 2]) } },
+          candidates: {
+            "10": { marksTotal: 80, preferences: prefs([1, 1]) },
+            "20": { marksTotal: 70, preferences: twentyWantsMedicine ? prefs([1, 1], [2, 2]) : prefs([2, 1]) },
+          },
           consent: [{ applicantId: 10, status: "Awaited", preferenceNo: 1, infoTitle: "FCPS - Punjab - Medicine - Mayo Hospital" }],
         }),
-      ).placements.map((p) => [p.applicantId, p.specialityName]);
+      );
+    const seated = (r: ReturnType<typeof awaited>) => r.placements.map((p) => [p.applicantId, p.specialityName]);
 
-    it("yield: the seat stays with them unless someone ranked above them wants it", () => {
-      expect(awaited(70, "yield")).toEqual([[10, "Medicine"], [20, "Surgery"]]);
-      expect(awaited(90, "yield")).toEqual([[20, "Medicine"]]);
+    it("yield: the seat goes to the next in line, and stays theirs only if nobody claims it", () => {
+      expect(seated(awaited("yield"))).toEqual([[20, "Medicine"]]);
+      const unclaimed = awaited("yield", false);
+      expect(seated(unclaimed)).toEqual([[10, "Medicine"], [20, "Surgery"]]);
+      expect(unclaimed.stats.awaitedReturned).toBe(1);
     });
 
-    it("vacate frees the seat for anyone; keep never does", () => {
-      expect(awaited(70, "vacate")).toEqual([[20, "Medicine"]]);
-      expect(awaited(90, "keep")).toEqual([[20, "Surgery"], [10, "Medicine"]]);
+    it("vacate frees the seat for good; keep never frees it", () => {
+      expect(seated(awaited("vacate", false))).toEqual([[20, "Surgery"]]);
+      expect(seated(awaited("keep"))).toEqual([[10, "Medicine"], [20, "Surgery"]]);
     });
   });
 

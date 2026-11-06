@@ -281,7 +281,7 @@ export type RunSummary = {
   /** next_round: how much of the published next round equals the previous one ("nobody moves"). */
   baseline?: number | null;
   /** next_round: the cascade's own counts, and the consent it started from. */
-  cascade?: CascadeStats & { consent: ConsentRoundSummary | null; carriedRejected: number };
+  cascade?: CascadeStats & { consent: ConsentRoundSummary | null; carriedRejected: number; droppedOut?: number };
   /** The rules exactly as applied (with the policy's bonus switches and caps). */
   resolved: ResolvedRules;
 };
@@ -292,15 +292,23 @@ export async function queueFirstRoundRun(db: Database, session: Session | null, 
 }
 
 /** Queue round fromRound + 1, simulated from published round fromRound and its consent replies. */
-export async function queueNextRoundRun(db: Database, session: Session | null, input: { induction: number; fromRound: number }) {
+export async function queueNextRoundRun(
+  db: Database,
+  session: Session | null,
+  input: { induction: number; fromRound: number; awaitedConsent?: "vacate" | "keep" | "yield" },
+) {
   assertCan(session, "data.edit");
   if (!(await roundId(db, input.induction, input.fromRound))) throw new UserFacingError(`Round ${input.fromRound} of induction ${input.induction} is not imported. Import it under Inductions & merit lists.`);
   const [c] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(simConsent).where(and(eq(simConsent.inductionId, input.induction), eq(simConsent.roundNo, input.fromRound)));
   if (!c?.n) throw new UserFacingError(`There are no consent replies for round ${input.fromRound}. Put consent_round${input.fromRound}.json in the folder and import the consent files.`);
-  return queueRun(db, session, { induction: input.induction, kind: "next_round", fromRound: input.fromRound });
+  return queueRun(db, session, { induction: input.induction, kind: "next_round", fromRound: input.fromRound, awaitedConsent: input.awaitedConsent });
 }
 
-async function queueRun(db: Database, session: Session | null, input: { induction: number; kind: "first_round" | "next_round"; fromRound: number | null }) {
+async function queueRun(
+  db: Database,
+  session: Session | null,
+  input: { induction: number; kind: "first_round" | "next_round"; fromRound: number | null; awaitedConsent?: "vacate" | "keep" | "yield" },
+) {
   assertCan(session, "data.edit");
   const [dataset] = await db.select().from(simDatasets).where(eq(simDatasets.inductionId, input.induction)).limit(1);
   if (!dataset) throw new UserFacingError(`Import induction ${input.induction}'s simulation data first.`);
@@ -315,7 +323,8 @@ async function queueRun(db: Database, session: Session | null, input: { inductio
       kind: input.kind,
       fromRound: input.fromRound,
       rulesOrigin: r.origin.kind === "stored" ? `v${r.origin.version}` : "default",
-      rules: r.rules,
+      // A run may override how Awaited replies are read (PHF has kept them in some rounds).
+      rules: input.awaitedConsent ? { ...r.rules, cascade: { ...r.rules.cascade, awaitedConsent: input.awaitedConsent } } : r.rules,
       policy: r.policy ? `${r.policy.policyKey} v${r.policy.version}` : null,
       datasetImportedAt: dataset.importedAt,
       createdBy: session.email,
@@ -539,6 +548,21 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
   }
   const carried = new Set<number>();
   for (const [k, st] of byRound) if (st.every((x) => x === "Rejected")) carried.add(Number(k.split(":")[1]));
+  // Dropped off an earlier published list: no longer in the running either.
+  let dropped = 0;
+  if (rules.cascade.droppedStayOut) {
+    const now = new Set(merit.map((m) => m.applicantId));
+    const before = await db
+      .selectDistinct({ applicantId: meritAllocations.applicantId })
+      .from(meritAllocations)
+      .innerJoin(meritRounds, eq(meritRounds.id, meritAllocations.roundId))
+      .where(and(eq(meritRounds.inductionId, induction), lt(meritRounds.roundNo, from)));
+    for (const b of before) {
+      if (now.has(b.applicantId) || carried.has(Number(b.applicantId))) continue;
+      carried.add(Number(b.applicantId));
+      dropped++;
+    }
+  }
 
   const res = runCascade({
     rules,
@@ -574,7 +598,7 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
     unnamedPreferences: unnamed,
     comparison: next ? compareRounds(next, placements.map(toAllocation)) : null,
     baseline: next ? compareRounds(next, merit).agreement : null,
-    cascade: { ...res.stats, consent: (await consentRounds(db, induction)).find((c) => c.round === from) ?? null, carriedRejected: carried.size },
+    cascade: { ...res.stats, consent: (await consentRounds(db, induction)).find((c) => c.round === from) ?? null, carriedRejected: carried.size - dropped, droppedOut: dropped },
     resolved: rules,
   };
   return { placements, summary };
