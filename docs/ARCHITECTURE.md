@@ -156,12 +156,34 @@ See [DATA_CONTRACTS.md](DATA_CONTRACTS.md) for the legacy datasets still to map.
 
 ## Calculation and simulation engines
 
-Kept out of UI code. They will be ported from the legacy JS (`app-predict-calc.js`,
-`sim-core.js`, `sim-placement.js`, `sim-cascade.js`) into pure modules under
-`src/lib/engine/`, proven against golden outputs produced by the legacy code, and run
-server-side. Long runs go to a background worker (a second container built from the
-same image) reading jobs from a Postgres table. No browser-supplied commands are ever
-executed.
+Kept out of UI code, as pure modules under `src/lib/engine/` (no I/O, no globals),
+run server-side. Long runs will go to a background worker (a second container built
+from the same image) reading jobs from a Postgres table. No browser-supplied commands
+are ever executed.
+
+**Ported (Nov 2026)** from the legacy simulator at public commit `f686206`:
+
+| Module | Legacy source | Does |
+|---|---|---|
+| `marks.ts` | `sim-core.js` | Mark per preference: base marks + programme bonus from the matching certificate (portal marks → computerised marks → preference's programme marks → legacy `programMarks`); FCPSD/FCPS Dentistry aliases; speciality groups for name matching |
+| `placement.ts` | `sim-placement.js` (← PHF `merit.py`) | First-round allocation in passes, best marks first, displacing lower holders; Armed Forces quotas as a separate track; per-preference outcome (placed / beaten with cutoff / not attempted / no seat) |
+| `cascade.ts` | `sim-cascade.js` (← `merit_cascade.py`) | Next round from a published one: consent and profile status vacate seats, then waves of upgrades; comparison with the round PHF actually published |
+
+**Parity.** `scripts/golden/legacy-engine.mjs` runs the legacy files in a Node sandbox
+on seeded synthetic inputs (with frequent tied marks) and writes inputs + outputs to
+`tests/fixtures/engine/`; `tests/engine-golden.test.ts` replays them through the port
+and requires identical marks, slots, placements and stats. Deliberate tie-breaking
+mutations make it fail. Known differences, all kept out of the golden inputs:
+
+- A 0-seat slot is skipped; the legacy code threw on it.
+- The legacy "marks option" and candidate-revision switches (admin-configurable
+  formulas) are not ported: the engine takes `baseMarks` already resolved.
+
+**Not yet wired to data.** Both engines need every candidate's full preference list
+(`induction21_candidates.json`), which is restricted and not imported yet. Next steps:
+a restricted-data importer from `APP_STORAGE_DIR`, then the background worker, then
+`/admin/processing` and `/portal/simulation` on top. `app-predict-calc.js` (the
+scoring calculator) is still to port.
 
 ## Storage
 
