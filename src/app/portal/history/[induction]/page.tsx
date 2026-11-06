@@ -15,6 +15,8 @@ import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
 import { intParam, oneOf } from "@/lib/params";
 import { closingLadder, inductionTracks, roundSettling, seatFlow } from "@/lib/data/insights";
+import { inductionRunning, methodCheck, nextInductionGate, predictRound } from "@/lib/data/predictions";
+import { MethodNote, PredictionBadge } from "@/components/charts/prediction-badge";
 import { SeatFlow } from "@/components/charts/seat-flow";
 import { MeritLadder } from "@/components/charts/merit-ladder";
 import { MeritMoveHeat } from "@/components/charts/merit-move-heat";
@@ -45,6 +47,13 @@ export default async function InductionPage({ params, searchParams }: { params: 
     seatFlow(db, session, { induction, limit: 6 }),
   ]);
   const ladderLabel = ladderTrack?.replace("|", " · ");
+  const running = await inductionRunning(db, induction);
+  const lastRound = ind.rounds.at(-1)!.roundNo;
+  const [check, gate, ahead] = await Promise.all([
+    ind.rounds.length > 1 ? methodCheck(db, session, { induction, track: ladderTrack }) : Promise.resolve(null),
+    nextInductionGate(db, session, induction + 1),
+    running ? predictRound(db, session, { induction, fromRound: lastRound, track: ladderTrack }) : Promise.resolve(null),
+  ]);
   const last = ind.rounds[ind.rounds.length - 1]!;
 
   return (
@@ -94,6 +103,55 @@ export default async function InductionPage({ params, searchParams }: { params: 
           <MeritMoveHeat rows={ladder.rows} rounds={ladder.rounds} caption={`Induction ${induction}, ${ladderLabel}: change in closing merit between rounds per speciality`} />
         </Card>
       ) : null}
+      <Card id="predictions">
+        <CardHeader
+          title="Predictions"
+          description={`Ranges with a confidence, never single numbers. Estimates from how closing merit moved in other inductions; not official.${ladderLabel ? ` ${ladderLabel}.` : ""}`}
+        />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid content-start gap-3">
+            {ahead && ahead.specialities.length ? (
+              <>
+                <h3 className="text-sm font-semibold">Likely closing merit in round {lastRound + 1}</h3>
+                <ul className="divide-y divide-line text-sm">
+                  {ahead.specialities.slice().sort((a, b) => b.closing - a.closing).slice(0, 10).map((r) => (
+                    <li key={r.speciality} className="flex items-center justify-between gap-3 py-2">
+                      <span className="min-w-0 truncate text-muted">{r.speciality}<span className="block font-mono text-[0.7rem] text-subtle">now {r.closing.toFixed(2)}</span></span>
+                      <PredictionBadge {...r} />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="text-sm text-muted">{running ? "Not enough history to predict the next round yet." : `This cycle is finished, so there is no next round to predict. Below is how the method did on it, round by round.`}</p>
+            )}
+            <div className="rounded-xl border border-line bg-canvas p-3 text-sm">
+              <p className="font-medium">Round 1 of induction {induction + 1}</p>
+              <p className="mt-1 text-xs text-muted">{gate.reason}</p>
+            </div>
+          </div>
+          <div className="grid content-start gap-3">
+            <h3 className="text-sm font-semibold">How well this works on induction {induction}</h3>
+            {check && check.transitions.length ? (
+              <>
+                <ul className="grid gap-2">
+                  {check.transitions.map((t) => (
+                    <li key={t.from} className="grid grid-cols-[4.5rem_minmax(0,1fr)_3rem] items-center gap-3 text-sm">
+                      <span className="font-mono text-xs text-muted">R{t.from}→R{t.to}</span>
+                      <span className="h-2.5 overflow-hidden rounded-full bg-line" aria-hidden>
+                        <span className="block h-full rounded-full bg-signal shadow-[0_0_8px_color-mix(in_srgb,var(--mn-cyan)_60%,transparent)]" style={{ width: `${Math.round((t.share ?? 0) * 100)}%` }} />
+                      </span>
+                      <span className="text-right font-mono text-xs tabular-nums">{t.share == null ? "—" : `${Math.round(t.share * 100)}%`}</span>
+                    </li>
+                  ))}
+                </ul>
+                <MethodNote share={check.share} n={check.n} induction={induction} />
+                <p className="text-xs text-subtle">Share of speciality closings that landed inside the range predicted from the round before, using inductions {check.inductionsUsed.join(", ")}.</p>
+              </>
+            ) : <p className="text-sm text-muted">Needs at least two rounds of this induction.</p>}
+          </div>
+        </div>
+      </Card>
       {flow.length ? (
         <Card>
           <CardHeader title="Seat flow" description="The six largest specialities: seats accepted, and seats declined or not taken that are offered again next round." />

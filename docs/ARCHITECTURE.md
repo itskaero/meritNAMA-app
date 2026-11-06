@@ -125,6 +125,15 @@ record. An applicant ID alone is never proof of identity.
   reach the page. Reports, helpful votes and moderation share the community
   tables, with `target_kind = 'review'`.
 
+## Predictions
+
+`src/lib/domain/prediction.ts` holds the pure maths: quantiles, the 20th–80th percentile range rounded outwards, confidence levels, coverage, and the policy-range parser. `src/lib/data/predictions.ts` reads the history.
+
+- **Matching specialities.** Changes are matched by programme, quota and a normalised speciality name, because older inductions are often not mapped to lookup ids.
+- **History.** It is computed per request from `merit_allocations`: one grouped query, about 100 ms.
+- **What counts as a forecast.** "Next round" is a forecast only while the induction's cycle end date is in the future. Otherwise the same code shows predicted against actual.
+- **Data errors.** Changes beyond ±50% are dropped.
+
 ## Data model (delivery 1)
 
 Only entities whose shape is already known:

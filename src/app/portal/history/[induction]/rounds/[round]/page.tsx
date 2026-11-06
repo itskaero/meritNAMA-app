@@ -18,6 +18,8 @@ import { getSession } from "@/lib/auth/session";
 import { getRound, inductionMaxMarks, listInductionsWithRounds, roundFacets, roundGroups, type RoundFilters } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
+import { inductionRunning, methodCheck, predictRound } from "@/lib/data/predictions";
+import { MethodNote, PredictionBadge } from "@/components/charts/prediction-badge";
 import { intParam, oneOf } from "@/lib/params";
 
 export const metadata = { title: "Merit round" };
@@ -55,6 +57,15 @@ export default async function RoundPage({ params, searchParams }: {
   const [groups, maxMarks] = await Promise.all([roundGroups(db, session, round.id, prev?.id ?? null, filters), inductionMaxMarks(db)]);
   const max = maxMarks[induction];
   const filtered = Object.keys(filters).length > 0;
+  // Predictions: the range we would have given for this round (from the round before),
+  // and, for the latest round of a running cycle, the range for the next one.
+  const running = !nextNo && (await inductionRunning(db, induction));
+  const [back, fwd, check] = await Promise.all([
+    prevNo ? predictRound(db, session, { induction, fromRound: prevNo }) : Promise.resolve(null),
+    running ? predictRound(db, session, { induction, fromRound: roundNo }) : Promise.resolve(null),
+    running ? Promise.resolve(null) : methodCheck(db, session, { induction }),
+  ]);
+  const gkey = (g: { program: string; quota: string; speciality: string; hospital: string }) => `${g.program}|${g.quota}|${g.speciality}|${g.hospital}`;
 
   // Busiest specialities in view, for the bar list.
   const bySpec = new Map<string, number>();
@@ -129,6 +140,24 @@ export default async function RoundPage({ params, searchParams }: {
                   align: "right",
                   cell: (g) => (prev ? <MeritDelta value={g.prevClosing == null ? null : (g.closing ?? 0) - g.prevClosing} /> : <span className="text-subtle">—</span>),
                 },
+                ...(back ? [{
+                  key: "pb",
+                  header: <span title="The range this method gave from the round before. ✓ when the real closing fell inside.">Predicted from R{prevNo}</span>,
+                  align: "right" as const,
+                  cell: (g: (typeof groups)[number]) => {
+                    const b = back.hospitals.get(gkey(g));
+                    return b ? <PredictionBadge {...b} compact /> : <span className="text-subtle">—</span>;
+                  },
+                }] : []),
+                ...(fwd ? [{
+                  key: "pf",
+                  header: <span title="Estimated closing merit for the next round. Not official.">Likely R{roundNo + 1}</span>,
+                  align: "right" as const,
+                  cell: (g: (typeof groups)[number]) => {
+                    const b = fwd.hospitals.get(gkey(g));
+                    return b ? <PredictionBadge {...b} /> : <span className="text-subtle">—</span>;
+                  },
+                }] : []),
                 {
                   key: "ask",
                   header: <span className="sr-only">Ask</span>,
@@ -148,6 +177,13 @@ export default async function RoundPage({ params, searchParams }: {
           </Card>
         </>
       )}
+      {back || fwd ? (
+        <Card>
+          <CardHeader title={fwd ? `Likely closing merit in round ${roundNo + 1}` : "How the predictions did"} description={fwd ? "Ranges, not single numbers: where each group's closing merit will probably land next round." : `Each group's range was made from round ${prevNo} using the other inductions. ✓ marks a closing that fell inside.`} />
+          <MethodNote share={check?.share ?? null} n={check?.n ?? 0} induction={check ? induction : null} />
+          <p className="mt-2 text-xs text-subtle">Based on inductions {(fwd ?? back)!.method.inductions.join(", ")}.</p>
+        </Card>
+      ) : null}
       <DiscussionPanel topic={{ kind: "round", key: `${induction}:${roundNo}` }} label={`round ${roundNo} of induction ${induction}`} />
     </AreaPage>
   );

@@ -61,6 +61,8 @@ Containers themselves are disposable; nothing important lives in image layers.
 
 ### Importing from the inbox
 
+Import past inductions too (every round file you have): next-round predictions learn from how closing merit moved in earlier cycles, and get more confident with more of them. Round files without allocations (PHF publishes empty shells before a round) are refused and can be skipped.
+
 New data files can be copied onto the NAS instead of uploaded through a browser.
 The app creates these folders on first use of the admin pages:
 

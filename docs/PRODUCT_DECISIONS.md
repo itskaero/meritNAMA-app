@@ -46,7 +46,18 @@ email), rate limits, reports and audited moderation.
      - **Reviews.** Any verified candidate (or staff) reviews a hospital, optionally for one speciality there, on four 1–5 scales where higher is always better: training, workload (5 = manageable), hostel, and stipend paid on time. One review per person per hospital and speciality; saving again edits it.
      - **"Allocated here."** The badge shows when the reviewer's verified record has a seat at that hospital.
      - **Where they show.** Reviews and averages are on the hospital page; the speciality page summarises them per hospital. Followers of the hospital are notified. Reviews can be marked helpful, reported and hidden like posts.
-6. **Predictions** (ranges) once two or more inductions of the same policy exist per track.
+6. ✅ **Predictions.**
+   - **Within a cycle.** The next round's closing merit is shown as a range with a confidence, never a single number, and always "not official". The range is the 20th–80th percentile of how that programme · quota · speciality's closing moved, *relative to itself*, at the same point of the cycle in the other inductions, applied to today's closing.
+     - Relative moves come from the allocation process, not the marks formula, so all past inductions count.
+     - With fewer than 3 past moves the whole programme's moves are used, marked Low.
+     - Confidence: **High** with 8 or more samples and a range under 2% of the closing; **Medium** with 4 or more; otherwise **Low**.
+   - **Method check.** Each finished induction is re-predicted round by round from the others. On the 11 imported inductions the range held for 65–84% of speciality closings, against 60% expected for a 20th–80th percentile range.
+   - **Where it shows:**
+     - round pages: "predicted from the round before" with ✓/✗, plus "Likely next round" while the cycle runs
+     - the induction page's Predictions card
+     - the finder: a next-round hint and a dashed band on the chance dial, while the cycle runs
+     - the dashboard
+   - **The next induction's first round** (raw marks) still needs two earlier inductions under the same scoring policy. None qualify today: inductions 19, 20 and 21 each use a different policy, and the page says so.
 
 ## Merit visuals (Nov 2026, from the concepts page)
 

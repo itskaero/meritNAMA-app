@@ -15,6 +15,7 @@ import { selectClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
 import { myMerit } from "@/lib/data/candidates";
 import { releasedBeforeFinal } from "@/lib/data/insights";
+import { inductionRunning, predictRound } from "@/lib/data/predictions";
 import { ChanceDial } from "@/components/charts/chance-dial";
 import { snippetParam } from "@/lib/domain/community";
 import { findOptions, finderOptions, listShortlist, optionHistory, type FinderOption } from "@/lib/data/finder";
@@ -119,6 +120,14 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   const options = result?.options ?? [];
   // Seats declined or not taken before the final round: why waiting can pay for Borderline options.
   const released = result ? await releasedBeforeFinal(db, session, { induction: induction.id, track: trackValue }) : new Map<string, number>();
+  // While the compared cycle is still running, the next round's likely closing for each option.
+  const ahead = result && (await inductionRunning(db, induction.id))
+    ? await predictRound(db, session, { induction: induction.id, fromRound: Math.max(...options.map((o) => o.lastRound)), track: trackValue })
+    : null;
+  const nextBand = (o: FinderOption) => {
+    const b = ahead?.hospitals.get(`${program}|${quota}|${o.speciality}|${o.hospital}`);
+    return b ? { ...b, lowPct: (b.low / induction.total) * 100, highPct: (b.high / induction.total) * 100 } : null;
+  };
   const counts = Object.fromEntries(STATUSES.map((st) => [st, options.filter((o) => o.status === st).length])) as Record<FinderStatus, number>;
   const visible = show ? options.filter((o) => o.status === show) : options;
   const bySpeciality = new Map<string, FinderOption[]>();
@@ -210,7 +219,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                       <p className="text-sm text-muted">{p.hospital}</p>
                       {o && result ? (
                         <div className="mt-3">
-                          <ChanceDial mePct={result.mePct} firstPct={o.firstPct} lastPct={o.lastPct} firstRound={o.firstRound} lastRound={o.lastRound} note={`Induction ${induction.id}: R${o.firstRound} ${o.firstClosing.toFixed(2)} → R${o.lastRound} ${o.lastClosing.toFixed(2)} of ${induction.total}`} />
+                          <ChanceDial mePct={result.mePct} firstPct={o.firstPct} lastPct={o.lastPct} firstRound={o.firstRound} lastRound={o.lastRound} predicted={nextBand(o)} note={`Induction ${induction.id}: R${o.firstRound} ${o.firstClosing.toFixed(2)} → R${o.lastRound} ${o.lastClosing.toFixed(2)} of ${induction.total}`} />
                         </div>
                       ) : <p className="mt-3 text-sm text-subtle">Not offered in induction {induction.id}.</p>}
                       {(() => {
@@ -285,6 +294,11 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                             </Link>
                             {o.status === "borderline" && released.get(`${o.speciality}|${o.hospital}`) ? (
                               <span className="block text-[0.7rem] text-amber">{released.get(`${o.speciality}|${o.hospital}`)} {released.get(`${o.speciality}|${o.hospital}`) === 1 ? "seat" : "seats"} freed before the final round</span>
+                            ) : null}
+                            {o.status !== "safe" && nextBand(o) ? (
+                              <span className="block text-[0.7rem] text-signal" title="Estimate from how closing merit moved at this point in other inductions. Not official.">
+                                Next round likely {nextBand(o)!.lowPct.toFixed(1)}–{nextBand(o)!.highPct.toFixed(1)}% · {nextBand(o)!.confidence.toLowerCase()} confidence
+                              </span>
                             ) : null}
                           </span>
                           <span className="sm:order-none"><StatusPill status={o.status} /></span>

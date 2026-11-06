@@ -10,6 +10,7 @@ import { Icon, type IconName } from "@/components/icon";
 import { Card, CardHeader } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
 import { roundSettling } from "@/lib/data/insights";
+import { inductionRunning, predictRound } from "@/lib/data/predictions";
 import { inductionTimeline, latestRoundChange, listInductionsWithRounds } from "@/lib/data/merit";
 import { latestRoundStats } from "@/lib/round-stats";
 import { getDb } from "@/lib/db/client";
@@ -35,6 +36,13 @@ export default async function PortalDashboard() {
   const [inductions, change] = await Promise.all([listInductionsWithRounds(db, session), latestRoundChange(db, session)]);
   const latest = inductions[0];
   const gauge = latest ? gaugeProps(latest, inductions[1]?.rounds.length) : null;
+  // While the latest cycle runs: how much closing merit is likely to move next round (median across specialities).
+  const ahead = latest && (await inductionRunning(db, latest.id)) ? await predictRound(db, session, { induction: latest.id, fromRound: latest.rounds.at(-1)!.roundNo }) : null;
+  const move = (pick: "low" | "high") => {
+    const v = (ahead?.specialities ?? []).map((r) => (r[pick] / r.closing - 1) * 100).sort((a, b) => a - b);
+    return v.length ? v[Math.floor(v.length / 2)]! : null;
+  };
+  const likely = ahead && move("low") !== null ? `Round ${ahead.toRound} likely moves closing merit by ${move("low")!.toFixed(1)}% to ${move("high")!.toFixed(1)}% (median across specialities; estimate, not official).` : "";
   const [timeline, settling] = latest
     ? await Promise.all([inductionTimeline(db, session, latest.id), roundSettling(db, session, latest.id)])
     : [[], null];
@@ -66,7 +74,7 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader
             title="Who is still moving"
-            description={`Induction ${latest.id}: candidates not yet in the seat they keep in the final round. Hover a round for who entered, moved or left.`}
+            description={`Induction ${latest.id}: candidates not yet in the seat they keep in the final round. Hover a round for who entered, moved or left.${likely ? ` ${likely}` : ""}`}
             action={<Link href={`/portal/history/${latest.id}#settling`} className="text-sm font-semibold text-signal hover:underline">By programme →</Link>}
           />
           <RoundFunnel final={settling.final} rounds={settling.rounds} caption={`Induction ${latest.id}: candidates still moving by round`} />
