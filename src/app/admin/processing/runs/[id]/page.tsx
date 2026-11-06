@@ -63,7 +63,9 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
             <Notice title={`Cascade: ${n(s.cascade.totalUpgrades)} upgrades, ${n(s.cascade.totalPlacements - s.cascade.totalUpgrades)} new placements in ${n(s.cascade.waves)} waves`}>
               Round {run.fromRound} consent: {s.cascade.consent ? `${n(s.cascade.consent.accepted)} accepted, ${n(s.cascade.consent.rejected)} rejected, ${n(s.cascade.consent.awaited)} awaited` : "none"}.{" "}
               {n(s.cascade.initialVacancies)} seats were freed by consent and profile status; {n(s.cascade.locked)} candidates accepted their first preference and stay in their programme;{" "}
-              {n(s.cascade.carriedRejected)} who rejected everything earlier stay out; {n(s.cascade.finalUnfilled)} seats remain empty.
+              {n(s.cascade.carriedRejected)} who rejected everything earlier stay out;{" "}
+              {s.cascade.awaitedReturned != null ? `${n(s.cascade.awaitedReturned)} seats stayed with Awaited candidates as nobody ranked above them took them; ` : ""}
+              {n(s.cascade.finalUnfilled)} seats remain empty.
             </Notice>
           ) : null}
           {s.unnamedPreferences ? <Notice tone="warning" title={`${n(s.unnamedPreferences)} preferences skipped`}>Their speciality id has no name under Reference data → Lookups, so they could not be matched to seats.</Notice> : null}

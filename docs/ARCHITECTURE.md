@@ -240,15 +240,31 @@ offers in an earlier round, and runs the cascade over the portal preferences. It
 compared with published round r+1 and with the "nobody moved" baseline (round r+1
 against round r), which is what the simulation has to beat.
 
-Back-test, induction 21, default rules: R1→R2 93.5% (baseline 57.3%), R2→R3 96.6%
-(88.4%), R3→R4 82.3% (94.5%), R4→R5 94.6% (90.6%), R5→R6 92.3% (85.9%), R6→R7 91.8%
-(86.6%), R7→R8 91.0% (89.0%). Round 3 is the exception: PHF kept candidates whose
-consent was "Awaited"; with `cascade.awaitedConsent: "keep"` R3→R4 reaches 95.3%
-(but R4→R5 drops to 94.0%), so that setting is per induction and may need changing
-between rounds.
+**Awaited replies** (`cascade.awaitedConsent`). The operator's account of PHF
+practice: an Awaited seat is filled only if an appropriate candidate exists. That is
+`"yield"` (the default for new inductions): the Awaited candidate keeps their place in
+the merit order for their own seat, so only someone ranked above them who wants it can
+take it; otherwise it stays theirs. `"vacate"` (the legacy behaviour) frees it for
+anyone, `"keep"` never does.
 
-Still to do: what drives the remaining later-round differences (joining status is the
-likely next input), and `app-predict-calc.js` (the scoring calculator).
+Back-test, induction 21 (agreement with the published next round; "nobody moved" in
+brackets):
+
+| | vacate | keep | **yield** | nobody moved |
+|---|---|---|---|---|
+| R1→R2 | 93.1% | 91.1% | 91.7% | 57.3% |
+| R2→R3 | 97.0% | 95.7% | 95.9% | 88.4% |
+| R3→R4 | 81.9% | 95.3% | 95.0% | 94.5% |
+| R4→R5 | 94.8% | 94.5% | 94.5% | 90.6% |
+| R5→R6 | 92.3% | 89.9% | 90.8% | 85.9% |
+| R6→R7 | 91.8% | 91.0% | 91.2% | 86.6% |
+| R7→R8 | 91.0% | 90.1% | 90.2% | 89.0% |
+| allocations reproduced, all rounds | 7,952 | 8,027 | **8,045** | |
+
+Only "yield" beats "nobody moved" in every round. Joining happens only after the final
+round, so it does not explain the remaining later-round differences.
+
+Still to do: `app-predict-calc.js` (the scoring calculator).
 
 ## Storage
 

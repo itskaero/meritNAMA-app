@@ -233,6 +233,28 @@ describe("cascade", () => {
     expect(runCascade(scenario({ rules: lenient, profileStatus: pending })).placements.map((p) => p.applicantId)).toEqual([20]);
   });
 
+  describe("an Awaited reply", () => {
+    // 10 holds Medicine and has not replied; 20 holds Surgery but prefers Medicine.
+    const awaited = (marks20: number, mode: "vacate" | "keep" | "yield") =>
+      runCascade(
+        scenario({
+          rules: on({ cascade: { ...rules.cascade, awaitedConsent: mode } }),
+          candidates: { "10": { marksTotal: 80, preferences: prefs([1, 1]) }, "20": { marksTotal: marks20, preferences: prefs([1, 1], [2, 2]) } },
+          consent: [{ applicantId: 10, status: "Awaited", preferenceNo: 1, infoTitle: "FCPS - Punjab - Medicine - Mayo Hospital" }],
+        }),
+      ).placements.map((p) => [p.applicantId, p.specialityName]);
+
+    it("yield: the seat stays with them unless someone ranked above them wants it", () => {
+      expect(awaited(70, "yield")).toEqual([[10, "Medicine"], [20, "Surgery"]]);
+      expect(awaited(90, "yield")).toEqual([[20, "Medicine"]]);
+    });
+
+    it("vacate frees the seat for anyone; keep never does", () => {
+      expect(awaited(70, "vacate")).toEqual([[20, "Medicine"]]);
+      expect(awaited(90, "keep")).toEqual([[20, "Surgery"], [10, "Medicine"]]);
+    });
+  });
+
   it("uses the shared marks: a certificate bonus counts in the cascade too", () => {
     const res = runCascade(
       scenario({
