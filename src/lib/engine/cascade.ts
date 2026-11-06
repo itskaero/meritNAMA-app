@@ -90,6 +90,8 @@ export type CascadeInput = {
    * tracks and consented to one (see trackBansFromRound). Only used with tracks "phf".
    */
   trackBans?: ReadonlyMap<number, ReadonlySet<string>>;
+  /** Likewise for programmes (see programmeBansFromRound). Only used with programmes "phf". */
+  programmeBans?: ReadonlyMap<number, ReadonlySet<string>>;
   onWave?: (p: { wave: number; changesThisPass: number; totalPlacements: number; totalUpgrades: number }) => void;
 };
 
@@ -362,14 +364,26 @@ export function runCascade(input: CascadeInput): CascadeResult {
       bans.set(cid, b);
     }
   }
+  // PHF programmes, likewise: seated in one programme a candidate may still get a seat in
+  // another; seated in two in this round, they keep the one they consented to.
+  const phfProgrammes = rules.cascade.programmes === "phf";
+  const progBans = new Map<number, Set<string>>();
+  if (phfProgrammes) {
+    for (const [cid, t] of input.programmeBans ?? []) progBans.set(cid, new Set(t));
+    for (const [cid, t] of programmeBansFromRound(input.merit, consentApproved)) {
+      const b = progBans.get(cid) ?? new Set<string>();
+      for (const x of t) b.add(x);
+      progBans.set(cid, b);
+    }
+  }
   const canTake = (cid: number, sk: string) => {
     if (!candidatePrefMap.get(cid)?.has(sk)) return false;
-    if (phfTracks) {
-      const track = trackOfSeat(sk);
-      if (bans.get(cid)?.has(track)) return false;
-      // Not seated in this track: a newcomer to it, whatever they hold in the other.
-      if (![...(candidateState.get(cid)?.keys() ?? [])].some((h) => trackOfSeat(h) === track)) return true;
-    }
+    const held = [...(candidateState.get(cid)?.keys() ?? [])];
+    if (phfProgrammes && progBans.get(cid)?.has(part(sk, 0))) return false;
+    if (phfTracks && bans.get(cid)?.has(trackOfSeat(sk))) return false;
+    // A newcomer to this track, or to this programme, is not held to what they hold elsewhere.
+    if (phfTracks && !held.some((h) => trackOfSeat(h) === trackOfSeat(sk))) return true;
+    if (phfProgrammes && !held.some((h) => part(h, 0) === part(sk, 0))) return true;
     const allowed = allowedPrograms.get(cid);
     if (allowed && allowed.size > 0 && !allowed.has(part(sk, 0))) return false;
     const allowedQ = allowedQuotas.get(cid);
@@ -557,6 +571,31 @@ export function trackBansFromRound(
     if (!sk) continue;
     const kept = quotaTrack(rules, part(sk, 3));
     out.set(cid, new Set([...tracks].filter((t) => t !== kept)));
+  }
+  return out;
+}
+
+/**
+ * Programme bans arising in one round: candidates allocated seats in two or more
+ * programmes who consented to one are out of the others from then on.
+ */
+export function programmeBansFromRound(
+  merit: readonly CascadeMeritEntry[],
+  accepted: ReadonlyMap<number, CascadeConsentRow>,
+): Map<number, Set<string>> {
+  const held = new Map<number, Set<string>>();
+  for (const e of merit) {
+    const cid = Number(e.applicantId);
+    (held.get(cid) ?? held.set(cid, new Set()).get(cid)!).add(e.typeName.trim());
+  }
+  const out = new Map<number, Set<string>>();
+  for (const [cid, progs] of held) {
+    if (progs.size < 2) continue;
+    const row = accepted.get(cid);
+    const sk = row ? consentSeatKey(row) : null;
+    if (!sk) continue;
+    const kept = part(sk, 0);
+    out.set(cid, new Set([...progs].filter((p) => p !== kept)));
   }
   return out;
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { marksContext, effectiveMark, programAliases, programBonus, type EngineCandidate, type Preference } from "@/lib/engine/marks";
 import { buildSeatTree, candidatePool, preferenceOutcomes, quotaTrack, runPlacement, type SeatLine } from "@/lib/engine/placement";
-import { acceptedConsent, consentSeatKey, parseConsentTitle, runCascade, trackBansFromRound, type CascadeInput } from "@/lib/engine/cascade";
+import { acceptedConsent, consentSeatKey, parseConsentTitle, programmeBansFromRound, runCascade, trackBansFromRound, type CascadeInput } from "@/lib/engine/cascade";
 import { allocationRulesSchema, DEFAULT_RULES, describeRules, LEGACY_CASCADE_RULES, policyForInduction, resolveRules, rulesDiff, RulesError, type AllocationRules } from "@/lib/engine/rules";
 import { policyInductions } from "@/lib/domain/scoring-policy";
 import type { Policy } from "@/lib/domain/scoring-policy";
@@ -299,6 +299,16 @@ describe("cascade", () => {
         { applicantId: 2, status: "Accepted", preferenceNo: 1, seatKey: "FCPS|Surgery|Mayo Hospital|Punjab" },
       ]);
       expect(trackBansFromRound(rules, merit, accepted)).toEqual(new Map([[1, new Set(["civilian"])]]));
+    });
+
+    it("seated in two programmes and consenting to one bans the other", () => {
+      const merit = [
+        { applicantId: 1, typeName: "FCPS", specialityName: "Medicine", hospitalName: "Mayo Hospital", quotaName: "Punjab" },
+        { applicantId: 1, typeName: "MD", specialityName: "Medicine", hospitalName: "Mayo Hospital", quotaName: "Punjab" },
+      ];
+      const accepted = acceptedConsent([{ applicantId: 1, status: "Accepted", preferenceNo: 1, seatKey: "MD|Medicine|Mayo Hospital|Punjab" }]);
+      expect(programmeBansFromRound(merit, accepted)).toEqual(new Map([[1, new Set(["FCPS"])]]));
+      expect(programmeBansFromRound(merit.slice(0, 1), accepted)).toEqual(new Map());
     });
   });
 

@@ -23,7 +23,7 @@ import {
 } from "@/lib/db/schema";
 import { compareRounds, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
-import { acceptedConsent, runCascade, seatKeyFromParts, trackBansFromRound, type CascadeCandidate, type CascadeConsentRow, type CascadeStats } from "@/lib/engine/cascade";
+import { acceptedConsent, programmeBansFromRound, runCascade, seatKeyFromParts, trackBansFromRound, type CascadeCandidate, type CascadeConsentRow, type CascadeStats } from "@/lib/engine/cascade";
 import { marksContext, type EngineCandidate, type MarksContext, type Preference, type SpecialtyGroups } from "@/lib/engine/marks";
 import { buildSeatTree, candidatePool, isEligible, runPlacement, type SeatLine } from "@/lib/engine/placement";
 import { allocationRulesSchema, resolveRules, type ResolvedRules } from "@/lib/engine/rules";
@@ -281,7 +281,7 @@ export type RunSummary = {
   /** next_round: how much of the published next round equals the previous one ("nobody moves"). */
   baseline?: number | null;
   /** next_round: the cascade's own counts, and the consent it started from. */
-  cascade?: CascadeStats & { consent: ConsentRoundSummary | null; carriedRejected: number; droppedOut?: number; trackBanned?: number };
+  cascade?: CascadeStats & { consent: ConsentRoundSummary | null; carriedRejected: number; droppedOut?: number; trackBanned?: number; programmeBanned?: number };
   /** The rules exactly as applied (with the policy's bonus switches and caps). */
   resolved: ResolvedRules;
 };
@@ -544,18 +544,23 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
   const asMerit = (rows: PublishedAllocation[]) =>
     rows.map((m) => ({ applicantId: Number(m.applicantId), typeName: m.program, specialityName: m.speciality, hospitalName: m.hospital, quotaName: m.quota }));
 
-  // Track bans from earlier rounds: seated in both tracks, consented to one.
+  // Bans from earlier rounds: seated in both tracks, or in two programmes, and consented to one.
   const trackBans = new Map<number, Set<string>>();
-  if (rules.cascade.tracks === "phf") {
+  const programmeBans = new Map<number, Set<string>>();
+  const merge = (into: Map<number, Set<string>>, from: Map<number, Set<string>>) => {
+    for (const [cid, t] of from) {
+      const b = into.get(cid) ?? new Set<string>();
+      t.forEach((x) => b.add(x));
+      into.set(cid, b);
+    }
+  };
+  if (rules.cascade.tracks === "phf" || rules.cascade.programmes === "phf") {
     for (let k = 1; k < from; k++) {
       const earlierMerit = await publishedRound(db, induction, k);
       if (!earlierMerit) continue;
-      const earlierConsent = await roundConsent(db, induction, k, earlierMerit);
-      for (const [cid, t] of trackBansFromRound(rules, asMerit(earlierMerit), acceptedConsent(earlierConsent))) {
-        const b = trackBans.get(cid) ?? new Set<string>();
-        t.forEach((x) => b.add(x));
-        trackBans.set(cid, b);
-      }
+      const accepted = acceptedConsent(await roundConsent(db, induction, k, earlierMerit));
+      if (rules.cascade.tracks === "phf") merge(trackBans, trackBansFromRound(rules, asMerit(earlierMerit), accepted));
+      if (rules.cascade.programmes === "phf") merge(programmeBans, programmeBansFromRound(asMerit(earlierMerit), accepted));
     }
   }
 
@@ -591,6 +596,7 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
     merit: asMerit(merit),
     consent,
     trackBans,
+    programmeBans,
     seats: lines,
     candidates,
     certificates,
@@ -620,7 +626,7 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
     unnamedPreferences: unnamed,
     comparison: next ? compareRounds(next, placements.map(toAllocation)) : null,
     baseline: next ? compareRounds(next, merit).agreement : null,
-    cascade: { ...res.stats, consent: (await consentRounds(db, induction)).find((c) => c.round === from) ?? null, carriedRejected: carried.size - dropped, droppedOut: dropped, trackBanned: trackBans.size },
+    cascade: { ...res.stats, consent: (await consentRounds(db, induction)).find((c) => c.round === from) ?? null, carriedRejected: carried.size - dropped, droppedOut: dropped, trackBanned: trackBans.size, programmeBanned: programmeBans.size },
     resolved: rules,
   };
   return { placements, summary };

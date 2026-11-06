@@ -96,6 +96,12 @@ export const allocationRulesSchema = z.strictObject({
      */
     tracks: z.enum(["legacy", "phf"]).default("phf"),
     /**
+     * Programmes in later rounds, the same way: phf lets a candidate seated in one
+     * programme get a seat in another; one seated in two consents to one and is out of
+     * the other for good. legacy: only programmes they already hold seats in.
+     */
+    programmes: z.enum(["legacy", "phf"]).default("phf"),
+    /**
      * Candidates who were on an earlier list and dropped off it (rejected, did not reply,
      * lost their profile) do not come back. Induction 21: PHF re-seated 0–1 per round.
      */
@@ -121,7 +127,7 @@ export const DEFAULT_RULES: AllocationRules = {
   parentBonus: { enabled: "auto", component: "parent_institute" },
   tracks: { separate: [{ id: "armed", quotaContains: ["armed force"] }], defaultTrack: "civilian" },
   placement: { displaceWhen: "strictlyHigher", orderBy: "bestMark", maxPasses: 1000, eligibleProfileStatus: [1], unknownStatus: "include" },
-  cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100, awaitedConsent: "yield", tracks: "phf", droppedStayOut: true },
+  cascade: { eligibleProfileStatus: [1], lockAcceptedFirstPreference: "programme", seatHolding: "perQuota", maxWaves: 100, awaitedConsent: "yield", tracks: "phf", programmes: "phf", droppedStayOut: true },
 };
 
 /**
@@ -134,7 +140,7 @@ export const LEGACY_FIRST_ROUND_RULES: AllocationRules = {
   certificateBonus: { ...DEFAULT_RULES.certificateBonus, enabled: true, combine: "first" },
   parentBonus: { ...DEFAULT_RULES.parentBonus, enabled: false },
   placement: { ...DEFAULT_RULES.placement, orderBy: "bestMarkWithoutParentBonus" },
-  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", tracks: "legacy", droppedStayOut: false },
+  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", tracks: "legacy", programmes: "legacy", droppedStayOut: false },
 };
 
 export const LEGACY_CASCADE_RULES: AllocationRules = {
@@ -150,7 +156,7 @@ export const LEGACY_CASCADE_RULES: AllocationRules = {
     fallback: "none",
   },
   parentBonus: { ...DEFAULT_RULES.parentBonus, enabled: false },
-  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", tracks: "legacy", droppedStayOut: false },
+  cascade: { ...DEFAULT_RULES.cascade, awaitedConsent: "vacate", tracks: "legacy", programmes: "legacy", droppedStayOut: false },
 };
 
 /** What the engines run with: rules plus the scoring policy's switches and caps. */
@@ -246,7 +252,7 @@ export function describeRules(r: ResolvedRules): { topic: string; text: string }
     },
     {
       topic: "Later rounds",
-      text: `profile status ${r.cascade.eligibleProfileStatus.join(" or ")} may hold seats; ${r.cascade.lockAcceptedFirstPreference === "programme" ? "accepting the 1st preference blocks moving to another programme" : "nobody is locked"}; one seat per ${r.cascade.seatHolding === "perProgramme" ? "programme" : "quota"}; consent “Awaited” ${r.cascade.awaitedConsent === "keep" ? "keeps the seat" : r.cascade.awaitedConsent === "yield" ? "keeps the seat only if nobody claims it" : "loses the seat"}; ${r.cascade.droppedStayOut ? "candidates who dropped off an earlier list stay out" : "candidates who dropped off an earlier list may come back"}; at most ${r.cascade.maxWaves} waves`,
+      text: `profile status ${r.cascade.eligibleProfileStatus.join(" or ")} may hold seats; ${r.cascade.lockAcceptedFirstPreference === "programme" ? "accepting the 1st preference blocks moving to another programme" : "nobody is locked"}; one seat per ${r.cascade.seatHolding === "perProgramme" ? "programme" : "quota"}; consent “Awaited” ${r.cascade.awaitedConsent === "keep" ? "keeps the seat" : r.cascade.awaitedConsent === "yield" ? "keeps the seat only if nobody claims it" : "loses the seat"}; ${r.cascade.tracks === "phf" ? "civilian and Armed Forces are separate tracks (seated in both, they keep the one they consent to)" : "tracks as in the legacy simulator"}; ${r.cascade.programmes === "phf" ? "seated in two programmes, they keep the one they consent to" : "only programmes they hold seats in"}; ${r.cascade.droppedStayOut ? "candidates who dropped off an earlier list stay out" : "candidates who dropped off an earlier list may come back"}; at most ${r.cascade.maxWaves} waves`,
     },
   ];
 }
