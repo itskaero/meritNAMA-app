@@ -5,18 +5,17 @@
  * Candidates are processed in passes, best marks first. Each takes the first
  * preference with a free seat, or displaces that seat's lowest-marked holder when it
  * outscores them; a displaced candidate tries again in the next pass. Passes repeat
- * until nothing changes. Armed Forces quota preferences form a separate track: a
- * candidate can hold one civilian and one Armed Forces seat.
+ * until nothing changes. Quotas named in the rules' tracks (Armed Forces by default)
+ * form separate tracks: a candidate can hold one seat per track.
  *
  * Pure: no I/O. Behaviour matches the legacy code exactly and is pinned by the
  * golden tests in tests/engine-golden.test.ts.
  */
-import { effectiveMark, type EngineCandidate, type MarksContext, type Preference } from "./marks";
+import { effectiveMark, parentBonus, type EngineCandidate, type MarksContext, type Preference } from "./marks";
+import type { ResolvedRules } from "./rules";
 
-export const MAX_PASSES = 1000;
-
-export type Track = "civilian" | "armed";
-export const TRACKS: readonly Track[] = ["civilian", "armed"];
+/** A track id from the rules, e.g. "civilian" or "armed". */
+export type Track = string;
 
 /** One line of a seat matrix (data/induction<n>_seats.json). */
 export type SeatLine = { typeName: string; quotaName: string; specialityName: string; hospitalName: string; seats: number };
@@ -66,9 +65,15 @@ export function normalizeQuotaName(quotaName: unknown): string {
     .trim();
 }
 
-/** Any quota naming the Armed Forces is its own track; everything else is civilian. */
-export function quotaTrack(quotaName: unknown): Track {
-  return normalizeQuotaName(quotaName).includes("armed force") ? "armed" : "civilian";
+/** Tracks in processing order: the default track first, then the separate ones. */
+export function trackIds(rules: ResolvedRules): Track[] {
+  return [rules.tracks.defaultTrack, ...rules.tracks.separate.map((t) => t.id)];
+}
+
+/** The track a quota belongs to (with the default rules: Armed Forces, else civilian). */
+export function quotaTrack(rules: ResolvedRules, quotaName: unknown): Track {
+  const q = normalizeQuotaName(quotaName);
+  return rules.tracks.separate.find((t) => t.quotaContains.some((s) => q.includes(normalizeQuotaName(s))))?.id ?? rules.tracks.defaultTrack;
 }
 
 /**
@@ -100,44 +105,43 @@ export function seatTreeFromPreferences(candidates: readonly EngineCandidate[], 
 }
 
 /** Candidates who applied to `program` (the legacy simulation pool before status filters). */
-export function candidatePool(ctx: MarksContext, candidates: readonly EngineCandidate[], program: string): EngineCandidate[] {
-  return candidates.filter((c) => effectiveMark(ctx, c, program) != null);
+export function candidatePool(rules: ResolvedRules, ctx: MarksContext, candidates: readonly EngineCandidate[], program: string): EngineCandidate[] {
+  return candidates.filter((c) => effectiveMark(rules, ctx, c, program) != null);
 }
 
-function trackPrefs(c: EngineCandidate, program: string, track: Track): Preference[] {
+function trackPrefs(rules: ResolvedRules, c: EngineCandidate, program: string, track: Track): Preference[] {
   return (c.preferences[program] ?? [])
-    .filter((p) => quotaTrack(p.quotaName) === track)
+    .filter((p) => quotaTrack(rules, p.quotaName) === track)
     .slice()
     .sort((a, b) => a.preferenceNo - b.preferenceNo);
 }
 
 const sameId = (a: string | number, b: string | number) => String(a) === String(b);
 
-/**
- * Run the allocation. `seatTree` is filled in place and returned.
- * `parentBonus` adds each preference's `marks` (parent-institute bonus) to the mark.
- */
+/** Run the allocation under `rules`. `seatTree` is filled in place and returned. */
 export function runPlacement(
+  rules: ResolvedRules,
   ctx: MarksContext,
   candidates: readonly EngineCandidate[],
   seatTree: SeatTree,
   program: string,
-  opts: { parentBonus?: boolean } = {},
 ): PlacementResult {
-  const parentBonus = !!opts.parentBonus;
-
+  const tracks = trackIds(rules);
   const prog: WorkingCandidate[] = candidates.flatMap((c) =>
-    TRACKS.map((track) => {
-      const prefs = trackPrefs(c, program, track);
-      const scores = prefs.map((p) => effectiveMark(ctx, c, program, p)).filter((v): v is number => v != null);
-      const sortMarks = scores.length ? Math.max(...scores) : (effectiveMark(ctx, c, program) ?? c.baseMarks);
+    tracks.map((track) => {
+      const prefs = trackPrefs(rules, c, program, track);
+      const orderMark = (p: Preference) => {
+        const m = effectiveMark(rules, ctx, c, program, p);
+        return m != null && rules.placement.orderBy === "bestMarkWithoutParentBonus" ? m - parentBonus(rules, p) : m;
+      };
+      const scores = prefs.map(orderMark).filter((v): v is number => v != null);
+      const sortMarks = scores.length ? Math.max(...scores) : (effectiveMark(rules, ctx, c, program) ?? c.baseMarks);
       return { applicantId: c.applicantId, sortMarks, track, prefs, placed: false, q: null, s: null, h: null, source: c } as WorkingCandidate;
     }).filter((w) => w.prefs.length && w.sortMarks != null),
   );
 
   const slot = (q: string, s: string, h: string): Slot | undefined => seatTree[q]?.[s]?.[h];
-  const markFor = (w: WorkingCandidate, p: Preference) =>
-    (effectiveMark(ctx, w.source, program, p) ?? w.sortMarks) + (parentBonus ? Number(p.marks) || 0 : 0);
+  const markFor = (w: WorkingCandidate, p: Preference) => effectiveMark(rules, ctx, w.source, program, p) ?? w.sortMarks;
   const entry = (w: WorkingCandidate, p: Preference): SlotEntry => ({
     applicantId: w.applicantId,
     marksTotal: markFor(w, p),
@@ -153,7 +157,7 @@ export function runPlacement(
 
   let prevPlaced = -1;
   let passes = 0;
-  for (let pass = 0; pass < MAX_PASSES; pass++) {
+  for (let pass = 0; pass < rules.placement.maxPasses; pass++) {
     // Array.prototype.sort is stable: equal marks keep input order (candidate, then track).
     const unplaced = prog.filter((w) => !w.placed).sort((a, b) => b.sortMarks - a.sortMarks);
     if (!unplaced.length) break;

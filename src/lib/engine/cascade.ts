@@ -7,13 +7,16 @@
  * who accepted keeps that seat and gives up the others), then fills every vacated
  * seat in waves: the best-marked eligible candidate who listed the seat above
  * everything they currently hold moves up, which vacates their old seat for the
- * next wave. Stops when a wave changes nothing (or after 100 waves).
+ * next wave. Stops when a wave changes nothing (or after `maxWaves`).
  *
- * Pure and synchronous. Behaviour matches the legacy code exactly and is pinned by
- * the golden tests in tests/engine-golden.test.ts. Two legacy details worth knowing:
+ * Marks come from the shared marks module and the allocation rules decide who may
+ * keep and take seats. Pure and synchronous. Under LEGACY_CASCADE_RULES behaviour
+ * matches the legacy code exactly (tests/engine-golden.test.ts). Two details:
  * applicant ids must be integers, and work proceeds in ascending id order wherever
  * the legacy code walked an object keyed by id.
  */
+import { marksContext, preferenceMark, type Certificate, type EngineCandidate, type MarksContext, type Preference } from "./marks";
+import type { ResolvedRules } from "./rules";
 
 /** Speciality ids that the legacy discipline file lacks; these names win over the input map. */
 export const MISSING_SPEC_IDS: Readonly<Record<number, string>> = {
@@ -50,21 +53,27 @@ export type CascadePreference = {
   quotaName: string;
   preferenceNo: number;
   disciplineIds?: number[] | null;
+  programMarks?: number | string | null;
+  /** Parent-institute bonus for this preference. */
+  marks?: number | string | null;
 };
 
-export type CascadeCandidate = { marksTotal?: number | null; preferences?: CascadePreference[] | null };
-
-export type CascadeCertificate = {
-  typeId?: number | null;
-  disciplineId?: number | null;
-  certificateMarks?: number | null;
-  computerizedMarks?: number | null;
+export type CascadeCandidate = {
+  marksTotal?: number | null;
+  /** Per-programme marks, the certificate fallback when the rules allow it. */
+  programMarks?: EngineCandidate["programMarks"];
+  preferences?: CascadePreference[] | null;
 };
+
+export type CascadeCertificate = Certificate;
 
 /** Profile verification status: 1 Accepted, 2 Rejected, 11 Pending, null unknown. */
 export type ProfileStatusFn = (applicantId: number) => number | null | undefined;
 
 export type CascadeInput = {
+  rules: ResolvedRules;
+  /** Speciality groups, for matching certificates by name when the rules allow it. */
+  ctx?: MarksContext;
   merit: readonly CascadeMeritEntry[];
   consent: readonly CascadeConsentRow[];
   seats: readonly CascadeSeatLine[];
@@ -153,17 +162,9 @@ export function runCascade(input: CascadeInput): CascadeResult {
   }
   allCandidateIds.sort(asc);
 
-  // Best certificate bonus per programme type + discipline.
-  const certBonus = new Map<number, Map<string, number>>();
-  for (const cid of allCandidateIds) {
-    const m = new Map<string, number>();
-    for (const cert of input.certificates[String(cid)] ?? []) {
-      const bonus = cert.certificateMarks || cert.computerizedMarks || 0;
-      const key = `${cert.typeId}_${cert.disciplineId}`;
-      if (!m.has(key) || bonus > m.get(key)!) m.set(key, bonus);
-    }
-    certBonus.set(cid, m);
-  }
+  const rules = input.rules;
+  const ctx = input.ctx ?? marksContext();
+  const eligibleStatus = new Set(rules.cascade.eligibleProfileStatus);
 
   // Mark per seat, and the preference number per seat, for listed seats that exist.
   const effMarkForSeat = new Map<number, Map<string, number>>();
@@ -174,17 +175,20 @@ export function runCascade(input: CascadeInput): CascadeResult {
     if (!cand || !Array.isArray(cand.preferences)) continue;
     const marks = new Map<string, number>();
     const prefs = new Map<string, number>();
+    const engineCand: EngineCandidate = {
+      applicantId: cid,
+      baseMarks: base,
+      programMarks: cand.programMarks,
+      certificates: input.certificates[String(cid)] ?? [],
+      preferences: {},
+    };
     for (const p of cand.preferences) {
       const specName = specMap[p.specialityId];
       if (!specName) continue;
       const sk = seatKeyFromParts(p.typeName, specName, p.hospitalName, p.quotaName);
       if (!seatCapacity.has(sk)) continue;
-      let bonus = 0;
-      for (const discId of p.disciplineIds ?? []) {
-        const b = certBonus.get(cid)?.get(`${p.typeId}_${discId}`) || 0;
-        if (b > bonus) bonus = b;
-      }
-      marks.set(sk, base + bonus);
+      const pref: Preference = { ...p, specialityName: specName };
+      marks.set(sk, preferenceMark(rules, ctx, engineCand, p.typeName, pref));
       prefs.set(sk, p.preferenceNo);
     }
     if (marks.size) effMarkForSeat.set(cid, marks);
@@ -212,7 +216,7 @@ export function runCascade(input: CascadeInput): CascadeResult {
   for (const cid of input.extraRejected ?? []) consentRejected.add(cid);
 
   const isEligible = (cid: number) =>
-    input.profileStatus(cid) === 1 && !consentRejected.has(cid) && !consentAwaited.has(cid);
+    eligibleStatus.has(input.profileStatus(cid) ?? NaN) && !consentRejected.has(cid) && !consentAwaited.has(cid);
 
   // Seats, seeded with the published round.
   const seats = new Map<string, { capacity: number; occupants: Map<number, number> }>();
@@ -275,7 +279,7 @@ export function runCascade(input: CascadeInput): CascadeResult {
 
   for (const cid of stateIds()) {
     const status = input.profileStatus(cid);
-    if (status != null && status !== 1) {
+    if (status != null && !eligibleStatus.has(status)) {
       vacateAll(cid);
       continue;
     }
@@ -323,7 +327,7 @@ export function runCascade(input: CascadeInput): CascadeResult {
 
   // Accepted their first preference: may not move to another programme.
   const locked = new Set<number>();
-  for (const cid of stateIds()) {
+  for (const cid of rules.cascade.lockAcceptedFirstPreference === "none" ? [] : stateIds()) {
     const accSk = acceptedSeatKey(cid);
     if (accSk && candidateState.get(cid)?.has(accSk) && candidatePrefMap.get(cid)?.get(accSk) === 1) locked.add(cid);
   }
@@ -387,8 +391,8 @@ export function runCascade(input: CascadeInput): CascadeResult {
           const newPref = candidatePrefMap.get(cid)?.get(sk);
           if (newPref == null) continue;
 
-          // Single-track candidates hold one seat per quota; multi-track ones one per programme.
-          const held = multiTrackInType.get(cid)?.has(typeName)
+          // perQuota: one seat per quota, or per programme for candidates seated in two of its quotas.
+          const held = rules.cascade.seatHolding === "perProgramme" || multiTrackInType.get(cid)?.has(typeName)
             ? heldIn(cid, (h) => part(h, 0) === typeName)
             : heldIn(cid, (h) => part(h, 0) === typeName && part(h, 3) === seatQuota);
 
@@ -435,7 +439,7 @@ export function runCascade(input: CascadeInput): CascadeResult {
     }
 
     if (changes === 0) break;
-    if (wave > 100) break;
+    if (wave > rules.cascade.maxWaves) break;
     input.onWave?.({ wave, changesThisPass: changes, totalPlacements, totalUpgrades });
   }
 

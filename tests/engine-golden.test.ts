@@ -3,7 +3,8 @@
  *
  * Inputs and expected outputs in tests/fixtures/engine/ were produced by running the
  * legacy JS (public repo itskaero/meritnama, commit in each file's `legacyCommit`)
- * through scripts/golden/legacy-engine.mjs. Inputs are synthetic.
+ * through scripts/golden/legacy-engine.mjs. Inputs are synthetic. The engines run
+ * under the LEGACY_* rule presets, which describe what the legacy code did.
  */
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -11,6 +12,7 @@ import path from "node:path";
 import { marksContext, effectiveMark, programBonus, type EngineCandidate, type Preference } from "@/lib/engine/marks";
 import { buildSeatTree, candidatePool, preferenceOutcomes, runPlacement, type SeatLine } from "@/lib/engine/placement";
 import { compareWithActual, runCascade, type CascadeInput } from "@/lib/engine/cascade";
+import { LEGACY_CASCADE_RULES, LEGACY_FIRST_ROUND_RULES, resolveRules } from "@/lib/engine/rules";
 
 const dir = path.join(__dirname, "fixtures/engine");
 const load = (f: string) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
@@ -36,7 +38,10 @@ const toEngine = (c: LegacyCandidate): EngineCandidate => ({
 describe("placement engine vs legacy", () => {
   const input = load("placement.input.json");
   const golden = load("placement.golden.json");
-  const ctx = marksContext({ specialtyGroups: load("specialty_groups.json"), certificatePolicy: load("certificate_policy.json") });
+  const ctx = marksContext({ specialtyGroups: load("specialty_groups.json") });
+  const rules = resolveRules(LEGACY_FIRST_ROUND_RULES);
+  // The legacy simulator's parent-bonus switch: on, and uncapped.
+  const withParent = resolveRules({ ...LEGACY_FIRST_ROUND_RULES, parentBonus: { ...LEGACY_FIRST_ROUND_RULES.parentBonus, enabled: true } });
   const candidates: EngineCandidate[] = input.candidates.map(toEngine);
 
   it("uses the pinned legacy commit for both files", () => {
@@ -50,11 +55,11 @@ describe("placement engine vs legacy", () => {
       return {
         applicantId: m.applicantId,
         program: m.program,
-        mark: effectiveMark(ctx, c, m.program),
+        mark: effectiveMark(rules, ctx, c, m.program),
         prefs: (c.preferences[m.program] ?? []).map((p) => ({
           preferenceNo: p.preferenceNo,
-          mark: effectiveMark(ctx, c, m.program, p),
-          bonus: programBonus(ctx, c, p, m.program).source,
+          mark: effectiveMark(rules, ctx, c, m.program, p),
+          bonus: programBonus(rules, ctx, c, p, m.program).source,
         })),
       };
     });
@@ -63,9 +68,10 @@ describe("placement engine vs legacy", () => {
 
   for (const run of golden.runs as { program: string; parentBonus: boolean; slots: unknown[]; candidates: unknown[] }[]) {
     it(`allocates ${run.program}${run.parentBonus ? " with parent bonus" : ""} identically`, () => {
-      const pool = candidatePool(ctx, candidates, run.program);
+      const r = run.parentBonus ? withParent : rules;
+      const pool = candidatePool(r, ctx, candidates, run.program);
       const tree = buildSeatTree(input.seats as SeatLine[], run.program);
-      const res = runPlacement(ctx, pool, tree, run.program, { parentBonus: run.parentBonus });
+      const res = runPlacement(r, ctx, pool, tree, run.program);
 
       const slots = [];
       for (const [q, specs] of Object.entries(res.seatTree))
@@ -96,6 +102,7 @@ describe("cascade engine vs legacy", () => {
   const input = load("cascade.input.json");
   const golden = load("cascade.golden.json");
   const base: Omit<CascadeInput, "merit" | "consent"> = {
+    rules: resolveRules(LEGACY_CASCADE_RULES),
     seats: input.seats,
     candidates: input.candidates,
     certificates: input.certificates,

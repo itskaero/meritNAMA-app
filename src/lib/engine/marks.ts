@@ -1,15 +1,19 @@
 /**
- * Per-preference merit marks, ported from the legacy simulator (`js/sim-core.js`,
- * public repo itskaero/meritnama @ f686206).
+ * Per-preference merit marks, shared by the first-round placement and the cascade.
+ * First ported from the legacy simulator (`js/sim-core.js`, `js/sim-cascade.js`,
+ * public repo itskaero/meritnama @ f686206); now driven by allocation rules.
  *
- * A candidate's mark for one preference = base marks + a programme bonus. The bonus
- * comes from the certificate that matches the preference's discipline (portal marks,
- * else computerised marks, else the preference's own programme marks), falling back
- * to the candidate's legacy `programMarks[program]`.
+ * A candidate's mark for one preference =
+ *     base marks
+ *   + certificate bonus (when the scoring policy counts it): the matching certificate's
+ *     value, best or first per the rules, else the candidate's per-programme marks,
+ *     capped at the component's max marks
+ *   + parent-institute bonus (when counted), capped likewise.
  *
- * Pure: no I/O, no globals. Behaviour (including quirks) matches the legacy code and
- * is pinned by the golden tests in tests/engine-golden.test.ts.
+ * Pure: no I/O, no globals. Parity with the legacy code under the LEGACY_* presets
+ * is pinned by tests/engine-golden.test.ts.
  */
+import type { ResolvedRules } from "./rules";
 
 export type Certificate = {
   disciplineId?: number | null;
@@ -32,19 +36,19 @@ export type Preference = {
   typeId?: number | null;
   disciplineIds?: number[] | null;
   programMarks?: number | string | null;
-  /** Parent-institute bonus in the legacy files; also a programme-marks fallback. */
+  /** Parent-institute bonus for this preference (legacy field name). */
   marks?: number | string | null;
 };
 
 export type EngineCandidate = {
   applicantId: string | number;
-  /** Marks before any programme bonus (legacy `marksTotal` under the official formula). */
+  /** Marks before any preference-level bonus (legacy `marksTotal` under the official formula). */
   baseMarks: number;
-  /** Legacy per-programme bonus: { FCPS: 5, MS: 3, … }. */
+  /** Per-programme marks from the file: { FCPS: 5, MS: 3, … }. The certificate fallback. */
   programMarks?: Record<string, number | string | null | undefined> | null;
   /** Legacy `applied_in`: explicit per-programme application flags. */
   appliedIn?: Record<string, boolean | null | undefined> | null;
-  certificates?: Certificate[] | null;
+  certificates?: readonly Certificate[] | null;
   /** Preferences per programme name, in any order. */
   preferences: Record<string, Preference[] | undefined>;
 };
@@ -54,18 +58,13 @@ export type SpecialtyGroups = {
   programs?: Record<string, { groups?: Record<string, { labels?: string[]; specialties?: string[] }> }>;
 };
 
-/** Shape of data/induction<n>_certificate_policy.json (only the part used here). */
-export type CertificatePolicy = {
-  fallback?: { useProgramMarksWhenNoCertificateMatch?: boolean };
-};
-
+/** Reference data the marks need: speciality groups for matching certificates by name. */
 export type MarksContext = {
   /** normalised programme → normalised speciality label → group id */
   groupIndex: Map<string, Map<string, string>>;
-  useProgramMarksWhenNoCertificateMatch: boolean;
 };
 
-export function marksContext(opts: { specialtyGroups?: SpecialtyGroups | null; certificatePolicy?: CertificatePolicy | null } = {}): MarksContext {
+export function marksContext(opts: { specialtyGroups?: SpecialtyGroups | null } = {}): MarksContext {
   const groupIndex = new Map<string, Map<string, string>>();
   for (const [program, cfg] of Object.entries(opts.specialtyGroups?.programs ?? {})) {
     const labels = new Map<string, string>();
@@ -78,10 +77,7 @@ export function marksContext(opts: { specialtyGroups?: SpecialtyGroups | null; c
     }
     groupIndex.set(normalizeProgramName(program), labels);
   }
-  return {
-    groupIndex,
-    useProgramMarksWhenNoCertificateMatch: opts.certificatePolicy?.fallback?.useProgramMarksWhenNoCertificateMatch !== false,
-  };
+  return { groupIndex };
 }
 
 export function normalizeProgramName(program: unknown): string {
@@ -128,7 +124,7 @@ function hasOwn(o: object, k: string) {
   return Object.prototype.hasOwnProperty.call(o, k);
 }
 
-/** Legacy `programMarks[program]` (any alias); 0 when absent or not a number. */
+/** Per-programme marks from the file (any alias); 0 when absent or not a number. */
 export function legacyProgramBonus(c: EngineCandidate, program: string): number {
   for (const alias of programAliases(program)) {
     const val = c.programMarks?.[alias];
@@ -140,7 +136,8 @@ export function legacyProgramBonus(c: EngineCandidate, program: string): number 
   return 0;
 }
 
-function legacyCertificateStringMatch(ctx: MarksContext, cert: Certificate, program: string, pref: Preference): boolean {
+function nameMatch(ctx: MarksContext, cert: Certificate, program: string, pref: Preference): boolean {
+  // Legacy detail kept: the name match reads `cert.program` only.
   if (!programMatches(cert.program, program)) return false;
   const prefSpecialty = pref.specialityName || "";
   if (!prefSpecialty) return false;
@@ -150,72 +147,93 @@ function legacyCertificateStringMatch(ctx: MarksContext, cert: Certificate, prog
   return normalizedLookupText(prefSpecialty) === normalizedLookupText(cert.specialty);
 }
 
-/** The certificate that earns the bonus for a preference: by discipline id, else by name. */
-export function certForPreference(ctx: MarksContext, pref: Preference, certs: Certificate[]): Certificate | null {
-  if (!certs.length) return null;
+/** Certificates that can earn the bonus for a preference, in file order. */
+export function matchingCertificates(rules: ResolvedRules, ctx: MarksContext, pref: Preference, certs: readonly Certificate[]): Certificate[] {
+  const r = rules.certificateBonus;
+  const pass = (c: Certificate) => !r.requirePass || normalizedLookupText(c.status) === "pass";
   const disciplineIds = pref.disciplineIds ?? [];
   if (disciplineIds.length) {
-    return (
-      certs.find(
-        (c) =>
-          c.disciplineId != null &&
-          disciplineIds.includes(c.disciplineId) &&
-          (pref.typeId == null || c.typeId == null || c.typeId === pref.typeId),
-      ) ?? null
-    );
+    return certs.filter((c) => {
+      if (!pass(c) || c.disciplineId == null || !disciplineIds.includes(c.disciplineId)) return false;
+      return r.typeMatch === "strict" ? String(c.typeId) === String(pref.typeId) : pref.typeId == null || c.typeId == null || c.typeId === pref.typeId;
+    });
   }
+  if (!r.matchByName) return [];
   const prog = pref.typeName ?? "";
-  return (
-    // Legacy quirk kept: the name match reads `cert.program` only, so a certificate
-    // that names its programme in `typeName` alone never matches by name.
-    certs.find((c) => programMatches(c.program || c.typeName, prog) && legacyCertificateStringMatch(ctx, c, prog, pref)) ?? null
-  );
+  return certs.filter((c) => pass(c) && programMatches(c.program || c.typeName, prog) && nameMatch(ctx, c, prog, pref));
 }
 
 function float(v: unknown): number {
   return Number.parseFloat(String(v));
 }
 
-export type BonusSource = "certificateMarks" | "computerizedMarks" | "programMarks" | "legacy" | "zero";
+export type BonusSource = "certificateMarks" | "computerizedMarks" | "programMarks" | "legacy" | "zero" | "off";
 
+/** A certificate's value: the first positive source the rules list. */
+function certificateValue(rules: ResolvedRules, cert: Certificate, pref: Preference): { value: number; source: BonusSource } | null {
+  for (const s of rules.certificateBonus.sources) {
+    // Legacy detail kept: a preference's programme marks fall back to its `marks` field.
+    const raw = s === "certificateMarks" ? cert.certificateMarks : s === "computerizedMarks" ? cert.computerizedMarks : pref.programMarks || pref.marks;
+    const v = float(raw);
+    if (Number.isFinite(v) && v > 0) return { value: v, source: s === "preferenceProgramMarks" ? "programMarks" : s };
+  }
+  return null;
+}
+
+const capAt = (v: number, cap: number | null) => (cap == null ? v : Math.min(v, cap));
+
+/** The certificate bonus for one preference, and where it came from. */
 export function programBonus(
+  rules: ResolvedRules,
   ctx: MarksContext,
   c: EngineCandidate,
   pref: Preference,
   program: string,
 ): { bonus: number; source: BonusSource; certificate?: Certificate } {
-  const legacy = legacyProgramBonus(c, program);
-  const legacyResult = { bonus: legacy || 0, source: (legacy ? "legacy" : "zero") as BonusSource };
-  if (!program) return legacyResult;
-  if (!pref.specialityName && !pref.disciplineIds?.length) return legacyResult;
+  if (!rules.certificate.on) return { bonus: 0, source: "off" };
+  const cap = rules.certificate.cap;
+  const legacy = rules.certificateBonus.fallback === "programMarks" ? legacyProgramBonus(c, program) : 0;
+  const fallback = { bonus: capAt(legacy || 0, cap), source: (legacy ? "legacy" : "zero") as BonusSource };
+  if (!program) return fallback;
+  if (!pref.specialityName && !pref.disciplineIds?.length) return fallback;
   const certs = Array.isArray(c.certificates) ? c.certificates : [];
-  if (!certs.length) return legacyResult;
+  if (!certs.length) return fallback;
 
-  const cert = certForPreference(ctx, pref, certs);
-  if (!cert) {
-    const use = ctx.useProgramMarksWhenNoCertificateMatch;
-    return { bonus: use ? legacy || 0 : 0, source: use && legacy ? "legacy" : "zero" };
+  const matches = matchingCertificates(rules, ctx, pref, certs);
+  const candidates = rules.certificateBonus.combine === "first" ? matches.slice(0, 1) : matches;
+  let best: { value: number; source: BonusSource; certificate: Certificate } | null = null;
+  for (const cert of candidates) {
+    const v = certificateValue(rules, cert, pref);
+    if (v && (!best || v.value > best.value)) best = { ...v, certificate: cert };
   }
-  const portal = float(cert.certificateMarks);
-  if (Number.isFinite(portal) && portal > 0) return { bonus: portal, source: "certificateMarks", certificate: cert };
-  const comp = float(cert.computerizedMarks);
-  if (Number.isFinite(comp) && comp > 0) return { bonus: comp, source: "computerizedMarks", certificate: cert };
-  const pm = float(pref.programMarks || pref.marks);
-  if (Number.isFinite(pm) && pm > 0) return { bonus: pm, source: "programMarks", certificate: cert };
-  return legacyResult;
+  if (!best) return fallback;
+  return { bonus: capAt(best.value, cap), source: best.source, certificate: best.certificate };
+}
+
+/** The parent-institute bonus for one preference. */
+export function parentBonus(rules: ResolvedRules, pref: Preference): number {
+  if (!rules.parent.on) return 0;
+  return capAt(Number(pref.marks) || 0, rules.parent.cap);
+}
+
+/** Base + bonuses for one preference, without the "did they apply" check. */
+export function preferenceMark(rules: ResolvedRules, ctx: MarksContext, c: EngineCandidate, program: string, pref: Preference): number {
+  return c.baseMarks + programBonus(rules, ctx, c, pref, program).bonus + parentBonus(rules, pref);
 }
 
 /**
- * A candidate's mark in `program`, for one preference when given.
+ * A candidate's mark in `program`, for one preference when given. Without a
+ * preference: base + per-programme marks (when the certificate bonus counts).
  * `null` when the candidate explicitly did not apply to the programme, or has neither
  * an application flag nor preferences for it.
  */
-export function effectiveMark(ctx: MarksContext, c: EngineCandidate, program: string, pref?: Preference): number | null {
+export function effectiveMark(rules: ResolvedRules, ctx: MarksContext, c: EngineCandidate, program: string, pref?: Preference): number | null {
   const appliedIn = c.appliedIn ?? {};
   const explicit = hasOwn(appliedIn, program);
   const hasPrefs = (c.preferences[program] ?? []).length > 0;
   const applied = programAliases(program).some((a) => appliedIn[a]);
   if (!applied && (explicit || !hasPrefs)) return null;
-  const bonus = pref ? programBonus(ctx, c, pref, program).bonus : legacyProgramBonus(c, program);
-  return c.baseMarks + bonus;
+  if (pref) return preferenceMark(rules, ctx, c, program, pref);
+  const fallback = rules.certificate.on && rules.certificateBonus.fallback === "programMarks" ? legacyProgramBonus(c, program) : 0;
+  return c.baseMarks + capAt(fallback, rules.certificate.cap);
 }

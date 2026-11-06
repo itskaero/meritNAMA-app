@@ -165,15 +165,39 @@ are ever executed.
 
 | Module | Legacy source | Does |
 |---|---|---|
-| `marks.ts` | `sim-core.js` | Mark per preference: base marks + programme bonus from the matching certificate (portal marks → computerised marks → preference's programme marks → legacy `programMarks`); FCPSD/FCPS Dentistry aliases; speciality groups for name matching |
+| `rules.ts` | — | Allocation rules per induction, as data (below) |
+| `marks.ts` | `sim-core.js`, `sim-cascade.js` | Mark per preference, shared by both engines: base marks + certificate bonus + parent-institute bonus, each as the rules and scoring policy say; FCPSD/FCPS Dentistry aliases; speciality groups for name matching |
 | `placement.ts` | `sim-placement.js` (← PHF `merit.py`) | First-round allocation in passes, best marks first, displacing lower holders; Armed Forces quotas as a separate track; per-preference outcome (placed / beaten with cutoff / not attempted / no seat) |
 | `cascade.ts` | `sim-cascade.js` (← `merit_cascade.py`) | Next round from a published one: consent and profile status vacate seats, then waves of upgrades; comparison with the round PHF actually published |
+
+**Rules, not code, for what changes between inductions.** Two documents decide an
+induction's simulation:
+
+- The **scoring policy** says *whether* a preference-level bonus counts and *how much*
+  it can be worth: `fcps_jcat` → certificate bonus, `parent_institute` → parent bonus;
+  included turns it on, `max_marks` caps it.
+- The **allocation rules** (`allocationRulesSchema`) say *how*: certificate matching
+  (discipline id, speciality name, programme type), value sources in order, best or
+  first certificate, pass required, fallback to per-programme marks; quota tracks;
+  processing order; and the cascade's eligible profile statuses, first-preference
+  lock, seat holding and wave limit. Each bonus's `enabled` is `"auto"` (follow the
+  policy) or an explicit `true`/`false` override.
+
+`resolveRules(rules, policy)` combines them. Each setting chooses among behaviours
+implemented in code, so an edit can never inject code; a new kind of rule needs code
+and a test. `DEFAULT_RULES` (for new inductions) counts the **best** matching
+certificate in both rounds and orders candidates by their full mark. Storing rules
+per induction with drafts, preview, publish and audit (as for scoring policies) is
+the next step.
 
 **Parity.** `scripts/golden/legacy-engine.mjs` runs the legacy files in a Node sandbox
 on seeded synthetic inputs (with frequent tied marks) and writes inputs + outputs to
 `tests/fixtures/engine/`; `tests/engine-golden.test.ts` replays them through the port
-and requires identical marks, slots, placements and stats. Deliberate tie-breaking
-mutations make it fail. Known differences, all kept out of the golden inputs:
+under the `LEGACY_FIRST_ROUND_RULES` and `LEGACY_CASCADE_RULES` presets (the legacy
+code found certificate marks differently in the two rounds, and ordered candidates
+without the parent bonus) and requires identical marks, slots, placements and stats.
+Deliberate tie-breaking and rule mutations make it fail. Known differences, kept out
+of the golden inputs:
 
 - A 0-seat slot is skipped; the legacy code threw on it.
 - The legacy "marks option" and candidate-revision switches (admin-configurable

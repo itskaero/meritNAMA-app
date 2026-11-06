@@ -153,7 +153,15 @@ function cascadeInput() {
       }
     }
     candidates[String(id)] = { marksTotal: chance(0.03) ? 0 : marks(), nameFull: `Synthetic ${id}`, preferences: prefs };
-    if (chance(0.4)) certificates[String(id)] = [{ typeId: pick([1, 2]), disciplineId: pick([2, 3, 6, 7]), certificateMarks: pick([0, 3, 5]), computerizedMarks: pick([0, 4]) }];
+    // Several certificates per candidate, some without a programme type, so "best" vs "first"
+    // and strict vs lenient type matching give different answers.
+    if (chance(0.5))
+      certificates[String(id)] = Array.from({ length: rint(1, 3) }, () => ({
+        ...(chance(0.8) ? { typeId: pick([1, 2]) } : {}),
+        disciplineId: pick([2, 3, 6, 7]),
+        certificateMarks: pick([0, 3, 4, 5]),
+        computerizedMarks: pick([0, 2, 4]),
+      }));
   }
 
   // Published round: greedy by marks, one seat per programme and track.
