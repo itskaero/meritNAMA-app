@@ -187,3 +187,23 @@ export async function exportScoringPolicyFile(db: Database, session: Session | n
   }
   return { ok: true, file: candidate as ScoringPolicyFile };
 }
+
+/**
+ * Policies for the merit calculator: per key the active version, else the newest, with
+ * the active key first. Anyone signed in may read them (they are public rules).
+ */
+export async function calculatorPolicies(db: Database, session: Session | null) {
+  assertCan(session, "portal");
+  const rows = await db.select().from(scoringPolicies).orderBy(scoringPolicies.policyKey, desc(scoringPolicies.version));
+  const current = new Map<string, (typeof rows)[number]>();
+  for (const r of rows) {
+    const seen = current.get(r.policyKey);
+    if (!seen || (r.status === "active" && seen.status !== "active")) current.set(r.policyKey, r);
+  }
+  return [...current.values()]
+    .flatMap((r) => {
+      const p = policySchema.safeParse(r.definition);
+      return p.success ? [{ key: r.policyKey, version: r.version, active: r.status === "active", policy: p.data }] : [];
+    })
+    .sort((a, b) => Number(b.active) - Number(a.active) || b.key.localeCompare(a.key));
+}

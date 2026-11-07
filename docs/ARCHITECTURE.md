@@ -295,7 +295,16 @@ their own seats plus anonymous counts and closing marks; staff
 (`/admin/processing/consent`) can change anyone's on their own copy. Rebuilt from
 unchanged official statuses, consent reproduces the official run within about ±1%.
 
-Still to do: `app-predict-calc.js` (the scoring calculator).
+**Merit calculator (Nov 2026).** `src/lib/engine/score.ts` computes merit marks from a
+candidate's own inputs under any stored scoring policy, per component type (percentage,
+years, count, score, months, tiered choice, yes/no, FCPS Part-I attempt or JCAT
+percentage), each capped at its max marks. Ported from `app-predict-calc.js`
+(runCalculator) and proven identical by `tests/score-golden.test.ts`: 320 random cases
+over all eight real policies, produced by running the legacy function on a fake form
+(`scripts/golden/legacy-calculator.mjs`). `/portal/calculator` is a plain GET form (no
+JavaScript needed, nothing stored); the result opens the score finder with the marks
+filled in. The legacy reverse calculator ("what do I need") is not ported: the finder
+and the prediction ranges answer the same question from the imported rounds.
 
 ## Storage
 

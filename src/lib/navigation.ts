@@ -41,6 +41,15 @@ export const candidateSections: Section[] = [
     planned: [],
   },
   {
+    href: "/portal/calculator",
+    group: "Menu",
+    icon: "sliders",
+    label: "Merit calculator",
+    description: "Work out your merit marks under the scoring policy from your own details.",
+    milestone: "Delivery 4 · Candidate MVP",
+    planned: [],
+  },
+  {
     href: "/portal/finder",
     group: "Menu",
     icon: "target",
