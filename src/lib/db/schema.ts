@@ -722,8 +722,16 @@ export const simulationRuns = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     inductionId: integer("induction_id").notNull(),
     kind: simulationRunKind("kind").notNull().default("first_round"),
-    /** next_round: the published round it starts from (it simulates fromRound + 1). */
+    /** next_round: the round it starts from (it simulates fromRound + 1). */
     fromRound: integer("from_round"),
+    /** Starts from this simulated run's list instead of the published round fromRound. */
+    baseRunId: uuid("base_run_id").references((): AnyPgColumn => simulationRuns.id, { onDelete: "set null" }),
+    /** A what-if run: private to this user. Null for the shared runs staff make. */
+    ownerUserId: uuid("owner_user_id").references(() => users.id, { onDelete: "cascade" }),
+    /** The simulated consent it used ("<applicantId>|<seatKey>" → status), or null for the official consent. */
+    consentOverrides: json("consent_overrides"),
+    /** Who is out going forward (rejected, dropped off, track and programme bans), for runs chained on this one. */
+    carry: json("carry"),
     status: simulationRunStatus("status").notNull().default("queued"),
     /** "v2" or "default". */
     rulesOrigin: text("rules_origin").notNull(),
@@ -740,6 +748,25 @@ export const simulationRuns = pgTable(
     finishedAt: timestamp("finished_at", { withTimezone: true }),
   },
   (t) => [index("simulation_runs_induction_idx").on(t.inductionId, t.createdAt)],
+);
+
+/**
+ * A person's private simulated consent for one list: a published round, or a simulated
+ * run's list. Official consent (sim_consent) is never changed. `overrides` maps
+ * "<applicantId>|<seatKey>" to "Accepted", "Rejected" or "Awaited".
+ */
+export const simConsentScenarios = pgTable(
+  "sim_consent_scenarios",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    inductionId: integer("induction_id").notNull(),
+    /** "published:<round>" or "run:<runId>". */
+    baseKey: text("base_key").notNull(),
+    overrides: json("overrides").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("sim_consent_scenarios_uq").on(t.userId, t.inductionId, t.baseKey)],
 );
 
 export const simulationPlacements = pgTable(

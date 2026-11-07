@@ -22,7 +22,7 @@ function ProfileCard({ session, mode, verified }: { session: Session; mode: UiMo
   const initials = session.email.slice(0, 2).toUpperCase();
   const pro = mode === "pro";
   return (
-    <div className={cn("flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-[inset_0_1px_0_rgba(242,246,252,0.04)]", pro && "lg:justify-center lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none")}>
+    <div className={cn("flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-[inset_0_1px_0_rgba(242,246,252,0.04)]", pro && "lg:justify-center lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none")}>
       <span
         title={pro ? `${session.email} · ${session.role}` : undefined}
         className="grid h-10 w-10 flex-none place-items-center rounded-full bg-gradient-to-br from-ember/40 to-elevated text-sm font-bold text-ink ring-1 ring-line-strong"

@@ -280,6 +280,21 @@ change). Joining happens only after the final round.
 With round 1 at 98.9%, the simulation reproduces 98.9% of PHF's first list and 93–97%
 of each later one (96.0–99.2%).
 
+**What if (simulated consent, Nov 2026).** As on the legacy site, consent can be changed
+for a simulation without touching the official consent. Each person keeps their own
+private copy per list (`sim_consent_scenarios`: a published round, or a simulated run's
+list) mapping an allocation to Accepted / Rejected / Awaited. Unchanged allocations keep
+the official status on a published list (`officialStatuses`, matching replies by title,
+since some exports leave the preference number 0) and count as Awaited on a simulated
+one. `consentRows` turns statuses into replies as the legacy site did. A what-if run is
+private to its owner (`simulation_runs.owner_user_id`), records the changes it used
+(`consent_overrides`) and what it carries forward (`carry`: who is out, track and
+programme bans), so the next round can be simulated from it (`base_run_id`).
+Candidates (`/portal/simulation`) see and change only their own allocations, and see
+their own seats plus anonymous counts and closing marks; staff
+(`/admin/processing/consent`) can change anyone's on their own copy. Rebuilt from
+unchanged official statuses, consent reproduces the official run within about ±1%.
+
 Still to do: `app-predict-calc.js` (the scoring calculator).
 
 ## Storage

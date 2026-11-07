@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, like } from "drizzle-orm";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
@@ -10,6 +10,7 @@ import { createPolicyDraft } from "@/lib/data/policies";
 import { importSeatFile } from "@/lib/data/reference-data";
 import { executeRun, getRun, importConsentRounds, importSimulationDataset, listDatasets, listSimulationFolders, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
 import { importMeritRound } from "@/lib/data/merit";
+import { getWhatIf, queueWhatIfRun, resetSimulatedConsent, setSimulatedConsent } from "@/lib/data/what-if";
 import * as schema from "@/lib/db/schema";
 
 /** DISPOSABLE database only (TEST_DATABASE_URL). Uses induction 970 and policy key "1996". Synthetic candidates. */
@@ -40,7 +41,9 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
   const root = mkdtempSync(path.join(tmpdir(), "mn-sim-"));
 
   const wipe = async () => {
+    await db.delete(schema.simConsentScenarios).where(eq(schema.simConsentScenarios.inductionId, IND));
     await db.delete(schema.simulationRuns).where(eq(schema.simulationRuns.inductionId, IND));
+    await db.delete(schema.candidateLinks).where(like(schema.candidateLinks.applicantId, "5000%"));
     const rs = await db.select({ id: schema.meritRounds.id }).from(schema.meritRounds).where(eq(schema.meritRounds.inductionId, IND));
     if (rs.length) await db.delete(schema.meritRounds).where(inArray(schema.meritRounds.id, rs.map((r) => r.id)));
     await db.delete(schema.simDatasets).where(eq(schema.simDatasets.inductionId, IND));
@@ -157,5 +160,50 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
     expect(keep.status).toBe("done");
     expect((keep.rules as { cascade: { awaitedConsent: string } }).cascade.awaitedConsent).toBe("keep");
     expect(keep.summary!.resolved.cascade.awaitedConsent).toBe("keep");
+  });
+
+  it("what if: private simulated consent, own seats only for candidates, official consent untouched", async () => {
+    const official = await db.select().from(schema.simConsent).where(eq(schema.simConsent.inductionId, IND));
+    const base = { kind: "published" as const, round: 1 };
+    // A candidate linked to an applicant who holds a seat in round 1.
+    const view0 = await getWhatIf(db, owner, { induction: IND, base });
+    const seat = view0.rows.find((r) => r.official === "Accepted")!;
+    const cand: Session = { userId: "s-c1", email: "sim-candidate@test.local", role: "candidate", isStub: false };
+    const [u] = await db.insert(schema.users).values({ email: cand.email, role: "candidate", displayName: "c" }).onConflictDoUpdate({ target: schema.users.email, set: { role: "candidate" } }).returning();
+    await db.insert(schema.candidateLinks).values({ userId: u!.id, applicantId: seat.applicantId, status: "verified", method: "manual" });
+
+    const mine = await getWhatIf(db, cand, { induction: IND, base });
+    expect(mine.rows.every((r) => r.applicantId === seat.applicantId)).toBe(true);
+    expect(mine.total).toBe(view0.total);
+    const other = view0.rows.find((r) => r.applicantId !== seat.applicantId)!;
+    await expect(setSimulatedConsent(db, cand, { induction: IND, base, applicantId: other.applicantId, seatKey: other.seatKey, status: "Rejected" })).rejects.toThrow(/only your own/);
+
+    await setSimulatedConsent(db, cand, { induction: IND, base, applicantId: seat.applicantId, seatKey: seat.seatKey, status: "Rejected" });
+    expect((await getWhatIf(db, cand, { induction: IND, base })).rows.find((r) => r.seatKey === seat.seatKey)).toMatchObject({ simulated: "Rejected", changed: true });
+    // Private: the owner's copy is unchanged; the official consent is unchanged.
+    expect((await getWhatIf(db, owner, { induction: IND, base })).changes).toBe(0);
+    expect(await db.select().from(schema.simConsent).where(eq(schema.simConsent.inductionId, IND))).toEqual(official);
+
+    const id = await queueWhatIfRun(db, cand, { induction: IND, base });
+    await executeRun(db, id);
+    const run = (await getRun(db, cand, id))!;
+    expect(run).toMatchObject({ status: "done", ownerUserId: u!.id, fromRound: 1, baseRunId: null });
+    expect(run.summary).toMatchObject({ consentSource: "simulated", consentChanges: 1 });
+    // Having rejected, they hold no seat in the simulated round.
+    const placed = await db.select().from(schema.simulationPlacements).where(eq(schema.simulationPlacements.runId, id));
+    expect(placed.some((p) => p.applicantId === seat.applicantId)).toBe(false);
+    // Other people (staff included) cannot open it.
+    expect(await getRun(db, owner, id)).toBeNull();
+
+    // Chain: the simulated round is a list too; its consent starts as Awaited.
+    const chained = await getWhatIf(db, cand, { induction: IND, base: { kind: "run", runId: id } });
+    expect(chained.roundNo).toBe(2);
+    expect(chained.counts.Accepted).toBe(0);
+    const id2 = await queueWhatIfRun(db, cand, { induction: IND, base: { kind: "run", runId: id } });
+    await executeRun(db, id2);
+    expect((await getRun(db, cand, id2))).toMatchObject({ status: "done", baseRunId: id, fromRound: 2 });
+
+    await resetSimulatedConsent(db, cand, { induction: IND, base });
+    expect((await getWhatIf(db, cand, { induction: IND, base })).changes).toBe(0);
   });
 });

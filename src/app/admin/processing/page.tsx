@@ -104,7 +104,10 @@ export default async function ProcessingPage() {
                                 <span className="tabular-nums">{c.rejected.toLocaleString("en-US")}</span> rejected, <span className="tabular-nums">{c.awaited.toLocaleString("en-US")}</span> awaited
                               </span>
                               {ds.publishedRounds.includes(c.round) ? (
-                                <StartRunForm induction={n} fromRound={c.round} variant="secondary" />
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Link href={`/admin/processing/consent?induction=${n}&base=published:${c.round}`} className="text-xs font-semibold text-signal underline-offset-4 hover:underline">What if…</Link>
+                                  <StartRunForm induction={n} fromRound={c.round} variant="secondary" />
+                                </div>
                               ) : (
                                 <span className="text-xs text-amber">Round {c.round} itself is not imported</span>
                               )}
@@ -132,7 +135,7 @@ export default async function ProcessingPage() {
           columns={[
             { key: "when", header: "Started (UTC)", cell: (r) => <Link href={`/admin/processing/runs/${r.id}`} className="font-medium text-signal underline-offset-4 hover:underline">{formatUtc(r.createdAt)}</Link> },
             { key: "n", header: "Induction", cell: (r) => r.inductionId },
-            { key: "kind", header: "Simulates", cell: (r) => (r.kind === "next_round" ? `Round ${r.fromRound! + 1} (from ${r.fromRound})` : "Round 1") },
+            { key: "kind", header: "Simulates", cell: (r) => <>{r.kind === "next_round" ? `Round ${r.fromRound! + 1} (from ${r.baseRunId ? "simulated " : ""}${r.fromRound})` : "Round 1"}{r.ownerUserId ? <Badge tone="simulated" className="ml-2">what-if</Badge> : null}</> },
             { key: "status", header: "Status", cell: (r) => <Badge tone={RUN_TONE[r.status]}>{r.status}</Badge> },
             { key: "rules", header: "Rules · policy", cell: (r) => `${r.rulesOrigin} · ${r.policy ?? "no policy"}` },
             { key: "placed", header: "Placed", align: "right", cell: (r) => r.summary?.placed.toLocaleString("en-US") ?? "—" },

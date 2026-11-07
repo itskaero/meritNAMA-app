@@ -2,8 +2,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { lstat, mkdir, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { and, asc, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
-import { assertCan, type Session } from "@/lib/auth/roles";
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
   hospitals,
@@ -23,6 +23,7 @@ import {
 } from "@/lib/db/schema";
 import { compareRounds, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
+import { consentRows, officialStatuses, type ConsentStatus, type ListAllocation, type OfficialReply } from "@/lib/domain/what-if";
 import { acceptedConsent, programmeBansFromRound, runCascade, seatKeyFromParts, trackBansFromRound, type CascadeCandidate, type CascadeConsentRow, type CascadeStats } from "@/lib/engine/cascade";
 import { marksContext, type EngineCandidate, type MarksContext, type Preference, type SpecialtyGroups } from "@/lib/engine/marks";
 import { buildSeatTree, candidatePool, isEligible, runPlacement, type SeatLine } from "@/lib/engine/placement";
@@ -30,6 +31,7 @@ import { allocationRulesSchema, resolveRules, type ResolvedRules } from "@/lib/e
 import { env } from "@/lib/env";
 import { UserFacingError } from "@/lib/errors";
 import { loadInductionRules } from "./allocation-rules";
+import { ensureUser } from "./users";
 import { requireReason, writeAudit, type Db } from "./shared";
 
 /**
@@ -278,6 +280,10 @@ export type RunSummary = {
   unnamedPreferences: number;
   /** Against the published round it simulates (round 1, or fromRound + 1), when imported. */
   comparison: RoundComparison | null;
+  /** next_round: "official" consent, or "simulated" (a person's changes, or a simulated list). */
+  consentSource?: "official" | "simulated";
+  /** next_round: how many allocations' consent a person changed. */
+  consentChanges?: number;
   /** next_round: how much of the published next round equals the previous one ("nobody moves"). */
   baseline?: number | null;
   /** next_round: the cascade's own counts, and the consent it started from. */
@@ -304,12 +310,22 @@ export async function queueNextRoundRun(
   return queueRun(db, session, { induction: input.induction, kind: "next_round", fromRound: input.fromRound, awaitedConsent: input.awaitedConsent });
 }
 
-async function queueRun(
+export async function queueRun(
   db: Database,
   session: Session | null,
-  input: { induction: number; kind: "first_round" | "next_round"; fromRound: number | null; awaitedConsent?: "vacate" | "keep" | "yield" },
+  input: {
+    induction: number;
+    kind: "first_round" | "next_round";
+    fromRound: number | null;
+    awaitedConsent?: "vacate" | "keep" | "yield";
+    /** What-if runs: private to this user, from this list, with this simulated consent. */
+    ownerUserId?: string;
+    baseRunId?: string | null;
+    consentOverrides?: Record<string, string> | null;
+  },
 ) {
-  assertCan(session, "data.edit");
+  if (input.ownerUserId) assertCan(session, "portal");
+  else assertCan(session, "data.edit");
   const [dataset] = await db.select().from(simDatasets).where(eq(simDatasets.inductionId, input.induction)).limit(1);
   if (!dataset) throw new UserFacingError(`Import induction ${input.induction}'s simulation data first.`);
   const [seat] = await db.select({ n: inductionSeats.seats }).from(inductionSeats).where(eq(inductionSeats.inductionId, input.induction)).limit(1);
@@ -322,6 +338,9 @@ async function queueRun(
       inductionId: input.induction,
       kind: input.kind,
       fromRound: input.fromRound,
+      ownerUserId: input.ownerUserId ?? null,
+      baseRunId: input.baseRunId ?? null,
+      consentOverrides: input.consentOverrides ?? null,
       rulesOrigin: r.origin.kind === "stored" ? `v${r.origin.version}` : "default",
       // A run may override how Awaited replies are read (PHF has kept them in some rounds).
       rules: input.awaitedConsent ? { ...r.rules, cascade: { ...r.rules.cascade, awaitedConsent: input.awaitedConsent } } : r.rules,
@@ -403,13 +422,31 @@ async function roundId(db: Db, induction: number, roundNo: number) {
   return round?.id ?? null;
 }
 
-type PublishedAllocation = Allocation & { preferenceNo: number };
+export type PublishedAllocation = Allocation & { preferenceNo: number };
+
+/** A simulated run's list, in the same shape as a published round. */
+export async function runList(db: Database, runId: string): Promise<PublishedAllocation[]> {
+  const rows = await db.select().from(simulationPlacements).where(eq(simulationPlacements.runId, runId));
+  return rows.map((p) => ({ applicantId: p.applicantId, program: p.program, quota: p.quota, speciality: p.speciality, hospital: p.hospital, mark: p.mark, preferenceNo: p.preferenceNo }));
+}
+
+export const toListAllocations = (rows: readonly PublishedAllocation[]): ListAllocation[] =>
+  rows.map((m) => ({ ...m, seatKey: seatKeyFromParts(m.program, m.speciality, m.hospital, m.quota) }));
+
+/** A round's official consent replies, for per-seat statuses. */
+export async function officialReplies(db: Db, induction: number, roundNo: number): Promise<OfficialReply[]> {
+  const rows = await db.select().from(simConsent).where(and(eq(simConsent.inductionId, induction), eq(simConsent.roundNo, roundNo)));
+  return rows.map((r) => ({ applicantId: r.applicantId, status: r.status, program: nm(r.program), quota: nm(r.quota), preferenceNo: r.preferenceNo, speciality: r.speciality ? nm(r.speciality) : null, hospital: r.hospital ? nm(r.hospital) : null }));
+}
+
+/** Who is out going forward after a run, for runs chained on it. */
+export type Carry = { out: number[]; trackBans: Record<string, string[]>; programmeBans: Record<string, string[]> };
 
 /**
  * A published round's allocations. Speciality and hospital use the lookup names when
  * the import resolved them (the names seat lines use), else the published text.
  */
-async function publishedRound(db: Database, induction: number, roundNo: number): Promise<PublishedAllocation[] | null> {
+export async function publishedRound(db: Database, induction: number, roundNo: number): Promise<PublishedAllocation[] | null> {
   const id = await roundId(db, induction, roundNo);
   if (!id) return null;
   const rows = await db
@@ -439,12 +476,12 @@ export async function executeRun(db: Database, runId: string): Promise<void> {
     const { policy } = await loadInductionRules(db, run.inductionId);
     const rules: ResolvedRules = resolveRules(allocationRulesSchema.parse(run.rules), policy?.definition ?? null);
     const ctx = marksContext({ specialtyGroups: await specialtyGroups(db, run.inductionId) });
-    const { placements, summary } =
-      run.kind === "next_round" ? await simulateNextRound(db, run, rules, ctx) : await simulateFirstRound(db, run, rules, ctx);
+    const { placements, summary, carry } =
+      run.kind === "next_round" ? await simulateNextRound(db, run, rules, ctx) : { ...(await simulateFirstRound(db, run, rules, ctx)), carry: null };
     await db.transaction(async (tx) => {
       await tx.delete(simulationPlacements).where(eq(simulationPlacements.runId, runId));
       for (let i = 0; i < placements.length; i += 2000) await tx.insert(simulationPlacements).values(placements.slice(i, i + 2000));
-      await tx.update(simulationRuns).set({ status: "done", summary, finishedAt: new Date() }).where(eq(simulationRuns.id, runId));
+      await tx.update(simulationRuns).set({ status: "done", summary, carry, finishedAt: new Date() }).where(eq(simulationRuns.id, runId));
     });
   } catch (err) {
     console.error("simulation run failed", runId, err);
@@ -512,10 +549,14 @@ async function roundConsent(db: Database, induction: number, roundNo: number, me
  * replies, and run the upgrade cascade over everyone's portal preferences.
  * Candidates who rejected everything in an earlier round stay out.
  */
-async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, ctx: MarksContext): Promise<{ placements: Placement[]; summary: RunSummary }> {
+async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, ctx: MarksContext): Promise<{ placements: Placement[]; summary: RunSummary; carry: Carry }> {
+  let carryOut: Carry = { out: [], trackBans: {}, programmeBans: {} };
   const from = run.fromRound!;
   const induction = run.inductionId;
-  const merit = await publishedRound(db, induction, from);
+  // The list it starts from: a simulated run's, or the published round.
+  const [baseRun] = run.baseRunId ? await db.select().from(simulationRuns).where(eq(simulationRuns.id, run.baseRunId)).limit(1) : [];
+  if (run.baseRunId && !baseRun) throw new UserFacingError("The simulated list this run starts from was deleted.");
+  const merit = baseRun ? await runList(db, baseRun.id) : await publishedRound(db, induction, from);
   if (!merit) throw new UserFacingError(`Round ${from} is no longer imported.`);
   const lines = await seatLines(db, induction);
   const names = await specialityNameMap(db);
@@ -540,7 +581,16 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
     });
   }
 
-  const consent = await roundConsent(db, induction, from, merit);
+  // Consent: the official replies, or per-seat statuses with a person's changes applied
+  // (official where there is no change; Awaited on a simulated list).
+  const overrides = (run.consentOverrides ?? null) as Record<string, ConsentStatus> | null;
+  let consent: CascadeConsentRow[];
+  if (!baseRun && !overrides) consent = await roundConsent(db, induction, from, merit);
+  else {
+    const list = toListAllocations(merit);
+    const official = baseRun ? new Map<string, ConsentStatus>() : officialStatuses(list, await officialReplies(db, induction, from));
+    consent = consentRows(list, (k) => overrides?.[k] ?? official.get(k) ?? "Awaited");
+  }
   const asMerit = (rows: PublishedAllocation[]) =>
     rows.map((m) => ({ applicantId: Number(m.applicantId), typeName: m.program, specialityName: m.speciality, hospitalName: m.hospital, quotaName: m.quota }));
 
@@ -554,7 +604,11 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
       into.set(cid, b);
     }
   };
-  if (rules.cascade.tracks === "phf" || rules.cascade.programmes === "phf") {
+  const baseCarry = (baseRun?.carry ?? null) as Carry | null;
+  if (baseRun) {
+    for (const [cid, t] of Object.entries(baseCarry?.trackBans ?? {})) trackBans.set(Number(cid), new Set(t));
+    for (const [cid, t] of Object.entries(baseCarry?.programmeBans ?? {})) programmeBans.set(Number(cid), new Set(t));
+  } else if (rules.cascade.tracks === "phf" || rules.cascade.programmes === "phf") {
     for (let k = 1; k < from; k++) {
       const earlierMerit = await publishedRound(db, induction, k);
       if (!earlierMerit) continue;
@@ -565,7 +619,7 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
   }
 
   // Rejected everything in an earlier round: no longer in the running.
-  const earlier = await db.select({ round: simConsent.roundNo, applicantId: simConsent.applicantId, status: simConsent.status })
+  const earlier = baseRun ? [] : await db.select({ round: simConsent.roundNo, applicantId: simConsent.applicantId, status: simConsent.status })
     .from(simConsent).where(and(eq(simConsent.inductionId, induction), lt(simConsent.roundNo, from)));
   const byRound = new Map<string, string[]>();
   for (const e of earlier) {
@@ -574,9 +628,10 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
   }
   const carried = new Set<number>();
   for (const [k, st] of byRound) if (st.every((x) => x === "Rejected")) carried.add(Number(k.split(":")[1]));
+  for (const cid of baseCarry?.out ?? []) carried.add(cid);
   // Dropped off an earlier published list: no longer in the running either.
   let dropped = 0;
-  if (rules.cascade.droppedStayOut) {
+  if (rules.cascade.droppedStayOut && !baseRun) {
     const now = new Set(merit.map((m) => m.applicantId));
     const before = await db
       .selectDistinct({ applicantId: meritAllocations.applicantId })
@@ -605,6 +660,16 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
     extraRejected: carried,
   });
 
+  // What chained runs carry forward: everyone out now, anyone who left this list, new bans.
+  const placedIds = new Set(res.placements.map((p) => p.applicantId));
+  const out = new Set<number>([...carried, ...res.consentRejected]);
+  if (rules.cascade.droppedStayOut) for (const m of merit) if (!placedIds.has(Number(m.applicantId))) out.add(Number(m.applicantId));
+  const accepted = acceptedConsent(consent);
+  merge(trackBans, trackBansFromRound(rules, asMerit(merit), accepted));
+  merge(programmeBans, programmeBansFromRound(asMerit(merit), accepted));
+  const toRecord = (m: Map<number, Set<string>>) => Object.fromEntries([...m].map(([k, v]) => [String(k), [...v]]));
+  carryOut = { out: [...out].sort((a, b) => a - b), trackBans: toRecord(trackBans), programmeBans: toRecord(programmeBans) };
+
   const placements: Placement[] = res.placements.map((p) => ({
     runId: run.id, applicantId: String(p.applicantId), program: p.typeName, quota: p.quotaName, speciality: p.specialityName,
     hospital: p.hospitalName, preferenceNo: p.preferenceNo, mark: p.effectiveMark, track: "",
@@ -625,27 +690,35 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
     byProgram,
     unnamedPreferences: unnamed,
     comparison: next ? compareRounds(next, placements.map(toAllocation)) : null,
-    baseline: next ? compareRounds(next, merit).agreement : null,
+    baseline: next && !baseRun ? compareRounds(next, merit).agreement : null,
+    consentSource: overrides || baseRun ? "simulated" : "official",
+    consentChanges: overrides ? Object.keys(overrides).length : 0,
     cascade: { ...res.stats, consent: (await consentRounds(db, induction)).find((c) => c.round === from) ?? null, carriedRejected: carried.size - dropped, droppedOut: dropped, trackBanned: trackBans.size, programmeBanned: programmeBans.size },
     resolved: rules,
   };
-  return { placements, summary };
+  return { placements, summary, carry: carryOut };
 }
 
+/** Shared runs, plus the caller's own what-if runs; other people's what-if runs stay private. */
 export async function listRuns(db: Database, session: Session | null) {
   assertCan(session, "staff");
+  const me = await ensureUser(db, session);
   const rows = await db
-    .select({ id: simulationRuns.id, inductionId: simulationRuns.inductionId, kind: simulationRuns.kind, fromRound: simulationRuns.fromRound, status: simulationRuns.status, rulesOrigin: simulationRuns.rulesOrigin, policy: simulationRuns.policy, summary: simulationRuns.summary, createdBy: simulationRuns.createdBy, createdAt: simulationRuns.createdAt, finishedAt: simulationRuns.finishedAt })
+    .select({ id: simulationRuns.id, inductionId: simulationRuns.inductionId, kind: simulationRuns.kind, fromRound: simulationRuns.fromRound, status: simulationRuns.status, rulesOrigin: simulationRuns.rulesOrigin, policy: simulationRuns.policy, summary: simulationRuns.summary, createdBy: simulationRuns.createdBy, createdAt: simulationRuns.createdAt, finishedAt: simulationRuns.finishedAt, ownerUserId: simulationRuns.ownerUserId, baseRunId: simulationRuns.baseRunId })
     .from(simulationRuns)
+    .where(or(isNull(simulationRuns.ownerUserId), eq(simulationRuns.ownerUserId, me.id)))
     .orderBy(desc(simulationRuns.createdAt))
     .limit(50);
   return rows.map((r) => ({ ...r, summary: r.summary as RunSummary | null }));
 }
 
+/** A run the caller may see: a shared run (staff), or their own what-if run (anyone signed in). */
 export async function getRun(db: Database, session: Session | null, id: string) {
-  assertCan(session, "staff");
+  assertCan(session, "portal");
   const [r] = await db.select().from(simulationRuns).where(eq(simulationRuns.id, id)).limit(1);
-  return r ? { ...r, summary: r.summary as RunSummary | null } : null;
+  if (!r) return null;
+  if (r.ownerUserId ? r.ownerUserId !== (await ensureUser(db, session)).id : !can(session, "staff")) return null;
+  return { ...r, summary: r.summary as RunSummary | null };
 }
 
 /** Runs that were queued or running when the server stopped: mark them failed so they can be re-run. */

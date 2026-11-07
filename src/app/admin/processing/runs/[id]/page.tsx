@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { Badge } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Notice } from "@/components/ui/notice";
@@ -46,6 +47,19 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
       <Badge tone="simulated">Simulated — not an official result</Badge>
       {run.status === "queued" || run.status === "running" ? <Refresh /> : null}
       {run.status === "failed" ? <Notice tone="warning" title="The run failed">{run.error}</Notice> : null}
+      {run.ownerUserId ? (
+        <Notice title="What-if run, private to you">
+          {s?.consentChanges ? `${s.consentChanges} consent change${s.consentChanges > 1 ? "s" : ""} from the official consent` : "No consent changes"}
+          {run.baseRunId ? ", starting from a simulated list (its consent counts as Awaited unless changed)." : "."}
+        </Notice>
+      ) : null}
+      {run.status === "done" ? (
+        <div>
+          <ButtonLink href={`/admin/processing/consent?induction=${run.inductionId}&base=run:${run.id}`} variant="secondary" size="sm">
+            What if… (change consent on this simulated round {run.kind === "next_round" ? run.fromRound! + 1 : 1})
+          </ButtonLink>
+        </div>
+      ) : null}
 
       {s ? (
         <>
