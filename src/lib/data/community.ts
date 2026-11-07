@@ -34,6 +34,7 @@ import {
 } from "@/lib/domain/community";
 import { UserFacingError } from "@/lib/errors";
 import { requireReason, writeAudit, type Db } from "./shared";
+import { assertFeature } from "./settings";
 import { mayPost } from "./candidates";
 import { autoFollow, isFollowing, notifyFollowers, notifyUser } from "./notifications";
 import { assertSnippetExists, snippetFigures } from "./snippets";
@@ -249,6 +250,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
 
 export async function createThread(db: Database, session: Session | null, input: { topic: Topic; title: string; body: string; snippet?: Snippet | null; poll?: PollInput | null }) {
   assertCan(session, "portal");
+  await assertFeature(db, session, "community");
   const v = threadInputSchema.parse(input);
   const poll = input.poll ? pollInputSchema.parse(input.poll) : null;
   const snippet = input.snippet ? snippetSchema.parse(input.snippet) : null;
@@ -275,6 +277,7 @@ export async function createThread(db: Database, session: Session | null, input:
 
 export async function replyToThread(db: Database, session: Session | null, input: { threadId: string; body: string; snippet?: Snippet | null }) {
   assertCan(session, "portal");
+  await assertFeature(db, session, "community");
   const v = replyInputSchema.parse(input);
   const snippet = input.snippet ? snippetSchema.parse(input.snippet) : null;
   return db.transaction(async (tx) => {
@@ -379,6 +382,7 @@ async function readPoll(db: Db, threadId: string, userId: string, isMod: boolean
 /** Vote, or change your vote, while the poll is open. Needs a verified record or a staff role. */
 export async function votePoll(db: Database, session: Session | null, input: { threadId: string; optionId: number }) {
   assertCan(session, "portal");
+  await assertFeature(db, session, "community");
   return db.transaction(async (tx) => {
     const me = await ensureUser(tx, session);
     if (!(await mayPost(tx, session))) throw new UserFacingError("Voting opens once your account is linked to your merit record. Verify it on your profile.");

@@ -7,6 +7,7 @@ import { allocationKey, isConsentStatus, officialStatuses, type ConsentStatus, t
 import { UserFacingError } from "@/lib/errors";
 import { verifiedApplicant } from "./candidates";
 import { getRun, officialReplies, publishedRound, queueRun, runList, toListAllocations, type RunSummary } from "./simulation";
+import { assertFeature } from "./settings";
 import { ensureUser } from "./users";
 
 /**
@@ -33,6 +34,7 @@ type Actor = { userId: string; staff: boolean; applicantId: string | null };
 
 async function actor(db: Database, session: Session | null): Promise<Actor> {
   assertCan(session, "portal");
+  await assertFeature(db, session, "simulation");
   const me = await ensureUser(db, session);
   const staff = can(session, "staff");
   const applicantId = await verifiedApplicant(db, me.id);

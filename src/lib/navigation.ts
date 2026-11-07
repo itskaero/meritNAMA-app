@@ -230,7 +230,7 @@ export const adminSections: Section[] = [
     group: "System",
     icon: "settings",
     label: "Team & roles",
-    description: "Who is on the team and what each person may do.",
+    description: "Who is on the team and what each person may do; candidate feature switches, data retention and backups.",
     milestone: "Delivery 3 · Admin MVP",
     planned: ["Feature toggles", "Data retention", "Backup status"],
   },

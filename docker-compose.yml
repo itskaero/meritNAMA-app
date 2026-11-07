@@ -47,6 +47,7 @@ services:
       APP_URL: ${APP_URL:-http://localhost:3000}
       PUBLIC_SITE_ORIGIN: ${PUBLIC_SITE_ORIGIN:-}
       APP_STORAGE_DIR: /app/storage
+      APP_BACKUP_DIR: /app/backups
       SMTP_URL: ${SMTP_URL:?set SMTP_URL in .env (sign-in links are emailed)}
       MAIL_FROM: ${MAIL_FROM:-}
       OWNER_EMAILS: ${OWNER_EMAILS:-}
@@ -55,6 +56,8 @@ services:
       CANDIDATE_INDEX_SECRET: ${CANDIDATE_INDEX_SECRET:?set CANDIDATE_INDEX_SECRET in .env}
     volumes:
       - ${MERITNAMA_DATA_DIR:-./var}/storage:/app/storage
+      # Read-only: the app only reports on backups (Team & roles); scripts/backup.sh writes them.
+      - ${MERITNAMA_DATA_DIR:-./var}/backups:/app/backups:ro
     ports:
       # Loopback only. Expose through a reverse proxy with HTTPS (see docs/DEPLOYMENT.md).
       - "127.0.0.1:${APP_PORT:-3000}:3000"

@@ -54,10 +54,16 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
         </Notice>
       ) : null}
       {run.status === "done" ? (
-        <div>
+        <div className="flex flex-wrap gap-2">
           <ButtonLink href={`/admin/processing/consent?induction=${run.inductionId}&base=run:${run.id}`} variant="secondary" size="sm">
             What if… (change consent on this simulated round {run.kind === "next_round" ? run.fromRound! + 1 : 1})
           </ButtonLink>
+          {run.ownerUserId ? null : (
+            <>
+              <ButtonLink href={`/admin/processing/runs/${run.id}/export?format=csv`} variant="ghost" size="sm" prefetch={false}>Download list (CSV)</ButtonLink>
+              <ButtonLink href={`/admin/processing/runs/${run.id}/export?format=json`} variant="ghost" size="sm" prefetch={false}>Download with inputs (JSON)</ButtonLink>
+            </>
+          )}
         </div>
       ) : null}
 

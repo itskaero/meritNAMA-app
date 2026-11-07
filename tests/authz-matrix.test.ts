@@ -39,6 +39,7 @@ const NO_SESSION = new Set([
   "notifications#parseFollowTarget", "notifications#autoFollow", "notifications#notifyFollowers", "notifications#notifyUser",
   "predictions#inductionRunning",
   "public#landingFigures",
+  "settings#loadFeatures", "settings#loadRetention", "settings#retentionIfDue",
   "shared#requireReason", "shared#writeAudit",
   "simulation#importProblem", "simulation#runList", "simulation#toListAllocations", "simulation#officialReplies", "simulation#publishedRound", "simulation#executeRun", "simulation#failInterruptedRuns",
   "snippets#assertSnippetExists", "snippets#snippetFigures", "snippets#snippetChoices",

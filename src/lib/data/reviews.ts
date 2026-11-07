@@ -9,6 +9,7 @@ import { UserFacingError } from "@/lib/errors";
 import { mayPost } from "./candidates";
 import { voteCount } from "./community";
 import { notifyFollowers } from "./notifications";
+import { assertFeature } from "./settings";
 import { ensureUser } from "./users";
 
 /**
@@ -29,6 +30,7 @@ const allocatedHere = sql<boolean>`exists (
 /** Write or update your review of a hospital (optionally one speciality there). */
 export async function saveReview(db: Database, session: Session | null, input: ReviewInput) {
   assertCan(session, "portal");
+  await assertFeature(db, session, "community");
   const v = reviewInputSchema.parse(input);
   const specialityId = v.specialityId ?? null;
   return db.transaction(async (tx) => {

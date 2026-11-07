@@ -15,6 +15,8 @@ export const envSchema = z
     PUBLIC_SITE_ORIGIN: z.url().optional(),
     /** Mounted persistent directory for approved data files and generated reports. */
     APP_STORAGE_DIR: z.string().min(1).default("./var/storage"),
+    /** Where scripts/backup.sh writes (mounted read-only into the app), for the backup status on Team & roles. */
+    APP_BACKUP_DIR: z.string().min(1).default("./var/backups"),
     /**
      * DEVELOPMENT ONLY. Pretend a user with this role is signed in so the guarded
      * routes can be built before real authentication exists. Rejected in production.

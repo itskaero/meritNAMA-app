@@ -22,7 +22,7 @@ import {
   simulationRuns,
   specialities,
 } from "@/lib/db/schema";
-import { applyCorrections, type Correction } from "@/lib/domain/corrections";
+import { applyCorrections, toCsv, type Correction } from "@/lib/domain/corrections";
 import { compareRounds, groupKey, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
 import { consentRows, officialStatuses, type ConsentStatus, type ListAllocation, type OfficialReply } from "@/lib/domain/what-if";
@@ -896,4 +896,38 @@ export async function firstRoundImpact(db: Database, session: Session | null, in
     topChanges: changes.slice(0, 25),
     ms: Date.now() - started,
   };
+}
+
+// ── Run outputs (downloads) ────────────────────────────────────────────────────
+
+/**
+ * A finished shared run as a file: the simulated list, plus (JSON) what it was run
+ * with, so each download is a self-describing version of the output. What-if runs
+ * stay private to their owner and are not exported here.
+ */
+export async function runOutput(db: Database, session: Session | null, input: { id: string; format: "csv" | "json" }): Promise<{ filename: string; body: string; type: string }> {
+  assertCan(session, "data.edit");
+  const [run] = await db.select().from(simulationRuns).where(eq(simulationRuns.id, input.id)).limit(1);
+  if (!run || run.ownerUserId) throw new UserFacingError("That run does not exist.");
+  if (run.status !== "done") throw new UserFacingError("The run has not finished.");
+  const rows = await db.select().from(simulationPlacements).where(eq(simulationPlacements.runId, run.id))
+    .orderBy(asc(simulationPlacements.program), asc(simulationPlacements.quota), asc(simulationPlacements.speciality), asc(simulationPlacements.hospital), desc(simulationPlacements.mark));
+  const roundNo = run.kind === "next_round" ? run.fromRound! + 1 : 1;
+  const stamp = (run.finishedAt ?? run.createdAt).toISOString().replace(/[-:]/g, "").slice(0, 15);
+  const base = `induction${run.inductionId}_round${roundNo}_simulated_${stamp}Z_${run.id.slice(0, 8)}`;
+  const placements = rows.map((p) => ({ program: p.program, quota: p.quota, speciality: p.speciality, hospital: p.hospital, preferenceNo: p.preferenceNo, applicantId: p.applicantId, mark: p.mark, track: p.track }));
+  await writeAudit(db, session.email, { action: "simulation.export", entityType: "simulation_run", entityId: run.id, after: { format: input.format, rows: rows.length }, reason: "Run output downloaded" });
+  if (input.format === "csv") {
+    const header = ["program", "quota", "speciality", "hospital", "preference_no", "applicant_id", "mark", "track"];
+    return { filename: `${base}.csv`, type: "text/csv", body: toCsv([header, ...placements.map((p) => [p.program, p.quota, p.speciality, p.hospital, p.preferenceNo, p.applicantId, p.mark, p.track])]) };
+  }
+  const summary = run.summary as RunSummary | null;
+  const doc = {
+    simulated: true,
+    run: { id: run.id, induction: run.inductionId, round: roundNo, kind: run.kind, fromRound: run.fromRound, baseRunId: run.baseRunId, createdBy: run.createdBy, createdAt: run.createdAt, finishedAt: run.finishedAt },
+    inputs: { datasetImportedAt: run.datasetImportedAt, rulesOrigin: run.rulesOrigin, policy: run.policy, rules: run.rules, consentChanges: summary?.consentChanges ?? 0 },
+    summary: summary ? { candidates: summary.candidates, eligible: summary.eligible, placed: summary.placed, byProgram: summary.byProgram, agreementWithPublished: summary.comparison?.agreement ?? null } : null,
+    placements,
+  };
+  return { filename: `${base}.json`, type: "application/json", body: JSON.stringify(doc, null, 2) + "\n" };
 }

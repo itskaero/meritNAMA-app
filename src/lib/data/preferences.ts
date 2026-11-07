@@ -11,6 +11,7 @@ import { myMerit } from "./candidates";
 import { computeOptions, finderOptions, listShortlist } from "./finder";
 import { inductionRunning, predictRound } from "./predictions";
 import type { Db } from "./shared";
+import { assertFeature } from "./settings";
 import { ensureUser } from "./users";
 
 /**
@@ -48,6 +49,7 @@ export async function listMyLists(db: Database, session: Session | null) {
 
 export async function createList(db: Database, session: Session | null, input: { name: string; program: string; quota: string; fromShortlist?: boolean }) {
   assertCan(session, "portal");
+  await assertFeature(db, session, "planner");
   const name = nameSchema.parse(input.name), program = textSchema.parse(input.program), quota = textSchema.parse(input.quota);
   const shortlist = input.fromShortlist ? (await listShortlist(db, session)).filter((s) => s.program === program && s.quota === quota) : [];
   return db.transaction(async (tx) => {
@@ -75,6 +77,7 @@ export async function renameList(db: Database, session: Session | null, input: {
 
 export async function duplicateList(db: Database, session: Session | null, id: string) {
   assertCan(session, "portal");
+  await assertFeature(db, session, "planner");
   return db.transaction(async (tx) => {
     const l = await ownList(tx, session, id);
     const [{ n }] = (await tx.select({ n: count() }).from(preferenceLists).where(eq(preferenceLists.userId, l.userId))) as [{ n: number }];
@@ -109,6 +112,7 @@ export async function setListMarks(db: Database, session: Session | null, input:
 
 export async function addItem(db: Database, session: Session | null, input: { id: string; speciality: string; hospital: string }) {
   assertCan(session, "portal");
+  await assertFeature(db, session, "planner");
   const speciality = textSchema.parse(input.speciality), hospital = textSchema.parse(input.hospital);
   return db.transaction(async (tx) => {
     const l = await ownList(tx, session, input.id);

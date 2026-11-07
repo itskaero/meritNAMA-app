@@ -13,7 +13,7 @@ import { importMeritRound } from "@/lib/data/merit";
 import { createPolicyDraft } from "@/lib/data/policies";
 import { importSeatFile } from "@/lib/data/reference-data";
 import { createRulesDraft } from "@/lib/data/allocation-rules";
-import { candidateSimRecord, executeRun, firstRoundImpact, importSimulationDataset, queueFirstRoundRun } from "@/lib/data/simulation";
+import { candidateSimRecord, executeRun, firstRoundImpact, importSimulationDataset, queueFirstRoundRun, runOutput } from "@/lib/data/simulation";
 import { DEFAULT_RULES, resolveRules } from "@/lib/engine/rules";
 import * as schema from "@/lib/db/schema";
 import type { MeritRoundFile } from "@/lib/domain/merit-round";
@@ -136,6 +136,15 @@ describe.skipIf(!url)("candidate records and corrections (integration)", () => {
     const placed = await db.select().from(schema.simulationPlacements).where(eq(schema.simulationPlacements.runId, runId));
     expect(placed.find((x) => x.applicantId === "610000")?.mark).toBeGreaterThanOrEqual(99);
     expect(placed.some((x) => x.applicantId === "610019")).toBe(false);
+
+    // The run's own output, as a versioned download.
+    await expect(runOutput(db, verifier, { id: runId, format: "csv" })).rejects.toThrow("forbidden");
+    const out = await runOutput(db, editor, { id: runId, format: "csv" });
+    expect(out.filename).toMatch(new RegExp(`^induction${IND}_round1_simulated_\\d{8}T\\d{6}Z_${runId.slice(0, 8)}\\.csv$`));
+    expect(out.body.split("\r\n").length - 2).toBe(placed.length);
+    const json = JSON.parse((await runOutput(db, editor, { id: runId, format: "json" })).body);
+    expect(json).toMatchObject({ simulated: true, run: { induction: IND, round: 1 }, inputs: { rulesOrigin: "default", policy: "1995 v1" } });
+    expect(json.placements).toHaveLength(placed.length);
 
     const csv = (await exportRecordsCsv(db, verifier, IND)).csv;
     expect(csv.split("\r\n")[0]).toMatch(/^applicant_id,base_marks,program_marks:/);

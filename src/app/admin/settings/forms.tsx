@@ -6,7 +6,8 @@ import { cn } from "@/components/ui/cn";
 import { ActionResult, Field, fieldClass, ReasonField } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, ROLES, type Role } from "@/lib/auth/roles";
-import { setRoleAction } from "./actions";
+import { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
+import { applyRetentionAction, setFeaturesAction, setRetentionAction, setRoleAction } from "./actions";
 
 /** Give someone a role by email (works before their first sign-in). */
 export function AddMemberForm() {
@@ -50,6 +51,65 @@ export function RoleRow({ email, role, isMe }: { email: string; role: Role; isMe
       <input id={`reason-${email}`} name="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason" className={cn(fieldClass, "h-9 py-1")} />
       <Button type="submit" size="sm" variant="secondary" disabled={pending || next === role || !reason.trim()}>Save</Button>
       {state.status !== "idle" ? <p role={state.status === "error" ? "alert" : "status"} className={cn("text-xs sm:col-span-4", state.status === "error" ? "text-danger" : "text-success")}>{state.message}</p> : null}
+    </form>
+  );
+}
+
+/** Switch candidate features on or off. */
+export function FeaturesForm({ flags }: { flags: FeatureFlags }) {
+  const [res, action, pending] = useActionState(setFeaturesAction, idleState);
+  const [on, setOn] = useState(flags);
+  const changed = (Object.keys(flags) as Feature[]).some((k) => flags[k] !== on[k]);
+  return (
+    <form action={action} className="grid gap-3">
+      <ul className="grid gap-2">
+        {(Object.keys(FEATURES) as Feature[]).map((k) => (
+          <li key={k}>
+            <label className="flex items-start gap-3 rounded-xl bg-canvas p-3 text-sm">
+              <input type="checkbox" name={`f_${k}`} value="1" checked={on[k]} onChange={(e) => setOn({ ...on, [k]: e.target.checked })} className="mt-0.5 h-4 w-4 accent-[var(--color-signal)]" />
+              <span className="grid gap-0.5">
+                <span className="font-medium">{FEATURES[k].label} <span className={on[k] ? "text-success" : "text-amber"}>· {on[k] ? "on" : "off"}</span></span>
+                <span className="text-xs text-muted">{FEATURES[k].description}</span>
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      <ReasonField placeholder="e.g. Pause the community during result week" />
+      <div><Button type="submit" disabled={pending || !changed}>Save switches</Button></div>
+      <ActionResult state={res} />
+    </form>
+  );
+}
+
+/** How long short-lived data is kept. */
+export function RetentionForm({ days }: { days: Retention }) {
+  const [res, action, pending] = useActionState(setRetentionAction, idleState);
+  const [v, setV] = useState<Record<RetentionKey, string>>(Object.fromEntries(Object.entries(days).map(([k, n]) => [k, String(n)])) as Record<RetentionKey, string>);
+  return (
+    <form action={action} className="grid gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(Object.keys(RETENTION) as RetentionKey[]).map((k) => (
+          <Field key={k} label={RETENTION[k].label} hint={`${RETENTION[k].min}–${RETENTION[k].max} days · default ${RETENTION[k].default}`}>
+            {(id) => <input id={id} name={`r_${k}`} value={v[k]} onChange={(e) => setV({ ...v, [k]: e.target.value })} inputMode="numeric" className={cn(fieldClass, "max-w-32")} />}
+          </Field>
+        ))}
+      </div>
+      <ReasonField placeholder="e.g. Keep proof documents for one induction cycle" />
+      <div><Button type="submit" disabled={pending}>Save periods</Button></div>
+      <ActionResult state={res} />
+    </form>
+  );
+}
+
+/** Remove what is past its retention period, now. */
+export function ApplyRetentionForm({ pending: due }: { pending: number }) {
+  const [res, action, pending] = useActionState(applyRetentionAction, idleState);
+  return (
+    <form action={action} className="grid gap-3">
+      <ReasonField placeholder="e.g. Clean-up before the NAS backup" />
+      <div><Button type="submit" variant="secondary" disabled={pending || !due}>Remove {due.toLocaleString("en-US")} item{due === 1 ? "" : "s"} now</Button></div>
+      <ActionResult state={res} />
     </form>
   );
 }

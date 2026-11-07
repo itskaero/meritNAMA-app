@@ -8,7 +8,10 @@ import { requireSection } from "@/lib/auth/session";
 import { listTeam } from "@/lib/data/team";
 import { getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
-import { AddMemberForm, RoleRow } from "./forms";
+import { Badge } from "@/components/ui/badge";
+import { backupStatus, featureFlags, retentionPreview, retentionSettings, RETENTION, type RetentionKey } from "@/lib/data/settings";
+import { formatUtc } from "@/lib/format";
+import { AddMemberForm, ApplyRetentionForm, FeaturesForm, RetentionForm, RoleRow } from "./forms";
 
 export const metadata = { title: "Team & roles" };
 export const dynamic = "force-dynamic";
@@ -28,7 +31,15 @@ export default async function TeamPage() {
   const frame = { area: "admin" as const, trail: [{ label: s.label }], title: s.label, description: s.description };
   const down = await whenDatabaseDown(frame);
   if (down) return down;
-  const team = await listTeam(getDb(), session);
+  const db = getDb();
+  const team = await listTeam(db, session);
+  const flags = await featureFlags(db, session);
+  const retention = await retentionSettings(db, session);
+  const due = await retentionPreview(db, session);
+  const dueTotal = Object.values(due).reduce((a, b) => a + b, 0);
+  const backups = await backupStatus(session);
+  const newest = backups.backups.find((b) => b.database);
+  const mb = (n: number) => `${(n / 1_048_576).toFixed(n < 10_485_760 ? 1 : 0)} MB`;
 
   return (
     <AreaPage {...frame}>
@@ -59,6 +70,56 @@ export default async function TeamPage() {
           </Card>
         </div>
       </div>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <Card>
+          <CardHeader title="Candidate features" description="Switch a feature off to hide it from candidates and refuse their changes to it (their data is kept). Staff keep access, to try it before switching it back on." />
+          <FeaturesForm flags={flags} />
+        </Card>
+        <Card>
+          <CardHeader
+            title="Backups"
+            description={backups.readable ? `scripts/backup.sh writes to ${backups.dir}. Schedule it daily and copy each backup off the NAS.` : `The app cannot read ${backups.dir}. Mount the backups folder read-only into the app (see docs/DEPLOYMENT.md).`}
+            action={<Badge tone={backups.state === "ok" ? "success" : backups.state === "stale" ? "warning" : "danger"}>{backups.state === "ok" ? "up to date" : backups.state === "stale" ? "more than a day old" : backups.state === "missing" ? "no backup yet" : "not visible"}</Badge>}
+          />
+          {newest ? (
+            <p className="mb-3 text-sm">Latest: <span className="font-mono">{formatUtc(newest.at)} UTC</span> · {mb(newest.bytes)}</p>
+          ) : null}
+          {backups.backups.length ? (
+            <ul className="divide-y divide-line text-sm">
+              {backups.backups.map((b) => (
+                <li key={b.name} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <span className="font-mono text-xs">{b.name}</span>
+                  <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                    {mb(b.bytes)}
+                    {b.database ? <Badge tone="success">database</Badge> : <Badge tone="danger">no database dump</Badge>}
+                    {b.storage ? <Badge>files</Badge> : null}
+                    {b.checksums ? <Badge>checksums</Badge> : <Badge tone="warning">no checksums</Badge>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : backups.readable ? <p className="text-sm text-muted">No backups found. Run scripts/backup.sh on the NAS.</p> : null}
+          <p className="mt-3 text-xs text-subtle">The app cannot see off-site copies; check those where they are kept.</p>
+        </Card>
+      </div>
+      <Card>
+        <CardHeader
+          title="Data retention"
+          description={`Short-lived data is removed once a day, after a staff page loads. The audit history, merit data and accounts are never removed here. ${retention.lastRun ? `Last run ${formatUtc(retention.lastRun)} UTC.` : "Not run yet."}`}
+        />
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+          <RetentionForm days={retention.days} />
+          <div className="grid content-start gap-3">
+            <p className="text-sm font-medium">Past its period now</p>
+            <ul className="grid gap-1.5 text-sm">
+              {(Object.keys(RETENTION) as RetentionKey[]).map((k) => (
+                <li key={k} className="flex justify-between gap-3"><span className="text-muted">{RETENTION[k].label}</span><span className="font-mono tabular-nums">{due[k].toLocaleString("en-US")}</span></li>
+              ))}
+            </ul>
+            <ApplyRetentionForm pending={dueTotal} />
+          </div>
+        </div>
+      </Card>
       <Card>
         <CardHeader title="What each role can do" />
         <div className="relative overflow-x-auto rounded-2xl border border-line">
