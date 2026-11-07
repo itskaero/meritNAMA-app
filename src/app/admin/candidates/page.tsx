@@ -68,7 +68,7 @@ export default async function AdminCandidatesPage({ searchParams }: { searchPara
               <li key={r.id} className="flex flex-wrap items-center gap-2 py-2.5">
                 <span className="font-mono">{r.applicantId}</span>
                 <Badge tone={r.status === "verified" ? "success" : "danger"}>{r.status === "verified" ? "Verified" : "Rejected"}</Badge>
-                <span className="text-muted">{r.method === "email" ? "matched by email" : `by ${r.reviewedBy}`}</span>
+                <span className="text-muted">{r.method === "email" ? "matched by email" : r.reviewedBy ? `by ${r.reviewedBy}` : "by a verifier"}</span>
                 <span className="text-subtle">{r.email} · {formatUtc(r.reviewedAt)}{r.reason ? ` · ${r.reason}` : ""}</span>
               </li>
             ))}
