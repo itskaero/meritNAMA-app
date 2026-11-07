@@ -34,13 +34,15 @@ function DeltaBadge({ d }: { d: Delta }) {
 }
 
 /** Headline numbers that count up and rise in, staggered, with an optional change badge. */
+const XL_COLS: Record<number, string> = { 1: "xl:grid-cols-1", 2: "xl:grid-cols-2", 3: "xl:grid-cols-3", 4: "xl:grid-cols-4" };
+
 export function StatTiles({ stats }: { stats: Stat[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${XL_COLS[Math.min(stats.length, 4)] ?? "xl:grid-cols-4"}`}>
       {stats.map((s, i) => (
-        <section key={s.label} className="mn-rise min-w-0 rounded-xl border border-line bg-surface p-5" style={{ animationDelay: `${i * 70}ms` }}>
+        <section key={s.label} className="mn-rise min-w-0 rounded-xl border border-line bg-surface p-4 shadow-[var(--mn-shadow-1)] sm:p-5" style={{ animationDelay: `${i * 70}ms` }}>
           <p className="text-xs text-muted">{s.label}</p>
-          <p className="mt-3 font-display text-4xl font-extrabold tracking-tight [font-stretch:110%]">
+          <p className="mt-2 text-[1.7rem] font-semibold tracking-tight text-heading tabular-nums sm:text-[2.1rem]">
             {s.format ? <span className="tabular-nums">{s.format(s.value)}</span> : <CountUp value={s.value} />}
           </p>
           {s.delta ? <DeltaBadge d={s.delta} /> : null}

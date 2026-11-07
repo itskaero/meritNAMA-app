@@ -94,14 +94,23 @@ higher-resolution photography when available by swapping the files and updating
 - Accessibility: axe-core over 31 pages, light and dark, desktop and phone width: no
   findings and no sideways scrolling (Nov 2026).
 
+## Dashboard
+
+The candidate dashboard (`src/app/portal/page.tsx`) leads with the person: their latest
+marks, seat and that seat's closing merit (or how to link their record). Beside it, the
+current induction: cycle dates, published rounds as links, and the cycle gauge only
+while the cycle runs. Then the round's figures (the accepted-seats tile is left out when
+a list was published without consent), median closing merit by round against the
+previous induction, the latest round's movements in their own programme and quota,
+what their marks reach (safe, borderline and out, with the highest-closing options),
+who is still moving, and where every figure comes from. Each block says whether its
+figures are published, calculated or an estimate.
+
 ## Next increments
 
-1. Dashboard reordered around the candidate: their merit, the current induction's
-   round status, closing merit history and movement first; the cycle gauge collapses to
-   a line once a cycle closes; zero-value tiles are hidden.
-2. Sortable columns and a sticky filter bar on the long tables (finder, round lists,
+1. Sortable columns and a sticky filter bar on the long tables (finder, round lists,
    candidate records), with grouped, collapsible results.
-3. Source and date captions on every chart, using the provenance badges.
-4. Page tabs on the long detail pages (induction, hospital, speciality).
-5. Allocation rules edited as a form instead of JSON.
-6. Loading skeletons matched to each page's layout.
+2. Source and date captions on every chart, using the provenance badges.
+3. Page tabs on the long detail pages (induction, hospital, speciality).
+4. Allocation rules edited as a form instead of JSON.
+5. Loading skeletons matched to each page's layout.

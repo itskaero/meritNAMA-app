@@ -8,12 +8,12 @@ export function Card({ children, className, id }: { children: ReactNode; classNa
 
 export function CardHeader({ title, action, description }: { title: ReactNode; action?: ReactNode; description?: ReactNode }) {
   return (
-    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-      <div className="min-w-0">
+    <div className="mb-4 flex items-start justify-between gap-x-4">
+      <div className="min-w-0 flex-1">
         <h2 className="text-[0.98rem] font-semibold text-heading">{title}</h2>
         {description ? <p className="mt-1 max-w-3xl text-sm text-muted">{description}</p> : null}
       </div>
-      {action}
+      {action ? <div className="flex flex-none flex-wrap justify-end gap-2">{action}</div> : null}
     </div>
   );
 }

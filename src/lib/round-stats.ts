@@ -13,9 +13,11 @@ export function latestRoundStats(change: { induction: number; now: RoundRow; bef
   const d = (a: number | null, b: number | null | undefined) => (before && a != null && b != null ? a - b : undefined);
   const mk = (value: number | undefined, better: "up" | "down" | "neutral", format?: (v: number) => string) =>
     value === undefined ? undefined : { value, label: vs, better, format };
-  return [
+  // A list published without consent replies reads 0 accepted: leave the tile out rather than show a misleading zero.
+  const consentKnown = now.accepted > 0 || (before?.accepted ?? 0) > 0;
+  const stats: (Stat | null)[] = [
     { label: `Induction ${induction} · round ${now.roundNo} allocations`, value: now.allocations, delta: mk(d(now.allocations, before?.allocations), "neutral") },
-    { label: "Accepted seats", value: now.accepted, delta: mk(d(now.accepted, before?.accepted), "up") },
+    consentKnown ? { label: "Accepted seats", value: now.accepted, delta: mk(d(now.accepted, before?.accepted), "up") } : null,
     // Fewer candidates holding seats between rounds is normal (they decline and leave), so not marked good or bad.
     { label: "Candidates with a seat", value: now.applicants, delta: mk(d(now.applicants, before?.applicants), "neutral") },
     {
@@ -25,4 +27,5 @@ export function latestRoundStats(change: { induction: number; now: RoundRow; bef
       delta: mk(d(now.medianClosing, before?.medianClosing), "down", (v) => v.toFixed(2)),
     },
   ];
+  return stats.filter((x): x is Stat => x !== null);
 }
