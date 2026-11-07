@@ -8,11 +8,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
 import { candidateRecord, duplicateGroups, exportRecordsCsv, revokeCorrection, searchRecords } from "@/lib/data/candidate-records";
 import { indexCandidates } from "@/lib/data/candidates";
-import { getChange, proposeCorrections, publishChange, rollbackChange } from "@/lib/data/changes";
+import { getChange, proposeCorrections, proposeRulesActivation, publishChange, rollbackChange } from "@/lib/data/changes";
 import { importMeritRound } from "@/lib/data/merit";
 import { createPolicyDraft } from "@/lib/data/policies";
 import { importSeatFile } from "@/lib/data/reference-data";
-import { candidateSimRecord, executeRun, importSimulationDataset, queueFirstRoundRun } from "@/lib/data/simulation";
+import { createRulesDraft } from "@/lib/data/allocation-rules";
+import { candidateSimRecord, executeRun, firstRoundImpact, importSimulationDataset, queueFirstRoundRun } from "@/lib/data/simulation";
+import { DEFAULT_RULES, resolveRules } from "@/lib/engine/rules";
 import * as schema from "@/lib/db/schema";
 import type { MeritRoundFile } from "@/lib/domain/merit-round";
 
@@ -50,6 +52,8 @@ describe.skipIf(!url)("candidate records and corrections (integration)", () => {
     await db.delete(schema.inductionSeats).where(eq(schema.inductionSeats.inductionId, IND));
     await db.delete(schema.inductions).where(eq(schema.inductions.id, IND));
     await db.delete(schema.scoringPolicies).where(eq(schema.scoringPolicies.policyKey, "1995"));
+    await db.delete(schema.stagedChanges).where(eq(schema.stagedChanges.target, `rules:${IND}`));
+    await db.delete(schema.allocationRules).where(eq(schema.allocationRules.inductionId, IND));
   };
 
   beforeAll(async () => {
@@ -152,5 +156,26 @@ describe.skipIf(!url)("candidate records and corrections (integration)", () => {
     await revokeCorrection(db, verifier, { id: r.corrections[0]!.id, reason: "entered on the wrong applicant" });
     await expect(revokeCorrection(db, verifier, { id: r.corrections[0]!.id, reason: "again" })).rejects.toThrow(/already/);
     expect((await candidateSimRecord(db, verifier, { induction: IND, applicantId: "610005" }))!.effective.programMarks[program]).toBe(2);
+  });
+
+  it("previews what a rules change does to round 1", async () => {
+    const policy = { ...policies["2026"], induction: IND };
+    const same = await firstRoundImpact(db, moderator, { induction: IND, next: resolveRules(DEFAULT_RULES, policy) });
+    expect(same.status).toBe("same");
+    expect((await firstRoundImpact(db, moderator, { induction: 970_001, next: resolveRules(DEFAULT_RULES, policy) })).status).toBe("no_data");
+
+    // Without the certificate bonus everyone loses their 2 programme marks: same seats, lower closing merit.
+    const noBonus = { ...DEFAULT_RULES, certificateBonus: { ...DEFAULT_RULES.certificateBonus, enabled: false } };
+    const impact = await firstRoundImpact(db, moderator, { induction: IND, next: resolveRules(noBonus, policy) });
+    expect(impact).toMatchObject({ status: "computed", candidates: 20, moved: 0, gained: 0, lost: 0 });
+    if (impact.status !== "computed") throw new Error("not computed");
+    expect(impact.groupsChanged).toBeGreaterThan(0);
+    expect(impact.topChanges[0]!.from! - impact.topChanges[0]!.to!).toBeCloseTo(2);
+    expect(JSON.stringify(impact)).not.toMatch(/6100\d\d/);
+
+    const draft = await createRulesDraft(db, owner, { induction: IND, definition: noBonus, reason: "try without bonus" });
+    const p = await proposeRulesActivation(db, owner, { id: draft.id, reason: "see the effect" });
+    const change = (await getChange(db, moderator, (p as { changeId: string }).changeId))!;
+    expect((change.preview as { impact: { status: string; groupsChanged: number } }).impact).toMatchObject({ status: "computed", groupsChanged: impact.groupsChanged });
   });
 });

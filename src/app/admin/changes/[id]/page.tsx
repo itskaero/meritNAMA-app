@@ -4,10 +4,12 @@ import { ActionBar } from "@/components/ui/action-bar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
+import { ImpactPreview } from "@/components/impact-preview";
 import { Notice } from "@/components/ui/notice";
 import { StatusPill } from "@/components/ui/page-header";
 import { requireSection } from "@/lib/auth/session";
 import { getChange, type ChangeKind } from "@/lib/data/changes";
+import type { RulesImpact } from "@/lib/data/simulation";
 import { getDb } from "@/lib/db/client";
 import { profileStatusLabel } from "@/lib/domain/corrections";
 import { formatMarks, formatUtc, isUuid } from "@/lib/format";
@@ -51,6 +53,7 @@ type PolicyPreview = {
   from?: string | null; to?: string; activeFrom?: string; activeTo?: string;
   total: { from: number | null; to: number }; components: { key: string; label: string; from: string; to: string }[];
   keys?: { key: string; state: "new" | "changed" | "unchanged" }[];
+  impacts?: RulesImpact[];
 };
 
 type RulesPreview = {
@@ -58,6 +61,7 @@ type RulesPreview = {
   settings: { setting: string; from: string; to: string }[];
   before: { topic: string; text: string }[] | null; after: { topic: string; text: string }[] | null;
   problem: string | null;
+  impact?: RulesImpact | null;
 };
 
 type CorrectionPreview = {
@@ -175,6 +179,7 @@ function Preview({ kind, preview }: { kind: ChangeKind; preview: unknown }) {
               ]} />
             ) : null}
           </Card>
+          {p.impact ? <ImpactPreview impact={p.impact} /> : null}
           <div className="grid gap-4 lg:grid-cols-2">
             <RulesWords title="Now" lines={p.before} />
             <RulesWords title="After publishing" lines={p.after} />
@@ -207,6 +212,7 @@ function Preview({ kind, preview }: { kind: ChangeKind; preview: unknown }) {
               ]} />
             ) : null}
           </Card>
+          {(p.impacts ?? []).map((i) => <ImpactPreview key={i.induction} impact={i} />)}
         </>
       );
     }

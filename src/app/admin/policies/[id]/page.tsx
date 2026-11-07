@@ -9,6 +9,9 @@ import { isUuid } from "@/lib/format";
 import { getPolicyVersion } from "@/lib/data/policies";
 import { getDb } from "@/lib/db/client";
 import { includedMaxTotal, policyInductions, policySchema } from "@/lib/domain/scoring-policy";
+import { ImpactPreview } from "@/components/impact-preview";
+import { ButtonLink } from "@/components/ui/button";
+import { previewPolicyImpact } from "@/lib/data/changes";
 import { ActivateForm, EditDraftForm } from "../forms";
 
 export const metadata = { title: "Scoring policy version" };
@@ -16,17 +19,19 @@ export const dynamic = "force-dynamic";
 
 export default async function PolicyVersionPage({ params, searchParams }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; impact?: string }>;
 }) {
   await requireSection("/admin/policies");
   const { id } = await params;
-  const { saved } = await searchParams;
+  const { saved, impact } = await searchParams;
   if (!isUuid(id)) notFound();
-  const row = await getPolicyVersion(getDb(), await getSession(), id);
+  const session = await getSession();
+  const row = await getPolicyVersion(getDb(), session, id);
   if (!row) notFound();
 
   const policy = policySchema.parse(row.definition);
   const inductions = policyInductions(policy);
+  const impacts = impact && row.status !== "active" ? await previewPolicyImpact(getDb(), session, id) : null;
 
   return (
     <AreaPage
@@ -46,6 +51,14 @@ export default async function PolicyVersionPage({ params, searchParams }: {
           { label: "All versions", href: "/admin/policies", icon: "list" },
         ]}
       />
+      {row.status === "active" ? null : impacts ? (
+        impacts.length ? impacts.map((i) => <ImpactPreview key={i.induction} impact={i} />) : <Notice title="No simulation data to measure against">None of the inductions this policy covers has simulation data imported.</Notice>
+      ) : (
+        <Card>
+          <CardHeader title="Effect on placement" description="Run round 1 of each covered induction that has simulation data, under the policy in force and under this version, and compare the lists. Takes a few seconds per induction." />
+          <div><ButtonLink href={`/admin/policies/${id}?impact=1`} variant="secondary" size="sm" prefetch={false}>Preview the effect</ButtonLink></div>
+        </Card>
+      )}
       <Card>
         <CardHeader title="Components" description={`Included components sum to ${includedMaxTotal(policy.components)} of ${policy.total_marks}.`} />
         <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">

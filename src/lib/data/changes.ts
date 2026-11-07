@@ -19,7 +19,7 @@ import {
 import { correctionKey, correctionSchema, currentValue, type Correction } from "@/lib/domain/corrections";
 import { meritRoundFileSchema, type MeritRoundFile } from "@/lib/domain/merit-round";
 import { seatFileSchema, seatKey, type SeatRow } from "@/lib/domain/reference-data";
-import { policySchema, scoringPolicyFileSchema, type Policy, type ScoringPolicyFile } from "@/lib/domain/scoring-policy";
+import { policyInductions, policySchema, scoringPolicyFileSchema, type Policy, type ScoringPolicyFile } from "@/lib/domain/scoring-policy";
 import { UserFacingError } from "@/lib/errors";
 import { indexCandidates } from "./candidates";
 import { deleteMeritRound, importMeritRound } from "./merit";
@@ -27,6 +27,7 @@ import { activatePolicyVersion, importScoringPolicyFile } from "./policies";
 import { activateRulesVersion, loadInductionRules, resolveFor, retireActiveRules, rulesBaseline } from "./allocation-rules";
 import { allocationRulesSchema, describeRules, rulesDiff } from "@/lib/engine/rules";
 import { exportSeatFile, importSeatFile } from "./reference-data";
+import { firstRoundImpact, type RulesImpact } from "./simulation";
 import { requireReason, writeAudit, type Db } from "./shared";
 
 /**
@@ -174,6 +175,28 @@ function policyDiff(before: Policy | null, after: Policy) {
   return { total: { from: before?.total_marks ?? null, to: after.total_marks }, label: { from: before?.label ?? null, to: after.label }, induction: after.induction, components: rows };
 }
 
+/**
+ * Round-1 impact of making `policy` the one in force, for each induction it covers
+ * that has simulation data (newest first, at most three: each costs two runs).
+ */
+async function policyImpacts(db: Database, session: Session, policy: Policy): Promise<RulesImpact[]> {
+  const covered = new Set(policyInductions(policy));
+  const withData = (await db.select({ id: simDatasets.inductionId }).from(simDatasets)).map((r) => r.id).filter((i) => covered.has(i)).sort((a, b) => b - a).slice(0, 3);
+  const out: RulesImpact[] = [];
+  for (const induction of withData) {
+    const { resolved, problem } = resolveFor((await loadInductionRules(db, induction)).rules, policy);
+    out.push(resolved ? await firstRoundImpact(db, session, { induction, next: resolved }) : { induction, status: "no_data", reason: problem ?? "The rules cannot be applied under this policy." });
+  }
+  return out;
+}
+
+/** The round-1 impact of a stored policy version, on demand (the version page). */
+export async function previewPolicyImpact(db: Database, session: Session | null, id: string): Promise<RulesImpact[] | null> {
+  assertCan(session, "staff");
+  const [row] = await db.select({ definition: scoringPolicies.definition }).from(scoringPolicies).where(eq(scoringPolicies.id, id)).limit(1);
+  return row ? policyImpacts(db, session, policySchema.parse(row.definition)) : null;
+}
+
 // ── Staging ────────────────────────────────────────────────────────────────────
 
 async function stage(db: Db, session: Session, c: { kind: ChangeKind; target: string; title: string; payload: unknown; preview: unknown; baseline: string; reason: string }) {
@@ -258,7 +281,7 @@ export async function proposeActivation(db: Database, session: Session | null, i
   const id = await stage(db, session, {
     kind: "policy_activate", target: "policy:active", title: `Activate scoring policy ${target.policyKey} v${target.version}`,
     payload: { id: target.id },
-    preview: { from: active ? `${active.policyKey} v${active.version}` : null, to: `${target.policyKey} v${target.version}`, ...policyDiff(before, after) },
+    preview: { from: active ? `${active.policyKey} v${active.version}` : null, to: `${target.policyKey} v${target.version}`, ...policyDiff(before, after), impacts: await policyImpacts(db, session, after) },
     baseline: await policyBaseline(db), reason,
   });
   return { applied: false, changeId: id, message: "Activation staged. Review the differences and publish." };
@@ -285,7 +308,10 @@ export async function proposePolicyFile(db: Database, session: Session | null, i
   const id = await stage(db, session, {
     kind: "policy_file_import", target: "policy:active", title: "Import scoring_policy.json",
     payload: { file },
-    preview: { activeFrom: active.policyKey, activeTo: file.active_policy, keys, ...policyDiff(policySchema.parse(active.definition), file.policies[file.active_policy]!) },
+    preview: {
+      activeFrom: active.policyKey, activeTo: file.active_policy, keys, ...policyDiff(policySchema.parse(active.definition), file.policies[file.active_policy]!),
+      impacts: await policyImpacts(db, session, policySchema.parse(file.policies[file.active_policy])),
+    },
     baseline: await policyBaseline(db), reason,
   });
   return { applied: false, changeId: id, message: "A policy is already active, so this import is staged. Review and publish it." };
@@ -314,6 +340,7 @@ export async function proposeRulesActivation(db: Database, session: Session | nu
       before: current.resolved ? describeRules(current.resolved) : null,
       after: next.resolved ? describeRules(next.resolved) : null,
       problem: next.problem,
+      impact: next.resolved ? await firstRoundImpact(db, session, { induction: target.inductionId, next: next.resolved }) : null,
     },
     baseline: await rulesBaseline(db, target.inductionId), reason,
   });

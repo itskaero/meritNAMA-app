@@ -11,25 +11,30 @@ import { allocationRulesSchema } from "@/lib/engine/rules";
 import { isUuid } from "@/lib/format";
 import { ActivateRulesForm, RulesDraftForm } from "../forms";
 import { RulesSummary } from "../rules-summary";
+import { ImpactPreview } from "@/components/impact-preview";
+import { ButtonLink } from "@/components/ui/button";
+import { firstRoundImpact } from "@/lib/data/simulation";
 
 export const metadata = { title: "Allocation rules version" };
 export const dynamic = "force-dynamic";
 
 export default async function RulesVersionPage({ params, searchParams }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; impact?: string }>;
 }) {
   await requireSection("/admin/rules");
   const { id } = await params;
-  const { saved } = await searchParams;
+  const { saved, impact } = await searchParams;
   if (!isUuid(id)) notFound();
   const db = getDb();
-  const row = await getRulesVersion(db, await getSession(), id);
+  const session = await getSession();
+  const row = await getRulesVersion(db, session, id);
   if (!row) notFound();
 
   const rules = allocationRulesSchema.parse(row.definition);
   const policy = await scoringPolicyForInduction(db, row.inductionId);
   const { resolved, problem } = resolveFor(rules, policy?.definition ?? null);
+  const effect = impact && resolved && row.status !== "active" ? await firstRoundImpact(db, session, { induction: row.inductionId, next: resolved }) : null;
 
   return (
     <AreaPage
@@ -53,6 +58,13 @@ export default async function RulesVersionPage({ params, searchParams }: {
         <CardHeader title="In words" description="How the simulation would run for this induction under this version and its scoring policy." />
         {resolved ? <RulesSummary resolved={resolved} /> : <Notice tone="warning" title="Cannot be applied yet">{problem}</Notice>}
       </Card>
+
+      {row.status === "active" || !resolved ? null : effect ? <ImpactPreview impact={effect} /> : (
+        <Card>
+          <CardHeader title="Effect on placement" description={`Run induction ${row.inductionId}'s round 1 under the rules in force and under this version, and compare the lists. Takes a few seconds.`} />
+          <div><ButtonLink href={`/admin/rules/${id}?impact=1`} variant="secondary" size="sm" prefetch={false}>Preview the effect</ButtonLink></div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Card id="edit">

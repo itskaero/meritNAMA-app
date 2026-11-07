@@ -23,7 +23,7 @@ import {
   specialities,
 } from "@/lib/db/schema";
 import { applyCorrections, type Correction } from "@/lib/domain/corrections";
-import { compareRounds, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
+import { compareRounds, groupKey, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
 import { consentRows, officialStatuses, type ConsentStatus, type ListAllocation, type OfficialReply } from "@/lib/domain/what-if";
 import { acceptedConsent, programmeBansFromRound, runCascade, seatKeyFromParts, trackBansFromRound, type CascadeCandidate, type CascadeConsentRow, type CascadeStats } from "@/lib/engine/cascade";
@@ -511,10 +511,8 @@ type Run = typeof simulationRuns.$inferSelect;
 type Placement = typeof simulationPlacements.$inferInsert;
 const toAllocation = (p: Placement): Allocation => ({ applicantId: p.applicantId, program: p.program, quota: p.quota, speciality: p.speciality, hospital: p.hospital, mark: p.mark });
 
-async function simulateFirstRound(db: Database, run: Run, rules: ResolvedRules, ctx: MarksContext): Promise<{ placements: Placement[]; summary: RunSummary }> {
-  const runId = run.id;
-  const { candidates, unnamed } = await loadEngineCandidates(db, run.inductionId);
-  const lines = await seatLines(db, run.inductionId);
+/** Round 1 under one set of rules: every programme's placement over the seat lines. */
+function placeFirstRound(rules: ResolvedRules, ctx: MarksContext, candidates: EngineCandidate[], lines: SeatLine[], runId: string) {
   const programNames = [...new Set(lines.map((l) => l.typeName))];
   const placements: Placement[] = [];
   const byProgram: RunSummary["byProgram"] = [];
@@ -534,6 +532,14 @@ async function simulateFirstRound(db: Database, run: Run, rules: ResolvedRules, 
         }
     byProgram.push({ program, pool: pool.length, placed, seats });
   }
+  return { placements, byProgram };
+}
+
+async function simulateFirstRound(db: Database, run: Run, rules: ResolvedRules, ctx: MarksContext): Promise<{ placements: Placement[]; summary: RunSummary }> {
+  const runId = run.id;
+  const { candidates, unnamed } = await loadEngineCandidates(db, run.inductionId);
+  const lines = await seatLines(db, run.inductionId);
+  const { placements, byProgram } = placeFirstRound(rules, ctx, candidates, lines, runId);
   const published = await publishedRound(db, run.inductionId, 1);
   const simulated: Allocation[] = placements.map(toAllocation);
   const summary: RunSummary = {
@@ -815,5 +821,79 @@ export async function candidateSimRecord(db: Database, session: Session | null, 
     })),
     consent: consent.map((c) => ({ round: c.roundNo, status: c.status, program: c.program, quota: c.quota, preferenceNo: c.preferenceNo, speciality: c.speciality, hospital: c.hospital })),
     rulesProblem: problem ?? null,
+  };
+}
+
+// ── Impact preview: round 1 under the current rules vs a draft ──────────────────
+
+export type RulesImpact =
+  | { induction: number; status: "no_data"; reason: string }
+  | { induction: number; status: "same"; reason: string }
+  | {
+      induction: number; status: "computed";
+      candidates: number; eligible: { from: number; to: number }; placed: { from: number; to: number };
+      /** Applicants by what happens to their seat(s). */
+      sameSeat: number; moved: number; gained: number; lost: number;
+      groupsChanged: number; groupsTotal: number;
+      topChanges: { group: string; from: number | null; to: number | null }[];
+      ms: number;
+    };
+
+/**
+ * What a change of rules or scoring policy would do to an induction's round 1: the
+ * simulation runs twice over the same imported data, under the rules in force and
+ * under `next`, and the two lists are compared. Aggregates only, no applicant ids.
+ */
+export async function firstRoundImpact(db: Database, session: Session | null, input: { induction: number; next: ResolvedRules }): Promise<RulesImpact> {
+  assertCan(session, "staff");
+  const { induction, next } = input;
+  const [ds] = await db.select({ id: simDatasets.inductionId }).from(simDatasets).where(eq(simDatasets.inductionId, induction)).limit(1);
+  if (!ds) return { induction, status: "no_data", reason: `Induction ${induction} has no simulation data, so the effect on placement cannot be shown.` };
+  const lines = await seatLines(db, induction);
+  if (!lines.length) return { induction, status: "no_data", reason: `Induction ${induction} has no seat matrix, so the effect on placement cannot be shown.` };
+  const current = await loadInductionRules(db, induction);
+  if (!current.resolved) return { induction, status: "no_data", reason: `The rules in force cannot be applied (${current.problem}), so there is nothing to compare with.` };
+  if (JSON.stringify(current.resolved) === JSON.stringify(next)) return { induction, status: "same", reason: "The simulation would run exactly as now: the settings that change do not alter how marks or placement are worked out." };
+
+  const started = Date.now();
+  const ctx = marksContext({ specialtyGroups: await specialtyGroups(db, induction) });
+  const { candidates } = await loadEngineCandidates(db, induction);
+  const before = placeFirstRound(current.resolved, ctx, candidates, lines, "impact").placements;
+  const after = placeFirstRound(next, ctx, candidates, lines, "impact").placements;
+
+  const seatsOf = (rows: Placement[]) => {
+    const m = new Map<string, string>();
+    for (const p of rows) m.set(p.applicantId, [m.get(p.applicantId), groupKey(p)].filter(Boolean).sort().join(" | "));
+    return m;
+  };
+  const a = seatsOf(before), b = seatsOf(after);
+  let sameSeat = 0, moved = 0, gained = 0, lost = 0;
+  for (const id of new Set([...a.keys(), ...b.keys()])) {
+    const x = a.get(id), y = b.get(id);
+    if (x && y) x === y ? sameSeat++ : moved++;
+    else if (y) gained++;
+    else lost++;
+  }
+  const closing = (rows: Placement[]) => {
+    const m = new Map<string, number>();
+    for (const p of rows) m.set(groupKey(p), Math.min(m.get(groupKey(p)) ?? Infinity, p.mark));
+    return m;
+  };
+  const ca = closing(before), cb = closing(after);
+  const changes: { group: string; from: number | null; to: number | null }[] = [];
+  for (const g of new Set([...ca.keys(), ...cb.keys()])) {
+    const x = ca.get(g) ?? null, y = cb.get(g) ?? null;
+    if (x == null || y == null || Math.abs(x - y) > 1e-9) changes.push({ group: g, from: x, to: y });
+  }
+  changes.sort((p, q) => Math.abs((q.to ?? 0) - (q.from ?? 0)) - Math.abs((p.to ?? 0) - (p.from ?? 0)));
+  return {
+    induction, status: "computed",
+    candidates: candidates.length,
+    eligible: { from: candidates.filter((c) => isEligible(current.resolved!, c)).length, to: candidates.filter((c) => isEligible(next, c)).length },
+    placed: { from: before.length, to: after.length },
+    sameSeat, moved, gained, lost,
+    groupsChanged: changes.length, groupsTotal: new Set([...ca.keys(), ...cb.keys()]).size,
+    topChanges: changes.slice(0, 25),
+    ms: Date.now() - started,
   };
 }

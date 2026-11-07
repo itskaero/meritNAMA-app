@@ -4,7 +4,7 @@ import { applyCorrections, parseCorrectionsCsv, toCsv } from "@/lib/domain/corre
 describe("corrections", () => {
   const rows = [
     { applicantId: "1", baseMarks: 50, programMarks: { FCPS: 2 }, profileStatus: 1, extra: "kept" },
-    { applicantId: "2", baseMarks: 60, programMarks: {}, profileStatus: null, extra: "kept" },
+    { applicantId: "2", baseMarks: 60, programMarks: {} as Record<string, number>, profileStatus: null as number | null, extra: "kept" },
   ];
 
   it("applies corrections in order without touching the input", () => {
