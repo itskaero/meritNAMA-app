@@ -44,32 +44,32 @@ export function RoundFunnel({ final, rounds, caption }: { final: number; rounds:
         ) : null}
       </div>
       <div className="relative overflow-x-auto">
-        <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full min-w-[620px]" aria-hidden>
+        <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full min-w-[620px]" role="group" aria-label="Rounds: choose one to see its details below">
           <defs>
             <linearGradient id="mn-funnel-core" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--mn-text)" />
               <stop offset="100%" stopColor="color-mix(in srgb, var(--mn-text) 72%, var(--mn-navy-700))" />
             </linearGradient>
           </defs>
-          <path d={bandPath(outer, { width: W, mid: MID })} fill="var(--mn-border-strong)" opacity="0.6" />
-          <path d={bandPath(outer.map((h) => h * 0.82), { width: W, mid: MID })} fill="var(--mn-text-subtle)" opacity="0.35" />
-          <path className="mn-grow-x" style={{ transformBox: "fill-box" }} d={bandPath(inner, { width: W, mid: MID })} fill="url(#mn-funnel-core)" />
+          <path aria-hidden d={bandPath(outer, { width: W, mid: MID })} fill="var(--mn-border-strong)" opacity="0.6" />
+          <path aria-hidden d={bandPath(outer.map((h) => h * 0.82), { width: W, mid: MID })} fill="var(--mn-text-subtle)" opacity="0.35" />
+          <path aria-hidden className="mn-grow-x" style={{ transformBox: "fill-box" }} d={bandPath(inner, { width: W, mid: MID })} fill="url(#mn-funnel-core)" />
           {rounds.map((r, i) => {
             const cx = i * cw + cw / 2, pct = movingPct(r.moving, final);
             return (
               <g key={r.roundNo}>
-                {i > 0 ? <line x1={i * cw} x2={i * cw} y1={40} y2={H - 4} stroke="var(--mn-border)" /> : null}
+                {i > 0 ? <line aria-hidden x1={i * cw} x2={i * cw} y1={40} y2={H - 4} stroke="var(--mn-border)" /> : null}
                 <rect
                   x={i * cw} y={0} width={cw} height={H}
                   className={cn("cursor-pointer outline-none", i === col ? "fill-[rgba(244,244,245,0.04)]" : "fill-transparent hover:fill-[rgba(244,244,245,0.03)]")}
                   onMouseEnter={() => setCol(i)} onFocus={() => setCol(i)} onClick={() => setCol(i)}
                   tabIndex={0} role="button" aria-label={`Round ${r.roundNo}: details`} aria-pressed={i === col}
                 />
-                <text x={cx} y={26} textAnchor="middle" className="pointer-events-none fill-ink font-mono text-[17px] font-semibold">{r.moving ? fmt(r.moving) : "Settled"}</text>
-                <text x={cx} y={44} textAnchor="middle" className="pointer-events-none fill-subtle text-[11px]">{r.moving ? "still moving" : `${fmt(final)} in final seats`}</text>
-                <rect x={cx - 27} y={MID - 14} width={54} height={28} rx={14} className="pointer-events-none fill-ink" />
-                <text x={cx} y={MID + 5} textAnchor="middle" className="pointer-events-none fill-canvas font-mono text-[13px] font-semibold">{pct}%</text>
-                <text x={cx} y={H - 12} textAnchor="middle" className="pointer-events-none fill-muted text-[12px]">Round {r.roundNo}</text>
+                <text aria-hidden x={cx} y={26} textAnchor="middle" className="pointer-events-none fill-ink font-mono text-[17px] font-semibold">{r.moving ? fmt(r.moving) : "Settled"}</text>
+                <text aria-hidden x={cx} y={44} textAnchor="middle" className="pointer-events-none fill-subtle text-[11px]">{r.moving ? "still moving" : `${fmt(final)} in final seats`}</text>
+                <rect aria-hidden x={cx - 27} y={MID - 14} width={54} height={28} rx={14} className="pointer-events-none fill-ink" />
+                <text aria-hidden x={cx} y={MID + 5} textAnchor="middle" className="pointer-events-none fill-canvas font-mono text-[13px] font-semibold">{pct}%</text>
+                <text aria-hidden x={cx} y={H - 12} textAnchor="middle" className="pointer-events-none fill-muted text-[12px]">Round {r.roundNo}</text>
               </g>
             );
           })}

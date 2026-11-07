@@ -50,7 +50,10 @@ export default async function PortalProfilePage() {
                     <p className="text-xs uppercase tracking-wide text-subtle">Latest marks · induction {latest.induction}, round {latest.roundNo}</p>
                     <p className="mt-1 font-display text-4xl font-bold tabular-nums">{formatMarks(latest.marks)}</p>
                   </div>
-                  <ButtonLink href={`/portal/finder?marks=${latest.marks.toFixed(4)}&induction=${latest.induction}`} size="sm">Open the score finder with these marks</ButtonLink>
+                  <div className="flex flex-wrap gap-2">
+                    <ButtonLink href="/portal/profile/report" variant="secondary" size="sm">Merit report (print or PDF)</ButtonLink>
+                    <ButtonLink href={`/portal/finder?marks=${latest.marks.toFixed(4)}&induction=${latest.induction}`} size="sm">Open the score finder with these marks</ButtonLink>
+                  </div>
                 </div>
               ) : null}
             </Card>

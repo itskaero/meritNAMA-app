@@ -12,7 +12,7 @@ import { UserFacingError } from "@/lib/errors";
 import { isUuid } from "@/lib/format";
 import { DeleteListButton, MarksForm, RenameForm } from "../forms";
 import { duplicateListAction } from "../actions";
-import { PrintButton } from "./print-button";
+import { PrintButton } from "@/components/print-button";
 
 export const metadata = { title: "Preference list" };
 export const dynamic = "force-dynamic";

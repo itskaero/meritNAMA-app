@@ -81,7 +81,7 @@ export function Landing({ f }: { f: LandingFigures }) {
         <div aria-hidden className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-canvas" />
       </header>
 
-      <main id="story">
+      <main id="main">
         {/* ── Figures ─────────────────────────────────────────────────────── */}
         <section aria-label="In numbers" className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-[max(16px,env(safe-area-inset-left,0px))] pt-6 md:grid-cols-4">
           {[

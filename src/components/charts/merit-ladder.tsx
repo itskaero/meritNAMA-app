@@ -80,7 +80,7 @@ export function MeritLadder({ rows, rounds, total, caption, linkRows = true, ini
           <span />
         </div>
       </div>
-      <div className="relative overflow-x-auto rounded-2xl border border-line">
+      <div tabIndex={0} role="region" aria-label="Merit ladder" className="relative overflow-x-auto rounded-2xl border border-line">
         <table className="w-full min-w-[480px] text-right text-sm">
           <caption className="sr-only">Lowest closing marks by round</caption>
           <thead className="bg-elevated text-xs text-muted"><tr><th scope="col" className="px-3 py-2.5 text-left font-medium">{linkRows ? "Speciality" : "Programme · quota"}</th>{rounds.map((n) => <th key={n} scope="col" className="px-3 py-2.5 font-medium">R{n}</th>)}</tr></thead>

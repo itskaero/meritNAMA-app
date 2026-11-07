@@ -12,7 +12,7 @@ export function MeritMoveHeat({ rows, rounds, caption }: { rows: LadderRow[]; ro
   return (
     <figure className="m-0 min-w-0">
       <figcaption className="sr-only">{caption}</figcaption>
-      <div className="relative overflow-x-auto">
+      <div tabIndex={0} role="region" aria-label="Where merit moved" className="relative overflow-x-auto">
         <table className="w-full min-w-[520px] border-separate border-spacing-1 text-sm">
           <thead>
             <tr>
@@ -28,7 +28,7 @@ export function MeritMoveHeat({ rows, rounds, caption }: { rows: LadderRow[]; ro
                   const k = Math.min(Math.abs(d) / scale, 1), held = Math.abs(d) < 0.005;
                   const bg = held ? "var(--mn-navy-800)" : d < 0 ? `color-mix(in srgb, var(--mn-cyan) ${Math.round(18 + k * 72)}%, var(--mn-navy-900))` : `color-mix(in srgb, var(--mn-amber) ${Math.round(18 + k * 50)}%, var(--mn-navy-900))`;
                   return (
-                    <td key={i} className="h-9 rounded-md text-center font-mono text-xs tabular-nums" style={{ background: bg, color: !held && k > 0.55 ? "var(--mn-cyan-ink)" : "var(--mn-text-muted)" }} title={`${row.label}, round ${rounds[i]} to ${rounds[i + 1]}: ${d.toFixed(2)}`}>
+                    <td key={i} className="h-9 rounded-md text-center font-mono text-xs tabular-nums" style={{ background: bg, color: held ? "var(--mn-text-muted)" : d < 0 ? (k > 0.7 ? "var(--mn-cyan-ink)" : "var(--mn-text)") : k > 0.6 ? "#111" : "var(--mn-text)" }} title={`${row.label}, round ${rounds[i]} to ${rounds[i + 1]}: ${d.toFixed(2)}`}>
                       {held ? <span aria-label="no change">·</span> : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(2)}`}
                     </td>
                   );

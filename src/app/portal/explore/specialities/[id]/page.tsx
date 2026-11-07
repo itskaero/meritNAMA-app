@@ -110,7 +110,7 @@ export default async function SpecialityPage({ params, searchParams }: {
           {said.length ? (
             <Card>
               <CardHeader title="What trainees say" description={`Reviews of ${h.speciality.name} by verified candidates, per hospital. Higher is better. Not official.`} />
-              <div className="relative overflow-x-auto">
+              <div tabIndex={0} role="region" aria-label="Average review ratings per hospital" className="relative overflow-x-auto">
                 <table className="w-full min-w-[640px] text-sm">
                   <caption className="sr-only">Average review ratings per hospital</caption>
                   <thead className="text-left text-xs text-muted">

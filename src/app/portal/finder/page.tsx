@@ -194,7 +194,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
               <Link
                 key={st}
                 href={href({ show: show === st ? undefined : st })}
-                aria-pressed={show === st}
+                aria-current={show === st ? "true" : undefined}
                 className={cn("mn-rise rounded-[1.5rem] border bg-surface p-5 transition-colors hover:bg-elevated", show === st ? "border-ink" : "border-line")}
                 style={{ animationDelay: `${(i + 1) * 70}ms` }}
               >

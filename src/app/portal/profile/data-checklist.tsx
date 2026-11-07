@@ -15,7 +15,7 @@ const COMPONENT_LABEL: Record<string, string> = {
 function Row({ ok, label, children }: { ok: boolean | null; label: string; children: React.ReactNode }) {
   return (
     <li className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 py-2.5">
-      <Badge tone={ok === null ? "neutral" : ok ? "success" : "warning"}>{ok === null ? "n/a" : ok ? "have" : "missing"}</Badge>
+      <Badge className="self-start" tone={ok === null ? "neutral" : ok ? "success" : "warning"}>{ok === null ? "n/a" : ok ? "have" : "missing"}</Badge>
       <div className="grid gap-0.5 text-sm">
         <span className="font-medium">{label}</span>
         <span className="text-muted">{children}</span>

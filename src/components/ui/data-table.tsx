@@ -24,7 +24,8 @@ export function DataTable<T>({ caption, columns, rows, rowKey, empty, maxHeight 
 }) {
   if (rows.length === 0 && empty) return <>{empty}</>;
   return (
-    <div className={cn("relative overflow-x-auto rounded-2xl border border-line", maxHeight && "overflow-y-auto")} style={maxHeight ? { maxHeight } : undefined}>
+    // Focusable and named, so keyboard users can scroll a wide or long table.
+    <div tabIndex={0} role="region" aria-label={caption} className={cn("relative overflow-x-auto rounded-2xl border border-line focus-visible:outline-2 focus-visible:outline-signal", maxHeight && "overflow-y-auto")} style={maxHeight ? { maxHeight } : undefined}>
       <table className="w-full text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className={cn("bg-elevated text-muted", maxHeight && "sticky top-0 z-[1]")}>

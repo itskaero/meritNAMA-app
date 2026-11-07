@@ -107,11 +107,20 @@ docs/               ARCHITECTURE, DEPLOYMENT, SECURITY, DATA_CONTRACTS
 
 ## What is left
 
-- **Hardening:** mobile and accessibility audit; a NAS rehearsal (fresh install, update,
-  rollback, restore drill); simulation runs move to a separate worker container if they
-  grow beyond a few seconds.
+Needs the operator, a decision or access this repository does not have:
+
+- **NAS rehearsal:** fresh install, update, rollback and the restore drill on the NAS
+  itself (the steps are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md); backup → restore
+  was verified in development).
 - **Cut-over:** point the public site at the app and remove the legacy app pages and
   datasets from the public repository; finish the public-repo security items in
   [docs/SECURITY.md](docs/SECURITY.md) (history purge, Firestore rules) if not done.
-- **Optional features** from the roadmap: seat watchlist and alerts, personal merit
-  report (PDF), grievance status, publication monitor.
+- **Grievance status** and a **publication monitor** (alert when PHF publishes a list)
+  need a source to read from: where grievance decisions are published, and which PHF
+  page or feed to watch.
+- **Separate worker container** for simulation runs, only if runs grow well beyond
+  their current few seconds (round 1 of induction 21 takes about 2 s).
+
+Done in this round: accessibility and mobile audit (axe-core on 31 pages at desktop and
+phone width: no findings, no sideways scrolling), shortlist alerts, a printable merit
+report (print or save as PDF from the browser).

@@ -122,7 +122,7 @@ export default async function TeamPage() {
       </Card>
       <Card>
         <CardHeader title="What each role can do" />
-        <div className="relative overflow-x-auto rounded-2xl border border-line">
+        <div tabIndex={0} role="region" aria-label="What each role can do" className="relative overflow-x-auto rounded-2xl border border-line">
           <table className="w-full text-left text-sm">
             <caption className="sr-only">Roles and the areas they can open</caption>
             <thead className="bg-elevated text-muted">

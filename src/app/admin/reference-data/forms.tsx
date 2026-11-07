@@ -209,7 +209,7 @@ export function SeatEditor({ induction, lines, lookups, children }: {
   return (
     <>
       <SharedReason value={reason} onChange={setReason}>{children}</SharedReason>
-      <div className="relative overflow-x-auto rounded-2xl border border-line">
+      <div tabIndex={0} role="region" aria-label="Seat lines" className="relative overflow-x-auto rounded-2xl border border-line">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">Seat lines for induction {induction}</caption>
           <thead className="bg-elevated text-muted">
@@ -290,7 +290,7 @@ export function LookupEditor({ kind, label, rows }: { kind: string; label: strin
   return (
     <>
       <SharedReason value={reason} onChange={setReason} />
-      <div className="relative overflow-x-auto rounded-2xl border border-line">
+      <div tabIndex={0} role="region" aria-label={label} className="relative overflow-x-auto rounded-2xl border border-line">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">{label}</caption>
           <thead className="bg-elevated text-muted">

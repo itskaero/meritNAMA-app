@@ -44,7 +44,7 @@ export function Timeline({ rows, now = new Date(), caption }: { rows: TimelineRo
   return (
     <figure className="m-0 min-w-0">
       <figcaption className="sr-only">{caption}</figcaption>
-      <div className="relative overflow-x-auto rounded-2xl border border-line bg-canvas">
+      <div tabIndex={0} role="region" aria-label="Timeline" className="relative overflow-x-auto rounded-2xl border border-line bg-canvas">
         <div className="relative min-w-[720px] px-4 pb-4">
           {/* Axis */}
           <div className="relative h-12 border-b border-line">

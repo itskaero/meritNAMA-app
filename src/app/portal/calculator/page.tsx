@@ -65,7 +65,7 @@ function Field({ c, sp }: { c: PolicyComponent; sp: Params }) {
         );
       case "tiered_select":
         return (
-          <select name={f} defaultValue={sp[f] ?? ""} className={fieldClass}>
+          <select name={f} defaultValue={sp[f] ?? ""} className={fieldClass} aria-label={c.label}>
             <option value="">— Select —</option>
             {(c.tiers ?? []).map((t, i) => <option key={i} value={i}>{t.label}</option>)}
           </select>

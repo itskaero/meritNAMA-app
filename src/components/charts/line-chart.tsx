@@ -125,7 +125,7 @@ export function LineChart({ xLabels, series, format = (v) => v.toFixed(2), title
       ) : null}
       <details className="mt-2 text-xs text-subtle">
         <summary className="cursor-pointer">Show values</summary>
-        <div className="relative mt-2 overflow-x-auto">
+        <div tabIndex={0} role="region" aria-label={`${title}: values`} className="relative mt-2 overflow-x-auto">
           <table className="text-left">
             <thead><tr><th className="pr-4 font-medium">Point</th>{series.map((s) => <th key={s.label} className="pr-4 font-medium">{s.label}</th>)}</tr></thead>
             <tbody>{xLabels.map((l, i) => <tr key={i}><td className="pr-4">{l}</td>{series.map((s) => <td key={s.label} className="pr-4 tabular-nums">{s.values[i] == null ? "—" : format(s.values[i]!)}</td>)}</tr>)}</tbody>
