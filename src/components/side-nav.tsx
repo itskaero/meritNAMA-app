@@ -108,7 +108,7 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
                           "relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                           pro && "lg:justify-center lg:px-0",
                           active
-                            ? "bg-[var(--mn-cyan-soft)] font-semibold text-heading before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-teal"
+                            ? "bg-[color-mix(in_srgb,var(--mn-brand-teal)_20%,transparent)] font-semibold text-heading before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-teal"
                             : "text-muted hover:bg-hover hover:text-ink",
                         )}
                       >

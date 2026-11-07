@@ -76,7 +76,7 @@ export function LineChart({ xLabels, series, format = (v) => v.toFixed(2), title
         {xLabels.map((l, i) => (i % every === 0 || i === xLabels.length - 1 ? (
           <text key={i} x={x(i)} y={H - 10} textAnchor="middle" fontSize="11" fill="var(--mn-text-muted)" fontFamily="var(--mn-font-mono)">{l}</text>
         ) : null))}
-        {areas.map((d, k) => <path key={`area-${k}`} d={d} fill={STROKE[first.tone ?? "ember"]} fillOpacity="0.1" />)}
+        {areas.map((d, k) => <path key={`area-${k}`} d={d} fill="var(--mn-chart-2)" fillOpacity="0.16" />)}
         {series.map((s, si) => (
           <path
             key={s.label}

@@ -67,6 +67,21 @@
   --mn-chart-grid: #E1E6E5;
   --mn-chart-axis: #62717B;
 
+  /* Feature surface: the one hero card per page (your merit, a hospital's summary). */
+  --mn-feature-bg: #142536;
+  --mn-feature-ink: #F3F0EA;
+  --mn-feature-muted: #C5CDD3;
+  --mn-feature-accent: #8CC4B7;
+  --mn-feature-line: rgba(231, 226, 216, 0.16);
+
+  /* Programme colours: muted, distinct, AA as text. One per programme, used everywhere it appears. */
+  --mn-prog-fcps: #2F5F86;
+  --mn-prog-ms: #7A4E8C;
+  --mn-prog-md: #2F6E61;
+  --mn-prog-mds: #8C5426;
+  --mn-prog-fcps-dentistry: #5E6A24;
+  --mn-prog-other: #5B6A74;
+
   /* Glass (over imagery only) */
   --mn-glass: rgba(255, 255, 255, 0.86);
   --mn-glass-border: rgba(20, 37, 54, 0.12);
@@ -150,6 +165,17 @@
   --mn-chart-neutral: #7E8D98;
   --mn-chart-grid: #263C4D;
   --mn-chart-axis: #93A1AB;
+  --mn-feature-bg: #213A50;
+  --mn-feature-ink: #F3F0EA;
+  --mn-feature-muted: #C5CDD3;
+  --mn-feature-accent: #95C8BC;
+  --mn-feature-line: rgba(231, 226, 216, 0.18);
+  --mn-prog-fcps: #8FB5D6;
+  --mn-prog-ms: #C7A3D4;
+  --mn-prog-md: #86C2B4;
+  --mn-prog-mds: #E0AE84;
+  --mn-prog-fcps-dentistry: #BCC77F;
+  --mn-prog-other: #A7B4BE;
   --mn-glass: rgba(14, 24, 35, 0.82);
   --mn-glass-border: rgba(231, 226, 216, 0.14);
   --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
@@ -190,6 +216,17 @@
     --mn-chart-neutral: #7E8D98;
     --mn-chart-grid: #263C4D;
     --mn-chart-axis: #93A1AB;
+    --mn-feature-bg: #213A50;
+    --mn-feature-ink: #F3F0EA;
+    --mn-feature-muted: #C5CDD3;
+    --mn-feature-accent: #95C8BC;
+    --mn-feature-line: rgba(231, 226, 216, 0.18);
+    --mn-prog-fcps: #8FB5D6;
+    --mn-prog-ms: #C7A3D4;
+    --mn-prog-md: #86C2B4;
+    --mn-prog-mds: #E0AE84;
+    --mn-prog-fcps-dentistry: #BCC77F;
+    --mn-prog-other: #A7B4BE;
     --mn-glass: rgba(14, 24, 35, 0.82);
     --mn-glass-border: rgba(231, 226, 216, 0.14);
     --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);

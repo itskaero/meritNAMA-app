@@ -10,6 +10,7 @@ import { getSession } from "@/lib/auth/session";
 import { hospitalAccreditation } from "@/lib/data/accreditation";
 import { hospitalProfile } from "@/lib/data/merit";
 import { Badge } from "@/components/ui/badge";
+import { ProgramTag, programColor } from "@/components/program-tag";
 import { listHospitalReviews, reviewChoices } from "@/lib/data/reviews";
 import { RatingMeter } from "@/components/community/rating-meter";
 import { ReviewCard } from "@/components/community/review-card";
@@ -45,6 +46,10 @@ export default async function HospitalPage({ params, searchParams }: { params: P
   const seatItems = [...seatsBySpec].sort((a, b) => b[1].seats - a[1].seats).map(([label, v]) => ({ label, value: v.seats, href: `/portal/explore/specialities/${v.id}` }));
   const acc = await hospitalAccreditation(db, session, { hospital: p.hospital.name, specialities: [...new Set([...seatsBySpec.keys(), ...p.closing.map((c) => c.speciality)])] });
   const latest = p.closing[0];
+  // Summary band: seats and programmes in the latest matrix, the closing range in the latest round.
+  const totalSeats = p.seats.reduce((n, r) => n + r.seats, 0);
+  const programmes = [...new Set(p.seats.map((r) => r.program.trim()))].sort();
+  const closings = p.closing.map((c) => Number(c.closing)).filter(Number.isFinite);
   const max = latest ? p.maxMarks[latest.induction_id] : undefined;
 
   return (
@@ -54,6 +59,28 @@ export default async function HospitalPage({ params, searchParams }: { params: P
       title={p.hospital.name}
       description="Seats by speciality from the latest seat matrix, and closing merit in the latest merit round."
     >
+      {totalSeats || closings.length ? (
+        <section aria-label="Summary" className="grid gap-5 rounded-xl bg-feature p-6 text-feature-ink shadow-[var(--mn-shadow-2)] sm:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)] sm:p-7">
+          <div><p className="text-xs text-feature-muted">Seats{p.seats[0] ? ` · induction ${p.seats[0].induction_id}` : ""}</p><p className="mt-1 font-serif text-4xl font-semibold tabular-nums">{totalSeats.toLocaleString("en-US")}</p></div>
+          <div><p className="text-xs text-feature-muted">Specialities</p><p className="mt-1 font-serif text-4xl font-semibold tabular-nums">{seatsBySpec.size}</p></div>
+          <div>
+            <p className="text-xs text-feature-muted">Closing merit{latest ? ` · round ${latest.round_no}` : ""}</p>
+            <p className="mt-1 font-serif text-4xl font-semibold tabular-nums">{closings.length ? formatMarks(Math.max(...closings)) : "—"}</p>
+            {closings.length > 1 ? <p className="text-xs text-feature-muted">highest; lowest {formatMarks(Math.min(...closings))}{max ? ` of ${max}` : ""}</p> : null}
+          </div>
+          <div className="grid content-start gap-2 sm:border-l sm:border-feature-line sm:pl-6">
+            <p className="text-xs text-feature-muted">Programmes</p>
+            <ul className="flex flex-wrap gap-1.5">
+              {programmes.map((pr) => (
+                <li key={pr} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-sm font-medium">
+                  <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: `color-mix(in srgb, ${programColor(pr)} 55%, white)` }} />{pr}
+                </li>
+              ))}
+            </ul>
+            {acc?.matched ? <p className="text-xs text-feature-muted">CPSP accredited for {acc.covered.length} of {seatsBySpec.size} specialities (matched by name)</p> : null}
+          </div>
+        </section>
+      ) : null}
       {seatItems.length === 0 && p.closing.length === 0 ? (
         <EmptyState title="No seats or merit data for this hospital yet" />
       ) : (
@@ -71,7 +98,7 @@ export default async function HospitalPage({ params, searchParams }: { params: P
                 rowKey={(r) => `${r.speciality}|${r.program}|${r.quota}`}
                 columns={[
                   { key: "s", header: "Speciality", cell: (r) => <EntityLink kind="speciality" id={r.speciality_id} name={r.speciality} /> },
-                  { key: "pq", header: "Programme · quota", tone: "muted", cell: (r) => `${r.program} · ${r.quota}` },
+                  { key: "pq", header: "Programme · quota", cell: (r) => <ProgramTag program={r.program} quota={r.quota} /> },
                   { key: "n", header: "Allocated", align: "right", cell: (r) => r.allocations },
                   { key: "c", header: "Closing", align: "right", tone: "mono", cell: (r) => formatMarks(Number(r.closing)) },
                 ]}

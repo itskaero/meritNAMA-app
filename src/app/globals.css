@@ -28,6 +28,11 @@
   --color-teal: var(--mn-brand-teal);
   --color-ivory: var(--mn-brand-ivory);
   --color-tint: var(--mn-teal-deep);
+  --color-feature: var(--mn-feature-bg);
+  --color-feature-ink: var(--mn-feature-ink);
+  --color-feature-muted: var(--mn-feature-muted);
+  --color-feature-accent: var(--mn-feature-accent);
+  --color-feature-line: var(--mn-feature-line);
   --color-easier: var(--mn-chart-easier);
   --color-harder: var(--mn-chart-harder);
   --color-neutral-series: var(--mn-chart-neutral);

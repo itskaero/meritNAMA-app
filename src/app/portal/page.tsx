@@ -6,9 +6,9 @@ import { RoundFunnel } from "@/components/charts/round-funnel";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { StatusIcon } from "@/components/finder/status";
+import { ProgramTag } from "@/components/program-tag";
 import { Icon } from "@/components/icon";
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { getSession } from "@/lib/auth/session";
@@ -86,40 +86,52 @@ export default async function PortalDashboard() {
   return (
     <AreaPage {...frame}>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-        {/* ── Your merit ─────────────────────────────────────────────────── */}
-        <Card>
-          <CardHeader
-            title="Your merit"
-            description={merit ? `Applicant record linked. From the published lists.` : "Link your account to your applicant record to see your own merit here."}
-            action={merit ? <Badge tone="official">Published</Badge> : null}
-          />
+        {/* ── Your merit: the page's one feature surface ──────────────────── */}
+        <section aria-labelledby="your-merit" className="relative overflow-hidden rounded-xl bg-feature p-6 text-feature-ink shadow-[var(--mn-shadow-2)] sm:p-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 id="your-merit" className="text-sm font-semibold uppercase tracking-[0.14em] text-feature-accent">Your merit</h2>
+              <p className="mt-1 text-sm text-feature-muted">{merit ? "Linked to your applicant record · from the published lists" : "Link your account to your applicant record to see your own merit here."}</p>
+            </div>
+            {merit ? <span className="rounded-full border border-feature-line px-2.5 py-0.5 text-xs font-medium text-feature-ink">Published</span> : null}
+          </div>
           {mine ? (
-            <div className="grid gap-5">
+            <div className="mt-6 grid gap-6">
               <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="text-xs font-medium text-muted">Latest marks · induction {mine.induction}, round {mine.roundNo}</p>
-                  <p className="mt-1 text-[2.6rem] font-semibold leading-none tracking-tight text-heading tabular-nums">
-                    {formatMarks(mine.marks)}{mineTotal ? <span className="ml-1.5 text-lg font-normal text-muted">/ {mineTotal}</span> : null}
+                  <p className="text-xs text-feature-muted">Latest marks · induction {mine.induction}, round {mine.roundNo}</p>
+                  <p className="mt-1 font-serif text-[3.6rem] font-semibold leading-none tracking-tight tabular-nums">
+                    {formatMarks(mine.marks)}{mineTotal ? <span className="ml-2 font-sans text-xl font-normal text-feature-muted">/ {mineTotal}</span> : null}
                   </p>
                 </div>
-                <ButtonLink href="/portal/profile" variant="secondary" size="sm">Merit profile</ButtonLink>
+                <Link href="/portal/profile" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-feature-ink px-3.5 text-sm font-medium text-feature hover:opacity-90">
+                  Merit profile <Icon name="arrow" className="h-4 w-4" />
+                </Link>
               </div>
-              <dl className="grid gap-3 border-t border-line pt-4 text-sm sm:grid-cols-2">
-                <div className="grid gap-0.5"><dt className="text-xs text-muted">Seat in round {mine.roundNo}</dt><dd className="font-medium text-ink">{mine.speciality} · {mine.hospital}</dd><dd className="text-xs text-muted">{mine.program} · {mine.quota} · preference {mine.preferenceNo || "—"}</dd></div>
-                <div className="grid gap-0.5"><dt className="text-xs text-muted">Closing merit of that seat</dt><dd className="font-medium tabular-nums text-ink">{formatMarks(mine.closing)}</dd><dd className="text-xs text-muted">Consent: {mine.consent || "not published"}</dd></div>
+              <dl className="grid gap-4 border-t border-feature-line pt-5 text-sm sm:grid-cols-2">
+                <div className="grid gap-1">
+                  <dt className="text-xs text-feature-muted">Seat in round {mine.roundNo}</dt>
+                  <dd className="font-medium">{mine.speciality} · {mine.hospital}</dd>
+                  <dd className="text-xs text-feature-muted">{mine.program.trim()} · {mine.quota.trim()} · preference {mine.preferenceNo || "—"}</dd>
+                </div>
+                <div className="grid gap-1">
+                  <dt className="text-xs text-feature-muted">Closing merit of that seat</dt>
+                  <dd className="font-serif text-2xl font-semibold tabular-nums">{formatMarks(mine.closing)}</dd>
+                  <dd className="text-xs text-feature-muted">{mine.closing != null ? `You were ${formatMarks(mine.marks - mine.closing)} above it` : ""}{mine.consent ? ` · consent ${mine.consent}` : ""}</dd>
+                </div>
               </dl>
             </div>
           ) : (
-            <div className="grid gap-4">
-              <p className="text-sm text-muted">Once linked, this shows your marks, your seat in each round and the options your marks reach. Until then you can still work out your marks and search options by hand.</p>
+            <div className="mt-6 grid gap-4">
+              <p className="max-w-lg text-sm text-feature-muted">Once linked, this shows your marks, your seat in each round and the options your marks reach. Until then you can still work out your marks and search options by hand.</p>
               <div className="flex flex-wrap gap-2">
-                <ButtonLink href="/portal/profile" size="sm">Link your record</ButtonLink>
-                <ButtonLink href="/portal/calculator" variant="secondary" size="sm">Merit calculator</ButtonLink>
-                <ButtonLink href="/portal/finder" variant="secondary" size="sm">Score finder</ButtonLink>
+                <Link href="/portal/profile" className="inline-flex h-9 items-center rounded-lg bg-feature-ink px-3.5 text-sm font-medium text-feature hover:opacity-90">Link your record</Link>
+                <Link href="/portal/calculator" className="inline-flex h-9 items-center rounded-lg border border-feature-line px-3.5 text-sm font-medium hover:bg-white/5">Merit calculator</Link>
+                <Link href="/portal/finder" className="inline-flex h-9 items-center rounded-lg border border-feature-line px-3.5 text-sm font-medium hover:bg-white/5">Score finder</Link>
               </div>
             </div>
           )}
-        </Card>
+        </section>
 
         {/* ── Current induction ──────────────────────────────────────────── */}
         {latest && lastRound ? (
@@ -176,7 +188,7 @@ export default async function PortalDashboard() {
           <Card>
             <CardHeader
               title={movement ? `Round ${movement.from.roundNo} → ${movement.to.roundNo}` : "Latest movement"}
-              description={mine ? `Biggest changes in ${mine.program} · ${mine.quota}.` : "Biggest changes in closing merit across all programmes."}
+              description={mine ? <>Biggest changes in <ProgramTag program={mine.program} quota={mine.quota} className="align-middle text-[0.85rem]" />.</> : "Biggest changes in closing merit across all programmes."}
               action={movement ? <Link href={`/portal/history/${latest.id}/compare?from=${movement.from.roundNo}&to=${movement.to.roundNo}`} className="text-sm font-medium text-signal hover:underline">Compare</Link> : null}
             />
             {movement ? (
@@ -190,7 +202,7 @@ export default async function PortalDashboard() {
                   <ul className="grid gap-1.5 text-sm">
                     {[...falls, ...rises].map((g) => (
                       <li key={`${g.program}|${g.quota}|${g.speciality}`} className="flex items-baseline justify-between gap-3 border-b border-line pb-1.5 last:border-0">
-                        <span className="min-w-0 truncate">{g.speciality}{mine ? "" : <span className="text-muted"> · {g.program.trim()} · {g.quota.trim()}</span>}</span>
+                        <span className="flex min-w-0 items-center gap-2 truncate">{mine ? null : <ProgramTag program={g.program} className="text-xs" />}<span className="truncate">{g.speciality}</span></span>
                         <span className={cn("flex-none font-medium tabular-nums", g.delta! < 0 ? "text-success" : "text-ember")}>{g.delta! < 0 ? "−" : "+"}{Math.abs(g.delta!).toFixed(2)}</span>
                       </li>
                     ))}
