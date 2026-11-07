@@ -259,7 +259,8 @@ export function describeRules(r: ResolvedRules): { topic: string; text: string }
     `${x.on ? `counted${x.cap != null ? `, at most ${x.cap} marks` : ""}` : "not counted"} (${enabled === "auto" ? `follows the scoring policy's ${component}` : `set ${enabled ? "on" : "off"} here`})`;
   const sourceName = { certificateMarks: "portal certificate marks", computerizedMarks: "computerised marks", preferenceProgramMarks: "the preference's programme marks" } as const;
   return [
-    { topic: "Base marks", text: r.baseMarks.formula ? `worked out as ${r.baseMarks.formula}${r.baseMarks.onMissing === "imported" ? " (a candidate missing a parameter keeps the imported marks)" : " (a missing parameter makes it 0)"}; staff corrections still win` : "as imported (the portal's total, or the components file's)" },
+    // Runs saved before base-marks formulas existed have no baseMarks: they used the imported marks.
+    { topic: "Base marks", text: r.baseMarks?.formula ? `worked out as ${r.baseMarks.formula}${r.baseMarks.onMissing === "imported" ? " (a candidate missing a parameter keeps the imported marks)" : " (a missing parameter makes it 0)"}; staff corrections still win` : "as imported (the portal's total, or the components file's)" },
     { topic: "Certificate bonus", text: onOff(r.certificate, c.enabled, c.component) },
     {
       topic: "Which certificate",

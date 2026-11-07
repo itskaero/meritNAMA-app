@@ -113,3 +113,11 @@ describe("CPSP accreditation matching", async () => {
     expect(hospitalsForSpeciality("Orthodontics", list).map((h) => h.hospital)).toEqual(["SIMS / SERVICES HOSPITAL"]);
   });
 });
+
+describe("rules saved before base-marks formulas", () => {
+  it("describe old resolved rules (stored on runs) as using imported marks", () => {
+    const off = { ...DEFAULT_RULES, certificateBonus: { ...DEFAULT_RULES.certificateBonus, enabled: false }, parentBonus: { ...DEFAULT_RULES.parentBonus, enabled: false } };
+    const old = { ...resolveRules(off), baseMarks: undefined } as unknown as Parameters<typeof describeRules>[0];
+    expect(describeRules(old)[0]).toEqual({ topic: "Base marks", text: "as imported (the portal's total, or the components file's)" });
+  });
+});
