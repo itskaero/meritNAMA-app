@@ -2,11 +2,9 @@ import type { IconName } from "@/components/icon";
 import { can, type Capability, type Session } from "@/lib/auth/roles";
 
 /**
- * Single source for app sections: drives the sidebar and the placeholder pages,
- * so a route's planned scope is documented in exactly one place.
+ * Single source for app sections: drives the sidebars, page titles and the admin
+ * section guards (requireSection). What is still to build is listed in the README.
  */
-export type Milestone = "Delivery 2 · Data foundations" | "Delivery 3 · Admin MVP" | "Delivery 4 · Candidate MVP";
-
 export type Section = {
   href: string;
   /** Sidebar group heading. */
@@ -15,8 +13,6 @@ export type Section = {
   icon: IconName;
   label: string;
   description: string;
-  milestone: Milestone;
-  planned: string[];
   /** Admin sections: what a staff member needs to see and open it. */
   capability?: Capability;
 };
@@ -28,8 +24,6 @@ export const candidateSections: Section[] = [
     icon: "dashboard",
     label: "Dashboard",
     description: "Your programme, induction, merit and plans at a glance.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Programme and induction", "Merit score and breakdown", "Record-verification state", "Preference-plan summary", "Data-source and update timestamps"],
   },
   {
     href: "/portal/inbox",
@@ -37,8 +31,6 @@ export const candidateSections: Section[] = [
     icon: "inbox",
     label: "Inbox",
     description: "New answers, accepted answers, new questions and new rounds for what you follow.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: [],
   },
   {
     href: "/portal/calculator",
@@ -46,8 +38,6 @@ export const candidateSections: Section[] = [
     icon: "sliders",
     label: "Merit calculator",
     description: "Work out your merit marks under the scoring policy from your own details.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: [],
   },
   {
     href: "/portal/finder",
@@ -55,8 +45,6 @@ export const candidateSections: Section[] = [
     icon: "target",
     label: "Score finder",
     description: "Enter your marks and see which specialities and hospitals they would have reached in past rounds.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: [],
   },
   {
     href: "/portal/profile",
@@ -64,8 +52,6 @@ export const candidateSections: Section[] = [
     icon: "user",
     label: "Merit profile",
     description: "Your verified merit record: every round you appeared in, with closing merit.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Component-level breakdown", "Missing-data indicators"],
   },
   {
     href: "/portal/preferences",
@@ -73,8 +59,6 @@ export const candidateSections: Section[] = [
     icon: "list",
     label: "Preference planner",
     description: "Put your options in order and see where the list is likely to place you.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: [],
   },
   {
     href: "/portal/simulation",
@@ -82,8 +66,6 @@ export const candidateSections: Section[] = [
     icon: "target",
     label: "Simulation",
     description: "Seat-allocation simulation using the existing engine.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Dataset and assumptions shown", "Predicted placement or unplaced outcome", "Which preference produced the result", "Saved, comparable runs"],
   },
   {
     href: "/portal/history",
@@ -91,8 +73,6 @@ export const candidateSections: Section[] = [
     icon: "trend",
     label: "Merit lists",
     description: "Every round of every induction: closing merit by programme, quota, speciality and hospital.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Programme- and quota-aware comparisons", "Seat-count trends", "Round-by-round movement", "Your score vs. historical cutoff"],
   },
   {
     href: "/portal/explore",
@@ -100,8 +80,6 @@ export const candidateSections: Section[] = [
     icon: "building",
     label: "Hospitals & specialties",
     description: "Each speciality and hospital, its seats and its closing merit across inductions.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Canonical hospital and specialty directory", "Programme availability", "Accreditation metadata where available"],
   },
   {
     href: "/portal/community",
@@ -109,8 +87,6 @@ export const candidateSections: Section[] = [
     icon: "chat",
     label: "Community",
     description: "Ask and answer questions about inductions, rounds, specialities and hospitals.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: [],
   },
   {
     href: "/portal/workspace",
@@ -118,8 +94,6 @@ export const candidateSections: Section[] = [
     icon: "folder",
     label: "Workspace",
     description: "Your shortlist of speciality and hospital options, saved on your account.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Server-side storage scoped to your account", "Favourite institutions", "Saved comparisons"],
   },
 ];
 
@@ -131,8 +105,6 @@ export const adminSections: Section[] = [
     icon: "dashboard",
     label: "Overview",
     description: "Active induction, datasets, processing and system health.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Active induction", "Dataset versions", "Candidate counts", "Validation issues", "Scoring-policy version", "Recent changes"],
   },
   {
     href: "/admin/candidates",
@@ -141,8 +113,6 @@ export const adminSections: Section[] = [
     icon: "users",
     label: "Candidates",
     description: "Verify account links, look up and correct candidate records, and find duplicates.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Search and filter", "Programme-specific marks", "Preference history", "Controlled correction with reason", "Duplicate detection", "Import/export"],
   },
   {
     href: "/admin/inductions",
@@ -151,8 +121,6 @@ export const adminSections: Section[] = [
     icon: "calendar",
     label: "Inductions & merit lists",
     description: "Import merit-round files, replace or remove rounds, and map published names to hospitals and specialities.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Induction configuration", "Historical merit lists", "Gazette seat data", "Source-data versions", "Before/after comparisons"],
   },
   {
     href: "/admin/policies",
@@ -161,8 +129,6 @@ export const adminSections: Section[] = [
     icon: "sliders",
     label: "Scoring policies",
     description: "Versioned scoring-policy definitions.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Schema-validated editor", "Totals check", "Impact preview via the calculation engine", "Explicit activation and rollback"],
   },
   {
     href: "/admin/rules",
@@ -171,8 +137,6 @@ export const adminSections: Section[] = [
     icon: "target",
     label: "Allocation rules",
     description: "How each induction's seats are allocated in the simulation: certificate and parent bonuses, tracks, later rounds.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Per-induction rules with drafts", "Bonuses follow the scoring policy", "Preview, publish and rollback", "Impact preview through the simulation"],
   },
   {
     href: "/admin/reference-data",
@@ -181,8 +145,6 @@ export const adminSections: Section[] = [
     icon: "database",
     label: "Reference data",
     description: "Seat matrices, lookups, disciplines, specialty groups and CPSP accreditation.",
-    milestone: "Delivery 2 · Data foundations",
-    planned: ["Canonical identifiers", "Display names and aliases", "Specialty groups", "Quota categories and seat counts", "Missing-reference checks"],
   },
   {
     href: "/admin/processing",
@@ -191,8 +153,6 @@ export const adminSections: Section[] = [
     icon: "cpu",
     label: "Processing & simulation",
     description: "Server-side pipelines and simulation runs.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Input selection and preflight validation", "Dataset reconciliation", "Processing logs", "Comparison against reference results", "Versioned, downloadable outputs"],
   },
   {
     href: "/admin/changes",
@@ -201,8 +161,6 @@ export const adminSections: Section[] = [
     icon: "history",
     label: "Changes to review",
     description: "Risky changes wait here with a before/after preview. Publish, discard, or roll back a published change.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: [],
   },
   {
     href: "/admin/audit",
@@ -211,8 +169,6 @@ export const adminSections: Section[] = [
     icon: "history",
     label: "Audit history",
     description: "Who changed what, when and why.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: [],
   },
   {
     href: "/admin/community",
@@ -221,8 +177,6 @@ export const adminSections: Section[] = [
     icon: "flag",
     label: "Community moderation",
     description: "Reported posts, hidden content and locked discussions.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: [],
   },
   {
     href: "/admin/settings",
@@ -231,8 +185,6 @@ export const adminSections: Section[] = [
     icon: "settings",
     label: "Team & roles",
     description: "Who is on the team and what each person may do; candidate feature switches, data retention and backups.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Feature toggles", "Data retention", "Backup status"],
   },
 ];
 

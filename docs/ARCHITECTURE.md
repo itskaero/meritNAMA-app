@@ -88,6 +88,21 @@ Without `SMTP_URL` in development, mail is written to `dev_outbox` and shown at
 - One verified link per account and per applicant (partial unique indexes).
 - Verification unlocks *My merit* on `/portal/profile` (only the person's own rows),
   marks pre-filled in the score finder, posting in the community, and a *Verified* badge.
+- **Records for staff** (`/admin/candidates/records`, verifiers and owners;
+  `src/lib/data/candidate-records.ts`). Search an induction's applicants (published
+  rounds ∪ simulation data) by ID prefix, programme, link or placement; open one to see
+  published allocations, marks per programme and per preference under the induction's
+  rules (`candidateSimRecord`), consent replies and the account link. *Possible
+  duplicates* lists applicant IDs whose official record gives the same email or PMDC
+  number (equal HMACs). Export as CSV is audited; text cells that a spreadsheet would
+  read as a formula are prefixed with an apostrophe.
+- **Corrections** (`candidate_corrections`, `src/lib/domain/corrections.ts`). Base
+  marks, programme marks or profile status, always with a reason, always staged
+  (`candidate_correction` change: before/after per value, publish, roll back). They are
+  kept apart from the imported dataset, so a re-import keeps them, and the engine
+  loader applies the ones in force (oldest first) to round 1 and to later rounds. A
+  CSV (`applicant_id,field,program,value`) stages many at once; every line is checked
+  first. Staff without `candidates.verify` see a staged correction's title only.
 
 **Decision on Firebase.** The legacy app's "auth" is an email + PIN checked in the
 browser against a world-readable Firestore collection. It cannot be made secure
@@ -305,6 +320,39 @@ over all eight real policies, produced by running the legacy function on a fake 
 JavaScript needed, nothing stored); the result opens the score finder with the marks
 filled in. The legacy reverse calculator ("what do I need") is not ported: the finder
 and the prediction ranges answer the same question from the imported rounds.
+
+### Impact preview
+
+`firstRoundImpact` (`src/lib/data/simulation.ts`) runs an induction's round 1 twice
+over the same imported data, under the rules in force and under a draft (rules
+version, or the same rules under another scoring policy), and compares the lists:
+candidates who keep their seat, move, gain or lose one, and the seat groups whose
+closing merit changes. Aggregates only. It is part of every staged rules or policy
+activation (each covered induction with simulation data, at most three) and can be run
+from a draft's page. When the resolved settings are identical it says so without
+running.
+
+### Run outputs
+
+A finished shared run downloads as CSV (the simulated list) or JSON (the list plus the
+run, rules, policy and dataset time it used), named
+`induction<n>_round<r>_simulated_<UTC>_<run id>`. Downloads need `data.edit` and are
+audited. What-if runs are not exported.
+
+## Workspace settings
+
+Owners (Team & roles; `src/lib/data/settings.ts`, `app_settings`):
+
+- **Feature switches** for the candidate community, calculator, planner and what-if
+  simulation. Off: the section leaves candidates' menus, its layout shows a notice
+  (`FeatureGate`), and the data layer refuses candidates' writes (`assertFeature`).
+  Staff keep access, with a reminder.
+- **Data retention**: sign-in links, expired sessions, the development mailbox, read
+  notifications, candidates' what-if runs and proof documents of decided requests
+  (the file is deleted; the decision stays). Runs at most daily, in `after()` of a
+  staff page, or on demand. The audit history is never purged.
+- **Backup status** from `APP_BACKUP_DIR` (the backups folder mounted read-only):
+  the newest `scripts/backup.sh` folders, their size and contents; stale after 26 hours.
 
 ## Storage
 

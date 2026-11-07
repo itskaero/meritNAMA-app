@@ -79,7 +79,7 @@ export default async function TeamPage() {
           <CardHeader
             title="Backups"
             description={backups.readable ? `scripts/backup.sh writes to ${backups.dir}. Schedule it daily and copy each backup off the NAS.` : `The app cannot read ${backups.dir}. Mount the backups folder read-only into the app (see docs/DEPLOYMENT.md).`}
-            action={<Badge tone={backups.state === "ok" ? "success" : backups.state === "stale" ? "warning" : "danger"}>{backups.state === "ok" ? "up to date" : backups.state === "stale" ? "more than a day old" : backups.state === "missing" ? "no backup yet" : "not visible"}</Badge>}
+            action={<Badge className="whitespace-nowrap" tone={backups.state === "ok" ? "success" : backups.state === "stale" ? "warning" : "danger"}>{backups.state === "ok" ? "up to date" : backups.state === "stale" ? "more than a day old" : backups.state === "missing" ? "no backup yet" : "not visible"}</Badge>}
           />
           {newest ? (
             <p className="mb-3 text-sm">Latest: <span className="font-mono">{formatUtc(newest.at)} UTC</span> · {mb(newest.bytes)}</p>

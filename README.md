@@ -19,11 +19,15 @@ a **what-if simulation** (change their own consent on a list and simulate the ne
 hospital and speciality pages with reviews; and a community with Q&A, polls and an inbox.
 
 **Staff**, by role (data editor, policy editor, verifier, moderator, owner): a
-work-queue home; candidate record verification; merit rounds, seats and reference data
-(uploads or a watched folder on the NAS); versioned scoring policies and allocation
-rules; **simulation** of round 1 and of each next round from the published list and
-consent, compared with what PHF published; risky changes previewed before publishing,
-with rollback; community moderation; the audit history; team and roles.
+work-queue home; candidate records (verification, search, marks per programme and
+preference, consent, staged corrections with a reason, possible duplicates, CSV export
+and corrections import); merit rounds, seats and reference data (uploads or a watched
+folder on the NAS); versioned scoring policies and allocation rules, each with an
+**impact preview** (round 1 simulated under the change, compared with now);
+**simulation** of round 1 and of each next round from the published list and consent,
+compared with what PHF published, with downloadable outputs; risky changes previewed
+before publishing, with rollback; community moderation; the audit history; team and
+roles, candidate feature switches, data retention and backup status.
 
 **Simulation accuracy** on induction 21 (real data, back-tested): round 1 reproduces
 98.9% of PHF's allocations; each later round 96–99%. Details and the rules behind them
@@ -109,5 +113,9 @@ docs/               ARCHITECTURE, DEPLOYMENT, SECURITY, DATA_CONTRACTS
 - **Cut-over:** point the public site at the app and remove the legacy app pages and
   datasets from the public repository; finish the public-repo security items in
   [docs/SECURITY.md](docs/SECURITY.md) (history purge, Firestore rules) if not done.
+- **Smaller items from the original section plans:** missing-data indicators on the
+  merit profile; CPSP accreditation shown on hospital and speciality pages; data-source
+  and update times on the dashboard; favourite institutions and saved comparisons in
+  the workspace (the seat shortlist exists); seat-count trends on merit lists.
 - **Optional features** from the roadmap: seat watchlist and alerts, personal merit
   report (PDF), grievance status, publication monitor.

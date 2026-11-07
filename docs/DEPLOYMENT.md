@@ -202,6 +202,9 @@ Writes `$MERITNAMA_DATA_DIR/backups/meritnama-<UTC>/` with `database.dump`
   backup on the same volume does not survive volume loss.
 - Prune old ones (e.g. keep 14 daily, 8 weekly).
 - Do not rely on copying `postgres/` while the DB is running.
+- Team & roles shows the newest backups and warns when the latest is more than a day
+  old. Compose mounts `backups/` read-only into the app as `/app/backups`
+  (`APP_BACKUP_DIR`); the app cannot see off-site copies.
 
 ## 5. Restore
 

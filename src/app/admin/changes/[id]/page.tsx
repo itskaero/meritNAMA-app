@@ -93,8 +93,12 @@ function Preview({ kind, preview }: { kind: ChangeKind; preview: unknown }) {
       return (
         <>
           <div className="grid gap-4 sm:grid-cols-2">
-            <FromTo label={`Applicants corrected in induction ${p.induction}`} from={0} to={p.applicants} />
-            <FromTo label="Values that change" from={0} to={p.rows.length + p.more} />
+            {([[`Applicants corrected in induction ${p.induction}`, p.applicants], ["Values that change", p.rows.length + p.more]] as const).map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-line bg-surface p-4">
+                <p className="text-xs text-muted">{label}</p>
+                <p className="mt-2 font-mono text-lg font-semibold tabular-nums">{value.toLocaleString("en-US")}</p>
+              </div>
+            ))}
           </div>
           {p.unchanged ? <Notice title={`${p.unchanged} value${p.unchanged > 1 ? "s were" : " was"} already as given`}>They are left out.</Notice> : null}
           <Card>

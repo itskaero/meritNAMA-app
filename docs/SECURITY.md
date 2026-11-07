@@ -44,6 +44,13 @@
   with `no-store`, `nosniff` and a sandboxing CSP.
 - Uploads (delivery 3): size limits, extension + content sniffing, schema validation
   before anything is stored, files written under `APP_STORAGE_DIR` with generated names.
+- Corrections to candidates' marks are staged with a reason, applied over the imported
+  data (never editing it) and can be withdrawn or rolled back; previews naming
+  applicants are shown only to staff with `candidates.verify`. Candidate and run exports
+  are audited, and CSV cells that could be read as formulas are neutralised.
+- Short-lived personal data (sign-in links, expired sessions, read notifications,
+  candidates' what-if runs, proof documents of decided requests) is removed after a
+  retention period an owner sets; the audit history is kept.
 - Processing jobs run fixed, server-defined code paths. Nothing executes
   browser-supplied commands.
 
