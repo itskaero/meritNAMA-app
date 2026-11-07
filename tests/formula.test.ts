@@ -59,7 +59,8 @@ describe("base-marks formulas", () => {
   });
 
   it("applies parameter corrections, then the formula, then marks corrections", () => {
-    const rows = [
+    type Row = { applicantId: string; baseMarks: number; params: Record<string, number>; programMarks: Record<string, number>; profileStatus: number; certificates: { status: string; certificateMarks: number }[] };
+    const rows: Row[] = [
       { applicantId: "1", baseMarks: 20, params: { degree: 14, houseJob: 5 }, programMarks: {}, profileStatus: 1, certificates: [{ status: "Pass", certificateMarks: 4 }] },
       { applicantId: "2", baseMarks: 30, params: { degree: 15 }, programMarks: {}, profileStatus: 1, certificates: [] },
       { applicantId: "3", baseMarks: 25, params: { degree: 10, houseJob: 1 }, programMarks: {}, profileStatus: 1, certificates: [] },
@@ -76,5 +77,39 @@ describe("base-marks formulas", () => {
     expect(effectiveCandidates(rows, [], null)).toEqual(rows);
     expect(certificateParameters([{ status: " pass ", certificateMarks: "3", computerizedMarks: null }, { status: "Fail", certificateMarks: 5 }])).toEqual({ certCount: 2, certPassed: 1, certMaxMarks: 5, certMaxComputerized: 0 });
     expect(formulaVariables({ baseMarks: 9, params: { marksTotal: 1 } }).marksTotal).toBe(9);
+  });
+});
+
+describe("CPSP accreditation matching", async () => {
+  const { matchHospital, specialityMatches, hospitalsForSpeciality } = await import("@/lib/domain/accreditation");
+  const list = [
+    { hospital: "KING EDWARD MEDICAL UNIVERSITY / MAYO HOSPITAL (LAHORE)", city: "Lahore", programs: [{ speciality: "GENERAL SURGERY", unit: "Unit-I", type: "F.A.", since: "01-01-2010" }, { speciality: "OBSTETRICS & GYNAECOLOGY", unit: "", type: "F.A.", since: "01-01-2012" }] },
+    { hospital: "INSTITUTE OF CHEST MEDICINE, MAYO HOSPITAL (LAHORE)", city: "Lahore", programs: [] },
+    { hospital: "UNIVERSITY OF LAHORE TEACHING HOSPITAL (LAHORE)", city: "Lahore", programs: [] },
+    { hospital: "LADY WILLINGTON HOSPITAL", city: "Lahore", programs: [] },
+    { hospital: "SIMS / SERVICES HOSPITAL", city: "Lahore", programs: [{ speciality: "DENTISTRY (ORTHODONTICS)", unit: "", type: "P.A.", since: "01-01-2015" }] },
+    { hospital: "ALLIED HOSPITAL", city: "Faisalabad", programs: [] },
+  ];
+  it("matches hospitals by their distinctive words and city", () => {
+    expect(matchHospital("Mayo Hospital, Lahore", list)?.entries.map((e) => e.hospital)).toEqual(["KING EDWARD MEDICAL UNIVERSITY / MAYO HOSPITAL (LAHORE)", "INSTITUTE OF CHEST MEDICINE, MAYO HOSPITAL (LAHORE)"]);
+    expect(matchHospital("Services Hospital, Lahore", list)?.entries.map((e) => e.hospital)).toEqual(["SIMS / SERVICES HOSPITAL"]);
+    expect(matchHospital("Lahore General Hospital, Lahore", list)).toBeNull();
+    expect(matchHospital("Lady Willingdon Hospital", list)?.entries[0]!.hospital).toBe("LADY WILLINGTON HOSPITAL");
+    expect(matchHospital("Allied II Hospital, Faisalabad", list)).toBeNull();
+    expect(matchHospital("Jinnah Hospital, Lahore", list)).toBeNull();
+  });
+  it("matches specialities across spelling and word order", () => {
+    expect(specialityMatches("General Surgery", "GENERAL SURGERY")).toBe(true);
+    expect(specialityMatches("Orthodontics", "DENTISTRY (ORTHODONTICS)")).toBe(true);
+    expect(specialityMatches("Gynecology & Obstetrics", "OBSTETRICS & GYNAECOLOGY")).toBe(true);
+    expect(specialityMatches("General Surgery", "SURGERY")).toBe(true);
+    expect(specialityMatches("General Surgery", "PLASTIC SURGERY")).toBe(false);
+    expect(specialityMatches("Plastic Surgery", "GENERAL SURGERY")).toBe(false);
+    expect(specialityMatches("Otorhinolaryngology ENT", "OTORHINOLARYNGOLOGY (E.N.T.)")).toBe(true);
+    expect(specialityMatches("Oral & Maxillofacial Surgery", "DENTISTRY (ORAL AND MAXILLO-FACIAL SURGERY)")).toBe(true);
+    expect(specialityMatches("Physical Medicine & Rehablitation", "PHYSICAL MEDICINE AND REHABILITATION")).toBe(true);
+    expect(specialityMatches("Cardio Thoracic Anesthesia", "CARDIOTHORACIC ANAESTHESIA")).toBe(true);
+    expect(specialityMatches("Pediatric Surgery", "PAEDIATRIC AND CONGENITAL CARDIAC SURGERY")).toBe(false);
+    expect(hospitalsForSpeciality("Orthodontics", list).map((h) => h.hospital)).toEqual(["SIMS / SERVICES HOSPITAL"]);
   });
 });

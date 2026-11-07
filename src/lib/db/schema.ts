@@ -43,6 +43,8 @@ export const users = pgTable("users", {
   role: userRole("role").notNull().default("candidate"),
   /** Shown on community posts instead of the email address. */
   displayName: text("display_name"),
+  /** Inbox alerts when a new merit round changes a seat on the person's shortlist. */
+  shortlistAlerts: boolean("shortlist_alerts").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -508,7 +510,7 @@ export const candidateLinks = pgTable(
 // ── Follows and the in-app inbox ───────────────────────────────────────────────
 
 export const followKind = pgEnum("follow_kind", ["induction", "round", "speciality", "hospital", "thread"]);
-export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round", "new_review"]);
+export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round", "new_review", "shortlist"]);
 
 /** What a member follows: a topic (same keys as discussion topics) or a thread (its id). */
 export const follows = pgTable(
@@ -824,3 +826,17 @@ export const appSettings = pgTable("app_settings", {
   updatedBy: text("updated_by").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Pages a member saved to come back to (comparisons, finder results), in their workspace. Private. */
+export const savedViews = pgTable(
+  "saved_views",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    /** A portal path with its query, e.g. "/portal/history/21/compare?a=1&b=3". */
+    href: text("href").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("saved_views_user_href_uq").on(t.userId, t.href), index("saved_views_user_idx").on(t.userId, t.createdAt)],
+);

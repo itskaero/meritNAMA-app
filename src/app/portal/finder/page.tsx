@@ -1,3 +1,4 @@
+import { SaveView } from "@/components/workspace/save-view";
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { LineChart } from "@/components/charts/line-chart";
@@ -134,8 +135,10 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   for (const o of visible) (bySpeciality.get(o.speciality) ?? bySpeciality.set(o.speciality, []).get(o.speciality)!).push(o);
   const hospitals = [...new Set(visible.map((o) => o.hospital))].sort();
 
+  const query = new URLSearchParams(Object.entries(sp).filter((e): e is [string, string] => typeof e[1] === "string" && e[1] !== "")).toString();
   return (
     <AreaPage {...frame}>
+      {query ? <div><SaveView href={`/portal/finder?${query}`} label={`Finder${sp.marks ? `: ${sp.marks} marks` : ""}${sp.track ? `, ${sp.track.replace("|", " · ")}` : ""}`} /></div> : null}
       <Card>
         <form method="get" className="grid gap-4 md:grid-cols-[repeat(4,minmax(0,1fr))_auto] md:items-end">
           <label className="grid gap-1.5 text-sm font-medium">

@@ -15,7 +15,7 @@ import {
 } from "@/lib/db/schema";
 import { isoDay, meritRoundFileSchema, nameKey } from "@/lib/domain/merit-round";
 import { UserFacingError } from "@/lib/errors";
-import { notifyFollowers } from "./notifications";
+import { notifyFollowers, notifyShortlists } from "./notifications";
 import { requireReason, writeAudit, type Db } from "./shared";
 
 /**
@@ -128,6 +128,8 @@ export async function importMeritRound(
       ],
       { kind: "new_round", title: `Induction ${inductionId}, round ${roundNo} ${prev ? "was updated" : "is out"}`, href: `/portal/history/${inductionId}/rounds/${roundNo}` },
     );
+    // People with seats from this round on their shortlist get the closing merit of each.
+    await notifyShortlists(tx, { induction: inductionId, roundNo, roundId: round!.id });
 
     const unmatched = {
       specialities: [...new Set(rows.filter((r) => r.specialityId === null).map((r) => r.speciality))],
@@ -530,4 +532,21 @@ export async function latestRoundChange(db: Database, session: Session | null) {
   const now = t.at(-1), before = t.at(-2);
   if (!now) return null;
   return { induction: latest.ind, now, before: before ?? null };
+}
+
+/** Seats per induction, in total and by programme, from the seat matrices (merit lists page). */
+export async function seatTrends(db: Database, session: Session | null) {
+  assertCan(session, "portal");
+  const rows = (await db.execute(sql`
+    select s.induction_id, trim(p.name) as program, sum(s.seats)::int as seats
+    from induction_seats s join programs p on p.id = s.program_id
+    group by 1, 2 order by 1, 2`)) as unknown as { induction_id: number; program: string; seats: number }[];
+  const inductions = [...new Set(rows.map((r) => r.induction_id))].sort((a, b) => a - b);
+  const programs = [...new Set(rows.map((r) => r.program))].sort();
+  const at = (i: number, p?: string) => rows.filter((r) => r.induction_id === i && (!p || r.program === p)).reduce((n, r) => n + r.seats, 0);
+  return {
+    inductions,
+    total: inductions.map((i) => at(i)),
+    byProgram: programs.map((p) => ({ program: p, values: inductions.map((i) => (rows.some((r) => r.induction_id === i && r.program === p) ? at(i, p) : null)) })),
+  };
 }

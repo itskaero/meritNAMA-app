@@ -9,7 +9,9 @@ import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Icon, type IconName } from "@/components/icon";
 import { Card, CardHeader } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
+import { dataSources } from "@/lib/data/freshness";
 import { roundSettling } from "@/lib/data/insights";
+import { formatUtc } from "@/lib/format";
 import { inductionRunning, predictRound } from "@/lib/data/predictions";
 import { inductionTimeline, latestRoundChange, listInductionsWithRounds } from "@/lib/data/merit";
 import { latestRoundStats } from "@/lib/round-stats";
@@ -33,6 +35,7 @@ export default async function PortalDashboard() {
 
   const db = getDb();
   const session = await getSession();
+  const sources = await dataSources(db, session);
   const [inductions, change] = await Promise.all([listInductionsWithRounds(db, session), latestRoundChange(db, session)]);
   const latest = inductions[0];
   const gauge = latest ? gaugeProps(latest, inductions[1]?.rounds.length) : null;
@@ -84,6 +87,19 @@ export default async function PortalDashboard() {
         <Card>
           <CardHeader title={`Latest: induction ${latest.id} · ${latest.rounds[0]!.cycleName}`} description={`Median closing merit per round${latest.maxMarks ? `, out of ${latest.maxMarks}` : ""}.`} />
           <LineChart title={`Induction ${latest.id}: median closing merit per round`} xLabels={timeline.map((t) => `R${t.roundNo}`)} series={[{ label: "Median closing merit", values: timeline.map((t) => t.medianClosing) }]} height={200} />
+        </Card>
+      ) : null}
+      {sources.length ? (
+        <Card>
+          <CardHeader title="Where this comes from" description="Every figure here is worked out from these, as last updated. Times are UTC." />
+          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+            {sources.map((s) => (
+              <div key={s.label} className="grid gap-0.5">
+                <dt className="font-medium">{s.label}</dt>
+                <dd className="text-muted">{s.detail}{s.at ? <span className="block font-mono text-xs text-subtle">updated {formatUtc(s.at)}</span> : null}</dd>
+              </div>
+            ))}
+          </dl>
         </Card>
       ) : null}
     </AreaPage>

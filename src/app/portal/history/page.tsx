@@ -6,7 +6,8 @@ import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
-import { listInductionsWithRounds, meritOverview } from "@/lib/data/merit";
+import { listInductionsWithRounds, meritOverview, seatTrends } from "@/lib/data/merit";
+import { LineChart } from "@/components/charts/line-chart";
 import { getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
 
@@ -19,7 +20,7 @@ export default async function MeritListsPage() {
   if (down) return down;
   const db = getDb();
   const session = await getSession();
-  const [inductions, overview] = await Promise.all([listInductionsWithRounds(db, session), meritOverview(db, session)]);
+  const [inductions, overview, seats] = await Promise.all([listInductionsWithRounds(db, session), meritOverview(db, session), seatTrends(db, session)]);
 
   return (
     <AreaPage area="portal" trail={[{ label: s.label }]} title={s.label} description={s.description}>
@@ -35,6 +36,29 @@ export default async function MeritListsPage() {
         <Card>
           <CardHeader title="Timeline" description="Each induction's cycle; select a round to open its merit list." />
           <InductionTimeline inductions={inductions} />
+        </Card>
+      ) : null}
+      {seats.inductions.length ? (
+        <Card>
+          <CardHeader
+            title="Seats by induction"
+            description={seats.inductions.length > 1
+              ? `From each induction's seat matrix. Induction ${seats.inductions.at(-1)} has ${seats.total.at(-1)!.toLocaleString("en-US")} seats, ${(() => { const d = seats.total.at(-1)! - seats.total.at(-2)!; return d === 0 ? "the same as" : `${Math.abs(d).toLocaleString("en-US")} ${d > 0 ? "more than" : "fewer than"}`; })()} induction ${seats.inductions.at(-2)}.`
+              : `Only induction ${seats.inductions[0]}'s seat matrix is imported, so there is no trend yet: ${seats.total[0]!.toLocaleString("en-US")} seats.`}
+          />
+          {seats.inductions.length > 1 ? (
+            <LineChart
+              title="Seats per induction, in total and by programme"
+              xLabels={seats.inductions.map((i) => `I${i}`)}
+              series={[{ label: "All programmes", values: seats.total }, ...seats.byProgram.map((p) => ({ label: p.program, values: p.values }))]}
+              format={(v) => Math.round(v).toLocaleString("en-US")}
+              height={240}
+            />
+          ) : (
+            <ul className="flex flex-wrap gap-2 text-sm">
+              {seats.byProgram.map((p) => <li key={p.program} className="rounded-full px-3 py-1.5 ring-1 ring-line-strong">{p.program} <span className="font-mono">{p.values[0]?.toLocaleString("en-US")}</span></li>)}
+            </ul>
+          )}
         </Card>
       ) : null}
       {inductions.length === 0 ? (

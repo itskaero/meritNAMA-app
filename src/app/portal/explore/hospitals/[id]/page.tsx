@@ -7,7 +7,9 @@ import { DataTable } from "@/components/ui/data-table";
 import { EntityLink } from "@/components/entity-link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
+import { hospitalAccreditation } from "@/lib/data/accreditation";
 import { hospitalProfile } from "@/lib/data/merit";
+import { Badge } from "@/components/ui/badge";
 import { listHospitalReviews, reviewChoices } from "@/lib/data/reviews";
 import { RatingMeter } from "@/components/community/rating-meter";
 import { ReviewCard } from "@/components/community/review-card";
@@ -41,6 +43,7 @@ export default async function HospitalPage({ params, searchParams }: { params: P
   const seatsBySpec = new Map<string, { id: number; seats: number }>();
   for (const r of p.seats) seatsBySpec.set(r.speciality, { id: r.speciality_id, seats: (seatsBySpec.get(r.speciality)?.seats ?? 0) + r.seats });
   const seatItems = [...seatsBySpec].sort((a, b) => b[1].seats - a[1].seats).map(([label, v]) => ({ label, value: v.seats, href: `/portal/explore/specialities/${v.id}` }));
+  const acc = await hospitalAccreditation(db, session, { hospital: p.hospital.name, specialities: [...new Set([...seatsBySpec.keys(), ...p.closing.map((c) => c.speciality)])] });
   const latest = p.closing[0];
   const max = latest ? p.maxMarks[latest.induction_id] : undefined;
 
@@ -77,6 +80,29 @@ export default async function HospitalPage({ params, searchParams }: { params: P
           </Card>
         </div>
       )}
+      {acc ? (
+        <Card>
+          <CardHeader
+            title="CPSP accreditation"
+            description={acc.matched ? `Matched by name to “${acc.matched}” in CPSP's list. Check with CPSP before relying on it.` : "No entry in CPSP's accreditation list matches this hospital's name. That does not mean it is not accredited."}
+            action={acc.matched ? <Badge tone={acc.covered.length ? "success" : "neutral"}>{acc.covered.length} of {seatsBySpec.size || acc.covered.length} seat specialities covered</Badge> : undefined}
+          />
+          {acc.programs.length ? (
+            <DataTable
+              caption="Accredited programmes"
+              rows={acc.programs}
+              rowKey={(r) => `${r.speciality}|${r.unit}|${r.type}`}
+              maxHeight="22rem"
+              columns={[
+                { key: "s", header: "Speciality (as CPSP writes it)", cell: (r) => r.speciality },
+                { key: "u", header: "Unit", tone: "muted", cell: (r) => r.unit || "—" },
+                { key: "t", header: "Type", cell: (r) => r.type },
+                { key: "y", header: "Since", align: "right", tone: "mono", cell: (r) => r.since },
+              ]}
+            />
+          ) : null}
+        </Card>
+      ) : null}
       <Card id="reviews" className="scroll-mt-6">
         <CardHeader
           title={`Reviews${rv.count ? ` (${rv.count})` : ""}`}

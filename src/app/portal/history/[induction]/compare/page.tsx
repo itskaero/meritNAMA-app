@@ -1,3 +1,4 @@
+import { SaveView } from "@/components/workspace/save-view";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { BarList } from "@/components/charts/bar-list";
@@ -33,6 +34,7 @@ export default async function ComparePage({ params, searchParams }: {
       title={`Round ${from} → round ${to}`}
       description={`Induction ${induction} · ${cmp.to.cycleName}. Closing merit per programme, quota and speciality, and candidate movement between the two rounds.`}
     >
+      <div><SaveView href={`/portal/history/${induction}/compare?from=${from}&to=${to}`} label={`Induction ${induction}: round ${from} → ${to}`} /></div>
       <StatTiles
         stats={[
           { label: `Allocations in round ${from}`, value: cmp.from.allocations },

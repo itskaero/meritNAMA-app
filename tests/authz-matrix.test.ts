@@ -36,7 +36,7 @@ const NO_SESSION = new Set([
   "community#describeTopics", "community#voteCount",
   "finder#computeOptions",
   "merit#inductionMaxMarks",
-  "notifications#parseFollowTarget", "notifications#autoFollow", "notifications#notifyFollowers", "notifications#notifyUser",
+  "notifications#parseFollowTarget", "notifications#autoFollow", "notifications#notifyFollowers", "notifications#notifyUser", "notifications#notifyShortlists",
   "predictions#inductionRunning",
   "public#landingFigures",
   "settings#loadFeatures", "settings#loadRetention", "settings#retentionIfDue",

@@ -9,6 +9,8 @@ import { getSession, requireCan } from "@/lib/auth/session";
 import { myLink, myMerit, type MyAllocation } from "@/lib/data/candidates";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
+import { myDataChecklist } from "@/lib/data/simulation";
+import { DataChecklist } from "./data-checklist";
 import { LinkRequestForm } from "./forms";
 
 export const metadata = { title: "Merit profile" };
@@ -21,6 +23,7 @@ export default async function PortalProfilePage() {
   const db = getDb();
   const session = await getSession();
   const [link, merit] = await Promise.all([myLink(db, session), myMerit(db, session)]);
+  const checklist = merit ? await myDataChecklist(db, session) : null;
   const latest = merit?.rows[0];
 
   return (
@@ -70,6 +73,7 @@ export default async function PortalProfilePage() {
                 ]}
               />
             </Card>
+            {checklist ? <DataChecklist data={checklist} rounds={new Set(merit.rows.map((r) => `${r.induction}-${r.roundNo}`)).size} /> : null}
           </>
         ) : (
           <>

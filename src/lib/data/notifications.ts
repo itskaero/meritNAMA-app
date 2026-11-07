@@ -2,7 +2,7 @@ import "server-only";
 import { and, count, desc, eq, inArray, isNull, lt, sql, type SQL } from "drizzle-orm";
 import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
-import { discussionThreads, follows, notifications } from "@/lib/db/schema";
+import { discussionThreads, follows, notifications, users } from "@/lib/db/schema";
 import { topicSchema } from "@/lib/domain/community";
 import { isUuid } from "@/lib/format";
 import { UserFacingError } from "@/lib/errors";
@@ -122,4 +122,59 @@ export async function openNotification(db: Db, session: Session | null, id: numb
     .where(and(eq(notifications.id, id), eq(notifications.userId, me.id))).returning({ href: notifications.href });
   // Only internal paths are stored, but check anyway before redirecting.
   return row && /^\/(?!\/)/.test(row.href) ? row.href : null;
+}
+
+/**
+ * After a merit round is imported: one inbox note per person whose shortlist has seats
+ * in it, with each seat's closing merit and its change from the previous round. Only
+ * people who keep shortlist alerts on. Inside the import's transaction.
+ */
+export async function notifyShortlists(db: Db, input: { induction: number; roundNo: number; roundId: number }) {
+  const rows = (await db.execute(sql`
+    with now as (
+      select trim(program) as program, trim(quota) as quota, trim(speciality) as speciality, trim(hospital) as hospital, min(marks) as closing
+      from merit_allocations where round_id = ${input.roundId}
+      group by 1, 2, 3, 4
+    ),
+    before as (
+      select trim(a.program) as program, trim(a.quota) as quota, trim(a.speciality) as speciality, trim(a.hospital) as hospital, min(a.marks) as closing
+      from merit_allocations a join merit_rounds r on r.id = a.round_id
+      where r.induction_id = ${input.induction} and r.round_no = ${input.roundNo - 1}
+      group by 1, 2, 3, 4
+    )
+    select s.user_id, s.speciality, s.hospital, now.closing, before.closing as previous
+    from shortlist_items s
+    join users u on u.id = s.user_id and u.shortlist_alerts
+    join now on now.program = s.program and now.quota = s.quota and now.speciality = s.speciality and now.hospital = s.hospital
+    left join before on before.program = s.program and before.quota = s.quota and before.speciality = s.speciality and before.hospital = s.hospital
+    order by s.user_id, s.created_at`)) as unknown as { user_id: string; speciality: string; hospital: string; closing: number; previous: number | null }[];
+  const byUser = new Map<string, typeof rows>();
+  for (const r of rows) byUser.set(r.user_id, [...(byUser.get(r.user_id) ?? []), r]);
+  const fmt = (n: number) => Number(n).toFixed(2);
+  for (const [userId, seats] of byUser) {
+    const parts = seats.slice(0, 3).map((s) => {
+      const d = s.previous == null ? null : Number(s.closing) - Number(s.previous);
+      return `${s.speciality} · ${s.hospital.split(",")[0]} ${fmt(s.closing)}${d == null || Math.abs(d) < 0.005 ? "" : ` (${d > 0 ? "+" : "−"}${fmt(Math.abs(d))})`}`;
+    });
+    const more = seats.length > 3 ? ` and ${seats.length - 3} more` : "";
+    await notifyUser(db, userId, {
+      kind: "shortlist",
+      title: `Round ${input.roundNo}, your shortlist: ${parts.join("; ")}${more}`,
+      href: `/portal/workspace`,
+    });
+  }
+  return byUser.size;
+}
+
+/** Whether the signed-in person gets shortlist alerts. */
+export async function shortlistAlerts(db: Db, session: Session | null) {
+  assertCan(session, "portal");
+  const [u] = await db.select({ on: users.shortlistAlerts }).from(users).where(eq(users.email, session.email)).limit(1);
+  return u?.on ?? true;
+}
+
+export async function setShortlistAlerts(db: Db, session: Session | null, on: boolean) {
+  assertCan(session, "portal");
+  const me = await ensureUser(db, session);
+  await db.update(users).set({ shortlistAlerts: on }).where(eq(users.id, me.id));
 }

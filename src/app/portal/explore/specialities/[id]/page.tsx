@@ -4,6 +4,9 @@ import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { LineChart } from "@/components/charts/line-chart";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { specialityAccreditation } from "@/lib/data/accreditation";
+import { matchHospital } from "@/lib/domain/accreditation";
 import { DataTable } from "@/components/ui/data-table";
 import { EntityLink } from "@/components/entity-link";
 import { selectClass } from "@/components/ui/styles";
@@ -53,6 +56,9 @@ export default async function SpecialityPage({ params, searchParams }: {
       ])
     : [null, []];
   const said = await specialityReviewSummary(getDb(), await getSession(), id);
+  // CPSP accreditation for this speciality, matched to the hospitals by name.
+  const acc = await specialityAccreditation(getDb(), await getSession(), h.speciality.name);
+  const accredited = new Set(acc ? h.byHospital.filter((r) => matchHospital(r.hospital, acc.hospitals)).map((r) => r.hospital) : []);
 
   return (
     <AreaPage
@@ -137,8 +143,10 @@ export default async function SpecialityPage({ params, searchParams }: {
                   { key: "pq", header: "Programme · quota", tone: "muted", cell: (r) => `${r.program} · ${r.quota}` },
                   { key: "n", header: "Allocated", align: "right", cell: (r) => r.allocations },
                   { key: "c", header: "Closing", align: "right", tone: "mono", cell: (r) => formatMarks(Number(r.closing)) },
+                  ...(acc ? [{ key: "cpsp", header: "CPSP", cell: (r: (typeof h.byHospital)[number]) => (accredited.has(r.hospital) ? <Badge tone="success">accredited</Badge> : <span className="text-xs text-subtle">not matched</span>) }] : []),
                 ]}
               />
+              {acc ? <p className="mt-3 text-xs text-subtle">CPSP lists {acc.hospitals.length} hospital{acc.hospitals.length === 1 ? "" : "s"} accredited for {h.speciality.name}. Hospitals are matched by name, so “not matched” is not proof that a unit is unaccredited.</p> : null}
             </Card>
           ) : null}
         </>

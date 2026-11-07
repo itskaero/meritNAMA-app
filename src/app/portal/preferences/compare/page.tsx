@@ -1,3 +1,4 @@
+import { SaveView } from "@/components/workspace/save-view";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
@@ -49,6 +50,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
 
   return (
     <AreaPage area="portal" trail={[{ label: "Preference planner", href: "/portal/preferences" }, { label: "Compare" }]} title="Compare lists" description="Each list's likely outcome, and where the same option sits in the other list.">
+      <div><SaveView href={`/portal/preferences/compare?a=${A.list.id}&b=${B.list.id}`} label={`${A.list.name} vs ${B.list.name}`} /></div>
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">{column(A, rb)}{column(B, ra)}</div>
     </AreaPage>
   );

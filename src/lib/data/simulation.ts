@@ -7,6 +7,7 @@ import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
   candidateCorrections,
+  candidateLinks,
   hospitals,
   inductionSeats,
   meritAllocations,
@@ -1030,4 +1031,46 @@ export async function baseMarksWorkbench(db: Database, session: Session | null, 
     }
   }
   return { candidates: rows.length, parameters, suggestion, trial };
+}
+
+// ── A candidate's own inputs (merit profile) ─────────────────────────────────
+
+/**
+ * What the app holds about the signed-in candidate's own record in the newest
+ * induction with simulation data: marks (as runs use them), components, profile status,
+ * preferences, certificates and consent replies. Only their own verified record.
+ */
+export async function myDataChecklist(db: Database, session: Session | null) {
+  assertCan(session, "portal");
+  const me = await ensureUser(db, session);
+  const [link] = await db.select({ applicantId: candidateLinks.applicantId }).from(candidateLinks)
+    .where(and(eq(candidateLinks.userId, me.id), eq(candidateLinks.status, "verified"))).limit(1);
+  if (!link) return null;
+  const applicantId = link.applicantId;
+  const [ds] = await db.select({ induction: simDatasets.inductionId, at: simDatasets.importedAt }).from(simDatasets).orderBy(desc(simDatasets.inductionId)).limit(1);
+  if (!ds) return { applicantId, induction: null, inData: false as const };
+  const { resolved, rules } = await loadInductionRules(db, ds.induction);
+  const [row] = await candidateRows(db, ds.induction, resolved ?? rules, applicantId);
+  if (!row) return { applicantId, induction: ds.induction, inData: false as const, importedAt: ds.at };
+  const prefs = await db.select({ program: simPreferences.program, n: sql<number>`count(*)`.mapWith(Number) }).from(simPreferences)
+    .where(and(eq(simPreferences.inductionId, ds.induction), eq(simPreferences.applicantId, applicantId))).groupBy(simPreferences.program);
+  const consent = await db.select({ round: simConsent.roundNo, status: simConsent.status }).from(simConsent)
+    .where(and(eq(simConsent.inductionId, ds.induction), eq(simConsent.applicantId, applicantId))).orderBy(asc(simConsent.roundNo));
+  const rounds = await consentRounds(db, ds.induction);
+  const [corrected] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(candidateCorrections)
+    .where(and(eq(candidateCorrections.inductionId, ds.induction), eq(candidateCorrections.applicantId, applicantId), isNull(candidateCorrections.revokedAt)));
+  return {
+    applicantId,
+    induction: ds.induction,
+    inData: true as const,
+    importedAt: ds.at,
+    baseMarks: row.baseMarks,
+    components: row.params,
+    programMarks: row.programMarks,
+    profileStatus: row.profileStatus,
+    certificates: row.certificates.length,
+    preferences: prefs.map((p) => ({ program: p.program.trim(), count: p.n })),
+    consent: rounds.map((r) => ({ round: r.round, replies: consent.filter((c) => c.round === r.round).map((c) => c.status) })),
+    corrected: (corrected?.n ?? 0) > 0,
+  };
 }

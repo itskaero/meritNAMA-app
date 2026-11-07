@@ -361,6 +361,24 @@ run, rules, policy and dataset time it used), named
 `induction<n>_round<r>_simulated_<UTC>_<run id>`. Downloads need `data.edit` and are
 audited. What-if runs are not exported.
 
+## Portal details
+
+- **Merit profile** lists what the app holds about the candidate's own record in the
+  newest induction with simulation data (marks, components, programme marks,
+  certificates, profile status, preferences, consent replies) and flags what is
+  missing, so they can see why a simulation leaves them out (`myDataChecklist`).
+- **CPSP accreditation** is matched to hospitals and specialities by name
+  (`src/lib/domain/accreditation.ts`): CPSP's "College / Hospital (City)" parts,
+  spelling variants, one-typo tolerance, numbers that must agree ("Allied II" is not
+  "Allied"). On induction 21, 48 of 69 hospitals match, all correctly; the rest are
+  left unmatched rather than guessed. Pages say a match is by name.
+- **Dashboard** lists its data sources and when each was last updated.
+- **Workspace**: saved views (finder results and comparisons, portal paths only,
+  private), the hospitals and specialities the member follows, and shortlist alerts:
+  when a round is imported, one inbox note per member with the closing merit of each
+  shortlisted seat in it and its change since the previous round (switchable).
+- **Merit lists** chart seats per induction, in total and by programme.
+
 ## Workspace settings
 
 Owners (Team & roles; `src/lib/data/settings.ts`, `app_settings`):

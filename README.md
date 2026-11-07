@@ -113,9 +113,5 @@ docs/               ARCHITECTURE, DEPLOYMENT, SECURITY, DATA_CONTRACTS
 - **Cut-over:** point the public site at the app and remove the legacy app pages and
   datasets from the public repository; finish the public-repo security items in
   [docs/SECURITY.md](docs/SECURITY.md) (history purge, Firestore rules) if not done.
-- **Smaller items from the original section plans:** missing-data indicators on the
-  merit profile; CPSP accreditation shown on hospital and speciality pages; data-source
-  and update times on the dashboard; favourite institutions and saved comparisons in
-  the workspace (the seat shortlist exists); seat-count trends on merit lists.
 - **Optional features** from the roadmap: seat watchlist and alerts, personal merit
   report (PDF), grievance status, publication monitor.
