@@ -25,10 +25,11 @@ export function ReviewControls({ id }: { id: string }) {
 }
 
 /** Propose one correction to an applicant's simulation inputs. Staged; someone publishes it from Changes. */
-export function CorrectionForm({ induction, applicantId, programs }: { induction: number; applicantId: string; programs: string[] }) {
+export function CorrectionForm({ induction, applicantId, programs, parameters = [] }: { induction: number; applicantId: string; programs: string[]; parameters?: string[] }) {
   const [res, action, pending] = useActionState(proposeCorrectionAction, idleState);
   const [field, setField] = useState("base_marks");
   const [program, setProgram] = useState(programs[0] ?? "");
+  const [parameter, setParameter] = useState(parameters[0] ?? "");
   const [value, setValue] = useState("");
   return (
     <form action={action} className="grid gap-3">
@@ -41,6 +42,7 @@ export function CorrectionForm({ induction, applicantId, programs }: { induction
               <option value="base_marks">Base marks</option>
               {programs.length ? <option value="program_marks">Programme marks</option> : null}
               <option value="profile_status">Profile status</option>
+              {parameters.length ? <option value="parameter">A parameter (for the base-marks formula)</option> : null}
             </select>
           )}
         </Field>
@@ -49,6 +51,15 @@ export function CorrectionForm({ induction, applicantId, programs }: { induction
             {(id) => (
               <select id={id} name="program" value={program} onChange={(e) => setProgram(e.target.value)} className={fieldClass}>
                 {programs.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            )}
+          </Field>
+        ) : null}
+        {field === "parameter" ? (
+          <Field label="Parameter">
+            {(id) => (
+              <select id={id} name="program" value={parameter} onChange={(e) => setParameter(e.target.value)} className={fieldClass}>
+                {parameters.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             )}
           </Field>

@@ -119,9 +119,28 @@ export type SimPreference = {
   parentMarks: number | null;
 };
 
+/**
+ * Numeric parameters for base-marks formulas (degree, houseJob, mdcat, …), taken from
+ * a marks or components row. Kept: plain numbers between -1000 and 1000 under a name
+ * that is not an id, a total or a personal field. Phone numbers, CNICs and PMDC numbers
+ * fail both tests, so they cannot be kept even under an unexpected name.
+ */
+const PERSONAL = /(cnic|phone|mobile|contact|whats|pmdc|email|name|address|father|birth|dob|^age$|^number$|^id$|id$|^applicant)/i;
+const NOT_PARAMETERS = new Set(["marksTotal", "programMarks", "profileStatus", "applied_in", "appliedIn", "preferences", "marksTotalBackup"]);
+export function numericParameters(row: Record<string, unknown> | null | undefined): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(row ?? {})) {
+    if (NOT_PARAMETERS.has(k) || PERSONAL.test(k) || !/^[A-Za-z_][A-Za-z0-9_]{0,40}$/.test(k)) continue;
+    if (typeof v === "number" && Number.isFinite(v) && Math.abs(v) <= 1000) out[k] = v;
+  }
+  return out;
+}
+
 export type SimCandidate = {
   applicantId: string;
   baseMarks: number;
+  /** Numeric parameters for base-marks formulas (see numericParameters). */
+  params: Record<string, number>;
   programMarks: Record<string, number>;
   appliedIn: Record<string, boolean>;
   certificates: SimCertificate[];
@@ -136,6 +155,8 @@ export type SimDatasetSummary = {
   withStatus: number;
   eligible: number;
   correctedMarks: number;
+  /** Parameter names available to base-marks formulas, with how many candidates have each. */
+  parameters?: Record<string, number>;
   /** Preferences of applicants with no row in the marks file (split format; left out). */
   preferencesWithoutMarks: number;
   /** "split" (marks + preferences files) or "combined" (legacy candidates file). */
@@ -169,6 +190,7 @@ export function effectiveProfileStatus(file: z.infer<typeof profileStatusFileSch
 
 type RawCandidate = {
   id: string;
+  params: Record<string, number>;
   marksTotal: number;
   programMarks: Record<string, unknown> | null | undefined;
   appliedIn: Record<string, boolean | null | undefined> | null | undefined;
@@ -182,7 +204,7 @@ const duplicate = (id: string, file: string) => new z.ZodError([{ code: "custom"
 function fromCombined(file: unknown): RawCandidate[] {
   const parsed = candidatesFileSchema.parse(file);
   const list = Array.isArray(parsed) ? parsed : "candidates" in parsed && Array.isArray(parsed.candidates) ? parsed.candidates : Object.values(parsed as Record<string, z.infer<typeof candidateSchema>>);
-  return list.map((c) => ({ id: String(c.applicantId), marksTotal: c.marksTotal, programMarks: c.programMarks, appliedIn: c.applied_in, profileStatus: null, preferences: c.preferences }));
+  return list.map((c) => ({ id: String(c.applicantId), params: numericParameters(c), marksTotal: c.marksTotal, programMarks: c.programMarks, appliedIn: c.applied_in, profileStatus: null, preferences: c.preferences }));
 }
 
 /** marks.json + preferences.json → raw candidates (in the marks file's order). */
@@ -192,7 +214,7 @@ function fromSplit(marksFile: unknown, preferencesFile: unknown): { list: RawCan
   const byId = new Map<string, RawCandidate>();
   for (const [id, r] of rows) {
     if (byId.has(id)) throw duplicate(id, "marks");
-    byId.set(id, { id, marksTotal: r.marksTotal, programMarks: r.programMarks, appliedIn: r.applied_in ?? r.appliedIn, profileStatus: r.profileStatus ?? null, preferences: [] });
+    byId.set(id, { id, params: numericParameters(r), marksTotal: r.marksTotal, programMarks: r.programMarks, appliedIn: r.applied_in ?? r.appliedIn, profileStatus: r.profileStatus ?? null, preferences: [] });
   }
   const prefs = preferencesFileSchema.parse(preferencesFile);
   const pairs = Array.isArray(prefs) ? prefs.map((p) => [p.applicantId, p] as const) : Object.entries(prefs).flatMap(([k, ps]) => ps.map((p) => [k, p] as const));
@@ -252,6 +274,8 @@ export function sanitizeSimDataset(files: {
     out.push({
       applicantId: id,
       baseMarks,
+      // The components file's values win over the marks file's.
+      params: { ...c.params, ...numericParameters(comp) },
       programMarks,
       appliedIn,
       certificates: (certificates[id] ?? []).map((x) => ({
@@ -287,6 +311,10 @@ export function sanitizeSimDataset(files: {
       withStatus: out.filter((c) => c.profileStatus != null).length,
       eligible: out.filter((c) => c.profileStatus === 1).length,
       correctedMarks,
+      parameters: out.reduce<Record<string, number>>((acc, c) => {
+        for (const k of Object.keys(c.params)) acc[k] = (acc[k] ?? 0) + 1;
+        return acc;
+      }, {}),
       preferencesWithoutMarks: orphans,
       format: split ? "split" : "combined",
     },

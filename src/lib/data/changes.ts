@@ -360,7 +360,7 @@ export async function proposeCorrections(db: Database, session: Session | null, 
   const byKey = new Map(list.map((c) => [correctionKey(c), c]));
   const corrections = [...byKey.values()];
   const ids = [...new Set(corrections.map((c) => c.applicantId))];
-  const rows = await db.select({ applicantId: simCandidates.applicantId, baseMarks: simCandidates.baseMarks, programMarks: simCandidates.programMarks, appliedIn: simCandidates.appliedIn, profileStatus: simCandidates.profileStatus })
+  const rows = await db.select({ applicantId: simCandidates.applicantId, baseMarks: simCandidates.baseMarks, params: simCandidates.params, programMarks: simCandidates.programMarks, appliedIn: simCandidates.appliedIn, profileStatus: simCandidates.profileStatus })
     .from(simCandidates).where(and(eq(simCandidates.inductionId, input.induction), inArray(simCandidates.applicantId, ids)));
   const found = new Map(rows.map((r) => [r.applicantId, r]));
   const missing = ids.filter((id) => !found.has(id));
@@ -372,13 +372,19 @@ export async function proposeCorrections(db: Database, session: Session | null, 
     .where(and(eq(candidateCorrections.inductionId, input.induction), inArray(candidateCorrections.applicantId, ids), isNull(candidateCorrections.revokedAt)))
     .orderBy(candidateCorrections.createdAt);
   const corrected = new Map((existing as Correction[]).map((c) => [correctionKey(c), c.value]));
+  const [ds] = await db.select({ summary: simDatasets.summary }).from(simDatasets).where(eq(simDatasets.inductionId, input.induction)).limit(1);
+  const datasetParams = (ds?.summary as { parameters?: Record<string, number> } | undefined)?.parameters ?? null;
   const preview = corrections.map((c) => {
     const r = found.get(c.applicantId)!;
     if (c.field === "program_marks") {
       const known = new Set([...Object.keys(r.programMarks as object), ...Object.keys((r.appliedIn as object | null) ?? {}), ...prefPrograms.filter((p) => p.applicantId === c.applicantId).map((p) => p.program.trim())]);
       if (!known.has(c.program!)) throw new UserFacingError(`Applicant ${c.applicantId} has no programme "${c.program}". Known: ${[...known].join(", ") || "none"}.`);
     }
-    const imported = currentValue({ ...r, programMarks: r.programMarks as Record<string, number> }, c.field, c.program);
+    if (c.field === "parameter") {
+      const known = Object.keys(datasetParams ?? (r.params as object));
+      if (!known.includes(c.program!)) throw new UserFacingError(`Induction ${input.induction}'s data has no parameter "${c.program}". Known: ${known.sort().join(", ") || "none (re-import the data to read them)"}.`);
+    }
+    const imported = currentValue({ ...r, programMarks: r.programMarks as Record<string, number>, params: r.params as Record<string, number> }, c.field, c.program);
     const from = corrected.has(correctionKey(c)) ? corrected.get(correctionKey(c))! : imported;
     return { applicantId: c.applicantId, field: c.field, program: c.program, imported, from, to: c.value };
   });

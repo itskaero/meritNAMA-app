@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { formInt, formText, proposalState, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { createRulesDraft } from "@/lib/data/allocation-rules";
+import { createRulesDraft, getRulesVersion } from "@/lib/data/allocation-rules";
+import { UserFacingError } from "@/lib/errors";
 import { proposeRulesActivation } from "@/lib/data/changes";
 import { getDb } from "@/lib/db/client";
 
@@ -37,4 +38,23 @@ export async function activateRulesAction(_prev: ActionState, form: FormData): P
   } catch (err) {
     return toActionState(err);
   }
+}
+
+/** Save a version's rules again, with a base-marks formula (or none), as a new draft. */
+export async function saveFormulaDraftAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  let id: string;
+  try {
+    const db = getDb();
+    const session = await getSession();
+    const base = await getRulesVersion(db, session, formText(form, "id"));
+    if (!base) throw new UserFacingError("That rules version no longer exists.");
+    const formula = formText(form, "formula").trim();
+    const definition = { ...(base.definition as object), baseMarks: { formula: formula || null, onMissing: formText(form, "onMissing") === "zero" ? "zero" : "imported" } };
+    const row = await createRulesDraft(db, session, { induction: base.inductionId, definition, reason: formText(form, "reason") });
+    id = row.id;
+  } catch (err) {
+    return toActionState(err);
+  }
+  revalidatePath("/admin/rules");
+  redirect(`/admin/rules/${id}?saved=1`);
 }

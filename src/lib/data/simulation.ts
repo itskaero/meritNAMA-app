@@ -22,13 +22,14 @@ import {
   simulationRuns,
   specialities,
 } from "@/lib/db/schema";
-import { applyCorrections, toCsv, type Correction } from "@/lib/domain/corrections";
+import { effectiveCandidates, toCsv, type Correction } from "@/lib/domain/corrections";
 import { compareRounds, groupKey, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
 import { consentRows, officialStatuses, type ConsentStatus, type ListAllocation, type OfficialReply } from "@/lib/domain/what-if";
 import { acceptedConsent, programmeBansFromRound, runCascade, seatKeyFromParts, trackBansFromRound, type CascadeCandidate, type CascadeConsentRow, type CascadeStats } from "@/lib/engine/cascade";
 import { effectiveMark, marksContext, parentBonus, programBonus, type EngineCandidate, type MarksContext, type Preference, type SpecialtyGroups } from "@/lib/engine/marks";
 import { buildSeatTree, candidatePool, isEligible, runPlacement, type SeatLine } from "@/lib/engine/placement";
+import { certificateParameters, compileFormula, formulaVariables } from "@/lib/engine/formula";
 import { allocationRulesSchema, resolveRules, type ResolvedRules } from "@/lib/engine/rules";
 import { env } from "@/lib/env";
 import { UserFacingError } from "@/lib/errors";
@@ -249,6 +250,7 @@ export async function importSimulationDataset(db: Database, session: Session | n
           inductionId: input.induction,
           applicantId: c.applicantId,
           baseMarks: c.baseMarks,
+          params: c.params,
           programMarks: c.programMarks,
           appliedIn: c.appliedIn,
           certificates: c.certificates,
@@ -366,9 +368,38 @@ async function specialtyGroups(db: Database, induction: number): Promise<Special
   return (doc?.data as SpecialtyGroups) ?? null;
 }
 
-async function loadEngineCandidates(db: Database, induction: number) {
+/** A stored candidate row with typed JSON fields. */
+const typed = (c: typeof simCandidates.$inferSelect) => ({
+  ...c,
+  params: (c.params ?? {}) as Record<string, number>,
+  programMarks: c.programMarks as Record<string, number>,
+  appliedIn: c.appliedIn as Record<string, boolean>,
+  certificates: c.certificates as SimCertificate[],
+});
+
+/** The base-marks formula of a set of rules, compiled; null when base marks are as imported. */
+function baseFormula(rules: Pick<ResolvedRules, "baseMarks">) {
+  if (!rules.baseMarks?.formula) return null;
+  try {
+    return { ...compileFormula(rules.baseMarks.formula), onMissing: rules.baseMarks.onMissing };
+  } catch (e) {
+    throw new UserFacingError(`The base-marks formula cannot be used: ${e instanceof Error ? e.message : "invalid"}.`);
+  }
+}
+
+/**
+ * An induction's candidates as a run uses them: corrected parameters, the rules'
+ * base-marks formula, then corrections to marks and status.
+ */
+async function candidateRows(db: Db, induction: number, rules: Pick<ResolvedRules, "baseMarks">, applicantId?: string) {
+  const rows = (await db.select().from(simCandidates)
+    .where(and(eq(simCandidates.inductionId, induction), applicantId ? eq(simCandidates.applicantId, applicantId) : undefined))).map(typed);
+  return effectiveCandidates(rows, await activeCorrections(db, induction, applicantId), baseFormula(rules));
+}
+
+async function loadEngineCandidates(db: Database, induction: number, rules: ResolvedRules) {
   const names = await specialityNameMap(db);
-  const rows = await db.select().from(simCandidates).where(eq(simCandidates.inductionId, induction));
+  const rows = await candidateRows(db, induction, rules);
   const prefs = await db.select().from(simPreferences).where(eq(simPreferences.inductionId, induction)).orderBy(asc(simPreferences.applicantId), asc(simPreferences.preferenceNo));
   const byId = new Map<string, Record<string, Preference[]>>();
   let unnamed = 0;
@@ -391,16 +422,12 @@ async function loadEngineCandidates(db: Database, induction: number) {
       marks: p.parentMarks,
     });
   }
-  const corrected = applyCorrections(
-    rows.map((c) => ({ ...c, programMarks: c.programMarks as Record<string, number> })),
-    await activeCorrections(db, induction),
-  );
-  const candidates: EngineCandidate[] = corrected.map((c) => ({
+  const candidates: EngineCandidate[] = rows.map((c) => ({
     applicantId: c.applicantId,
     baseMarks: c.baseMarks,
     programMarks: c.programMarks,
-    appliedIn: c.appliedIn as Record<string, boolean>,
-    certificates: c.certificates as SimCertificate[],
+    appliedIn: c.appliedIn,
+    certificates: c.certificates,
     profileStatus: c.profileStatus,
     preferences: byId.get(c.applicantId) ?? {},
   }));
@@ -537,7 +564,7 @@ function placeFirstRound(rules: ResolvedRules, ctx: MarksContext, candidates: En
 
 async function simulateFirstRound(db: Database, run: Run, rules: ResolvedRules, ctx: MarksContext): Promise<{ placements: Placement[]; summary: RunSummary }> {
   const runId = run.id;
-  const { candidates, unnamed } = await loadEngineCandidates(db, run.inductionId);
+  const { candidates, unnamed } = await loadEngineCandidates(db, run.inductionId, rules);
   const lines = await seatLines(db, run.inductionId);
   const { placements, byProgram } = placeFirstRound(rules, ctx, candidates, lines, runId);
   const published = await publishedRound(db, run.inductionId, 1);
@@ -584,10 +611,7 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
   if (!merit) throw new UserFacingError(`Round ${from} is no longer imported.`);
   const lines = await seatLines(db, induction);
   const names = await specialityNameMap(db);
-  const rows = applyCorrections(
-    (await db.select().from(simCandidates).where(eq(simCandidates.inductionId, induction))).map((c) => ({ ...c, programMarks: c.programMarks as Record<string, number> })),
-    await activeCorrections(db, induction),
-  );
+  const rows = await candidateRows(db, induction, rules);
   const prefs = await db.select().from(simPreferences).where(eq(simPreferences.inductionId, induction)).orderBy(asc(simPreferences.applicantId), asc(simPreferences.preferenceNo));
 
   // The cascade keys candidates by integer id.
@@ -596,7 +620,7 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
   const status = new Map<number, number | null>();
   for (const c of rows) {
     candidates[c.applicantId] = { marksTotal: c.baseMarks, programMarks: c.programMarks, preferences: [] };
-    certificates[c.applicantId] = c.certificates as SimCertificate[];
+    certificates[c.applicantId] = c.certificates;
     status.set(Number(c.applicantId), c.profileStatus);
   }
   let unnamed = 0;
@@ -760,8 +784,10 @@ export async function failInterruptedRuns(db: Database, olderThanMinutes = 30) {
 
 export type CandidateSimRecord = {
   induction: number;
-  imported: { baseMarks: number; programMarks: Record<string, number>; profileStatus: number | null };
-  effective: { baseMarks: number; programMarks: Record<string, number>; profileStatus: number | null };
+  imported: { baseMarks: number; programMarks: Record<string, number>; profileStatus: number | null; params: Record<string, number> };
+  effective: { baseMarks: number; programMarks: Record<string, number>; profileStatus: number | null; params: Record<string, number> };
+  /** The induction's base-marks formula, when its rules set one. */
+  formula: string | null;
   appliedIn: Record<string, boolean>;
   certificates: number;
   /** Per programme: the mark without a preference (base + programme marks under the rules), or null when not applied. */
@@ -778,8 +804,9 @@ export async function candidateSimRecord(db: Database, session: Session | null, 
   assertCan(session, "candidates.verify");
   const [row] = await db.select().from(simCandidates).where(and(eq(simCandidates.inductionId, input.induction), eq(simCandidates.applicantId, input.applicantId))).limit(1);
   if (!row) return null;
-  const imported = { applicantId: row.applicantId, baseMarks: row.baseMarks, programMarks: row.programMarks as Record<string, number>, profileStatus: row.profileStatus };
-  const [effective] = applyCorrections([imported], await activeCorrections(db, input.induction, input.applicantId));
+  const imported = typed(row);
+  const { resolved, problem, rules } = await loadInductionRules(db, input.induction);
+  const [effective] = await candidateRows(db, input.induction, resolved ?? rules, input.applicantId);
   const names = await specialityNameMap(db);
   const prefs = await db.select().from(simPreferences)
     .where(and(eq(simPreferences.inductionId, input.induction), eq(simPreferences.applicantId, input.applicantId)))
@@ -795,7 +822,6 @@ export async function candidateSimRecord(db: Database, session: Session | null, 
     applicantId: row.applicantId, baseMarks: effective!.baseMarks, programMarks: effective!.programMarks,
     appliedIn: row.appliedIn as Record<string, boolean>, certificates: row.certificates as SimCertificate[], profileStatus: effective!.profileStatus, preferences: byProgram,
   };
-  const { resolved, problem } = await loadInductionRules(db, input.induction);
   const ctx = marksContext({ specialtyGroups: await specialtyGroups(db, input.induction) });
   const programs = [...new Set([...Object.keys(engine.appliedIn ?? {}), ...Object.keys(byProgram)])].sort();
   const consent = await db.select().from(simConsent)
@@ -803,8 +829,9 @@ export async function candidateSimRecord(db: Database, session: Session | null, 
     .orderBy(asc(simConsent.roundNo), asc(simConsent.preferenceNo));
   return {
     induction: input.induction,
-    imported: { baseMarks: imported.baseMarks, programMarks: imported.programMarks, profileStatus: imported.profileStatus },
-    effective: { baseMarks: effective!.baseMarks, programMarks: effective!.programMarks, profileStatus: effective!.profileStatus },
+    imported: { baseMarks: imported.baseMarks, programMarks: imported.programMarks, profileStatus: imported.profileStatus, params: imported.params },
+    effective: { baseMarks: effective!.baseMarks, programMarks: effective!.programMarks, profileStatus: effective!.profileStatus, params: effective!.params },
+    formula: rules.baseMarks.formula,
     appliedIn: engine.appliedIn as Record<string, boolean>,
     certificates: (engine.certificates ?? []).length,
     programmes: programs.map((program) => ({
@@ -857,9 +884,11 @@ export async function firstRoundImpact(db: Database, session: Session | null, in
 
   const started = Date.now();
   const ctx = marksContext({ specialtyGroups: await specialtyGroups(db, induction) });
-  const { candidates } = await loadEngineCandidates(db, induction);
+  // Loaded per side: a base-marks formula changes the candidates themselves.
+  const { candidates } = await loadEngineCandidates(db, induction, current.resolved);
+  const nextCandidates = JSON.stringify(current.resolved.baseMarks) === JSON.stringify(next.baseMarks) ? candidates : (await loadEngineCandidates(db, induction, next)).candidates;
   const before = placeFirstRound(current.resolved, ctx, candidates, lines, "impact").placements;
-  const after = placeFirstRound(next, ctx, candidates, lines, "impact").placements;
+  const after = placeFirstRound(next, ctx, nextCandidates, lines, "impact").placements;
 
   const seatsOf = (rows: Placement[]) => {
     const m = new Map<string, string>();
@@ -889,7 +918,7 @@ export async function firstRoundImpact(db: Database, session: Session | null, in
   return {
     induction, status: "computed",
     candidates: candidates.length,
-    eligible: { from: candidates.filter((c) => isEligible(current.resolved!, c)).length, to: candidates.filter((c) => isEligible(next, c)).length },
+    eligible: { from: candidates.filter((c) => isEligible(current.resolved!, c)).length, to: nextCandidates.filter((c) => isEligible(next, c)).length },
     placed: { from: before.length, to: after.length },
     sameSeat, moved, gained, lost,
     groupsChanged: changes.length, groupsTotal: new Set([...ca.keys(), ...cb.keys()]).size,
@@ -930,4 +959,75 @@ export async function runOutput(db: Database, session: Session | null, input: { 
     placements,
   };
   return { filename: `${base}.json`, type: "application/json", body: JSON.stringify(doc, null, 2) + "\n" };
+}
+
+// ── Base-marks formula workbench (allocation rules page) ──────────────────────
+
+export type FormulaParameter = { name: string; source: "data" | "certificates" | "imported total"; candidates: number; min: number; max: number; mean: number };
+export type FormulaTrial =
+  | { ok: false; error: string }
+  | {
+      ok: true; formula: string; onMissing: "imported" | "zero";
+      candidates: number; computed: number; missing: number;
+      /** Candidates whose base marks would differ from the imported ones by more than 0.005. */
+      differ: number; maxUp: number; maxDown: number;
+      buckets: { label: string; count: number }[];
+    };
+
+/**
+ * What a base-marks formula can use for an induction, and (with `formula`) how it would
+ * compare with the imported base marks, over every candidate. Aggregates only.
+ * Parameter corrections are applied, as in a run.
+ */
+export async function baseMarksWorkbench(db: Database, session: Session | null, input: { induction: number; formula?: string | null; onMissing?: "imported" | "zero" }) {
+  assertCan(session, "policy.edit");
+  const rows = await candidateRows(db, input.induction, { baseMarks: { formula: null, onMissing: "imported" } });
+  if (!rows.length) return null;
+  const stats = new Map<string, { source: FormulaParameter["source"]; xs: number[] }>();
+  for (const r of rows) {
+    const add = (name: string, v: number, source: FormulaParameter["source"]) => {
+      const s = stats.get(name) ?? stats.set(name, { source, xs: [] }).get(name)!;
+      s.xs.push(v);
+    };
+    for (const [k, v] of Object.entries(r.params)) add(k, v, "data");
+    add("marksTotal", r.baseMarks, "imported total");
+    for (const [k, v] of Object.entries(certificateParameters(r.certificates))) add(k, v, "certificates");
+  }
+  const parameters: FormulaParameter[] = [...stats].map(([name, s]) => ({
+    name, source: s.source, candidates: s.xs.length,
+    min: Math.min(...s.xs), max: Math.max(...s.xs), mean: s.xs.reduce((a, b) => a + b, 0) / s.xs.length,
+  })).sort((a, b) => (a.source === b.source ? a.name.localeCompare(b.name) : a.source === "data" ? -1 : b.source === "data" ? 1 : a.source.localeCompare(b.source)));
+
+  // A starting point: the data parameters that are ever non-zero, added up.
+  const summed = parameters.filter((p) => p.source === "data" && (p.max !== 0 || p.min !== 0)).map((p) => p.name);
+  const suggestion = summed.length ? summed.join(" + ") : null;
+
+  let trial: FormulaTrial | null = null;
+  const src = input.formula?.trim();
+  if (src) {
+    try {
+      const f = compileFormula(src, parameters.map((p) => p.name));
+      const onMissing = input.onMissing ?? "imported";
+      let computed = 0, missing = 0, differ = 0, maxUp = 0, maxDown = 0;
+      const edges = [0.005, 0.5, 1, 2, 5];
+      const counts = new Array(edges.length + 1).fill(0) as number[];
+      for (const r of rows) {
+        const v = f.evaluate(formulaVariables(r));
+        if (v == null) missing++;
+        else computed++;
+        const base = v ?? (onMissing === "zero" ? 0 : r.baseMarks);
+        const d = base - r.baseMarks;
+        if (Math.abs(d) > 0.005) differ++;
+        maxUp = Math.max(maxUp, d);
+        maxDown = Math.min(maxDown, d);
+        const i = edges.findIndex((e) => Math.abs(d) <= e);
+        counts[i < 0 ? edges.length : i]!++;
+      }
+      const labels = ["same (±0.005)", "up to 0.5", "0.5 – 1", "1 – 2", "2 – 5", "more than 5"];
+      trial = { ok: true, formula: f.source, onMissing, candidates: rows.length, computed, missing, differ, maxUp, maxDown, buckets: labels.map((label, i) => ({ label, count: counts[i]! })) };
+    } catch (e) {
+      trial = { ok: false, error: e instanceof Error ? e.message : "Not a valid formula" };
+    }
+  }
+  return { candidates: rows.length, parameters, suggestion, trial };
 }

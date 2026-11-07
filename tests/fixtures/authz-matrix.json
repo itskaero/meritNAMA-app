@@ -144,6 +144,7 @@
  "simulation#candidateSimRecord": "verifier owner",
  "simulation#firstRoundImpact": "data_editor policy_editor verifier moderator owner",
  "simulation#runOutput": "data_editor owner",
+ "simulation#baseMarksWorkbench": "policy_editor owner",
  "team#listTeam": "owner",
  "team#setUserRole": "owner",
  "what-if#getWhatIf": "candidate data_editor policy_editor verifier moderator owner",

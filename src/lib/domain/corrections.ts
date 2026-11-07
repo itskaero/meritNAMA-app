@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formulaVariables } from "@/lib/engine/formula";
 
 /**
  * Staff corrections to a candidate's simulation inputs. Pure: the data layer stores
@@ -6,13 +7,14 @@ import { z } from "zod";
  * of the imported dataset, so a re-import keeps them.
  */
 
-export const CORRECTION_FIELDS = ["base_marks", "program_marks", "profile_status"] as const;
+export const CORRECTION_FIELDS = ["base_marks", "program_marks", "profile_status", "parameter"] as const;
 export type CorrectionField = (typeof CORRECTION_FIELDS)[number];
 
 export const CORRECTION_LABELS: Record<CorrectionField, string> = {
   base_marks: "Base marks",
   program_marks: "Programme marks",
   profile_status: "Profile status",
+  parameter: "Parameter",
 };
 
 /** Profile verification statuses as the portal numbers them. */
@@ -28,7 +30,8 @@ export const correctionSchema = z
   })
   .superRefine((c, ctx) => {
     if (c.field === "program_marks" && !c.program) ctx.addIssue({ code: "custom", message: "Programme marks need a programme", path: ["program"] });
-    if (c.field !== "program_marks" && c.program) ctx.addIssue({ code: "custom", message: "Only programme marks take a programme", path: ["program"] });
+    if (c.field === "parameter" && !c.program) ctx.addIssue({ code: "custom", message: "A parameter correction needs the parameter's name in the program column", path: ["program"] });
+    if (c.field !== "program_marks" && c.field !== "parameter" && c.program) ctx.addIssue({ code: "custom", message: "Only programme marks and parameters take a name", path: ["program"] });
     if (c.field === "profile_status" && !(c.value in PROFILE_STATUS)) ctx.addIssue({ code: "custom", message: "Profile status is 1 (Accepted), 2 (Rejected) or 11 (Pending)", path: ["value"] });
     if (c.field !== "profile_status" && (c.value < 0 || c.value > 1000)) ctx.addIssue({ code: "custom", message: "Marks must be between 0 and 1000", path: ["value"] });
   });
@@ -36,12 +39,13 @@ export type Correction = z.output<typeof correctionSchema>;
 
 export const correctionKey = (c: Pick<Correction, "applicantId" | "field" | "program">) => `${c.applicantId}|${c.field}|${c.program ?? ""}`;
 
-type Correctable = { applicantId: string; baseMarks: number; programMarks: Record<string, number>; profileStatus: number | null };
+type Correctable = { applicantId: string; baseMarks: number; programMarks: Record<string, number>; profileStatus: number | null; params?: Record<string, number> };
 
 /** The value a correction targets, as it stands on a candidate. */
 export function currentValue(c: Correctable, field: CorrectionField, program: string | null): number | null {
   if (field === "base_marks") return c.baseMarks;
   if (field === "profile_status") return c.profileStatus;
+  if (field === "parameter") return c.params?.[program ?? ""] ?? null;
   const v = c.programMarks[program ?? ""];
   return v == null ? null : Number(v);
 }
@@ -57,10 +61,11 @@ export function applyCorrections<T extends Correctable>(rows: readonly T[], corr
   return rows.map((r) => {
     const mine = byId.get(r.applicantId);
     if (!mine) return r;
-    const out: T = { ...r, programMarks: { ...r.programMarks } };
+    const out: T = { ...r, programMarks: { ...r.programMarks }, ...(r.params ? { params: { ...r.params } } : {}) };
     for (const c of mine) {
       if (c.field === "base_marks") out.baseMarks = c.value;
       else if (c.field === "profile_status") out.profileStatus = c.value;
+      else if (c.field === "parameter") out.params = { ...out.params, [c.program!]: c.value };
       else out.programMarks[c.program!] = c.value;
     }
     return out;
@@ -138,4 +143,31 @@ export function toCsv(rows: readonly (readonly (string | number | null | undefin
     return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   return rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
+}
+
+// ── Base marks under the rules, with corrections ───────────────────────────────
+
+type Prepared = Correctable & { certificates?: readonly { status?: string | null; certificateMarks?: number | string | null; computerizedMarks?: number | string | null }[] | null };
+
+/**
+ * The inputs a run uses: corrected parameters first, then the base-marks formula (when
+ * the rules set one), then corrections to marks and status, which win over the formula.
+ * `formula` is the compiled formula or null (base marks as imported).
+ */
+export function effectiveCandidates<T extends Prepared>(
+  rows: readonly T[],
+  corrections: readonly Correction[],
+  formula: { evaluate: (vars: Record<string, number>) => number | null; onMissing: "imported" | "zero" } | null,
+): T[] {
+  const params = corrections.filter((c) => c.field === "parameter");
+  const rest = corrections.filter((c) => c.field !== "parameter");
+  const withParams = applyCorrections(rows, params);
+  const based = formula
+    ? withParams.map((r) => {
+        const v = formula.evaluate(formulaVariables(r));
+        const baseMarks = v ?? (formula.onMissing === "zero" ? 0 : r.baseMarks);
+        return baseMarks === r.baseMarks ? r : { ...r, baseMarks: Math.round(baseMarks * 1e6) / 1e6 };
+      })
+    : withParams;
+  return applyCorrections(based, rest);
 }

@@ -38,7 +38,7 @@ export async function proposeCorrectionAction(_prev: ActionState, form: FormData
     const raw = formText(form, "value").trim();
     const p = await proposeCorrections(getDb(), await getSession(), {
       induction: formInt(form, "induction", "Induction"),
-      corrections: [{ applicantId: formText(form, "applicantId"), field, program: field === "program_marks" ? formText(form, "program") || null : null, value: raw === "" ? Number.NaN : Number(raw) }],
+      corrections: [{ applicantId: formText(form, "applicantId"), field, program: field === "program_marks" || field === "parameter" ? formText(form, "program") || null : null, value: raw === "" ? Number.NaN : Number(raw) }],
       reason: formText(form, "reason"),
       source: "record",
     });

@@ -321,6 +321,28 @@ JavaScript needed, nothing stored); the result opens the score finder with the m
 filled in. The legacy reverse calculator ("what do I need") is not ported: the finder
 and the prediction ranges answer the same question from the imported rounds.
 
+### Base-marks formula
+
+Allocation rules may set `baseMarks.formula`, an expression over the candidate's
+imported parameters (`src/lib/engine/formula.ts`: numbers, + − × ÷, brackets,
+comparisons, `&&`/`||`, `min`, `max`, `abs`, `round`, `clamp`, `if`; parsed, never
+`eval`ed). Parameters are the numeric component fields of `marks.json` /
+`components.json` (e.g. `degree`, `houseJob`, `position`, `mdcat`), `marksTotal` (the
+imported total) and certificate figures (`certCount`, `certPassed`, `certMaxMarks`,
+`certMaxComputerized`). Import keeps a field as a parameter only if it is a plain
+number between −1000 and 1000 under a name that is not an id, a total or a personal
+field, so phones, CNICs and PMDC numbers cannot be kept.
+
+The engines are untouched: the data layer works base marks out before a run
+(`effectiveCandidates`): corrected parameters → formula → corrections to marks and
+status, which still win. A candidate missing a parameter keeps the imported marks, or
+gets 0 (`onMissing`). The rules page lists the parameters with their ranges, tries a
+formula on every candidate (how many would differ from the imported total, and by how
+much: aggregates only) and saves it as a new draft; the impact preview then shows the
+placement effect. Corrections can set a single parameter (`field = parameter`), which
+the formula then uses. On induction 21, `degree + houseJob + …` matches the imported
+total for all but 9 of 3,474 candidates.
+
 ### Impact preview
 
 `firstRoundImpact` (`src/lib/data/simulation.ts`) runs an induction's round 1 twice

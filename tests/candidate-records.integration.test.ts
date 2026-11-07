@@ -12,8 +12,8 @@ import { getChange, proposeCorrections, proposeRulesActivation, publishChange, r
 import { importMeritRound } from "@/lib/data/merit";
 import { createPolicyDraft } from "@/lib/data/policies";
 import { importSeatFile } from "@/lib/data/reference-data";
-import { createRulesDraft } from "@/lib/data/allocation-rules";
-import { candidateSimRecord, executeRun, firstRoundImpact, importSimulationDataset, queueFirstRoundRun, runOutput } from "@/lib/data/simulation";
+import { activateRulesVersion, createRulesDraft } from "@/lib/data/allocation-rules";
+import { baseMarksWorkbench, candidateSimRecord, executeRun, firstRoundImpact, importSimulationDataset, queueFirstRoundRun, runOutput } from "@/lib/data/simulation";
 import { DEFAULT_RULES, resolveRules } from "@/lib/engine/rules";
 import * as schema from "@/lib/db/schema";
 import type { MeritRoundFile } from "@/lib/domain/merit-round";
@@ -30,7 +30,8 @@ const owner: Session = { userId: "cr-o", email: "cr-owner@test.local", role: "ow
 const moderator: Session = { userId: "cr-m", email: "cr-moderator@test.local", role: "moderator", isStub: false };
 const program = String(seats[0]!.typeName).trim();
 
-const marks = Array.from({ length: 20 }, (_, i) => ({ applicantId: 610000 + i, marksTotal: 50 + i, programMarks: { [program]: 2 }, applied_in: { [program]: true }, profileStatus: 1, nameFull: "Private Name" }));
+// Components add up to the total, except 610003's (mis-totalled by 2).
+const marks = Array.from({ length: 20 }, (_, i) => ({ applicantId: 610000 + i, marksTotal: 50 + i, degree: 40 + i, houseJob: i === 3 ? 12 : 10, programMarks: { [program]: 2 }, applied_in: { [program]: true }, profileStatus: 1, nameFull: "Private Name", mobileNo: 3001234567 }));
 const prefs = marks.flatMap((m, i) => [0, 5, 11].map((k, n) => {
   const s = seats[(i + k) % seats.length]!;
   return { applicantId: m.applicantId, typeName: s.typeName, typeId: s.typeId, preferenceNo: n + 1, quotaName: s.quotaName, specialityId: s.specialityId, hospitalName: s.hospitalName, disciplineIds: [] };
@@ -186,5 +187,34 @@ describe.skipIf(!url)("candidate records and corrections (integration)", () => {
     const p = await proposeRulesActivation(db, owner, { id: draft.id, reason: "see the effect" });
     const change = (await getChange(db, moderator, (p as { changeId: string }).changeId))!;
     expect((change.preview as { impact: { status: string; groupsChanged: number } }).impact).toMatchObject({ status: "computed", groupsChanged: impact.groupsChanged });
+  });
+
+  it("works base marks out with a formula, with parameter corrections, through the rules", async () => {
+    await expect(baseMarksWorkbench(db, verifier, { induction: IND })).rejects.toThrow("forbidden");
+    const wb = (await baseMarksWorkbench(db, owner, { induction: IND, formula: "degree + houseJob" }))!;
+    expect(wb.parameters.filter((p) => p.source === "data").map((p) => p.name)).toEqual(["degree", "houseJob"]);
+    expect(wb.suggestion).toBe("degree + houseJob");
+    expect(wb.trial).toMatchObject({ ok: true, candidates: 20, computed: 20, missing: 0, differ: 1, maxUp: 2 });
+    expect((await baseMarksWorkbench(db, owner, { induction: IND, formula: "degree + mobileNo" }))!.trial).toMatchObject({ ok: false, error: expect.stringMatching(/Unknown parameter: mobileNo/) });
+    const stored = await db.select({ p: schema.simCandidates.params }).from(schema.simCandidates).where(eq(schema.simCandidates.inductionId, IND));
+    expect(JSON.stringify(stored)).not.toMatch(/3001234567|Private/);
+
+    // A parameter correction feeds the formula once the rules use it.
+    const p = await proposeCorrections(db, verifier, { induction: IND, corrections: [{ applicantId: "610003", field: "parameter", program: "houseJob", value: 10 }], reason: "house job verified as 10" });
+    await publishChange(db, verifier, { id: (p as { changeId: string }).changeId, reason: "ok" });
+    await expect(proposeCorrections(db, verifier, { induction: IND, corrections: [{ applicantId: "610003", field: "parameter", program: "nope", value: 1 }], reason: "x" })).rejects.toThrow(/no parameter "nope"/);
+    expect((await baseMarksWorkbench(db, owner, { induction: IND, formula: "degree + houseJob" }))!.trial).toMatchObject({ differ: 0 });
+
+    const draft = await createRulesDraft(db, owner, { induction: IND, definition: { ...DEFAULT_RULES, label: "Recomputed", baseMarks: { formula: "degree + houseJob + 100", onMissing: "imported" } }, reason: "try" });
+    const impact = await firstRoundImpact(db, owner, { induction: IND, next: resolveRules({ ...DEFAULT_RULES, baseMarks: { formula: "degree + houseJob + 100", onMissing: "imported" } }, { ...policies["2026"], induction: IND }) });
+    expect(impact).toMatchObject({ status: "computed", moved: 0, gained: 0, lost: 0 });
+    if (impact.status === "computed") expect(impact.topChanges[0]!.to! - impact.topChanges[0]!.from!).toBeCloseTo(100);
+    await activateRulesVersion(db, owner, { id: draft.id, reason: "use it" });
+    const sim = (await candidateSimRecord(db, verifier, { induction: IND, applicantId: "610003" }))!;
+    expect(sim).toMatchObject({ formula: "degree + houseJob + 100", imported: { baseMarks: 53, params: { houseJob: 12 } }, effective: { baseMarks: 153, params: { houseJob: 10 } } });
+    const runId = await queueFirstRoundRun(db, editor, { induction: IND });
+    await executeRun(db, runId);
+    const placed = await db.select().from(schema.simulationPlacements).where(eq(schema.simulationPlacements.runId, runId));
+    expect(Math.min(...placed.map((x) => x.mark))).toBeGreaterThan(140);
   });
 });

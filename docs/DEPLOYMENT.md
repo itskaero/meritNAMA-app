@@ -87,6 +87,11 @@ $MERITNAMA_DATA_DIR/storage/inbox/
 
 ### Simulation data (restricted)
 
+Numeric component fields in `marks.json` or `components.json` (degree, houseJob,
+mdcat, …) are kept as parameters for an optional base-marks formula (Allocation rules →
+a version → Base marks). Data imported before this was added has none: import it again.
+
+
 Candidate marks and portal preferences are personal data and never go through the
 inbox, a browser upload or the repository. Your backend writes them onto the NAS,
 one folder per induction:

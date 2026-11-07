@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Policy } from "@/lib/domain/scoring-policy";
+import { compileFormula, FormulaError } from "./formula";
 
 /**
  * Allocation rules: HOW an induction's seats are allocated, as data.
@@ -18,8 +19,29 @@ const SOURCE = z.enum(["certificateMarks", "computerizedMarks", "preferenceProgr
 /** "auto": follow the scoring policy component; true/false: an explicit, visible override. */
 const ENABLED = z.union([z.literal("auto"), z.boolean()]);
 
+/** A formula that must parse; which parameters exist is checked against the induction's data where it is known. */
+const formulaSource = z.string().trim().max(500).superRefine((v, ctx) => {
+  try {
+    compileFormula(v);
+  } catch (e) {
+    ctx.addIssue({ code: "custom", message: e instanceof FormulaError ? e.message : "Not a valid formula" });
+  }
+});
+
 export const allocationRulesSchema = z.strictObject({
   label: z.string().min(1),
+  /**
+   * Base marks (marks before any preference-level bonus). null: as imported (the
+   * portal's marksTotal, or components.json's). A formula recomputes them from the
+   * candidate's imported parameters (src/lib/engine/formula.ts), e.g. to correct a
+   * mis-totalled record or to try a different weighting. `onMissing`: a candidate
+   * lacking a parameter keeps the imported marks, or counts the formula as 0.
+   * Staff corrections to base marks still win. Defaults keep older rules valid.
+   */
+  baseMarks: z.strictObject({
+    formula: formulaSource.nullable(),
+    onMissing: z.enum(["imported", "zero"]),
+  }).default({ formula: null, onMissing: "imported" }),
   certificateBonus: z.strictObject({
     enabled: ENABLED,
     /** Scoring-policy component that switches this bonus on and caps it. */
@@ -114,6 +136,7 @@ export type AllocationRules = z.infer<typeof allocationRulesSchema>;
 /** Rules for new inductions: the best certificate counts, and policy components decide what is on. */
 export const DEFAULT_RULES: AllocationRules = {
   label: "Default",
+  baseMarks: { formula: null, onMissing: "imported" },
   certificateBonus: {
     enabled: "auto",
     component: "fcps_jcat",
@@ -236,6 +259,7 @@ export function describeRules(r: ResolvedRules): { topic: string; text: string }
     `${x.on ? `counted${x.cap != null ? `, at most ${x.cap} marks` : ""}` : "not counted"} (${enabled === "auto" ? `follows the scoring policy's ${component}` : `set ${enabled ? "on" : "off"} here`})`;
   const sourceName = { certificateMarks: "portal certificate marks", computerizedMarks: "computerised marks", preferenceProgramMarks: "the preference's programme marks" } as const;
   return [
+    { topic: "Base marks", text: r.baseMarks.formula ? `worked out as ${r.baseMarks.formula}${r.baseMarks.onMissing === "imported" ? " (a candidate missing a parameter keeps the imported marks)" : " (a missing parameter makes it 0)"}; staff corrections still win` : "as imported (the portal's total, or the components file's)" },
     { topic: "Certificate bonus", text: onOff(r.certificate, c.enabled, c.component) },
     {
       topic: "Which certificate",

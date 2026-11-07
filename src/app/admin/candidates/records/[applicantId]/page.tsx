@@ -77,7 +77,7 @@ export default async function CandidateRecordPage({ params, searchParams }: { pa
                   <div key={label} className="rounded-2xl bg-elevated/60 p-4">
                     <dt className="text-xs text-muted">{label}</dt>
                     <dd className="mt-1 font-mono text-lg tabular-nums">{v(field, b)}</dd>
-                    {a !== b ? <dd className="text-xs text-amber">corrected · imported {v(field, a)}</dd> : null}
+                    {a !== b ? <dd className="text-xs text-amber">{field === "base_marks" && sim.formula ? "formula or correction" : "corrected"} · imported {v(field, a)}</dd> : null}
                   </div>
                 ))}
                 <div className="rounded-2xl bg-elevated/60 p-4">
@@ -85,6 +85,23 @@ export default async function CandidateRecordPage({ params, searchParams }: { pa
                   <dd className="mt-1 font-mono text-lg tabular-nums">{sim.certificates}</dd>
                 </div>
               </dl>
+              {Object.keys(sim.imported.params).length ? (
+                <div className="grid gap-2">
+                  <p className="text-xs text-muted">
+                    Parameters{sim.formula ? <> · base marks are worked out as <code className="font-mono">{sim.formula}</code></> : " · base marks are as imported"}
+                  </p>
+                  <ul className="flex flex-wrap gap-1.5">
+                    {Object.keys(sim.imported.params).sort().map((k) => {
+                      const a = sim.imported.params[k], b = sim.effective.params[k];
+                      return (
+                        <li key={k} className={cn("rounded-lg bg-elevated px-2 py-1 font-mono text-xs", a !== b && "ring-1 ring-amber/60")}>
+                          {k} {b == null ? "—" : formatMarks(b)}{a !== b ? <span className="text-amber"> (imported {a == null ? "—" : formatMarks(a)})</span> : null}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : null}
               {sim.rulesProblem ? <Notice tone="warning" title="Marks per preference cannot be worked out">{sim.rulesProblem}</Notice> : null}
               <DataTable
                 caption="Marks by programme"
@@ -208,7 +225,7 @@ export default async function CandidateRecordPage({ params, searchParams }: { pa
                 ))}
               </ul>
             ) : null}
-            <CorrectionForm induction={induction} applicantId={applicantId} programs={sim.programmes.map((p) => p.program)} />
+            <CorrectionForm induction={induction} applicantId={applicantId} programs={sim.programmes.map((p) => p.program)} parameters={Object.keys(sim.imported.params).sort()} />
           </Card>
         </>
       ) : null}

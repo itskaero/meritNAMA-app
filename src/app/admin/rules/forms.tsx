@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/cn";
 import { ActionResult, fieldClass, ReasonField } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
-import { activateRulesAction, saveRulesDraftAction } from "./actions";
+import { activateRulesAction, saveFormulaDraftAction, saveRulesDraftAction } from "./actions";
 
 /** New draft for an induction, from a JSON definition (prefilled with the current or default rules). */
 export function RulesDraftForm({ induction, definition, fixedInduction = false }: { induction?: number; definition: string; fixedInduction?: boolean }) {
@@ -54,6 +54,21 @@ export function ActivateRulesForm({ id }: { id: string }) {
       <input type="hidden" name="id" value={id} />
       <ReasonField placeholder="e.g. Rules for induction 22 confirmed" />
       <div><Button type="submit" variant="secondary" disabled={pending}>{pending ? "Staging…" : "Make active"}</Button></div>
+      <ActionResult state={state} />
+    </form>
+  );
+}
+
+/** Save the tried formula into a new draft of this version. */
+export function SaveFormulaForm({ id, formula, onMissing, label }: { id: string; formula: string; onMissing: "imported" | "zero"; label: string }) {
+  const [state, action, pending] = useActionState(saveFormulaDraftAction, idleState);
+  return (
+    <form action={action} className="grid gap-3">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="formula" value={formula} />
+      <input type="hidden" name="onMissing" value={onMissing} />
+      <ReasonField placeholder="e.g. Recompute base marks from components; 9 records were mis-totalled" />
+      <div><Button type="submit" disabled={pending}>{label}</Button></div>
       <ActionResult state={state} />
     </form>
   );

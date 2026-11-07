@@ -13,18 +13,19 @@ import { ActivateRulesForm, RulesDraftForm } from "../forms";
 import { RulesSummary } from "../rules-summary";
 import { ImpactPreview } from "@/components/impact-preview";
 import { ButtonLink } from "@/components/ui/button";
-import { firstRoundImpact } from "@/lib/data/simulation";
+import { baseMarksWorkbench, firstRoundImpact } from "@/lib/data/simulation";
+import { FormulaCard } from "../formula-card";
 
 export const metadata = { title: "Allocation rules version" };
 export const dynamic = "force-dynamic";
 
 export default async function RulesVersionPage({ params, searchParams }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string; impact?: string }>;
+  searchParams: Promise<{ saved?: string; impact?: string; formula?: string; onMissing?: string }>;
 }) {
   await requireSection("/admin/rules");
   const { id } = await params;
-  const { saved, impact } = await searchParams;
+  const { saved, impact, formula, onMissing } = await searchParams;
   if (!isUuid(id)) notFound();
   const db = getDb();
   const session = await getSession();
@@ -34,6 +35,8 @@ export default async function RulesVersionPage({ params, searchParams }: {
   const rules = allocationRulesSchema.parse(row.definition);
   const policy = await scoringPolicyForInduction(db, row.inductionId);
   const { resolved, problem } = resolveFor(rules, policy?.definition ?? null);
+  const tried = formula != null ? { formula: formula.slice(0, 500), onMissing: onMissing === "zero" ? ("zero" as const) : ("imported" as const) } : null;
+  const wb = await baseMarksWorkbench(db, session, { induction: row.inductionId, formula: tried?.formula, onMissing: tried?.onMissing });
   const effect = impact && resolved && row.status !== "active" ? await firstRoundImpact(db, session, { induction: row.inductionId, next: resolved }) : null;
 
   return (
@@ -65,6 +68,8 @@ export default async function RulesVersionPage({ params, searchParams }: {
           <div><ButtonLink href={`/admin/rules/${id}?impact=1`} variant="secondary" size="sm" prefetch={false}>Preview the effect</ButtonLink></div>
         </Card>
       )}
+
+      <FormulaCard id={row.id} induction={row.inductionId} current={rules.baseMarks.formula} onMissing={rules.baseMarks.onMissing} wb={wb} tried={tried} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Card id="edit">

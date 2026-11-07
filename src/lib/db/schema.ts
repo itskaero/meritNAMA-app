@@ -658,6 +658,8 @@ export const simCandidates = pgTable(
     inductionId: integer("induction_id").notNull().references(() => simDatasets.inductionId, { onDelete: "cascade" }),
     applicantId: text("applicant_id").notNull(),
     baseMarks: doublePrecision("base_marks").notNull(),
+    /** Numeric parameters for base-marks formulas (degree, houseJob, mdcat, …); see numericParameters. */
+    params: json("params").notNull().default({}),
     programMarks: json("program_marks").notNull(),
     appliedIn: json("applied_in").notNull(),
     certificates: json("certificates").notNull(),
@@ -798,7 +800,7 @@ export const candidateCorrections = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     inductionId: integer("induction_id").notNull(),
     applicantId: text("applicant_id").notNull(),
-    /** "base_marks", "program_marks" (with program) or "profile_status". */
+    /** "base_marks", "program_marks" (program = the programme), "profile_status" or "parameter" (program = the parameter's name). */
     field: text("field").notNull(),
     program: text("program"),
     value: doublePrecision("value").notNull(),
@@ -811,7 +813,7 @@ export const candidateCorrections = pgTable(
   },
   (t) => [
     index("candidate_corrections_candidate_idx").on(t.inductionId, t.applicantId),
-    check("candidate_corrections_field", sql`${t.field} in ('base_marks', 'program_marks', 'profile_status')`),
+    check("candidate_corrections_field", sql`${t.field} in ('base_marks', 'program_marks', 'profile_status', 'parameter')`),
   ],
 );
 

@@ -39,6 +39,7 @@ describe("simulation dataset import", () => {
     expect(out[0]).toEqual({
       applicantId: "101",
       baseMarks: 61.5,
+      params: {},
       programMarks: {},
       appliedIn: { FCPS: true, MS: false },
       certificates: [],
@@ -68,7 +69,7 @@ describe("simulation dataset import", () => {
     expect(out[0]!.certificates).toEqual([{ disciplineId: 2, typeId: 1, typeName: null, program: null, specialty: null, status: "Pass", certificateMarks: 5, computerizedMarks: 4 }]);
     expect(JSON.stringify(out)).not.toMatch(/secret-ref|private remark/);
     expect(out[1]!.profileStatus).toBe(2);
-    expect(summary).toEqual({ candidates: 2, preferences: 3, withCertificates: 1, withStatus: 2, eligible: 1, correctedMarks: 1, preferencesWithoutMarks: 0, format: "combined" });
+    expect(summary).toEqual({ candidates: 2, preferences: 3, withCertificates: 1, withStatus: 2, eligible: 1, correctedMarks: 1, parameters: {}, preferencesWithoutMarks: 0, format: "combined" });
   });
 
   it("reads the split format: marks rows, preference rows and certificate rows", () => {
