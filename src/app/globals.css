@@ -27,6 +27,10 @@
   --color-slate: var(--mn-brand-slate);
   --color-teal: var(--mn-brand-teal);
   --color-ivory: var(--mn-brand-ivory);
+  --color-gold: var(--mn-brand-amber);
+  --color-terracotta: var(--mn-brand-terracotta);
+  --color-mint: var(--mn-brand-mint);
+  --color-charcoal: var(--mn-brand-charcoal);
   --color-tint: var(--mn-teal-deep);
   --color-feature: var(--mn-feature-bg);
   --color-feature-ink: var(--mn-feature-ink);
@@ -111,4 +115,28 @@ html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger te
   main, main * { color: #111 !important; background: transparent !important; box-shadow: none !important; text-shadow: none !important; }
   main { border: 0 !important; }
   main li { break-inside: avoid; border-color: #bbb !important; }
+}
+
+/*
+ * Brand imagery helpers.
+ * .mn-mask paints transparent line art (public/images/brand/art-*.webp) in the
+ * element's text colour, so it follows the theme: set --mn-mask: url(...).
+ * .mn-reveal and .mn-parallax are scroll-driven CSS animations: no JavaScript, and
+ * where a browser lacks scroll timelines (or the reader prefers less motion)
+ * content simply shows, never stays hidden.
+ */
+.mn-mask {
+  background-color: currentColor;
+  -webkit-mask: var(--mn-mask) center / contain no-repeat;
+  mask: var(--mn-mask) center / contain no-repeat;
+}
+@keyframes mn-reveal { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes mn-parallax { from { transform: translateY(-5%) scale(1.1); } to { transform: translateY(5%) scale(1.1); } }
+@keyframes mn-hero-in { from { transform: scale(1.06); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: no-preference) {
+  .mn-hero-img { animation: mn-hero-in 1.6s var(--mn-ease) both; }
+  @supports (animation-timeline: view()) {
+    .mn-reveal { animation: mn-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+    .mn-parallax { animation: mn-parallax linear both; animation-timeline: view(); animation-range: cover; }
+  }
 }

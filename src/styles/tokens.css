@@ -12,18 +12,25 @@
  * Token names from v1 are kept as the semantic layer ("navy-950" = page background,
  * "cyan" = primary action), so components did not have to change names.
  *
- * Brand colours used as given where they are not text: Muted Teal #5B9487 and
- * Secondary Text #71808A are below 4.5:1 as text on the light background, so text
- * and buttons use the deeper --mn-cyan (#3D7266) and --mn-text-muted (#5F6E78).
+ * v2.1 (Nov 2026): brand palette for the redesign with the generated imagery: Deep
+ * Navy #10243A, Slate Blue #263C4D, Teal #176B67, Amber #E5A04B, Terracotta #D97861,
+ * Mint #E9F0ED, Warm Ivory #F3EEE5, Charcoal #283747. Teal is dark enough to be the
+ * primary action and link colour as given. Amber and Terracotta are below 4.5:1 as
+ * text on light surfaces, so they are fills, accents and chart series only; amber
+ * text uses --mn-amber (#8A5D12).
  */
 :root {
   color-scheme: light;
 
   /* Brand */
-  --mn-brand-navy: #142536;    /* Midnight Navy: headings, navigation, identity */
+  --mn-brand-navy: #10243A;    /* Deep Navy: headings, navigation, identity */
   --mn-brand-slate: #263C4D;   /* Slate Blue */
-  --mn-brand-teal: #5B9487;    /* Muted Teal: fills, chart series, selected states (not text) */
-  --mn-brand-ivory: #E7E2D8;   /* Warm Ivory: editorial panels, landing, sign-in */
+  --mn-brand-teal: #176B67;    /* Teal: fills, chart series, selected states */
+  --mn-brand-amber: #E5A04B;   /* Amber: highlights and accents on navy (not text on light) */
+  --mn-brand-terracotta: #D97861; /* Terracotta: "harder" series, warm accents (not text on light) */
+  --mn-brand-mint: #E9F0ED;    /* Mint: tinted panels */
+  --mn-brand-charcoal: #283747; /* Charcoal: body text */
+  --mn-brand-ivory: #F3EEE5;   /* Warm Ivory: editorial panels, landing, sign-in */
 
   /* Surfaces (semantic; v1 names) */
   --mn-navy-950: #F5F6F4;   /* page background */
@@ -34,18 +41,18 @@
   --mn-border-strong: #C8D1D0;
 
   /* Text */
-  --mn-text: #202D38;
-  --mn-text-heading: #142536;
+  --mn-text: #283747;
+  --mn-text-heading: #10243A;
   --mn-text-muted: #56656F;
   --mn-text-subtle: #5B6A74;   /* AA on the page background and raised surfaces */
   --mn-text-decor: #71808A;    /* Secondary Text as given: icons and rules, not body copy */
 
   /* Signal */
-  --mn-cyan: #3D7266;          /* primary action, links, active nav text (deep muted teal) */
-  --mn-cyan-strong: #325F55;   /* hover */
+  --mn-cyan: #176B67;          /* primary action, links, active nav text (brand teal) */
+  --mn-cyan-strong: #11524F;   /* hover */
   --mn-cyan-ink: #FFFFFF;      /* text on primary */
-  --mn-cyan-soft: rgba(91, 148, 135, 0.14);
-  --mn-teal-deep: #E4EFEC;     /* tinted panels (soft teal) */
+  --mn-cyan-soft: rgba(23, 107, 103, 0.11);
+  --mn-teal-deep: #E9F0ED;     /* tinted panels (mint) */
   --mn-amber: #8A5D12;         /* warnings, estimates */
   --mn-amber-soft: rgba(176, 125, 40, 0.12);
   --mn-danger: #A63A35;
@@ -57,21 +64,21 @@
   --mn-ember-deep: #7A3B25;
 
   /* Charts */
-  --mn-chart-1: #142536;       /* primary series */
-  --mn-chart-2: #5B9487;
-  --mn-chart-3: #B5694B;
+  --mn-chart-1: #10243A;       /* primary series */
+  --mn-chart-2: #176B67;
+  --mn-chart-3: #D97861;
   --mn-chart-4: #8A97A0;
-  --mn-chart-easier: #5B9487;  /* closing merit fell */
-  --mn-chart-harder: #B5694B;  /* closing merit rose */
+  --mn-chart-easier: #176B67;  /* closing merit fell */
+  --mn-chart-harder: #D97861;  /* closing merit rose */
   --mn-chart-neutral: #8A97A0; /* counts such as seats */
   --mn-chart-grid: #E1E6E5;
   --mn-chart-axis: #62717B;
 
   /* Feature surface: the one hero card per page (your merit, a hospital's summary). */
-  --mn-feature-bg: #142536;
+  --mn-feature-bg: #10243A;
   --mn-feature-ink: #F3F0EA;
   --mn-feature-muted: #C5CDD3;
-  --mn-feature-accent: #8CC4B7;
+  --mn-feature-accent: #E5A04B;
   --mn-feature-line: rgba(231, 226, 216, 0.16);
 
   /* Programme colours: muted, distinct, AA as text. One per programme, used everywhere it appears. */
@@ -84,7 +91,7 @@
 
   /* Glass (over imagery only) */
   --mn-glass: rgba(255, 255, 255, 0.86);
-  --mn-glass-border: rgba(20, 37, 54, 0.12);
+  --mn-glass-border: rgba(16, 36, 58, 0.12);
 
   /* Typography */
   --mn-font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -168,7 +175,7 @@
   --mn-feature-bg: #213A50;
   --mn-feature-ink: #F3F0EA;
   --mn-feature-muted: #C5CDD3;
-  --mn-feature-accent: #95C8BC;
+  --mn-feature-accent: #E5A04B;
   --mn-feature-line: rgba(231, 226, 216, 0.18);
   --mn-prog-fcps: #8FB5D6;
   --mn-prog-ms: #C7A3D4;
@@ -219,7 +226,7 @@
     --mn-feature-bg: #213A50;
     --mn-feature-ink: #F3F0EA;
     --mn-feature-muted: #C5CDD3;
-    --mn-feature-accent: #95C8BC;
+    --mn-feature-accent: #E5A04B;
     --mn-feature-line: rgba(231, 226, 216, 0.18);
     --mn-prog-fcps: #8FB5D6;
     --mn-prog-ms: #C7A3D4;

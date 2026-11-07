@@ -1,7 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AreaPage } from "@/components/area-page";
+import { PHOTOS } from "@/components/brand-assets";
 import { whenDatabaseDown } from "@/components/database-unavailable";
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/session";
 import { exploreIndex } from "@/lib/data/merit";
@@ -39,11 +40,21 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
 
   return (
     <AreaPage area="portal" trail={[{ label: s.label }]} title={s.label} description={s.description}>
-      <form method="get" role="search" className="flex max-w-xl gap-2">
-        <label htmlFor="explore-q" className="sr-only">Search hospitals and specialities</label>
-        <input id="explore-q" name="q" defaultValue={q} placeholder="Search, e.g. Mayo or anaesthesia" className="h-11 flex-1 rounded-full border border-line-strong bg-canvas px-4 text-sm text-ink placeholder:text-subtle" />
-        <Button type="submit" variant="secondary">Search</Button>
-      </form>
+      {/* Photograph used once, as the search band: an illustration, not a particular hospital. */}
+      <section aria-label="Search hospitals and specialities" className="relative isolate overflow-hidden rounded-xl bg-navy">
+        <Image src={PHOTOS.hospital.src} alt="" fill priority sizes="(min-width: 1024px) 1100px, 100vw" className="-z-10 object-cover" style={{ objectPosition: "50% 35%" }} />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-navy/95 via-navy/75 to-navy/25" />
+        <div className="grid gap-4 p-6 sm:p-8 md:max-w-xl">
+          <p className="font-serif text-2xl font-semibold leading-tight text-ivory sm:text-[1.7rem]">
+            {idx.hospitals.length.toLocaleString("en-US")} hospitals and {idx.specialities.length.toLocaleString("en-US")} specialities, on the same published figures.
+          </p>
+          <form method="get" role="search" className="flex gap-2">
+            <label htmlFor="explore-q" className="sr-only">Search hospitals and specialities</label>
+            <input id="explore-q" name="q" defaultValue={q} placeholder="Search, e.g. Mayo or anaesthesia" className="h-11 min-w-0 flex-1 rounded-lg border border-ivory/30 bg-surface px-4 text-sm text-ink placeholder:text-subtle" />
+            <button type="submit" className="h-11 rounded-lg bg-gold px-4 text-sm font-semibold text-navy hover:bg-ivory">Search</button>
+          </form>
+        </div>
+      </section>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Card>
           <CardHeader title="Specialities" description="Number = allocations across all imported rounds." />

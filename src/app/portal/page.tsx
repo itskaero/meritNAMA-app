@@ -27,6 +27,7 @@ import { featureFlags } from "@/lib/data/settings";
 import { peerInterest, peerKey } from "@/lib/data/social";
 import { PEER_MIN, PEER_WINDOW } from "@/lib/domain/social";
 import { PeerCount } from "@/components/rooms/peer-count";
+import { ART } from "@/components/brand-assets";
 import { RepBadge } from "@/components/community/rep-badge";
 
 export const metadata = { title: "Dashboard" };
@@ -98,7 +99,8 @@ export default async function PortalDashboard() {
     <AreaPage {...frame}>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         {/* ── Your merit: the page's one feature surface ──────────────────── */}
-        <section aria-labelledby="your-merit" className="relative overflow-hidden rounded-xl bg-feature p-6 text-feature-ink shadow-[var(--mn-shadow-2)] sm:p-7">
+        <section aria-labelledby="your-merit" className="relative isolate overflow-hidden rounded-xl bg-feature p-6 text-feature-ink shadow-[var(--mn-shadow-2)] sm:p-7">
+          <span aria-hidden className="mn-mask pointer-events-none absolute -right-20 -top-16 -z-10 h-[340px] w-[480px] text-feature-accent opacity-[0.13]" style={{ ["--mn-mask" as string]: `url(${ART.contour})` }} />
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 id="your-merit" className="text-sm font-semibold uppercase tracking-[0.14em] text-feature-accent">Your merit</h2>

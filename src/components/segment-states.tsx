@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
+import { ART } from "./brand-assets";
 
 /** Shown while a page in the admin or portal area loads. */
 export function SegmentLoading() {
@@ -25,9 +26,10 @@ export function SegmentError({ error, retry }: { error: unknown; retry: () => vo
   const digest = error instanceof Error && "digest" in error ? String(error.digest) : null;
   return (
     <div className="px-4 py-16 sm:px-8">
-      <div role="alert" className="mx-auto max-w-lg rounded-xl border border-danger/40 bg-danger/10 p-6">
-        <h1 className="text-lg font-semibold text-danger">Something went wrong</h1>
-        <p className="mt-2 text-sm text-muted">The page could not be loaded. Try again; if it keeps failing, check the server logs.</p>
+      <div role="alert" className="relative isolate mx-auto max-w-lg overflow-hidden rounded-xl border border-line border-l-4 border-l-danger bg-surface p-6 shadow-[var(--mn-shadow-1)]">
+        <span aria-hidden className="mn-mask absolute -right-16 -top-10 -z-10 h-56 w-72 text-teal opacity-[0.08]" style={{ ["--mn-mask" as string]: `url(${ART.contour})` }} />
+        <h1 className="font-serif text-xl font-semibold text-heading">Something went wrong</h1>
+        <p className="mt-2 text-sm text-muted">The page could not be loaded. Try again in a moment. If it keeps failing, the reference below helps us find the cause.</p>
         {digest ? <p className="mt-2 font-mono text-xs text-subtle">Reference: {digest}</p> : null}
         <Button className="mt-5" onClick={() => retry()}>Try again</Button>
       </div>

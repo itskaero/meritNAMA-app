@@ -17,21 +17,26 @@ academic, never as an AI product or a gaming dashboard. Light is the default.
 | Page frame: breadcrumb, serif title, description | `src/components/area-page.tsx`, `ui/page-header.tsx` |
 | Primitives | `src/components/ui/` (card, badge, button, data-table, metric, notice, empty-state, action-bar, styles) |
 | Charts | `src/components/charts/` |
-| Landing, sign-in, photographs and credits | `src/components/landing/`, `src/components/auth/`, `public/images/landing/` |
+| Landing, sign-in | `src/components/landing/`, `src/components/auth/` |
+| Imagery: manifest and files | `src/components/brand-assets.ts`, `public/images/brand/` |
 
 ## Colour
 
-Brand: Midnight Navy `#142536`, Slate Blue `#263C4D`, Muted Teal `#5B9487`, Warm
-Ivory `#E7E2D8`. Light background `#F5F6F4`, white surfaces, borders `#E1E6E5`, text
-`#202D38`.
+Brand (v2.1): Deep Navy `#10243A`, Slate Blue `#263C4D`, Teal `#176B67`, Amber
+`#E5A04B`, Terracotta `#D97861`, Mint `#E9F0ED`, Warm Ivory `#F3EEE5`, Charcoal
+`#283747`. Light background `#F5F6F4`, white surfaces, borders `#E1E6E5`, body text in
+Charcoal, headings in Deep Navy.
 
-Two brand values are below 4.5:1 as text on the light background, so they are used
-only where they are not text:
-
-- Muted Teal `#5B9487` (3.2:1): fills, chart series, the selected-nav marker, the logo
-  beam. Text and buttons use the deeper teal `#3D7266` (`--mn-cyan`, 5.1:1).
+- Teal is the primary action and link colour as given (`--mn-cyan`, 5.9:1 on white).
+- Amber and Terracotta are below 4.5:1 as text on light surfaces: Amber is the accent
+  on navy (hero emphasis, primary buttons on dark bands, the dashboard's feature
+  accent), Terracotta the "harder" chart series. Amber text on light uses
+  `--mn-amber` (`#8A5D12`); terracotta text uses `--mn-ember` (`#9C4F33`).
 - Secondary Text `#71808A` (3.8:1): icons and rules (`--mn-text-decor`). Secondary text
   uses `#56656F` (`--mn-text-muted`).
+- Tailwind names for the brand: `bg-navy`, `bg-slate`, `bg-teal`, `bg-gold`,
+  `bg-terracotta`, `bg-mint`, `bg-ivory`, `text-charcoal`. Mint and Ivory do not change
+  in dark mode; inside the app use `bg-tint` for a themed mint.
 
 Semantic tokens keep their v1 names (`--mn-navy-950` is the page background,
 `--mn-cyan` the primary action), so components use Tailwind names that describe the
@@ -52,7 +57,7 @@ No glows, neon borders or decorative gradients. Gradients appear only as photo s
 - Interface and data: IBM Plex Sans, tabular numerals in tables and figures.
 - Codes and identifiers: IBM Plex Mono.
 
-Page titles are 30–38px serif; card titles 15–16px sans semibold; body 14–16px.
+Homepage display headings are serif up to 83px; page titles in the app 30–38px serif; card titles 15–16px sans semibold; body 14–16px.
 
 ## Components
 
@@ -79,14 +84,38 @@ that it rose, `--mn-chart-neutral` (grey) is for counts such as seats. Every cha
 prints its values, says what it measures and where the data comes from, and an
 estimate carries the `simulated` badge.
 
-## Photography
+## Imagery
 
-Authentic and educational: real campuses, wards, lecture halls and people. No robots,
-holograms or circuit boards. The landing and sign-in pages use two photographs of King
-Edward Medical University, Lahore (CC BY-SA 4.0, credited in the footer and in
-`public/images/landing/CREDITS.md`). They are 960px renditions; replace them with
-higher-resolution photography when available by swapping the files and updating
-`src/components/landing/photos.ts`.
+The homepage, sign-in and one band in the app use a set of generated images
+(illustrations of medical education, not photographs of any institution: no caption
+may name a real hospital or university, and the footer says so). Files are in
+`public/images/brand/`; `src/components/brand-assets.ts` is the manifest, with alt
+text, intrinsic size and the focal point (`object-position`) of each photograph.
+
+| Asset | Shape, focal point | Used on |
+|---|---|---|
+| `hero-library-study.jpg` | 2.36:1; doctor right of centre, dark left half | Homepage hero (full bleed on desktop, top half on phones) |
+| `study-desk.jpg` | 4:3; textbooks and stethoscope | Journey 01, Preparing (with the scoring policy) |
+| `doctor-corridor.jpg` | 16:9; doctor left of centre facing right | Journey 02, Entering training; sign-in panel |
+| `postgraduate-planning.jpg` | 4:3; reading training handbooks | Journey 03, Exploring options (with the finder sample) |
+| `hospital-aerial.jpg` | 16:9; building mass upper half | Journey 04 full-bleed band; Browse hospitals search band |
+| `campus-heritage.jpg` | 4:3; heritage block left | Journey 04 inset |
+| `graduate-courtyard.jpg` | 4:3; face upper centre | Journey 05, Deciding |
+| `texture-contour-navy.jpg` | dark contours, amber dots | Homepage "Merit moves every round" data band |
+| `texture-paper-ivory.jpg` | ivory paper, window light | "The record so far" and Methodology |
+| `texture-paper-waves.jpg` | navy, teal and ivory paper waves | Closing band |
+| `art-*.webp` (transparent) | seal, divider, contour, skyline, botanical | Methodology seal; figures divider; contour behind the features list, the dashboard's feature card and the error state; skyline in the footer and 404; a sprig in every empty state and behind sign-in |
+
+Not used, so not shipped: the isometric "network of buildings" (glowing lines read as
+a tech product, against the brief), the dark window-light texture and the flowing
+line waves (no section needed them), and a second copy of the hospital aerial.
+
+Line art is stored with transparency (alpha from the white background) and mostly
+painted through `.mn-mask` in a theme colour, so it follows light and dark. Images are
+served by `next/image` (WebP at the right width, lazy below the fold; the hero is
+`priority`). Motion is CSS only: `.mn-reveal` (fade up as a section enters) and
+`.mn-parallax` use scroll timelines where the browser has them, the hero settles in
+once, and all of it is off under reduced motion.
 
 ## Checks
 
