@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { snippetParam } from "@/lib/domain/community";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
+import { RoundRoomPanel } from "@/components/rooms/round-room-panel";
 import { BarList } from "@/components/charts/bar-list";
 import { RoundBeam } from "@/components/charts/round-beam";
 import { MeritDelta } from "@/components/merit-delta";
@@ -87,7 +88,7 @@ export default async function RoundPage({ params, searchParams }: {
           ...(prevNo ? [{ label: `Round ${prevNo}`, href: `/portal/history/${induction}/rounds/${prevNo}`, icon: "history" as const }] : []),
           ...(nextNo ? [{ label: `Round ${nextNo}`, href: `/portal/history/${induction}/rounds/${nextNo}`, icon: "arrow" as const }] : []),
           { label: "Score finder", href: `/portal/finder?induction=${induction}`, icon: "target" as const },
-          { label: "Discuss", href: "#discussion", icon: "chat" as const },
+          { label: running ? "Round room (live)" : "Round room", href: "#room", icon: "chat" as const },
         ]}
       />
       <Card>
@@ -111,6 +112,7 @@ export default async function RoundPage({ params, searchParams }: {
           <span aria-live="polite">{groups.length.toLocaleString("en-US")} groups{filtered ? " match" : ""}</span>
         </div>
       </Card>
+      {running ? <RoundRoomPanel induction={induction} roundNo={roundNo} live /> : null}
 
       {groups.length === 0 ? (
         <EmptyState title="No allocations match these filters" action={<ButtonLink href={base} variant="secondary">Clear filters</ButtonLink>} />
@@ -184,6 +186,7 @@ export default async function RoundPage({ params, searchParams }: {
           <p className="mt-2 text-xs text-subtle">Based on inductions {(fwd ?? back)!.method.inductions.join(", ")}.</p>
         </Card>
       ) : null}
+      {running ? null : <RoundRoomPanel induction={induction} roundNo={roundNo} live={false} />}
       <DiscussionPanel topic={{ kind: "round", key: `${induction}:${roundNo}` }} label={`round ${roundNo} of induction ${induction}`} />
     </AreaPage>
   );

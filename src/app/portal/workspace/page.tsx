@@ -14,6 +14,8 @@ import { findSection } from "@/lib/navigation";
 import { toggleShortlistAction } from "../finder/actions";
 import Link from "next/link";
 import { shortlistAlerts } from "@/lib/data/notifications";
+import { peerInterest, peerKey } from "@/lib/data/social";
+import { PeerCount } from "@/components/rooms/peer-count";
 import { followedPlaces, listSavedViews } from "@/lib/data/workspace";
 import { formatUtc } from "@/lib/format";
 import { deleteViewAction, setAlertsAction } from "./actions";
@@ -30,7 +32,8 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
   const session = await getSession();
   const [items, opts, mine] = await Promise.all([listShortlist(db, session), finderOptions(db, session), myMerit(db, session).catch(() => null)]);
   const sp = await searchParams;
-  const [views, places, alerts] = await Promise.all([listSavedViews(db, session), followedPlaces(db, session), shortlistAlerts(db, session)]);
+  const [views, places, alerts, peers] = await Promise.all([listSavedViews(db, session), followedPlaces(db, session), shortlistAlerts(db, session), peerInterest(db, session, { limit: 200 })]);
+  const peerOf = new Map(peers.seats.map((p) => [peerKey(p), p.peers]));
   // Marks for the dials: typed here, else the verified record's latest marks.
   const latestInd = opts.inductions[0];
   const own = mine?.rows[0];
@@ -101,7 +104,7 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
                   return (
                   <li key={`${x.speciality}|${x.hospital}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)_auto]">
                     <span className="min-w-0">
-                      <span className="block font-medium">{x.speciality}</span>
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">{x.speciality}<PeerCount n={peerOf.get(peerKey(x))} /></span>
                       <span className="block truncate text-muted">{x.hospital}</span>
                     </span>
                     {mePct !== null ? (

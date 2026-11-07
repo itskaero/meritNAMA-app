@@ -22,6 +22,12 @@ import { getDb } from "@/lib/db/client";
 import { formatMarks, formatUtc } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
 import { latestRoundStats } from "@/lib/round-stats";
+import { roomPulse } from "@/lib/data/rooms";
+import { featureFlags } from "@/lib/data/settings";
+import { peerInterest, peerKey } from "@/lib/data/social";
+import { PEER_MIN, PEER_WINDOW } from "@/lib/domain/social";
+import { PeerCount } from "@/components/rooms/peer-count";
+import { RepBadge } from "@/components/community/rep-badge";
 
 export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -41,12 +47,17 @@ export default async function PortalDashboard() {
 
   const db = getDb();
   const session = await getSession();
-  const [inductions, change, merit, sources] = await Promise.all([
+  const [inductions, change, merit, sources, peers, flags] = await Promise.all([
     listInductionsWithRounds(db, session),
     latestRoundChange(db, session),
     myMerit(db, session).catch(() => null),
     dataSources(db, session),
+    peerInterest(db, session, { limit: 200 }),
+    featureFlags(db, session),
   ]);
+  const pulse = flags.community ? await roomPulse(db, session, { limit: 3 }) : null;
+  const peerOf = new Map(peers.seats.map((p) => [peerKey(p), p.peers]));
+  const room = pulse?.rooms[0] ?? null;
   const latest = inductions[0];
   const lastRound = latest?.rounds.at(-1);
   const running = latest ? await inductionRunning(db, latest.id) : false;
@@ -239,7 +250,7 @@ export default async function PortalDashboard() {
                 <ul className="divide-y divide-line rounded-lg border border-line text-sm">
                   {nearest.map((o) => (
                     <li key={`${o.speciality}|${o.hospital}`} className="flex items-center justify-between gap-3 px-3 py-2">
-                      <span className="min-w-0"><span className="block truncate font-medium">{o.speciality}</span><span className="block truncate text-xs text-muted">{o.hospital}</span></span>
+                      <span className="min-w-0"><span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium"><span className="truncate">{o.speciality}</span><PeerCount n={peerOf.get(peerKey({ program: mine!.program, quota: mine!.quota, speciality: o.speciality, hospital: o.hospital }))} /></span><span className="block truncate text-xs text-muted">{o.hospital}</span></span>
                       <span className="flex flex-none items-center gap-2"><span className="tabular-nums">{formatMarks(o.lastClosing)}</span><StatusIcon status={o.status} className={cn("h-3 w-3", o.status === "safe" ? "text-success" : "text-amber")} /></span>
                     </li>
                   ))}
@@ -252,6 +263,68 @@ export default async function PortalDashboard() {
           </div>
         </Card>
       ) : null}
+
+      {/* ── People near your marks, and the round room ───────────────────── */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <Card>
+          <CardHeader
+            title="Popular near your marks"
+            description={
+              peers.marks == null
+                ? "Seats that people with marks like yours have saved."
+                : `What people within ${PEER_WINDOW} of your ${formatMarks(peers.marks)} (${peers.source === "record" ? "your record" : "your preference list"}) have shortlisted or planned.`
+            }
+            action={<Badge tone="calculated">Anonymous counts</Badge>}
+          />
+          {peers.marks == null ? (
+            <p className="text-sm text-muted">
+              Link your merit record, or <Link href="/portal/preferences" className="text-signal hover:underline">make a preference list with your expected marks</Link>, to see which seats people near you are weighing up.
+            </p>
+          ) : peers.seats.length ? (
+            <ol className="divide-y divide-line rounded-lg border border-line text-sm">
+              {peers.seats.slice(0, 6).map((p, i) => (
+                <li key={peerKey(p)} className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2">
+                  <span className="font-mono text-xs text-subtle tabular-nums">{i + 1}</span>
+                  <span className="min-w-0"><span className="block truncate font-medium">{p.speciality}</span><span className="block truncate text-xs text-muted">{p.hospital} · {p.program} {p.quota}</span></span>
+                  <span className="text-xs tabular-nums text-signal-strong">{p.peers} people</span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-sm text-muted">
+              {peers.near ? `${peers.near} people are near your marks, ` : "Too few people near your marks yet, "}
+              but no seat is on at least {PEER_MIN} of their lists. Counts appear once {PEER_MIN} or more people share a seat, so nobody can be singled out.
+            </p>
+          )}
+          <p className="mt-3 text-xs text-subtle">Turn counting off for yourself under Community → You.</p>
+        </Card>
+        {room ? (
+          <Card>
+            <CardHeader
+              title={`Round room · induction ${room.induction}, round ${room.roundNo}`}
+              description={room.today ? `${room.today} ${room.today === 1 ? "message" : "messages"} in the last day.` : "One-line chat on the latest round. Round day posts the figures automatically."}
+              action={<Link href={`/portal/history/${room.induction}/rounds/${room.roundNo}#room`} className="text-sm font-medium text-signal hover:underline">Open the room</Link>}
+            />
+            {pulse!.preview.length ? (
+              <ul className="grid gap-2 text-sm">
+                {pulse!.preview.map((m) => (
+                  <li key={m.id} className={cn("rounded-lg px-3 py-2", m.kind === "system" ? "border border-teal/30 bg-tint" : "border border-line")}>
+                    <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                      <span className="font-semibold text-heading">{m.kind === "system" ? "meritNAMA · round day" : m.mine ? "You" : m.author}</span>
+                      {m.kind === "message" && m.verified && !m.team ? <Badge tone="success">Verified</Badge> : null}
+                      <RepBadge level={m.level} />
+                      {m.band ? <span className="rounded border border-line px-1.5 font-mono text-[0.7rem]">{m.band}</span> : null}
+                    </p>
+                    <p className="mt-0.5 line-clamp-2 text-ink">{m.body}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted">Quiet so far. Be the first to say what moved for you.</p>
+            )}
+          </Card>
+        ) : null}
+      </div>
 
       {/* ── Remaining candidates ────────────────────────────────────────── */}
       {latest && settling && latest.rounds.length > 1 ? (

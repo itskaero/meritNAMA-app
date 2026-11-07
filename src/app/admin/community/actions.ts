@@ -15,7 +15,7 @@ export async function moderateAction(_prev: ActionState, form: FormData): Promis
     const id = formText(form, "id");
     const action = formText(form, "action") as ModerationAction;
     if (!isUuid(id) || !ACTIONS.includes(action)) throw new UserFacingError("Unknown moderation request.");
-    const kind = (["thread", "post", "review"].includes(String(form.get("kind"))) ? form.get("kind") : "post") as ContentKind;
+    const kind = (["thread", "post", "review", "message"].includes(String(form.get("kind"))) ? form.get("kind") : "post") as ContentKind;
     await moderate(getDb(), await getSession(), { kind, id, action, reason: formText(form, "reason") });
     revalidatePath("/admin/community");
     revalidatePath("/portal", "layout");
@@ -29,7 +29,7 @@ export async function dismissAction(_prev: ActionState, form: FormData): Promise
   try {
     const id = formText(form, "id");
     if (!isUuid(id)) throw new UserFacingError("Unknown report.");
-    await dismissReports(getDb(), await getSession(), { kind: (["thread", "post", "review"].includes(String(form.get("kind"))) ? form.get("kind") : "post") as ContentKind, id, reason: formText(form, "reason") });
+    await dismissReports(getDb(), await getSession(), { kind: (["thread", "post", "review", "message"].includes(String(form.get("kind"))) ? form.get("kind") : "post") as ContentKind, id, reason: formText(form, "reason") });
     revalidatePath("/admin/community");
     return { status: "success", message: "Reports dismissed." };
   } catch (err) {

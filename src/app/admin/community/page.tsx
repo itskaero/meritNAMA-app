@@ -34,9 +34,9 @@ export default async function ModerationPage() {
               <li key={`${r.target_kind}-${r.target_id}`} className="grid gap-3 rounded-2xl border border-line bg-canvas p-4">
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <Badge tone="danger">{r.reports} {r.reports === 1 ? "report" : "reports"}</Badge>
-                  <Badge>{r.target_kind === "thread" ? "Question" : r.target_kind === "post" ? "Answer" : "Hospital review"}</Badge>
+                  <Badge>{r.target_kind === "thread" ? "Question" : r.target_kind === "post" ? "Answer" : r.target_kind === "message" ? "Room message" : "Hospital review"}</Badge>
                   {r.status === "hidden" ? <Badge tone="warning">Already hidden</Badge> : null}
-                  {r.thread_id ? <Link href={`/portal/community/${r.thread_id}`} className="font-medium text-signal hover:underline">{r.thread_title}</Link> : r.review_hospital_id ? <Link href={`/portal/explore/hospitals/${r.review_hospital_id}#reviews`} className="font-medium text-signal hover:underline">{r.thread_title}</Link> : <span className="text-muted">Removed</span>}
+                  {r.thread_id ? <Link href={`/portal/community/${r.thread_id}`} className="font-medium text-signal hover:underline">{r.thread_title}</Link> : r.room_href ? <Link href={r.room_href} className="font-medium text-signal hover:underline">{r.thread_title}</Link> : r.review_hospital_id ? <Link href={`/portal/explore/hospitals/${r.review_hospital_id}#reviews`} className="font-medium text-signal hover:underline">{r.thread_title}</Link> : <span className="text-muted">Removed</span>}
                 </div>
                 {r.excerpt ? <blockquote className="border-l-2 border-line-strong pl-3 text-sm text-muted">{r.excerpt}</blockquote> : null}
                 <p className="text-xs text-subtle">Reasons: {r.reasons.join(" · ")}</p>

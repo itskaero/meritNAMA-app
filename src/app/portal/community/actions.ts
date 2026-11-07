@@ -32,7 +32,7 @@ const pollOf = (f: FormData) => {
   return pollInputSchema.parse({ question: formText(f, "pollQuestion"), options, closesInDays: days > 0 ? days : undefined });
 };
 
-const kindOf = (f: FormData): ContentKind => (["thread", "post", "review"].includes(formText(f, "kind")) ? formText(f, "kind") : "post") as ContentKind;
+const kindOf = (f: FormData): ContentKind => (["thread", "post", "review", "message"].includes(formText(f, "kind")) ? formText(f, "kind") : "post") as ContentKind;
 const idOf = (f: FormData, k = "id") => {
   const v = formText(f, k);
   if (!isUuid(v)) throw new UserFacingError("That post no longer exists.");

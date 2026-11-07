@@ -90,14 +90,16 @@ html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger te
 @keyframes mn-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes mn-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes mn-pop { 0% { r: 0; } 70% { r: 7; } 100% { r: 5; } }
+@keyframes mn-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 @keyframes mn-beam { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 .mn-draw { stroke-dasharray: 1; animation: mn-draw 1.1s var(--mn-ease) both; }
 .mn-grow-x { transform-origin: left center; animation: mn-grow-x .8s var(--mn-ease) both; }
 .mn-grow-y { transform-box: fill-box; transform-origin: bottom; animation: mn-grow-y .7s var(--mn-ease) both; }
 .mn-rise { animation: mn-rise .5s var(--mn-ease) both; }
+.mn-pulse { animation: mn-pulse 1.8s ease-in-out infinite; }
 .mn-beam-flow { background-size: 200% 100%; animation: mn-beam 6s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .mn-draw, .mn-grow-x, .mn-grow-y, .mn-rise, .mn-beam-flow { animation: none; }
+  .mn-draw, .mn-grow-x, .mn-grow-y, .mn-rise, .mn-beam-flow, .mn-pulse { animation: none; }
 }
 
 /* Printing a preference list: only the page content, dark on white. */

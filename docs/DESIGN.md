@@ -106,6 +106,20 @@ what their marks reach (safe, borderline and out, with the highest-closing optio
 who is still moving, and where every figure comes from. Each block says whether its
 figures are published, calculated or an estimate.
 
+## Social
+
+- **Round room**: a log, not a messenger. One line per message, the latest round-day
+  post pinned above it on a tint with the `calculated` badge, own messages on a soft
+  teal fill, a pulsing "Live" dot only on a running induction's latest round (static
+  under reduced motion). Older rounds read as an archive. It sits high on the round
+  page while live, and near the foot otherwise.
+- **Names** carry, in order: Team or Verified, the reputation level (Contributor
+  neutral, Helpful teal, Trusted navy; nothing for New), and the opt-in merit band in
+  mono (`FCPS · 21–22`).
+- **Peer counts** are a teal chip, "n near your marks", on shortlist rows and on the
+  dashboard's reachable options, and a "Popular near your marks" card. Below three
+  nothing renders.
+
 ## Next increments
 
 1. Sortable columns and a sticky filter bar on the long tables (finder, round lists,

@@ -16,6 +16,7 @@ import {
 import { isoDay, meritRoundFileSchema, nameKey } from "@/lib/domain/merit-round";
 import { UserFacingError } from "@/lib/errors";
 import { notifyFollowers, notifyShortlists } from "./notifications";
+import { postRoundDay } from "./rooms";
 import { requireReason, writeAudit, type Db } from "./shared";
 
 /**
@@ -129,7 +130,9 @@ export async function importMeritRound(
       { kind: "new_round", title: `Induction ${inductionId}, round ${roundNo} ${prev ? "was updated" : "is out"}`, href: `/portal/history/${inductionId}/rounds/${roundNo}` },
     );
     // People with seats from this round on their shortlist get the closing merit of each.
-    await notifyShortlists(tx, { induction: inductionId, roundNo, roundId: round!.id });
+    const alerted = await notifyShortlists(tx, { induction: inductionId, roundNo, roundId: round!.id });
+    // Round day: the round's own figures open the conversation in its room.
+    await postRoundDay(tx, { induction: inductionId, roundNo, roundId: round!.id, alerted, updated: Boolean(prev) });
 
     const unmatched = {
       specialities: [...new Set(rows.filter((r) => r.specialityId === null).map((r) => r.speciality))],

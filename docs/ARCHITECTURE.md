@@ -140,6 +140,29 @@ record. An applicant ID alone is never proof of identity.
   reach the page. Reports, helpful votes and moderation share the community
   tables, with `target_kind = 'review'`.
 
+- Round rooms (`round_room_messages`, `src/lib/data/rooms.ts`): a one-line chat per
+  published round, keyed by (induction, round), ordered by `seq` so clients poll
+  "after n" (a Server Action, every 8 s while the tab is visible on a running
+  induction's latest round, every minute otherwise). Everyone signed in reads; posting
+  needs `mayPost` (verified record or staff), the community feature switch, 1–300
+  characters, and at most one message per 10 s and 30 per hour. `importMeritRound`
+  calls `postRoundDay` in its transaction: a system message (author null) with the
+  round's allocations, median closing merit and its change, the biggest fall, and how
+  many shortlist alerts went out. Reports and hide/show use `target_kind = 'message'`.
+- Merit band (opt-in, `users.show_band`, off by default): beside a name in rooms,
+  the programme and a one-mark range of the latest verified allocation, worked out
+  in SQL; exact marks and applicant ids never reach the page.
+- Reputation (`src/lib/data/social.ts`, `reputationSql`): computed when read, nothing
+  stored. 10 per accepted answer on someone else's question, 2 per helpful vote from a
+  verified member or staff, at most 5 votes counted from one voter. Levels: New,
+  Contributor (10), Helpful (50), Trusted (150); "New" shows no badge.
+- Peer counts (`peerInterest`): people whose reference marks (verified record's latest
+  allocation, else their latest preference list's marks) are within 0.5 of the
+  viewer's, counted over shortlists and preference lists. Counts only, never below
+  3, the viewer excluded, and anyone with `users.peer_counted = false` left out.
+  The viewer's own stored marks are used, never typed ones, so the window cannot be
+  moved around to probe.
+
 ## Preference lists
 
 `preference_lists` and `preference_items` (primary key: list + speciality + hospital, so an option appears once; positions unique per list). Every function in `src/lib/data/preferences.ts` loads the list through `ownList`, which filters by the signed-in user, so another member's list reads as "does not exist". Reordering rewrites the list in one transaction after checking the new order names exactly the current options.

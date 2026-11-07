@@ -16,6 +16,12 @@ import { FollowButton } from "@/components/community/follow-button";
 import { isFollowing } from "@/lib/data/notifications";
 import { THREAD_FILTERS, type ThreadFilter } from "@/lib/domain/community";
 import { DisplayNameForm } from "./forms";
+import { roomPulse } from "@/lib/data/rooms";
+import { myReputation, socialPrefs } from "@/lib/data/social";
+import { REPUTATION, REPUTATION_LEVELS } from "@/lib/domain/social";
+import { RepBadge } from "@/components/community/rep-badge";
+import { SocialPrefs } from "@/components/rooms/social-prefs";
+import { RoomPulseList } from "@/components/rooms/room-pulse";
 
 export const metadata = { title: "Community" };
 export const dynamic = "force-dynamic";
@@ -29,11 +35,14 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
   const show: ThreadFilter = (THREAD_FILTERS as readonly string[]).includes(sp.show ?? "") ? (sp.show as ThreadFilter) : "all";
   const db = getDb();
   const session = await getSession();
-  const [threads, stats, me, topicInfo] = await Promise.all([
+  const [threads, stats, me, topicInfo, rep, prefs, pulse] = await Promise.all([
     listThreads(db, session, { topic: topic ?? undefined, sort, filter: show }),
     communityStats(db, session),
     getMyProfile(db, session),
     topic ? describeTopics(db, [topic]) : Promise.resolve(null),
+    myReputation(db, session),
+    socialPrefs(db, session),
+    roomPulse(db, session, { limit: 4 }),
   ]);
   const about = topic ? topicInfo?.get(`${topic.kind}:${topic.key}`) : null;
   const qs = (o: Record<string, string | undefined>) => {
@@ -88,6 +97,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
               <ButtonLink href={`/portal/community/new${qs({ topic: topicQ })}`} size="sm">Ask a question</ButtonLink>
             </div>
           </div>
+          <h2 className="sr-only">Questions</h2>
           {threads.length ? (
             <ThreadList threads={threads} showTopic={!topic} />
           ) : (
@@ -98,8 +108,27 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
         </div>
         <div className="grid content-start gap-5">
           <Card>
+            <CardHeader title="Round rooms" description="One-line chat on each merit round. The newest round is where round day happens." />
+            <RoomPulseList rooms={pulse.rooms} />
+          </Card>
+          <Card>
             <CardHeader title="You" description={`You post as ${me.displayName}.`} />
             <DisplayNameForm current={me.displayName ?? ""} />
+            <div className="mt-5 border-t border-line pt-4">
+              <p className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="font-semibold text-heading">Reputation</span>
+                <span className="font-mono tabular-nums text-ink">{rep.points}</span>
+                <RepBadge level={rep.level.label} />
+                {rep.level.key === "new" ? <span className="text-xs text-muted">New</span> : null}
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                {rep.next ? `${rep.next.needed} to ${rep.next.level.label}. ` : "The top level. "}
+                {REPUTATION.accepted} for an accepted answer, {REPUTATION.helpful} for each helpful vote from a verified member (at most {REPUTATION.perVoterCap} counted from one person). Levels: {REPUTATION_LEVELS.map((l) => `${l.label} ${l.min}+`).join(", ")}.
+              </p>
+            </div>
+            <div className="mt-5 border-t border-line pt-4">
+              <SocialPrefs showBand={prefs.showBand} peerCounted={prefs.peerCounted} />
+            </div>
           </Card>
           <Card>
             <CardHeader title="House rules" />

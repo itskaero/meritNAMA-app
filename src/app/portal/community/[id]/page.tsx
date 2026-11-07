@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RepBadge } from "@/components/community/rep-badge";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { timeAgo } from "@/components/community/thread-list";
@@ -22,13 +23,14 @@ import { AcceptButton, HelpfulButton, ReplyForm, ReportButton } from "../forms";
 export const metadata = { title: "Question" };
 export const dynamic = "force-dynamic";
 
-function Byline({ author, team, verified, at }: { author: string | null; team: boolean; verified: boolean; at: Date }) {
+function Byline({ author, team, verified, level, at }: { author: string | null; team: boolean; verified: boolean; level?: string; at: Date }) {
   return (
     <p className="flex flex-wrap items-center gap-2 text-xs text-subtle">
       <span aria-hidden className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-ember/40 to-elevated text-[0.65rem] font-bold text-ink">{(author ?? "?").slice(0, 2).toUpperCase()}</span>
       <span className="font-semibold text-muted">{author}</span>
       {team ? <Badge tone="current">Team</Badge> : null}
       {verified && !team ? <Badge tone="success">Verified</Badge> : null}
+      <RepBadge level={level} />
       <time dateTime={at.toISOString()}>{timeAgo(at)}</time>
     </p>
   );
@@ -67,7 +69,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
             {t.duplicateOf ? <Badge>Duplicate</Badge> : t.locked ? <Badge>Locked</Badge> : null}
             <span className="ml-auto"><FollowButton target={{ kind: "thread", key: t.id }} following={me.following} path={path} /></span>
           </div>
-          <Byline author={t.author} team={t.authorIsTeam} verified={t.authorVerified} at={t.createdAt} />
+          <Byline author={t.author} team={t.authorIsTeam} verified={t.authorVerified} level={t.authorLevel} at={t.createdAt} />
           <Body text={t.body} />
           {card(t.snippet)}
           {view.poll ? <PollCard threadId={t.id} poll={view.poll} mayVote={me.mayPost} /> : null}
@@ -85,7 +87,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
             <li key={p.id} className="mn-rise" style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
               <article className={`grid gap-3 rounded-2xl border bg-surface p-4 ${p.status === "hidden" ? "border-danger/40 opacity-70" : p.accepted ? "border-success/50" : "border-line"}`}>
                 {p.accepted ? <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-success"><Icon name="check" className="h-4 w-4" />Accepted answer</p> : null}
-                <Byline author={p.author} team={p.authorIsTeam} verified={p.authorVerified} at={p.createdAt} />
+                <Byline author={p.author} team={p.authorIsTeam} verified={p.authorVerified} level={p.authorLevel} at={p.createdAt} />
                 {p.status === "hidden" ? <Badge tone="danger">Hidden from members</Badge> : null}
                 <Body text={p.body} />
                 {card(p.snippet)}

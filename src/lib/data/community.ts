@@ -15,6 +15,7 @@ import {
   discussionPollOptions,
   discussionPollVotes,
   hospitalReviews,
+  roundRoomMessages,
 } from "@/lib/db/schema";
 import {
   displayNameSchema,
@@ -39,6 +40,8 @@ import { mayPost } from "./candidates";
 import { autoFollow, isFollowing, notifyFollowers, notifyUser } from "./notifications";
 import { assertSnippetExists, snippetFigures } from "./snippets";
 import { ensureUser } from "./users";
+import { reputationSql } from "./social";
+import { reputationLevel } from "@/lib/domain/social";
 
 /**
  * Community discussions. Any signed-in user reads and posts; admins moderate.
@@ -107,10 +110,17 @@ export async function describeTopics(db: Database, topics: Topic[]): Promise<Map
 // ── Reading ────────────────────────────────────────────────────────────────────
 
 /** What members can mark helpful, report, and moderators can hide. */
-export type ContentKind = "thread" | "post" | "review";
+export type ContentKind = "thread" | "post" | "review" | "message";
+
+/** The table that holds a kind of content. */
+const tableOf = (kind: ContentKind) =>
+  kind === "thread" ? discussionThreads : kind === "post" ? discussionPosts : kind === "review" ? hospitalReviews : roundRoomMessages;
+
+const entityOf = (kind: ContentKind) => (kind === "review" ? "hospital_review" : kind === "message" ? "round_room_message" : `discussion_${kind}`);
 
 async function authorOf(db: Db, kind: ContentKind, id: string) {
-  const table = kind === "thread" ? discussionThreads : kind === "post" ? discussionPosts : hospitalReviews;
+  if (kind === "message") return null; // room messages take no votes
+  const table = tableOf(kind) as typeof discussionThreads;
   const [row] = await db.select({ authorId: table.authorId }).from(table).where(eq(table.id, id)).limit(1);
   return row ?? null;
 }
@@ -142,6 +152,7 @@ export async function listThreads(
       author: users.displayName,
       authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
       authorVerified,
+      authorPoints: reputationSql(),
       status: discussionThreads.status,
       locked: discussionThreads.locked,
       pinned: discussionThreads.pinned,
@@ -171,7 +182,7 @@ export async function listThreads(
     )
     .limit(Math.min(opts.limit ?? 50, 100));
   const topics = await describeTopics(db, rows.map((r) => ({ kind: r.topicKind, key: r.topicKey })));
-  return rows.map((r) => ({ ...r, topic: topics.get(`${r.topicKind}:${r.topicKey}`)! }));
+  return rows.map(({ authorPoints, ...r }) => ({ ...r, authorLevel: reputationLevel(authorPoints).label, topic: topics.get(`${r.topicKind}:${r.topicKey}`)! }));
 }
 
 export async function getThread(db: Database, session: Session | null, id: string) {
@@ -188,6 +199,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
       author: users.displayName,
       authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
       authorVerified,
+      authorPoints: reputationSql(),
       mine: sql<boolean>`${discussionThreads.authorId} = ${me.id}`,
       status: discussionThreads.status,
       locked: discussionThreads.locked,
@@ -211,6 +223,7 @@ export async function getThread(db: Database, session: Session | null, id: strin
       author: users.displayName,
       authorIsTeam: sql<boolean>`${users.role} <> 'candidate'`,
       authorVerified,
+      authorPoints: reputationSql(),
       mine: sql<boolean>`${discussionPosts.authorId} = ${me.id}`,
       status: discussionPosts.status,
       snippet: discussionPosts.snippet,
@@ -232,8 +245,8 @@ export async function getThread(db: Database, session: Session | null, id: strin
   const poll = await readPoll(db, t.id, me.id, isAdmin);
   return {
     poll,
-    thread: { ...t, snippet: storedSnippet(t.snippet) },
-    posts: ordered.map((p) => ({ ...p, snippet: storedSnippet(p.snippet), accepted: p.id === t.acceptedPostId })),
+    thread: { ...t, authorLevel: reputationLevel(t.authorPoints).label, snippet: storedSnippet(t.snippet) },
+    posts: ordered.map((p) => ({ ...p, authorLevel: reputationLevel(p.authorPoints).label, snippet: storedSnippet(p.snippet), accepted: p.id === t.acceptedPostId })),
     topic,
     original: original ?? null,
     figures: await snippetFigures(db, snippets),
@@ -438,7 +451,7 @@ export async function moderate(
 ) {
   assertCan(session, "community.moderate");
   const reason = requireReason(input.reason, "moderation");
-  if (input.kind !== "thread" && !["hide", "show"].includes(input.action)) throw new UserFacingError("Replies and reviews can only be hidden or shown.");
+  if (input.kind !== "thread" && !["hide", "show"].includes(input.action)) throw new UserFacingError("Replies, reviews and room messages can only be hidden or shown.");
   return db.transaction(async (tx) => {
     const set =
       input.action === "hide" ? { status: "hidden" as const } :
@@ -446,7 +459,7 @@ export async function moderate(
       input.action === "lock" ? { locked: true } :
       input.action === "unlock" ? { locked: false } :
       input.action === "pin" ? { pinned: true } : { pinned: false };
-    const table = input.kind === "thread" ? discussionThreads : input.kind === "post" ? discussionPosts : hospitalReviews;
+    const table = tableOf(input.kind) as typeof discussionThreads;
     const res = await tx.update(table).set(set as never).where(eq(table.id, input.id)).returning({ id: table.id });
     if (!res.length) throw new UserFacingError("That post no longer exists.");
     if (input.action === "hide") {
@@ -455,7 +468,7 @@ export async function moderate(
         .set({ status: "resolved", resolvedBy: session.email })
         .where(and(eq(discussionReports.targetKind, input.kind), eq(discussionReports.targetId, input.id), eq(discussionReports.status, "open")));
     }
-    await writeAudit(tx, session.email, { action: `community.${input.action}`, entityType: input.kind === "review" ? "hospital_review" : `discussion_${input.kind}`, entityId: input.id, after: set, reason });
+    await writeAudit(tx, session.email, { action: `community.${input.action}`, entityType: entityOf(input.kind), entityId: input.id, after: set, reason });
   });
 }
 
@@ -464,21 +477,23 @@ export async function listOpenReports(db: Database, session: Session | null) {
   const rows = (await db.execute(sql`
     select r.target_kind, r.target_id, count(*)::int as reports, min(r.created_at) as first_at,
            array_agg(r.reason order by r.created_at) as reasons,
-           coalesce(t.title, pt.title, 'Review of ' || h.name) as thread_title,
+           coalesce(t.title, pt.title, 'Review of ' || h.name, 'Round room: induction ' || rm.induction || ', round ' || rm.round_no) as thread_title,
            coalesce(t.id, p.thread_id) as thread_id,
            hr.hospital_id as review_hospital_id,
-           left(coalesce(t.body, p.body, hr.body), 280) as excerpt,
-           coalesce(t.status, p.status, hr.status)::text as status
+           case when rm.id is not null then '/portal/history/' || rm.induction || '/rounds/' || rm.round_no || '#room' end as room_href,
+           left(coalesce(t.body, p.body, hr.body, rm.body), 280) as excerpt,
+           coalesce(t.status, p.status, hr.status, rm.status)::text as status
     from discussion_reports r
     left join discussion_threads t on r.target_kind = 'thread' and t.id = r.target_id
     left join discussion_posts p on r.target_kind = 'post' and p.id = r.target_id
     left join discussion_threads pt on pt.id = p.thread_id
     left join hospital_reviews hr on r.target_kind = 'review' and hr.id = r.target_id
     left join hospitals h on h.id = hr.hospital_id
+    left join round_room_messages rm on r.target_kind = 'message' and rm.id = r.target_id
     where r.status = 'open'
-    group by r.target_kind, r.target_id, t.title, pt.title, h.name, t.id, p.thread_id, hr.hospital_id, t.body, p.body, hr.body, t.status, p.status, hr.status
+    group by r.target_kind, r.target_id, t.title, pt.title, h.name, t.id, p.thread_id, hr.hospital_id, t.body, p.body, hr.body, t.status, p.status, hr.status, rm.id, rm.induction, rm.round_no, rm.body, rm.status
     order by count(*) desc, min(r.created_at)`)) as unknown as {
-    target_kind: ContentKind; target_id: string; reports: number; first_at: string; reasons: string[]; thread_title: string | null; thread_id: string | null; review_hospital_id: number | null; excerpt: string | null; status: string | null;
+    target_kind: ContentKind; target_id: string; reports: number; first_at: string; reasons: string[]; thread_title: string | null; thread_id: string | null; review_hospital_id: number | null; room_href: string | null; excerpt: string | null; status: string | null;
   }[];
   return rows;
 }
@@ -491,7 +506,7 @@ export async function dismissReports(db: Database, session: Session | null, inpu
       .update(discussionReports)
       .set({ status: "dismissed", resolvedBy: session.email })
       .where(and(eq(discussionReports.targetKind, input.kind), eq(discussionReports.targetId, input.id), eq(discussionReports.status, "open")));
-    await writeAudit(tx, session.email, { action: "community.dismiss_reports", entityType: input.kind === "review" ? "hospital_review" : `discussion_${input.kind}`, entityId: input.id, reason });
+    await writeAudit(tx, session.email, { action: "community.dismiss_reports", entityType: entityOf(input.kind), entityId: input.id, reason });
   });
 }
 

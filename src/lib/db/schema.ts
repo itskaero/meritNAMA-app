@@ -45,6 +45,10 @@ export const users = pgTable("users", {
   displayName: text("display_name"),
   /** Inbox alerts when a new merit round changes a seat on the person's shortlist. */
   shortlistAlerts: boolean("shortlist_alerts").notNull().default(true),
+  /** Show a coarse merit band (programme and a 1-mark range) next to the name in round rooms. Off by default. */
+  showBand: boolean("show_band").notNull().default(false),
+  /** Counted, anonymously, in "people near your marks" figures. On by default; the profile turns it off. */
+  peerCounted: boolean("peer_counted").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -337,7 +341,34 @@ export const discussionReports = pgTable(
   (t) => [
     index("discussion_reports_status_idx").on(t.status, t.createdAt),
     uniqueIndex("discussion_reports_once_uq").on(t.targetKind, t.targetId, t.reporterId),
-    check("discussion_reports_kind", sql`${t.targetKind} in ('thread', 'post', 'review')`),
+    check("discussion_reports_kind", sql`${t.targetKind} in ('thread', 'post', 'review', 'message')`),
+  ],
+);
+
+/**
+ * Round rooms: a short-message chat attached to one merit round (topic key "21:6").
+ * Members post one-liners; on import the round's own figures arrive as a system
+ * message (author null). `seq` orders messages and lets clients ask for "after n".
+ */
+export const roundRoomMessages = pgTable(
+  "round_room_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seq: bigserial("seq", { mode: "number" }).notNull(),
+    induction: integer("induction").notNull(),
+    roundNo: integer("round_no").notNull(),
+    authorId: uuid("author_id").references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().default("message"),
+    body: text("body").notNull(),
+    status: discussionStatus("status").notNull().default("visible"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("round_room_messages_seq_uq").on(t.seq),
+    index("round_room_messages_room_idx").on(t.induction, t.roundNo, t.seq),
+    index("round_room_messages_author_idx").on(t.authorId, t.createdAt),
+    check("round_room_messages_kind", sql`${t.kind} in ('message', 'system')`),
+    check("round_room_messages_body", sql`char_length(${t.body}) between 1 and 600`),
   ],
 );
 
