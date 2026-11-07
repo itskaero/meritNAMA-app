@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import { Archivo, IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -16,7 +17,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: "#0b0b0c" };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Render per request, so the Content Security Policy's nonce (src/proxy.ts) reaches every page's scripts.
+  await connection();
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} ${display.variable}`}>
       <body

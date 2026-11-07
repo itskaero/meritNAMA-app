@@ -294,6 +294,7 @@ export type RunSummary = {
 
 /** Queue a first-round run with the induction's current rules. Execute it with executeRun. */
 export async function queueFirstRoundRun(db: Database, session: Session | null, input: { induction: number }) {
+  assertCan(session, "data.edit");
   return queueRun(db, session, { induction: input.induction, kind: "first_round", fromRound: null });
 }
 
@@ -324,8 +325,9 @@ export async function queueRun(
     consentOverrides?: Record<string, string> | null;
   },
 ) {
-  if (input.ownerUserId) assertCan(session, "portal");
-  else assertCan(session, "data.edit");
+  assertCan(session, "portal");
+  // Shared runs need the data capability; a what-if run is the caller's own.
+  if (!input.ownerUserId) assertCan(session, "data.edit");
   const [dataset] = await db.select().from(simDatasets).where(eq(simDatasets.inductionId, input.induction)).limit(1);
   if (!dataset) throw new UserFacingError(`Import induction ${input.induction}'s simulation data first.`);
   const [seat] = await db.select({ n: inductionSeats.seats }).from(inductionSeats).where(eq(inductionSeats.inductionId, input.induction)).limit(1);

@@ -383,6 +383,7 @@ export async function removeSeatLine(db: Database, session: Session | null, inpu
 
 /** Rebuild data/induction<n>_seats.json, field for field and in the original order. */
 export async function exportSeatFile(db: Database, session: Session | null, induction: number): Promise<SeatRow[]> {
+  assertCan(session, "staff");
   const rows = await listSeats(db, session, inductionSchema.parse(induction));
   return rows.map((r) => ({
     typeId: r.programId,

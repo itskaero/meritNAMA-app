@@ -311,8 +311,7 @@ and the prediction ranges answer the same question from the imported rounds.
 `APP_STORAGE_DIR` (mounted volume) holds approved source files and generated reports.
 Restricted datasets are imported from there, never committed.
 
-## What is placeholder
+## Status
 
-Every page under `/portal` and `/admin` renders `PlaceholderPage` with a *Not yet
-integrated* badge and its planned scope (from `src/lib/navigation.ts`). The only live
-data is system health on `/admin` and stored policy versions on `/admin/policies`.
+Every portal and admin page is live; none renders `PlaceholderPage` any more. What is
+left (release hardening, cut-over, optional features) is listed in the README.

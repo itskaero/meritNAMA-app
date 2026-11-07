@@ -150,6 +150,7 @@ export async function importFromInbox(
   input: { kind: InboxKind; name: string; reason: string; calendarYear?: number },
   opts: { root?: string } = {},
 ): Promise<Proposal> {
+  assertCan(session, "staff"); // the folder's own capability is checked below
   const k = INBOX_KINDS[input.kind];
   if (!k) throw new UserFacingError("Unknown inbox folder.");
   assertCan(session, k.capability);
@@ -176,6 +177,7 @@ export async function importFromInbox(
 
 /** Set a file aside without importing it (moves it to inbox/processed/). */
 export async function skipInboxFile(db: Database, session: Session | null, input: { kind: InboxKind; name: string; reason: string }, opts: { root?: string } = {}) {
+  assertCan(session, "staff"); // the folder's own capability is checked below
   const k = INBOX_KINDS[input.kind];
   if (!k) throw new UserFacingError("Unknown inbox folder.");
   assertCan(session, k.capability);

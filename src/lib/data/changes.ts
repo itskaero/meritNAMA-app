@@ -373,6 +373,7 @@ async function loadForDecision(db: Db, session: Session | null, id: string) {
 
 /** Apply a pending change. Refused when the data changed since the preview was made. */
 export async function publishChange(db: Database, sessionIn: Session | null, input: { id: string; reason: string }) {
+  assertCan(sessionIn, "staff"); // the change's own capability is checked once it is loaded
   const reason = reasonFor(input.reason);
   const { c, session } = await loadForDecision(db, sessionIn, input.id);
   if (c.status !== "pending") throw new UserFacingError(`This change is already ${c.status.replace("_", " ")}.`);
@@ -426,6 +427,7 @@ export async function publishChange(db: Database, sessionIn: Session | null, inp
 }
 
 export async function discardChange(db: Database, sessionIn: Session | null, input: { id: string; reason: string }) {
+  assertCan(sessionIn, "staff"); // the change's own capability is checked once it is loaded
   const reason = reasonFor(input.reason);
   const { c, session } = await loadForDecision(db, sessionIn, input.id);
   if (c.status !== "pending") throw new UserFacingError(`This change is already ${c.status.replace("_", " ")}.`);
@@ -435,6 +437,7 @@ export async function discardChange(db: Database, sessionIn: Session | null, inp
 
 /** Undo a published change from its snapshot. Only the latest published change of a target can be undone. */
 export async function rollbackChange(db: Database, sessionIn: Session | null, input: { id: string; reason: string }) {
+  assertCan(sessionIn, "staff"); // the change's own capability is checked once it is loaded
   const reason = reasonFor(input.reason);
   const { c, session } = await loadForDecision(db, sessionIn, input.id);
   if (c.status !== "published" || c.snapshot == null) throw new UserFacingError("Only a published change with a snapshot can be rolled back.");

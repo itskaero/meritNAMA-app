@@ -212,7 +212,7 @@ export const adminSections: Section[] = [
     label: "Audit history",
     description: "Who changed what, when and why.",
     milestone: "Delivery 3 · Admin MVP",
-    planned: ["Actor and timestamp", "Previous and new values", "Reason and result", "Reversal where feasible"],
+    planned: [],
   },
   {
     href: "/admin/community",
