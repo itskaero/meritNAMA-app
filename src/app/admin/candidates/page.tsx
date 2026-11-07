@@ -5,11 +5,13 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { getSession, requireSection } from "@/lib/auth/session";
+import { duplicateCount } from "@/lib/data/candidate-records";
 import { listLinkRequests } from "@/lib/data/candidates";
 import { getDb } from "@/lib/db/client";
 import { formatMarks, formatUtc } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
 import { ReviewControls } from "./forms";
+import { CandidateTabs } from "./tabs";
 
 export const metadata = { title: "Candidates" };
 export const dynamic = "force-dynamic";
@@ -17,14 +19,17 @@ export const dynamic = "force-dynamic";
 export default async function AdminCandidatesPage({ searchParams }: { searchParams: Promise<{ decided?: string }> }) {
   await requireSection("/admin/candidates");
   const s = findSection("/admin/candidates");
-  const frame = { area: "admin" as const, trail: [{ label: s.label }], title: "Records to verify", description: "Candidates asking to link their account to an applicant record. Accounts whose sign-in email matches the official record are linked automatically and do not appear here." };
+  const frame = { area: "admin" as const, trail: [{ label: s.label }], title: "Candidates", description: "Candidates asking to link their account to an applicant record. Accounts whose sign-in email matches the official record are linked automatically and do not appear here." };
   const down = await whenDatabaseDown(frame);
   if (down) return down;
-  const { pending, recent } = await listLinkRequests(getDb(), await getSession());
+  const session = await getSession();
+  const { pending, recent } = await listLinkRequests(getDb(), session);
+  const duplicates = await duplicateCount(getDb(), session);
   const { decided } = await searchParams;
 
   return (
     <AreaPage {...frame}>
+      <CandidateTabs current="/admin/candidates" counts={{ "/admin/candidates": pending.length, "/admin/candidates/duplicates": duplicates }} />
       {decided === "verified" ? <Notice title="Approved: the account is verified." /> : decided === "rejected" ? <Notice title="Rejected. The candidate sees your reason on their profile." /> : null}
       <Card>
         <CardHeader title={`Waiting (${pending.length})`} description="Check the proof shows the same applicant ID. The PMDC hint compares what they typed with the record; it is not proof on its own." />

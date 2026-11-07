@@ -12,6 +12,7 @@ import { auditLog } from "@/lib/db/schema";
  */
 const RESTRICTED: Record<string, Capability> = {
   candidate_link: "candidates.verify",
+  candidate_correction: "candidates.verify",
   user: "roles.manage",
 };
 

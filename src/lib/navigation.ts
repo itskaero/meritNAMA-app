@@ -140,7 +140,7 @@ export const adminSections: Section[] = [
     group: "Menu",
     icon: "users",
     label: "Candidates",
-    description: "Verify requests to link accounts to merit records.",
+    description: "Verify account links, look up and correct candidate records, and find duplicates.",
     milestone: "Delivery 3 · Admin MVP",
     planned: ["Search and filter", "Programme-specific marks", "Preference history", "Controlled correction with reason", "Duplicate detection", "Import/export"],
   },

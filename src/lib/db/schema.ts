@@ -365,6 +365,7 @@ export const changeKind = pgEnum("change_kind", [
   "merit_round_replace",
   "merit_round_delete",
   "rules_activate",
+  "candidate_correction",
 ]);
 export const changeStatus = pgEnum("change_status", ["pending", "published", "discarded", "rolled_back"]);
 
@@ -784,3 +785,40 @@ export const simulationPlacements = pgTable(
   },
   (t) => [index("simulation_placements_run_idx").on(t.runId, t.program, t.quota, t.speciality)],
 );
+
+/**
+ * Staff corrections to a candidate's simulation inputs (marks or profile status), with
+ * a reason. Kept apart from the imported dataset so a re-import does not lose them:
+ * the engine applies the active ones on top of sim_candidates when it loads a run.
+ * Revoking (or rolling back the change that added them) sets revoked_at.
+ */
+export const candidateCorrections = pgTable(
+  "candidate_corrections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    inductionId: integer("induction_id").notNull(),
+    applicantId: text("applicant_id").notNull(),
+    /** "base_marks", "program_marks" (with program) or "profile_status". */
+    field: text("field").notNull(),
+    program: text("program"),
+    value: doublePrecision("value").notNull(),
+    reason: text("reason").notNull(),
+    changeId: uuid("change_id").references(() => stagedChanges.id, { onDelete: "set null" }),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    revokedBy: text("revoked_by"),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("candidate_corrections_candidate_idx").on(t.inductionId, t.applicantId),
+    check("candidate_corrections_field", sql`${t.field} in ('base_marks', 'program_marks', 'profile_status')`),
+  ],
+);
+
+/** Workspace settings edited on Team & roles: feature switches and data retention. */
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: json("value").notNull(),
+  updatedBy: text("updated_by").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

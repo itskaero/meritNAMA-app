@@ -6,6 +6,7 @@ import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
+  candidateCorrections,
   hospitals,
   inductionSeats,
   meritAllocations,
@@ -21,11 +22,12 @@ import {
   simulationRuns,
   specialities,
 } from "@/lib/db/schema";
+import { applyCorrections, type Correction } from "@/lib/domain/corrections";
 import { compareRounds, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
 import { consentRows, officialStatuses, type ConsentStatus, type ListAllocation, type OfficialReply } from "@/lib/domain/what-if";
 import { acceptedConsent, programmeBansFromRound, runCascade, seatKeyFromParts, trackBansFromRound, type CascadeCandidate, type CascadeConsentRow, type CascadeStats } from "@/lib/engine/cascade";
-import { marksContext, type EngineCandidate, type MarksContext, type Preference, type SpecialtyGroups } from "@/lib/engine/marks";
+import { effectiveMark, marksContext, parentBonus, programBonus, type EngineCandidate, type MarksContext, type Preference, type SpecialtyGroups } from "@/lib/engine/marks";
 import { buildSeatTree, candidatePool, isEligible, runPlacement, type SeatLine } from "@/lib/engine/placement";
 import { allocationRulesSchema, resolveRules, type ResolvedRules } from "@/lib/engine/rules";
 import { env } from "@/lib/env";
@@ -389,16 +391,30 @@ async function loadEngineCandidates(db: Database, induction: number) {
       marks: p.parentMarks,
     });
   }
-  const candidates: EngineCandidate[] = rows.map((c) => ({
+  const corrected = applyCorrections(
+    rows.map((c) => ({ ...c, programMarks: c.programMarks as Record<string, number> })),
+    await activeCorrections(db, induction),
+  );
+  const candidates: EngineCandidate[] = corrected.map((c) => ({
     applicantId: c.applicantId,
     baseMarks: c.baseMarks,
-    programMarks: c.programMarks as Record<string, number>,
+    programMarks: c.programMarks,
     appliedIn: c.appliedIn as Record<string, boolean>,
     certificates: c.certificates as SimCertificate[],
     profileStatus: c.profileStatus,
     preferences: byId.get(c.applicantId) ?? {},
   }));
   return { candidates, unnamed };
+}
+
+/** Staff corrections in force for an induction, oldest first (later ones win). */
+async function activeCorrections(db: Db, induction: number, applicantId?: string): Promise<Correction[]> {
+  const rows = await db
+    .select({ applicantId: candidateCorrections.applicantId, field: candidateCorrections.field, program: candidateCorrections.program, value: candidateCorrections.value })
+    .from(candidateCorrections)
+    .where(and(eq(candidateCorrections.inductionId, induction), isNull(candidateCorrections.revokedAt), applicantId ? eq(candidateCorrections.applicantId, applicantId) : undefined))
+    .orderBy(asc(candidateCorrections.createdAt));
+  return rows as Correction[];
 }
 
 async function seatLines(db: Database, induction: number): Promise<SeatLine[]> {
@@ -562,7 +578,10 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
   if (!merit) throw new UserFacingError(`Round ${from} is no longer imported.`);
   const lines = await seatLines(db, induction);
   const names = await specialityNameMap(db);
-  const rows = await db.select().from(simCandidates).where(eq(simCandidates.inductionId, induction));
+  const rows = applyCorrections(
+    (await db.select().from(simCandidates).where(eq(simCandidates.inductionId, induction))).map((c) => ({ ...c, programMarks: c.programMarks as Record<string, number> })),
+    await activeCorrections(db, induction),
+  );
   const prefs = await db.select().from(simPreferences).where(eq(simPreferences.inductionId, induction)).orderBy(asc(simPreferences.applicantId), asc(simPreferences.preferenceNo));
 
   // The cascade keys candidates by integer id.
@@ -570,7 +589,7 @@ async function simulateNextRound(db: Database, run: Run, rules: ResolvedRules, c
   const certificates: Record<string, SimCertificate[]> = {};
   const status = new Map<number, number | null>();
   for (const c of rows) {
-    candidates[c.applicantId] = { marksTotal: c.baseMarks, programMarks: c.programMarks as Record<string, number>, preferences: [] };
+    candidates[c.applicantId] = { marksTotal: c.baseMarks, programMarks: c.programMarks, preferences: [] };
     certificates[c.applicantId] = c.certificates as SimCertificate[];
     status.set(Number(c.applicantId), c.profileStatus);
   }
@@ -729,4 +748,72 @@ export async function failInterruptedRuns(db: Database, olderThanMinutes = 30) {
   const stuck = await db.select({ id: simulationRuns.id, createdAt: simulationRuns.createdAt }).from(simulationRuns).where(inArray(simulationRuns.status, ["queued", "running"]));
   const ids = stuck.filter((r) => r.createdAt < cutoff).map((r) => r.id);
   if (ids.length) await db.update(simulationRuns).set({ status: "failed", error: "Interrupted (the server restarted while it ran). Start it again.", finishedAt: new Date() }).where(inArray(simulationRuns.id, ids));
+}
+
+// ── One candidate's simulation inputs (admin candidate records) ──────────────
+
+export type CandidateSimRecord = {
+  induction: number;
+  imported: { baseMarks: number; programMarks: Record<string, number>; profileStatus: number | null };
+  effective: { baseMarks: number; programMarks: Record<string, number>; profileStatus: number | null };
+  appliedIn: Record<string, boolean>;
+  certificates: number;
+  /** Per programme: the mark without a preference (base + programme marks under the rules), or null when not applied. */
+  programmes: { program: string; mark: number | null; preferences: { preferenceNo: number; quota: string; speciality: string; hospital: string; mark: number | null; bonus: number; bonusSource: string; parent: number }[] }[];
+  consent: { round: number; status: string; program: string; quota: string; preferenceNo: number; speciality: string | null; hospital: string | null }[];
+  rulesProblem: string | null;
+};
+
+/**
+ * One applicant's simulation inputs in an induction, with corrections applied and the
+ * marks the engine would use for each preference under the induction's rules.
+ */
+export async function candidateSimRecord(db: Database, session: Session | null, input: { induction: number; applicantId: string }): Promise<CandidateSimRecord | null> {
+  assertCan(session, "candidates.verify");
+  const [row] = await db.select().from(simCandidates).where(and(eq(simCandidates.inductionId, input.induction), eq(simCandidates.applicantId, input.applicantId))).limit(1);
+  if (!row) return null;
+  const imported = { applicantId: row.applicantId, baseMarks: row.baseMarks, programMarks: row.programMarks as Record<string, number>, profileStatus: row.profileStatus };
+  const [effective] = applyCorrections([imported], await activeCorrections(db, input.induction, input.applicantId));
+  const names = await specialityNameMap(db);
+  const prefs = await db.select().from(simPreferences)
+    .where(and(eq(simPreferences.inductionId, input.induction), eq(simPreferences.applicantId, input.applicantId)))
+    .orderBy(asc(simPreferences.program), asc(simPreferences.preferenceNo));
+  const byProgram: Record<string, Preference[]> = {};
+  for (const p of prefs) {
+    (byProgram[nm(p.program)] ??= []).push({
+      preferenceNo: p.preferenceNo, quotaName: nm(p.quota), specialityName: names.get(p.specialityId) ?? `Speciality ${p.specialityId}`, hospitalName: nm(p.hospital),
+      typeName: nm(p.program), typeId: p.typeId, disciplineIds: p.disciplineIds, programMarks: p.programMarks, marks: p.parentMarks,
+    });
+  }
+  const engine: EngineCandidate = {
+    applicantId: row.applicantId, baseMarks: effective!.baseMarks, programMarks: effective!.programMarks,
+    appliedIn: row.appliedIn as Record<string, boolean>, certificates: row.certificates as SimCertificate[], profileStatus: effective!.profileStatus, preferences: byProgram,
+  };
+  const { resolved, problem } = await loadInductionRules(db, input.induction);
+  const ctx = marksContext({ specialtyGroups: await specialtyGroups(db, input.induction) });
+  const programs = [...new Set([...Object.keys(engine.appliedIn ?? {}), ...Object.keys(byProgram)])].sort();
+  const consent = await db.select().from(simConsent)
+    .where(and(eq(simConsent.inductionId, input.induction), eq(simConsent.applicantId, input.applicantId)))
+    .orderBy(asc(simConsent.roundNo), asc(simConsent.preferenceNo));
+  return {
+    induction: input.induction,
+    imported: { baseMarks: imported.baseMarks, programMarks: imported.programMarks, profileStatus: imported.profileStatus },
+    effective: { baseMarks: effective!.baseMarks, programMarks: effective!.programMarks, profileStatus: effective!.profileStatus },
+    appliedIn: engine.appliedIn as Record<string, boolean>,
+    certificates: (engine.certificates ?? []).length,
+    programmes: programs.map((program) => ({
+      program,
+      mark: resolved ? effectiveMark(resolved, ctx, engine, program) : null,
+      preferences: (byProgram[program] ?? []).map((p) => {
+        const bonus = resolved ? programBonus(resolved, ctx, engine, p, program) : { bonus: 0, source: "off" };
+        return {
+          preferenceNo: p.preferenceNo, quota: p.quotaName, speciality: p.specialityName, hospital: p.hospitalName,
+          mark: resolved ? effectiveMark(resolved, ctx, engine, program, p) : null,
+          bonus: bonus.bonus, bonusSource: bonus.source, parent: resolved ? parentBonus(resolved, p) : 0,
+        };
+      }),
+    })),
+    consent: consent.map((c) => ({ round: c.roundNo, status: c.status, program: c.program, quota: c.quota, preferenceNo: c.preferenceNo, speciality: c.speciality, hospital: c.hospital })),
+    rulesProblem: problem ?? null,
+  };
 }

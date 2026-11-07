@@ -113,6 +113,13 @@
       "when": 1794017864867,
       "tag": "0015_consent_whatif",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794041597393,
+      "tag": "0016_candidate_corrections_settings",
+      "breakpoints": true
     }
   ]
 }

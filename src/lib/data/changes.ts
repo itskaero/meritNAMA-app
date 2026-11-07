@@ -1,9 +1,13 @@
 import "server-only";
-import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { assertCan, can, type Capability, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
   allocationRules,
+  candidateCorrections,
+  simCandidates,
+  simDatasets,
+  simPreferences,
   discussionThreads,
   inductionSeats,
   meritAllocations,
@@ -12,6 +16,7 @@ import {
   scoringPolicyFileMeta,
   stagedChanges,
 } from "@/lib/db/schema";
+import { correctionKey, correctionSchema, currentValue, type Correction } from "@/lib/domain/corrections";
 import { meritRoundFileSchema, type MeritRoundFile } from "@/lib/domain/merit-round";
 import { seatFileSchema, seatKey, type SeatRow } from "@/lib/domain/reference-data";
 import { policySchema, scoringPolicyFileSchema, type Policy, type ScoringPolicyFile } from "@/lib/domain/scoring-policy";
@@ -40,6 +45,7 @@ export const CHANGE_CAPABILITY: Record<ChangeKind, Capability> = {
   merit_round_replace: "data.edit",
   merit_round_delete: "data.edit",
   rules_activate: "policy.edit",
+  candidate_correction: "candidates.verify",
 };
 
 export type Proposal = { applied: true; message: string } | { applied: false; changeId: string; message: string };
@@ -67,6 +73,15 @@ async function policyBaseline(db: Db) {
   const [meta] = await db.select({ id: scoringPolicyFileMeta.id }).from(scoringPolicyFileMeta).orderBy(desc(scoringPolicyFileMeta.id)).limit(1);
   const [latest] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(scoringPolicies);
   return `policy:${active?.id ?? "none"}:${meta?.id ?? "none"}:${latest?.n ?? 0}`;
+}
+
+async function correctionsBaseline(db: Db, induction: number) {
+  const [d] = await db.select({ at: simDatasets.importedAt }).from(simDatasets).where(eq(simDatasets.inductionId, induction)).limit(1);
+  const [c] = await db
+    .select({ n: sql<number>`count(*) filter (where ${candidateCorrections.revokedAt} is null)`.mapWith(Number), at: sql<string>`coalesce(max(greatest(${candidateCorrections.createdAt}, coalesce(${candidateCorrections.revokedAt}, ${candidateCorrections.createdAt}))), 'epoch')::text` })
+    .from(candidateCorrections)
+    .where(eq(candidateCorrections.inductionId, induction));
+  return `corrections:${induction}:${d?.at.toISOString() ?? "none"}:${c?.n ?? 0}:${c?.at ?? ""}`;
 }
 
 // ── Sanitised merit-round payloads (only the fields this app imports) ─────────
@@ -305,6 +320,56 @@ export async function proposeRulesActivation(db: Database, session: Session | nu
   return { applied: false, changeId: id, message: "Activation staged. Review the differences and publish." };
 }
 
+/**
+ * Correct candidates' simulation inputs (marks or profile status). Always staged:
+ * the preview lists each value before and after. One applicant from the record page,
+ * or many from a corrections file.
+ */
+export async function proposeCorrections(db: Database, session: Session | null, input: { induction: number; corrections: unknown[]; reason: string; source?: "record" | "file" }): Promise<Proposal> {
+  assertCan(session, "candidates.verify");
+  const reason = reasonFor(input.reason);
+  const list = input.corrections.map((c) => correctionSchema.parse(c));
+  if (!list.length) throw new UserFacingError("There is nothing to correct.");
+  const byKey = new Map(list.map((c) => [correctionKey(c), c]));
+  const corrections = [...byKey.values()];
+  const ids = [...new Set(corrections.map((c) => c.applicantId))];
+  const rows = await db.select({ applicantId: simCandidates.applicantId, baseMarks: simCandidates.baseMarks, programMarks: simCandidates.programMarks, appliedIn: simCandidates.appliedIn, profileStatus: simCandidates.profileStatus })
+    .from(simCandidates).where(and(eq(simCandidates.inductionId, input.induction), inArray(simCandidates.applicantId, ids)));
+  const found = new Map(rows.map((r) => [r.applicantId, r]));
+  const missing = ids.filter((id) => !found.has(id));
+  if (missing.length) throw new UserFacingError(`Not in induction ${input.induction}'s simulation data: ${missing.slice(0, 10).join(", ")}${missing.length > 10 ? ` and ${missing.length - 10} more` : ""}.`);
+  const prefPrograms = await db.selectDistinct({ applicantId: simPreferences.applicantId, program: simPreferences.program }).from(simPreferences)
+    .where(and(eq(simPreferences.inductionId, input.induction), inArray(simPreferences.applicantId, ids)));
+  const existing = await db.select({ applicantId: candidateCorrections.applicantId, field: candidateCorrections.field, program: candidateCorrections.program, value: candidateCorrections.value })
+    .from(candidateCorrections)
+    .where(and(eq(candidateCorrections.inductionId, input.induction), inArray(candidateCorrections.applicantId, ids), isNull(candidateCorrections.revokedAt)))
+    .orderBy(candidateCorrections.createdAt);
+  const corrected = new Map((existing as Correction[]).map((c) => [correctionKey(c), c.value]));
+  const preview = corrections.map((c) => {
+    const r = found.get(c.applicantId)!;
+    if (c.field === "program_marks") {
+      const known = new Set([...Object.keys(r.programMarks as object), ...Object.keys((r.appliedIn as object | null) ?? {}), ...prefPrograms.filter((p) => p.applicantId === c.applicantId).map((p) => p.program.trim())]);
+      if (!known.has(c.program!)) throw new UserFacingError(`Applicant ${c.applicantId} has no programme "${c.program}". Known: ${[...known].join(", ") || "none"}.`);
+    }
+    const imported = currentValue({ ...r, programMarks: r.programMarks as Record<string, number> }, c.field, c.program);
+    const from = corrected.has(correctionKey(c)) ? corrected.get(correctionKey(c))! : imported;
+    return { applicantId: c.applicantId, field: c.field, program: c.program, imported, from, to: c.value };
+  });
+  const changed = preview.filter((p) => p.from !== p.to);
+  if (!changed.length) return { applied: true, message: "Nothing changes: every value is already as given." };
+  const single = ids.length === 1 && input.source !== "file";
+  const id = await stage(db, session, {
+    kind: "candidate_correction",
+    target: single ? `corrections:${input.induction}:${ids[0]}` : `corrections:${input.induction}:file`,
+    title: single ? `Correct applicant ${ids[0]} (induction ${input.induction})` : `Correct ${new Set(changed.map((c) => c.applicantId)).size} applicants (induction ${input.induction})`,
+    payload: { induction: input.induction, corrections: changed.map(({ applicantId, field, program, to }) => ({ applicantId, field, program, value: to })) },
+    preview: { induction: input.induction, applicants: new Set(changed.map((c) => c.applicantId)).size, unchanged: preview.length - changed.length, rows: changed.slice(0, 500), more: Math.max(0, changed.length - 500) },
+    baseline: await correctionsBaseline(db, input.induction),
+    reason,
+  });
+  return { applied: false, changeId: id, message: `${changed.length} correction${changed.length > 1 ? "s" : ""} staged. Review and publish.` };
+}
+
 // ── Reading ────────────────────────────────────────────────────────────────────
 
 export async function listChanges(db: Database, session: Session | null) {
@@ -323,7 +388,8 @@ export async function getChange(db: Database, session: Session | null, id: strin
   if (!c) return null;
   // The payload and snapshot (which can hold applicant ids) never leave this module.
   return {
-    id: c.id, kind: c.kind, target: c.target, title: c.title, status: c.status, preview: c.preview, reason: c.reason,
+    // Corrections name applicants and their marks: only staff who handle candidate records see them.
+    id: c.id, kind: c.kind, target: c.target, title: c.title, status: c.status, preview: c.kind === "candidate_correction" && !can(session, "candidates.verify") ? null : c.preview, reason: c.reason,
     createdBy: c.createdBy, createdAt: c.createdAt, decidedBy: c.decidedBy, decidedAt: c.decidedAt, decisionReason: c.decisionReason,
     canDecide: can(session, CHANGE_CAPABILITY[c.kind]),
     stale: c.status === "pending" && (await currentBaseline(db, c)) !== c.baseline,
@@ -351,6 +417,7 @@ async function currentBaseline(db: Db, c: typeof stagedChanges.$inferSelect) {
     case "policy_activate":
     case "policy_file_import": return policyBaseline(db);
     case "rules_activate": return rulesBaseline(db, (c.payload as { induction: number }).induction);
+    case "candidate_correction": return correctionsBaseline(db, (c.payload as { induction: number }).induction);
   }
 }
 
@@ -421,6 +488,15 @@ export async function publishChange(db: Database, sessionIn: Session | null, inp
       await activateRulesVersion(db, session, { id: p.id, reason: why });
       break;
     }
+    case "candidate_correction": {
+      const p = c.payload as { induction: number; corrections: Correction[] };
+      const inserted = await db.insert(candidateCorrections)
+        .values(p.corrections.map((x) => ({ inductionId: p.induction, applicantId: x.applicantId, field: x.field, program: x.program, value: x.value, reason: why, changeId: c.id, createdBy: session.email })))
+        .returning({ id: candidateCorrections.id });
+      snapshot = { induction: p.induction, ids: inserted.map((r) => r.id) };
+      await writeAudit(db, session.email, { action: "candidate.correct", entityType: "candidate_correction", entityId: c.id, after: { induction: p.induction, corrections: p.corrections.length }, reason: why });
+      break;
+    }
   }
   await db.update(stagedChanges).set({ status: "published", snapshot, decidedBy: session.email, decidedAt: new Date(), decisionReason: reason }).where(eq(stagedChanges.id, c.id));
   await writeAudit(db, session.email, { action: "change.publish", entityType: "staged_change", entityId: c.id, after: { kind: c.kind, target: c.target }, reason });
@@ -467,6 +543,11 @@ export async function rollbackChange(db: Database, sessionIn: Session | null, in
       const s = c.snapshot as { induction: number; activeId: string | null };
       if (s.activeId) await activateRulesVersion(db, session, { id: s.activeId, reason: why });
       else await retireActiveRules(db, session, { induction: s.induction, reason: why });
+      break;
+    }
+    case "candidate_correction": {
+      const s = c.snapshot as { induction: number; ids: string[] };
+      if (s.ids.length) await db.update(candidateCorrections).set({ revokedAt: new Date(), revokedBy: session.email }).where(and(inArray(candidateCorrections.id, s.ids), isNull(candidateCorrections.revokedAt)));
       break;
     }
   }

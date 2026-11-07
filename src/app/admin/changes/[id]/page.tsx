@@ -9,6 +9,7 @@ import { StatusPill } from "@/components/ui/page-header";
 import { requireSection } from "@/lib/auth/session";
 import { getChange, type ChangeKind } from "@/lib/data/changes";
 import { getDb } from "@/lib/db/client";
+import { profileStatusLabel } from "@/lib/domain/corrections";
 import { formatMarks, formatUtc, isUuid } from "@/lib/format";
 import { DecisionForm } from "../forms";
 import { STATUS_TONE, statusLabel } from "../status";
@@ -59,6 +60,13 @@ type RulesPreview = {
   problem: string | null;
 };
 
+type CorrectionPreview = {
+  induction: number; applicants: number; unchanged: number; more: number;
+  rows: { applicantId: string; field: string; program: string | null; imported: number | null; from: number | null; to: number }[];
+};
+
+const FIELD_LABEL: Record<string, string> = { base_marks: "Base marks", program_marks: "Programme marks", profile_status: "Profile status" };
+
 function RulesWords({ title, lines }: { title: string; lines: { topic: string; text: string }[] | null }) {
   return (
     <Card>
@@ -73,7 +81,31 @@ function RulesWords({ title, lines }: { title: string; lines: { topic: string; t
 }
 
 function Preview({ kind, preview }: { kind: ChangeKind; preview: unknown }) {
+  if (preview == null) return <Notice title="Details hidden">This change names candidates and their marks. Only staff who handle candidate records can see it.</Notice>;
   switch (kind) {
+    case "candidate_correction": {
+      const p = preview as CorrectionPreview;
+      const v = (field: string, x: number | null) => (x == null ? "—" : field === "profile_status" ? profileStatusLabel(x) : formatMarks(x));
+      return (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FromTo label={`Applicants corrected in induction ${p.induction}`} from={0} to={p.applicants} />
+            <FromTo label="Values that change" from={0} to={p.rows.length + p.more} />
+          </div>
+          {p.unchanged ? <Notice title={`${p.unchanged} value${p.unchanged > 1 ? "s were" : " was"} already as given`}>They are left out.</Notice> : null}
+          <Card>
+            <CardHeader title="Values" description={`The simulation uses these from its next run. ${p.more ? `First ${p.rows.length} shown.` : ""}`} />
+            <DataTable caption="Corrections" rows={p.rows} rowKey={(r) => `${r.applicantId}|${r.field}|${r.program ?? ""}`} columns={[
+              { key: "a", header: "Applicant", tone: "mono", cell: (r) => <a href={`/admin/candidates/records/${r.applicantId}?i=${p.induction}`} className="text-signal hover:underline">{r.applicantId}</a> },
+              { key: "f", header: "Value", cell: (r) => `${FIELD_LABEL[r.field] ?? r.field}${r.program ? ` · ${r.program}` : ""}` },
+              { key: "i", header: "Imported", align: "right", tone: "mono", cell: (r) => v(r.field, r.imported) },
+              { key: "n", header: "Now", align: "right", tone: "mono", cell: (r) => v(r.field, r.from) },
+              { key: "t", header: "After", align: "right", tone: "mono", cell: (r) => v(r.field, r.to) },
+            ]} />
+          </Card>
+        </>
+      );
+    }
     case "seat_matrix_replace": {
       const p = preview as SeatPreview;
       const lists: [string, { line: string; detail: string }[], number][] = [

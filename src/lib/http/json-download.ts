@@ -16,6 +16,17 @@ export function jsonDownload(data: unknown, filename: string, { trailingNewline 
   });
 }
 
+/** A CSV file download (UTF-8 with a byte-order mark, so spreadsheets read names correctly). */
+export function csvDownload(csv: string, filename: string) {
+  return new Response("\uFEFF" + csv, {
+    headers: {
+      ...noStore,
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename.replace(/["\\\r\n]/g, "")}"`,
+    },
+  });
+}
+
 export function jsonProblem(status: number, error: string, extra?: Record<string, unknown>) {
   return Response.json({ error, ...extra }, { status, headers: noStore });
 }
