@@ -61,7 +61,7 @@ export function RoundFunnel({ final, rounds, caption }: { final: number; rounds:
                 {i > 0 ? <line aria-hidden x1={i * cw} x2={i * cw} y1={40} y2={H - 4} stroke="var(--mn-border)" /> : null}
                 <rect
                   x={i * cw} y={0} width={cw} height={H}
-                  className={cn("cursor-pointer outline-none", i === col ? "fill-[rgba(244,244,245,0.04)]" : "fill-transparent hover:fill-[rgba(244,244,245,0.03)]")}
+                  className={cn("cursor-pointer outline-none", i === col ? "fill-[var(--mn-cyan-soft)]" : "fill-transparent hover:fill-[var(--mn-cyan-soft)]")}
                   onMouseEnter={() => setCol(i)} onFocus={() => setCol(i)} onClick={() => setCol(i)}
                   tabIndex={0} role="button" aria-label={`Round ${r.roundNo}: details`} aria-pressed={i === col}
                 />

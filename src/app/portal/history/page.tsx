@@ -71,7 +71,7 @@ export default async function MeritListsPage() {
               <Card key={ind.id} className="mn-rise">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-mono text-xs uppercase tracking-[0.14em] text-ember-hot">{first.cycleCode}</p>
+                    <p className="font-mono text-xs uppercase tracking-[0.14em] text-ember">{first.cycleCode}</p>
                     <h2 className="mt-1 text-xl font-semibold">
                       <Link href={`/portal/history/${ind.id}`} className="hover:underline">Induction {ind.id}</Link>{" "}
                       <span className="font-normal text-muted">· {first.cycleName}</span>

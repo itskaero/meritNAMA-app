@@ -36,7 +36,7 @@ export function OptionSearch({ listId, options }: { listId: string; options: Opt
         {matches.map((o) => (
           <li key={`${o.speciality}|${o.hospital}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-line px-3 py-2 text-sm">
             <span className="min-w-0">
-              <span className="block truncate">{o.speciality}{o.shortlisted ? <span className="ml-2 text-[0.7rem] text-ember-hot">★ shortlisted</span> : null}</span>
+              <span className="block truncate">{o.speciality}{o.shortlisted ? <span className="ml-2 text-[0.7rem] text-ember">★ shortlisted</span> : null}</span>
               <span className="block truncate text-xs text-muted">{o.hospital}{o.lastPct != null ? ` · closed at ${o.lastPct.toFixed(1)}%` : ""}</span>
             </span>
             <span className="flex items-center gap-2">

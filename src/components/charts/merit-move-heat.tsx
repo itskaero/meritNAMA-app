@@ -2,7 +2,7 @@ import type { LadderRow } from "@/lib/data/insights";
 
 /**
  * "Where merit moved": rows × round transitions, each cell tinted by how far the
- * closing merit fell (teal, darker = bigger drop), amber when it rose, grey when it
+ * closing merit fell (muted teal, stronger = bigger drop), terracotta when it rose, grey when it
  * held. Every cell also prints its change, so colour is never the only signal.
  */
 export function MeritMoveHeat({ rows, rounds, caption }: { rows: LadderRow[]; rounds: number[]; caption: string }) {
@@ -26,9 +26,9 @@ export function MeritMoveHeat({ rows, rounds, caption }: { rows: LadderRow[]; ro
                 <th scope="row" className="max-w-[12rem] truncate pr-2 text-left font-normal text-muted">{row.label}</th>
                 {changes[ri]!.map((d, i) => {
                   const k = Math.min(Math.abs(d) / scale, 1), held = Math.abs(d) < 0.005;
-                  const bg = held ? "var(--mn-navy-800)" : d < 0 ? `color-mix(in srgb, var(--mn-cyan) ${Math.round(18 + k * 72)}%, var(--mn-navy-900))` : `color-mix(in srgb, var(--mn-amber) ${Math.round(18 + k * 50)}%, var(--mn-navy-900))`;
+                  const bg = held ? "var(--mn-navy-800)" : `color-mix(in srgb, ${d < 0 ? "var(--mn-chart-easier)" : "var(--mn-chart-harder)"} ${Math.round(10 + k * 35)}%, var(--mn-navy-900))`;
                   return (
-                    <td key={i} className="h-9 rounded-md text-center font-mono text-xs tabular-nums" style={{ background: bg, color: held ? "var(--mn-text-muted)" : d < 0 ? (k > 0.7 ? "var(--mn-cyan-ink)" : "var(--mn-text)") : k > 0.6 ? "#111" : "var(--mn-text)" }} title={`${row.label}, round ${rounds[i]} to ${rounds[i + 1]}: ${d.toFixed(2)}`}>
+                    <td key={i} className="h-9 rounded-md text-center font-mono text-xs tabular-nums" style={{ background: bg, color: held ? "var(--mn-text-muted)" : "var(--mn-text-heading)" }} title={`${row.label}, round ${rounds[i]} to ${rounds[i + 1]}: ${d.toFixed(2)}`}>
                       {held ? <span aria-label="no change">·</span> : `${d > 0 ? "+" : "−"}${Math.abs(d).toFixed(2)}`}
                     </td>
                   );

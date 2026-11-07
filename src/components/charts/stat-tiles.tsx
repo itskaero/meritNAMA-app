@@ -38,7 +38,7 @@ export function StatTiles({ stats }: { stats: Stat[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((s, i) => (
-        <section key={s.label} className="mn-rise min-w-0 rounded-[1.5rem] border border-line bg-surface p-5" style={{ animationDelay: `${i * 70}ms` }}>
+        <section key={s.label} className="mn-rise min-w-0 rounded-xl border border-line bg-surface p-5" style={{ animationDelay: `${i * 70}ms` }}>
           <p className="text-xs text-muted">{s.label}</p>
           <p className="mt-3 font-display text-4xl font-extrabold tracking-tight [font-stretch:110%]">
             {s.format ? <span className="tabular-nums">{s.format(s.value)}</span> : <CountUp value={s.value} />}

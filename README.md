@@ -98,11 +98,11 @@ src/lib/db/         Drizzle schema + lazy client + DB health check
 src/lib/domain/     data contracts and pure helpers (policies, merit files, simulation inputs)
 src/lib/engine/     marks, round-1 placement, next-round cascade, rules, merit calculator
 src/lib/navigation  single source for sections
-src/styles/tokens.css  copy of the public site's design tokens
+src/styles/tokens.css  design tokens, light and dark (docs/DESIGN.md)
 drizzle/            generated SQL migrations (commit these)
 scripts/            migrate.mjs, backup.sh, restore.sh, golden/ (legacy parity generators)
 deploy/Caddyfile    optional reverse proxy
-docs/               ARCHITECTURE, DEPLOYMENT, SECURITY, DATA_CONTRACTS
+docs/               ARCHITECTURE, DESIGN, DEPLOYMENT, SECURITY, DATA_CONTRACTS
 ```
 
 ## What is left

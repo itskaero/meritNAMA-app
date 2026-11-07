@@ -10,7 +10,8 @@ export function BarList({ items, format = (v) => String(v), max, tone = "ember" 
   tone?: "ember" | "teal";
 }) {
   const top = max ?? Math.max(...items.map((i) => i.value), 1);
-  const fill = tone === "ember" ? "bg-gradient-to-r from-ember-deep to-ember" : "bg-gradient-to-r from-signal/50 to-signal";
+  // Counts (seats) in the neutral series colour; "teal" for meaningful highlights.
+  const fill = tone === "ember" ? "bg-neutral-series" : "bg-teal";
   return (
     <ul className="grid min-w-0 gap-2.5">
       {items.map((it, i) => {

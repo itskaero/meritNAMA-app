@@ -21,13 +21,27 @@
   --color-ember: var(--mn-ember);
   --color-ember-hot: var(--mn-ember-hot);
   --color-ember-deep: var(--mn-ember-deep);
+  --color-heading: var(--mn-text-heading);
+  --color-decor: var(--mn-text-decor);
+  --color-navy: var(--mn-brand-navy);
+  --color-slate: var(--mn-brand-slate);
+  --color-teal: var(--mn-brand-teal);
+  --color-ivory: var(--mn-brand-ivory);
+  --color-tint: var(--mn-teal-deep);
+  --color-easier: var(--mn-chart-easier);
+  --color-harder: var(--mn-chart-harder);
+  --color-neutral-series: var(--mn-chart-neutral);
   --font-sans: var(--mn-font-sans);
+  --font-serif: var(--mn-font-serif);
   --font-mono: var(--mn-font-mono);
   --font-display: var(--mn-font-display);
+  /* Restrained radii: cards 10px, larger surfaces 12px; nothing rounder except pills. */
   --radius-sm: var(--mn-radius-sm);
   --radius-md: var(--mn-radius-md);
   --radius-lg: var(--mn-radius-lg);
   --radius-xl: var(--mn-radius-xl);
+  --radius-2xl: 12px;
+  --radius-3xl: 14px;
   /* Tailwind's transition-* utilities follow the token, so reduced motion turns them off. */
   --default-transition-duration: var(--mn-duration);
   --default-transition-timing-function: var(--mn-ease);
@@ -39,13 +53,16 @@
  * since box-shadows are dropped there.
  */
 @layer base {
-  html { color-scheme: dark; }
   body {
     background: var(--mn-navy-950);
     color: var(--mn-text);
     font-family: var(--mn-font-sans);
+    font-feature-settings: "tnum" 0;
     -webkit-font-smoothing: antialiased;
   }
+  h1, h2, h3, h4 { color: var(--mn-text-heading); text-wrap: balance; }
+  /* Figures line up in tables and metric cards. */
+  table, .tabular-nums, [class*="font-mono"] { font-variant-numeric: tabular-nums; }
   :focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: var(--mn-focus-ring); }
   ::selection { background: var(--mn-cyan); color: var(--mn-cyan-ink); }
 }
@@ -76,20 +93,6 @@ html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger te
 .mn-beam-flow { background-size: 200% 100%; animation: mn-beam 6s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .mn-draw, .mn-grow-x, .mn-grow-y, .mn-rise, .mn-beam-flow { animation: none; }
-}
-
-/* Landing hero: the hands drift toward the spark, which breathes. Off under reduced motion. */
-@keyframes mn-drift-left { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(26px, 10px); } }
-@keyframes mn-drift-right { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-24px, -10px); } }
-@keyframes mn-breathe { 0%, 100% { opacity: .85; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } }
-@keyframes mn-glow { 0%, 100% { filter: drop-shadow(0 0 18px rgba(255, 176, 138, .7)); } 50% { filter: drop-shadow(0 0 30px rgba(255, 176, 138, 1)); } }
-.mn-hand-left { animation: mn-drift-left 9s ease-in-out infinite; }
-.mn-hand-right { animation: mn-drift-right 9s ease-in-out infinite; }
-span.mn-spark, div.mn-spark { animation: mn-breathe 5s ease-in-out infinite; }
-svg.mn-spark { animation: mn-glow 5s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .mn-hand-left, .mn-hand-right, span.mn-spark, div.mn-spark, svg.mn-spark { animation: none; }
-  span.mn-spark { transform: translate(-50%, -50%); }
 }
 
 /* Printing a preference list: only the page content, dark on white. */

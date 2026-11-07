@@ -118,7 +118,7 @@ export function CommandPalette({ commands }: { commands: Command[] }) {
       className="fixed inset-0 z-50 flex items-start justify-center bg-canvas/70 px-4 pt-[12vh] backdrop-blur-sm"
       onMouseDown={(e) => e.target === e.currentTarget && hide()}
     >
-      <div role="dialog" aria-modal="true" aria-label="Search and jump" className="w-full max-w-xl overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]">
+      <div role="dialog" aria-modal="true" aria-label="Search and jump" className="w-full max-w-xl overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[var(--mn-shadow-2)]">
         <div className="flex items-center gap-3 border-b border-line px-4">
           <Icon name="search" className="h-5 w-5 text-subtle" />
           <input

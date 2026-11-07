@@ -54,8 +54,8 @@ export default async function PortalDashboard() {
     <AreaPage {...frame}>
       <div className="grid gap-4 sm:grid-cols-3">
         {SHORTCUTS.map((c, i) => (
-          <Link key={c.href} href={c.href} className="mn-rise group flex items-start gap-4 rounded-[1.5rem] border border-line bg-surface p-5 transition-colors hover:border-ember/50 hover:bg-elevated" style={{ animationDelay: `${i * 60}ms` }}>
-            <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-ember/15 text-ember-hot ring-1 ring-ember/30 transition-transform group-hover:-translate-y-0.5"><Icon name={c.icon} /></span>
+          <Link key={c.href} href={c.href} className="mn-rise group flex items-start gap-4 rounded-xl border border-line bg-surface p-5 transition-colors hover:border-ember/50 hover:bg-elevated" style={{ animationDelay: `${i * 60}ms` }}>
+            <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-ember/15 text-ember ring-1 ring-ember/30 transition-transform group-hover:-translate-y-0.5"><Icon name={c.icon} /></span>
             <span><span className="block text-lg font-semibold">{c.title}</span><span className="text-sm text-muted">{c.text}</span></span>
           </Link>
         ))}

@@ -33,6 +33,8 @@ ENV NODE_ENV=production \
 RUN mkdir -p /app/storage && chown node:node /app/storage
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
+# Static files (landing photographs); the standalone output does not include them.
+COPY --from=build --chown=node:node /app/public ./public
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \

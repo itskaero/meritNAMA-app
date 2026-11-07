@@ -55,7 +55,7 @@ export function ChartCrosshair({ points, plotTopPct, plotBottomPct, title }: { p
           </span>
           <div
             role="status"
-            className="pointer-events-none absolute top-2 z-10 min-w-36 rounded-xl border border-line-strong bg-surface/95 px-3 py-2 text-xs shadow-[0_12px_30px_-12px_rgba(0,0,0,0.8)] backdrop-blur"
+            className="pointer-events-none absolute top-2 z-10 min-w-36 rounded-xl border border-line-strong bg-surface/95 px-3 py-2 text-xs shadow-[var(--mn-shadow-2)] backdrop-blur"
             style={flip ? { right: `${100 - p.xPct + 1.5}%` } : { left: `${p.xPct + 1.5}%` }}
           >
             <p className="mb-1 font-semibold text-ink">{p.label}</p>

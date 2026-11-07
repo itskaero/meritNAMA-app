@@ -99,7 +99,7 @@ export function HelpfulButton({ kind, id, threadId = "", path, count, voted, dis
         title={disabled ? "You cannot mark your own post" : voted ? "Remove helpful" : "Mark as helpful"}
         className={cn(
           "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors disabled:cursor-default disabled:opacity-60",
-          voted ? "border-ember/50 bg-ember/15 text-ember-hot" : "border-line-strong text-muted hover:border-ember/50 hover:text-ink",
+          voted ? "border-ember/50 bg-ember/15 text-ember" : "border-line-strong text-muted hover:border-ember/50 hover:text-ink",
         )}
       >
         <Icon name="heart" className="h-3.5 w-3.5" />

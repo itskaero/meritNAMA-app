@@ -9,11 +9,12 @@ import { cn } from "./ui/cn";
 export type NavItem = { href: string; label: string; group: string; icon: IconName };
 
 /**
- * Sidebar on wide screens, drawer on phones. In Pro mode the wide-screen sidebar is
- * an icon rail: labels stay in the DOM for screen readers and show as tooltips.
- * The phone drawer always shows full labels.
+ * Persistent sidebar on wide screens, drawer on phones. Brand and search at the top,
+ * the menu in the middle (it alone scrolls, so every section stays reachable), the
+ * account menu at the bottom. In Pro mode the wide-screen sidebar is an icon rail:
+ * labels stay in the DOM for screen readers and show as tooltips.
  */
-export function SideNav({ area, items, pro = false, brand, bell, profile, tools, footer }: {
+export function SideNav({ area, items, pro = false, brand, bell, profile, tools, footer = null }: {
   area: string;
   items: NavItem[];
   pro?: boolean;
@@ -22,7 +23,7 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
   bell?: ReactNode;
   profile: ReactNode;
   tools?: ReactNode;
-  footer: ReactNode;
+  footer?: ReactNode;
 }) {
   const pathname = usePathname();
   // The drawer is open "for" a path, so navigating anywhere closes it without an effect.
@@ -63,41 +64,38 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
 
   return (
     <>
-      <header data-print-hide className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden">
+      <header data-print-hide className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface/95 px-4 backdrop-blur lg:hidden">
         {brand}
         <div className="flex items-center gap-2">
           {bell}
-        <button
-          ref={toggleRef}
-          type="button"
-          className="grid h-11 w-11 place-items-center rounded-full border border-muted/60"
-          aria-expanded={open}
-          aria-controls="app-nav"
-          aria-label={open ? "Close navigation" : "Open navigation"}
-          onClick={() => setOpen(!open)}
-        >
-          <Icon name={open ? "close" : "menu"} />
-        </button>
+          <button
+            ref={toggleRef}
+            type="button"
+            className="grid h-11 w-11 place-items-center rounded-lg border border-line text-ink"
+            aria-expanded={open}
+            aria-controls="app-nav"
+            aria-label={open ? "Close navigation" : "Open navigation"}
+            onClick={() => setOpen(!open)}
+          >
+            <Icon name={open ? "close" : "menu"} />
+          </button>
         </div>
       </header>
 
       <aside
         id="app-nav"
         className={cn(
-          "bg-canvas lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col",
-          open ? "fixed inset-x-0 top-16 bottom-0 z-20 flex flex-col overflow-y-auto" : "hidden",
+          "border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r",
+          open ? "fixed inset-x-0 top-14 bottom-0 z-20 flex flex-col overflow-y-auto" : "hidden",
         )}
       >
-        <div className={cn("hidden h-16 items-center lg:flex", pro ? "flex-col justify-center gap-2 pt-3 h-auto" : "justify-between px-6")}>{brand}{bell}</div>
-        <div className="grid gap-3 px-4 pt-2">
-          {profile}
-          {tools}
-        </div>
-        <nav ref={navRef} aria-label={area} className={cn("flex-1 overflow-y-auto py-5", pro ? "px-4 lg:px-3" : "px-4")}>
+        <div className={cn("hidden h-14 flex-none items-center lg:flex", pro ? "justify-center" : "justify-between pl-5 pr-3")}>{brand}{pro ? null : bell}</div>
+        {tools ? <div className={cn("flex-none px-3 pb-2", pro && "lg:flex lg:justify-center")}>{tools}</div> : null}
+        <nav ref={navRef} aria-label={area} className={cn("min-h-0 flex-1 overflow-y-auto px-3 pb-3", pro && "lg:px-2")}>
           {groups.map((g) => (
-            <div key={g} className={cn("mb-6 last:mb-0", pro && "lg:mb-3 lg:border-b lg:border-line lg:pb-3 lg:last:border-0")}>
-              <p className={cn("px-3 pb-2 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-subtle", pro && "lg:sr-only")}>{g}</p>
-              <ul className="flex flex-col gap-1">
+            <div key={g} className={cn("pt-3 first:pt-1", pro && "lg:border-t lg:border-line lg:first:border-0")}>
+              <p className={cn("px-3 pb-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-subtle", pro && "lg:sr-only")}>{g}</p>
+              <ul className="flex flex-col gap-0.5">
                 {items.filter((i) => i.group === g).map((s) => {
                   const active = isActive(s.href);
                   return (
@@ -107,14 +105,14 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
                         aria-current={active ? "page" : undefined}
                         title={pro ? s.label : undefined}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition-colors",
-                          pro && "lg:justify-center lg:px-0 lg:py-3",
+                          "relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                          pro && "lg:justify-center lg:px-0",
                           active
-                            ? "border-ink bg-ink font-semibold text-canvas shadow-[0_6px_20px_-8px_rgba(244,244,245,0.45)]"
-                            : "border-transparent text-muted hover:bg-surface hover:text-ink",
+                            ? "bg-[var(--mn-cyan-soft)] font-semibold text-heading before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-teal"
+                            : "text-muted hover:bg-hover hover:text-ink",
                         )}
                       >
-                        <Icon name={s.icon} className="h-[18px] w-[18px] flex-none" />
+                        <Icon name={s.icon} className={cn("h-[18px] w-[18px] flex-none", active ? "text-signal" : "text-decor")} />
                         <span className={cn(pro && "lg:sr-only")}>{s.label}</span>
                       </Link>
                     </li>
@@ -124,7 +122,7 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
             </div>
           ))}
         </nav>
-        <div className={cn("py-4", pro ? "px-6 lg:px-3" : "px-6")}>{footer}</div>
+        <div className={cn("flex-none border-t border-line p-3", pro && "lg:px-2")}>{profile}{footer}</div>
       </aside>
     </>
   );

@@ -61,7 +61,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
         ) : null}
         <Card className="mn-rise grid gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            {topic.href ? <Link href={topic.href} className="text-sm text-ember-hot hover:underline">{topic.label}</Link> : <span className="text-sm text-ember-hot">{topic.label}</span>}
+            {topic.href ? <Link href={topic.href} className="text-sm text-ember hover:underline">{topic.label}</Link> : <span className="text-sm text-ember">{topic.label}</span>}
             {t.pinned ? <Badge tone="current">Pinned</Badge> : null}
             {t.acceptedPostId ? <Badge tone="success">Answered</Badge> : null}
             {t.duplicateOf ? <Badge>Duplicate</Badge> : t.locked ? <Badge>Locked</Badge> : null}
@@ -83,7 +83,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ id: str
         <ol className="grid gap-3">
           {posts.map((p, i) => (
             <li key={p.id} className="mn-rise" style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}>
-              <article className={`grid gap-3 rounded-2xl border bg-surface p-4 ${p.status === "hidden" ? "border-danger/40 opacity-70" : p.accepted ? "border-success/50 shadow-[0_0_0_1px_var(--mn-success)]" : "border-line"}`}>
+              <article className={`grid gap-3 rounded-2xl border bg-surface p-4 ${p.status === "hidden" ? "border-danger/40 opacity-70" : p.accepted ? "border-success/50" : "border-line"}`}>
                 {p.accepted ? <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-success"><Icon name="check" className="h-4 w-4" />Accepted answer</p> : null}
                 <Byline author={p.author} team={p.authorIsTeam} verified={p.authorVerified} at={p.createdAt} />
                 {p.status === "hidden" ? <Badge tone="danger">Hidden from members</Badge> : null}

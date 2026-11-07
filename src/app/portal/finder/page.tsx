@@ -45,7 +45,7 @@ function Star({ saved, item, label }: { saved: boolean; item: { program: string;
         aria-pressed={saved}
         aria-label={saved ? `Remove ${label} from shortlist` : `Add ${label} to shortlist`}
         title={saved ? "On your shortlist" : "Add to shortlist"}
-        className={cn("grid h-8 w-8 place-items-center rounded-full text-lg leading-none transition-colors", saved ? "text-ember-hot" : "text-subtle hover:text-ink")}
+        className={cn("grid h-8 w-8 place-items-center rounded-full text-lg leading-none transition-colors", saved ? "text-ember" : "text-subtle hover:text-ink")}
       >
         {saved ? "★" : "☆"}
       </button>
@@ -185,7 +185,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
       ) : (
         <>
           <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="mn-rise rounded-[1.5rem] border border-ember/40 bg-[linear-gradient(140deg,color-mix(in_srgb,var(--mn-ember-deep)_35%,var(--mn-navy-900)),var(--mn-navy-900)_70%)] p-5">
+            <div className="mn-rise rounded-xl border border-ember/40 bg-[linear-gradient(140deg,color-mix(in_srgb,var(--mn-ember-deep)_35%,var(--mn-navy-900)),var(--mn-navy-900)_70%)] p-5">
               <p className="text-xs text-muted">Your score</p>
               <p className="mt-3 font-display text-4xl font-extrabold tracking-tight [font-stretch:110%]">{pct(result.mePct)}</p>
               <p className="mt-1 text-xs text-subtle">{marks} of {total} · compared with induction {induction.id} (out of {induction.total})</p>
@@ -195,7 +195,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                 key={st}
                 href={href({ show: show === st ? undefined : st })}
                 aria-current={show === st ? "true" : undefined}
-                className={cn("mn-rise rounded-[1.5rem] border bg-surface p-5 transition-colors hover:bg-elevated", show === st ? "border-ink" : "border-line")}
+                className={cn("mn-rise rounded-xl border bg-surface p-5 transition-colors hover:bg-elevated", show === st ? "border-ink" : "border-line")}
                 style={{ animationDelay: `${(i + 1) * 70}ms` }}
               >
                 <p className="flex items-center gap-2 text-xs text-muted"><StatusIcon status={st} className={cn("h-2.5 w-2.5", STATUS_STYLE[st].text)} />{STATUS_LABEL[st]}</p>

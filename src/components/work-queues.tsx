@@ -35,7 +35,7 @@ export function WorkQueues({ queues }: { queues: Queue[] }) {
           </>
         );
         const cls = cn(
-          "mn-rise block rounded-[1.5rem] border p-5 transition-colors",
+          "mn-rise block rounded-xl border p-5 transition-colors",
           busy ? "border-amber/40 bg-amber/5 hover:border-amber/70" : "border-line bg-surface",
           q.href && "hover:bg-elevated",
         );

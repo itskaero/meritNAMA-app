@@ -9,7 +9,8 @@ export type Series = {
   details?: (string | null)[];
 };
 
-const STROKE = { ember: "var(--mn-ember)", teal: "var(--mn-cyan)", muted: "var(--mn-text-subtle)" } as const;
+// Primary series in navy (ink in dark mode), comparison in muted teal, context in grey.
+const STROKE = { ember: "var(--mn-chart-1)", teal: "var(--mn-chart-2)", muted: "var(--mn-chart-4)" } as const;
 
 function niceTicks(lo: number, hi: number, count = 4) {
   const span = hi - lo || 1;
@@ -68,8 +69,8 @@ export function LineChart({ xLabels, series, format = (v) => v.toFixed(2), title
       <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={title}>
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--mn-border)" strokeWidth="1" />
-            <text x={L - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="var(--mn-text-subtle)" fontFamily="var(--mn-font-mono)">{format(t)}</text>
+            <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--mn-chart-grid)" strokeWidth="1" />
+            <text x={L - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="var(--mn-chart-axis)" fontFamily="var(--mn-font-mono)">{format(t)}</text>
           </g>
         ))}
         {xLabels.map((l, i) => (i % every === 0 || i === xLabels.length - 1 ? (
@@ -91,10 +92,10 @@ export function LineChart({ xLabels, series, format = (v) => v.toFixed(2), title
           />
         ))}
         {series.map((s, si) => s.values.map((v, i) => (v == null ? null : (
-          <circle key={`${si}-${i}`} cx={x(i)} cy={y(v)} r={si === 0 && i === lastIdx ? 5 : 2.5} fill={si === 0 && i === lastIdx ? "var(--mn-ember-hot)" : STROKE[s.tone ?? (si === 0 ? "ember" : "muted")]} />
+          <circle key={`${si}-${i}`} cx={x(i)} cy={y(v)} r={si === 0 && i === lastIdx ? 5 : 2.5} fill={si === 0 && i === lastIdx ? "var(--mn-chart-1)" : STROKE[s.tone ?? (si === 0 ? "ember" : "muted")]} />
         ))))}
         {lastIdx >= 0 ? (
-          <text x={Math.min(x(lastIdx), W - R)} y={y(first.values[lastIdx]!) - 12} textAnchor={x(lastIdx) > W - 80 ? "end" : "middle"} fontSize="12" fontWeight="600" fill="var(--mn-ember-hot)" fontFamily="var(--mn-font-mono)">
+          <text x={Math.min(x(lastIdx), W - R)} y={y(first.values[lastIdx]!) - 12} textAnchor={x(lastIdx) > W - 80 ? "end" : "middle"} fontSize="12" fontWeight="600" fill="var(--mn-text-heading)" fontFamily="var(--mn-font-mono)">
             {format(first.values[lastIdx]!)}
           </text>
         ) : null}

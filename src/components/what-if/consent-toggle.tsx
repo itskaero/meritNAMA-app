@@ -6,7 +6,7 @@ import type { ConsentStatus } from "@/lib/domain/what-if";
 
 const STATUSES: ConsentStatus[] = ["Accepted", "Rejected", "Awaited"];
 const tone: Record<ConsentStatus, string> = {
-  Accepted: "bg-signal/15 text-signal ring-signal/50",
+  Accepted: "bg-[var(--mn-cyan-soft)] text-signal-strong ring-teal/60",
   Rejected: "bg-danger/15 text-danger ring-danger/50",
   Awaited: "bg-amber/15 text-amber ring-amber/50",
 };

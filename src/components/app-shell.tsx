@@ -9,40 +9,59 @@ import { Icon } from "./icon";
 import type { Section } from "@/lib/navigation";
 import { whatsNew } from "@/lib/data/whats-new";
 import { getDb } from "@/lib/db/client";
-import { parseUiMode, UI_MODE_COOKIE, WHATS_NEW_COOKIE, type UiMode } from "@/lib/ui-mode";
+import { parseTheme, parseUiMode, THEME_COOKIE, UI_MODE_COOKIE, WHATS_NEW_COOKIE, type Theme, type UiMode } from "@/lib/ui-mode";
 import { LogoMark, Wordmark } from "./brand";
 import { CommandPalette, PaletteButton, type Command } from "./command-palette";
 import { ModeToggle } from "./mode-toggle";
+import { ThemeToggle } from "./theme-toggle";
 import { WhatsNew } from "./whats-new";
 import { SideNav, type NavItem } from "./side-nav";
-import { Badge } from "./ui/badge";
 import { cn } from "./ui/cn";
 
-function ProfileCard({ session, mode, verified }: { session: Session; mode: UiMode; verified: boolean }) {
+/**
+ * The account row at the foot of the sidebar: who is signed in, and a menu (opening
+ * upward) with the colour theme, interface mode and sign out. A <details> element, so
+ * it works before scripts load.
+ */
+function AccountMenu({ session, mode, theme, verified }: { session: Session; mode: UiMode; theme: Theme; verified: boolean }) {
   const initials = session.email.slice(0, 2).toUpperCase();
   const pro = mode === "pro";
   return (
-    <div className={cn("flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-[inset_0_1px_0_rgba(242,246,252,0.04)]", pro && "lg:justify-center lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none")}>
-      <span
-        title={pro ? `${session.email} · ${session.role}` : undefined}
-        className="grid h-10 w-10 flex-none place-items-center rounded-full bg-gradient-to-br from-ember/40 to-elevated text-sm font-bold text-ink ring-1 ring-line-strong"
+    <details className="group relative">
+      <summary
+        className={cn("flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-hover [&::-webkit-details-marker]:hidden", pro && "lg:justify-center lg:px-0")}
+        title={pro ? `${session.email} · ${ROLE_LABELS[session.role]}` : undefined}
       >
-        <span aria-hidden>{initials}</span>
-      </span>
-      <div className={cn("min-w-0", pro && "lg:sr-only")}>
-        <p className="truncate text-sm font-semibold" title={session.email}>{session.email}</p>
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-ink px-2 py-px text-[0.68rem] font-bold text-canvas">{ROLE_LABELS[session.role]}</span>
-          {verified ? <Badge tone="success" className="py-px text-[0.7rem]">Verified</Badge> : null}
-          {session.isStub ? <Badge tone="warning" className="py-px text-[0.7rem]">Dev stub</Badge> : null}
+        <span aria-hidden className="grid h-8 w-8 flex-none place-items-center rounded-full bg-navy text-xs font-semibold text-ivory">{initials}</span>
+        <span className={cn("min-w-0 flex-1", pro && "lg:sr-only")}>
+          <span className="block truncate text-sm font-medium text-ink">{session.email}</span>
+          <span className="flex items-center gap-1.5 text-xs text-muted">
+            {ROLE_LABELS[session.role]}
+            {verified ? <span className="inline-flex items-center gap-0.5 text-success"><Icon name="check" className="h-3 w-3" />Verified</span> : null}
+            {session.isStub ? <span className="text-amber">· dev stub</span> : null}
+          </span>
+        </span>
+        <Icon name="more" className={cn("h-4 w-4 text-decor", pro && "lg:hidden")} />
+        <span className="sr-only">Account menu</span>
+      </summary>
+      <div className={cn("absolute bottom-full z-40 mb-2 grid w-64 gap-3 rounded-xl border border-line bg-surface p-3 shadow-[var(--mn-shadow-2)]", pro ? "left-0 lg:left-full lg:bottom-0 lg:mb-0 lg:ml-2" : "left-0")}>
+        <div className="grid gap-1.5">
+          <p className="text-xs font-semibold text-muted">Theme</p>
+          <ThemeToggle theme={theme} />
+        </div>
+        <div className="grid gap-1.5">
+          <p className="text-xs font-semibold text-muted">Interface</p>
+          <ModeToggle mode={mode} />
         </div>
         {session.isStub ? null : (
-          <form action={signOutAction} className="mt-1.5">
-            <button type="submit" className="text-xs font-semibold text-muted underline-offset-4 hover:text-ink hover:underline">Sign out</button>
+          <form action={signOutAction} className="border-t border-line pt-2">
+            <button type="submit" className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-ink hover:bg-hover">
+              <Icon name="logout" className="h-4 w-4 text-decor" />Sign out
+            </button>
           </form>
         )}
       </div>
-    </div>
+    </details>
   );
 }
 
@@ -63,6 +82,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
 }) {
   const jar = await cookies();
   const mode = parseUiMode(jar.get(UI_MODE_COOKIE)?.value);
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
   // "What's new": newest events after the last dismissal; quietly empty if the database is down.
   const seen = Number(jar.get(WHATS_NEW_COOKIE)?.value ?? 0) || 0;
   const verified = session.role === "candidate" && (await myLink(getDb(), session).catch(() => null))?.status === "verified";
@@ -78,14 +98,14 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
   ];
 
   return (
-    <div data-mode={mode} className={cn("min-h-screen bg-canvas lg:grid", pro ? "lg:grid-cols-[84px_1fr]" : "lg:grid-cols-[272px_1fr]")}>
+    <div data-mode={mode} className={cn("min-h-screen bg-canvas lg:grid", pro ? "lg:grid-cols-[72px_1fr]" : "lg:grid-cols-[256px_1fr]")}>
       <SideNav
         area={area}
         items={items}
         pro={pro}
         brand={
-          <Link href="/" className="flex items-center gap-2.5 rounded-lg text-ink" aria-label="meritNAMA home">
-            <LogoMark className={pro ? "h-8 w-8" : "h-7 w-7"} />
+          <Link href="/" className="flex items-center gap-2.5 rounded-md text-heading" aria-label="meritNAMA home">
+            <LogoMark className={pro ? "h-7 w-7" : "h-6 w-6"} />
             <Wordmark className={pro ? "lg:hidden" : undefined} />
           </Link>
         }
@@ -93,37 +113,22 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
           <Link
             href="/portal/inbox"
             aria-label={unread ? `Inbox, ${unread} unread` : "Inbox"}
-            className="relative grid h-11 w-11 place-items-center rounded-full border border-muted/60 text-ink hover:bg-hover lg:h-9 lg:w-9"
+            className="relative grid h-11 w-11 place-items-center rounded-lg text-muted hover:bg-hover hover:text-ink lg:h-9 lg:w-9"
           >
             <Icon name="bell" className="h-5 w-5" />
             {unread ? (
-              <span aria-hidden className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-ember px-1 font-mono text-[0.65rem] font-bold text-canvas">
+              <span aria-hidden className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-signal px-1 text-[0.6rem] font-bold text-signal-ink">
                 {unread > 99 ? "99+" : unread}
               </span>
             ) : null}
           </Link>
         }
-        profile={<ProfileCard session={session} mode={mode} verified={verified} />}
-        tools={
-          <div className={cn("grid gap-2", pro && "lg:justify-items-center")}>
-            {pro ? (
-              <>
-                <PaletteButton compact className="hidden lg:inline-flex" />
-                <PaletteButton className="w-full lg:hidden" />
-              </>
-            ) : <PaletteButton className="w-full" />}
-            <ModeToggle mode={mode} compact={pro} />
-          </div>
-        }
-        footer={
-          <div className="grid gap-3">
-            {news.length ? <div className={cn(pro && "lg:hidden")}><WhatsNew items={news} /></div> : null}
-            <p className={cn("text-xs text-subtle", pro && "lg:sr-only")}>{session.isStub ? `${area} · scaffold v0.1` : area}</p>
-          </div>
-        }
+        tools={pro ? <><PaletteButton compact className="hidden lg:inline-flex" /><PaletteButton className="w-full lg:hidden" /></> : <PaletteButton className="w-full" />}
+        profile={<AccountMenu session={session} mode={mode} theme={theme} verified={verified} />}
       />
-      <div className="min-w-0 lg:py-3 lg:pr-3">
-        <main id="main" className="min-h-full bg-canvas lg:min-h-[calc(100vh-1.5rem)] lg:rounded-[1.75rem] lg:border lg:border-line lg:bg-[linear-gradient(180deg,var(--mn-navy-900),var(--mn-navy-950)_40%)]">
+      <div className="min-w-0">
+        <main id="main" className="min-h-screen bg-canvas">
+          {news.length ? <WhatsNew items={news} /> : null}
           {children}
         </main>
       </div>

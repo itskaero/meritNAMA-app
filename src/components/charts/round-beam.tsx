@@ -16,7 +16,7 @@ export function RoundBeam({ rounds, current, hrefFor }: { rounds: number[]; curr
             aria-current={r === current ? "page" : undefined}
             className={cn(
               "grid h-9 min-w-9 place-items-center rounded-full border px-2 font-mono text-xs font-semibold transition-colors",
-              r === current ? "border-ember bg-ember text-canvas shadow-[0_0_18px_var(--mn-ember)]" : "border-line-strong bg-canvas text-muted hover:border-ember hover:text-ink",
+              r === current ? "border-ember bg-ember text-canvas" : "border-line-strong bg-canvas text-muted hover:border-ember hover:text-ink",
             )}
           >
             R{r}

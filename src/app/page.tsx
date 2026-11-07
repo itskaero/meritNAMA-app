@@ -14,7 +14,7 @@ export const metadata = {
 export default async function Home() {
   const session = await getSession();
   if (session) redirect(isStaff(session) ? "/admin" : "/portal");
-  const empty = { inductions: 0, rounds: 0, allocations: 0, seats: 0, hospitals: 0, specialities: 0, discussions: 0, policy: null, latest: null, sample: null };
+  const empty = { inductions: 0, rounds: 0, updatedAt: null, allocations: 0, seats: 0, hospitals: 0, specialities: 0, discussions: 0, policy: null, latest: null, sample: null };
   const figures = (await checkDatabase()) === "ok" ? await landingFigures(getDb()).catch(() => empty) : empty;
   return <Landing f={figures} />;
 }

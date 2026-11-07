@@ -52,7 +52,7 @@ export function SignInForm({ google }: { google: boolean }) {
           Email
           <input name="email" type="email" required autoComplete="email" inputMode="email" placeholder="e.g. ayesha.khan@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
         </label>
-        <button type="submit" disabled={pending} className="h-11 rounded-[10px] bg-white text-sm font-semibold text-[#0b0b0c] transition-colors hover:bg-[#e7e7ea] disabled:opacity-60">
+        <button type="submit" disabled={pending} className="h-11 rounded-lg bg-signal text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-strong disabled:opacity-60">
           {pending ? "Sending…" : "Email me a sign-in link"}
         </button>
         {state.status === "error" ? <ActionResult state={state} /> : null}

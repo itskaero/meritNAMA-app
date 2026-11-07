@@ -58,8 +58,8 @@ export function MeritLadder({ rows, rounds, total, caption, linkRows = true, ini
                     key={k}
                     className={cn(
                       "h-2.5 rounded-full transition-[background-color,box-shadow] duration-300",
-                      k < Math.round(now) ? "bg-signal shadow-[0_0_8px_color-mix(in_srgb,var(--mn-cyan)_70%,transparent)]"
-                      : k < Math.round(first) ? "bg-[color-mix(in_srgb,var(--mn-ember)_55%,var(--mn-border))] shadow-[0_0_6px_color-mix(in_srgb,var(--mn-ember)_40%,transparent)]"
+                      k < Math.round(now) ? "bg-signal"
+                      : k < Math.round(first) ? "bg-[color-mix(in_srgb,var(--mn-ember)_55%,var(--mn-border))]"
                       : "bg-line",
                     )}
                   />

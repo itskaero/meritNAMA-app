@@ -13,3 +13,12 @@ export function parseUiMode(value: string | undefined): UiMode {
 
 /** Time (ms) up to which "What's new" items were dismissed. */
 export const WHATS_NEW_COOKIE = "mn_news_seen";
+
+/** Colour theme: light by default; dark, or follow the device ("system"). */
+export const THEMES = ["light", "dark", "system"] as const;
+export type Theme = (typeof THEMES)[number];
+export const THEME_COOKIE = "mn_theme";
+
+export function parseTheme(value: string | undefined): Theme {
+  return value === "dark" || value === "system" ? value : "light";
+}

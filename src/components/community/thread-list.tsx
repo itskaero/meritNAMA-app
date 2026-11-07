@@ -48,7 +48,7 @@ export function ThreadList({ threads, showTopic = true }: { threads: ThreadSumma
                 {t.hasSnippet ? <Badge tone="historical">Merit card</Badge> : null}
                 {t.hasPoll ? <Badge tone="current">Poll</Badge> : null}
                 {t.status === "hidden" ? <Badge tone="danger">Hidden</Badge> : null}
-                {showTopic ? <span className="text-ember-hot">{t.topic.label}</span> : null}
+                {showTopic ? <span className="text-ember">{t.topic.label}</span> : null}
               </div>
               <h3 className="text-base font-semibold leading-snug">
                 <Link href={`/portal/community/${t.id}`} className="hover:underline">{t.title}</Link>

@@ -104,7 +104,7 @@ export default async function SeatMatrixPage({ params, searchParams }: {
         </SeatEditor>
       )}
 
-      <details id="replace" className="scroll-mt-20 rounded-[1.5rem] border border-line bg-surface p-5">
+      <details id="replace" className="scroll-mt-20 rounded-xl border border-line bg-surface p-5">
         <summary className="cursor-pointer font-semibold">Replace this matrix from a file</summary>
         <div className="mt-4"><SeatImportForm defaultInduction={induction} /></div>
       </details>

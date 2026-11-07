@@ -9,7 +9,7 @@ export function RatingMeter({ value, size = "md", label }: { value: number | nul
           const fill = value == null ? 0 : Math.min(Math.max(value - i, 0), 1);
           return (
             <span key={i} className={cn("relative overflow-hidden rounded-full bg-line", size === "sm" ? "h-1.5" : "h-2.5")}>
-              {fill > 0 ? <span className="absolute inset-y-0 left-0 rounded-full bg-signal shadow-[0_0_8px_color-mix(in_srgb,var(--mn-cyan)_60%,transparent)]" style={{ width: `${fill * 100}%` }} /> : null}
+              {fill > 0 ? <span className="absolute inset-y-0 left-0 rounded-full bg-signal" style={{ width: `${fill * 100}%` }} /> : null}
             </span>
           );
         })}

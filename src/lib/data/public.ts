@@ -13,7 +13,7 @@ import { inductionMaxMarks } from "./merit";
  */
 export async function landingFigures(db: Database) {
   const [[rounds], [alloc], [seats], [threads], [posts], active, maxMarks] = await Promise.all([
-    db.select({ rounds: sql<number>`count(*)`.mapWith(Number), inductions: sql<number>`count(distinct ${meritRounds.inductionId})`.mapWith(Number) }).from(meritRounds),
+    db.select({ rounds: sql<number>`count(*)`.mapWith(Number), inductions: sql<number>`count(distinct ${meritRounds.inductionId})`.mapWith(Number), updatedAt: sql<string | null>`max(${meritRounds.importedAt})::text` }).from(meritRounds),
     db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(meritAllocations),
     db.select({ seats: sql<number>`coalesce(sum(${inductionSeats.seats}), 0)`.mapWith(Number), hospitals: sql<number>`count(distinct ${inductionSeats.hospitalId})`.mapWith(Number), specialities: sql<number>`count(distinct ${inductionSeats.specialityId})`.mapWith(Number) }).from(inductionSeats),
     db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(discussionThreads).where(eq(discussionThreads.status, "visible")),
@@ -61,6 +61,7 @@ export async function landingFigures(db: Database) {
   return {
     inductions: rounds?.inductions ?? 0,
     rounds: rounds?.rounds ?? 0,
+    updatedAt: rounds?.updatedAt ? new Date(rounds.updatedAt) : null,
     allocations: alloc?.n ?? 0,
     seats: seats?.seats ?? 0,
     hospitals: seats?.hospitals ?? 0,

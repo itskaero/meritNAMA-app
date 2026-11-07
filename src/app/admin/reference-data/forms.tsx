@@ -235,7 +235,7 @@ export function SeatEditor({ induction, lines, lookups, children }: {
           </tbody>
         </table>
       </div>
-      <section id="add-line" className="mt-6 scroll-mt-20 rounded-[1.5rem] border border-line bg-surface p-5">
+      <section id="add-line" className="mt-6 scroll-mt-20 rounded-xl border border-line bg-surface p-5">
         <h2 className="mb-4 text-base font-semibold">Add a seat line</h2>
         <AddSeatLine induction={induction} lookups={lookups} reason={reason} />
       </section>
@@ -307,7 +307,7 @@ export function LookupEditor({ kind, label, rows }: { kind: string; label: strin
           </tbody>
         </table>
       </div>
-      <section className="mt-6 rounded-[1.5rem] border border-line bg-surface p-5">
+      <section className="mt-6 rounded-xl border border-line bg-surface p-5">
         <h2 className="mb-4 text-base font-semibold">Add an entry</h2>
         <AddLookup kind={kind} reason={reason} />
       </section>

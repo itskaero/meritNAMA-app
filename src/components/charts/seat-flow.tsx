@@ -27,7 +27,7 @@ export function SeatFlow({ panels, caption }: { panels: FlowPanel[]; caption: st
               <div className="grid h-28 items-end gap-1.5" style={{ gridTemplateColumns: `repeat(${p.rounds.length}, minmax(0, 1fr))` }}>
                 {p.rounds.map((r, i) => (
                   <div key={r.roundNo} className="mn-grow-y flex h-full flex-col justify-end gap-0.5" style={{ animationDelay: `${i * 50}ms` }} title={`Round ${r.roundNo}: ${r.accepted} accepted, ${r.released} released`}>
-                    <span className="rounded-[4px] bg-amber shadow-[0_0_8px_color-mix(in_srgb,var(--mn-amber)_45%,transparent)]" style={{ height: `${Math.max((r.released / max) * 100, r.released ? 3 : 0)}%` }} />
+                    <span className="rounded-[4px] bg-amber" style={{ height: `${Math.max((r.released / max) * 100, r.released ? 3 : 0)}%` }} />
                     <span className="rounded-[4px] bg-[linear-gradient(180deg,var(--mn-cyan),color-mix(in_srgb,var(--mn-cyan)_45%,var(--mn-teal-deep)))]" style={{ height: `${(r.accepted / max) * 100}%` }} />
                   </div>
                 ))}

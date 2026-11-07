@@ -139,7 +139,7 @@ export default async function InductionPage({ params, searchParams }: { params: 
                     <li key={t.from} className="grid grid-cols-[4.5rem_minmax(0,1fr)_3rem] items-center gap-3 text-sm">
                       <span className="font-mono text-xs text-muted">R{t.from}→R{t.to}</span>
                       <span className="h-2.5 overflow-hidden rounded-full bg-line" aria-hidden>
-                        <span className="block h-full rounded-full bg-signal shadow-[0_0_8px_color-mix(in_srgb,var(--mn-cyan)_60%,transparent)]" style={{ width: `${Math.round((t.share ?? 0) * 100)}%` }} />
+                        <span className="block h-full rounded-full bg-signal" style={{ width: `${Math.round((t.share ?? 0) * 100)}%` }} />
                       </span>
                       <span className="text-right font-mono text-xs tabular-nums">{t.share == null ? "—" : `${Math.round(t.share * 100)}%`}</span>
                     </li>

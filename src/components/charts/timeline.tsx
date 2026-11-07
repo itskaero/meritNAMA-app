@@ -63,7 +63,7 @@ export function Timeline({ rows, now = new Date(), caption }: { rows: TimelineRo
           {/* Grid lines and the Now line */}
           <div aria-hidden className="pointer-events-none absolute inset-x-4 bottom-4 top-12">
             {ticks.map((t) => <span key={t.t} className="absolute inset-y-0 w-px bg-line/60" style={{ left: `${x(t.t)}%` }} />)}
-            <span className="absolute inset-y-0 z-[1] w-px bg-signal shadow-[0_0_10px_var(--mn-cyan)]" style={{ left: `${x(today)}%` }} />
+            <span className="absolute inset-y-0 z-[1] w-px bg-signal" style={{ left: `${x(today)}%` }} />
           </div>
           {/* Rows */}
           <ol className="relative grid gap-3 pt-4">

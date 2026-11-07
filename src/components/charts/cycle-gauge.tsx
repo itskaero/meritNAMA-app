@@ -115,7 +115,7 @@ export function CycleGauge({
                   aria-hidden
                   className={cn(
                     "h-3 w-3 justify-self-center rounded-full border-2",
-                    r.state === "published" && "border-success bg-success shadow-[0_0_10px_color-mix(in_srgb,var(--mn-success)_60%,transparent)]",
+                    r.state === "published" && "border-success bg-success",
                     r.state === "next" && "border-signal bg-signal",
                     r.state === "expected" && "border-line-strong",
                   )}

@@ -72,7 +72,7 @@ export default async function PortalSimulationPage({ searchParams }: { searchPar
             </Link>
           ))}
           {runs.filter((r) => r.status === "done").slice(0, 6).map((r) => (
-            <Link key={r.id} href={href(ind.induction, `run:${r.id}`)} className={cn("rounded-full border border-dashed px-3.5 py-1.5 text-sm", key === `run:${r.id}` ? "border-amber bg-amber/15 text-amber" : "border-amber/40 text-amber/80 hover:text-amber")}>
+            <Link key={r.id} href={href(ind.induction, `run:${r.id}`)} className={cn("rounded-full border border-dashed px-3.5 py-1.5 text-sm", key === `run:${r.id}` ? "border-amber bg-amber/15 text-amber" : "border-amber/40 text-amber hover:underline")}>
               Simulated round {r.fromRound! + 1} · {formatUtc(r.createdAt).slice(11)}
             </Link>
           ))}
