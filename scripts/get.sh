@@ -25,7 +25,9 @@ export PATH="$PATH:/usr/local/bin:/usr/local/sbin:/usr/sbin:/sbin"
 REPO="itskaero/meritNAMA-app"
 REF="${MN_REF:-main}"
 if [ -z "${MN_DIR:-}" ]; then
-  if [ -d /volume1/docker ]; then MN_DIR=/volume1/docker/meritnama; else MN_DIR="$(pwd)/meritnama"; fi
+  if [ -d /volume1/docker ]; then MN_DIR=/volume1/docker/meritnama        # Synology
+  elif [ -d /DATA ]; then MN_DIR=/DATA/meritnama                          # ZimaOS / CasaOS
+  else MN_DIR="$(pwd)/meritnama"; fi
 fi
 
 say()  { printf '\033[1;36m▸\033[0m %s\n' "$*"; }

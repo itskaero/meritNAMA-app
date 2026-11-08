@@ -129,7 +129,8 @@ configure() {
     ask MN_TUNNEL_TOKEN "Tunnel token" "" secret
   fi
   local default_data="./var"
-  [ -d /volume1 ] && default_data="/volume1/meritnama-data"
+  [ -d /volume1 ] && default_data="/volume1/meritnama-data"   # Synology
+  [ -d /DATA ] && [ ! -d /volume1 ] && default_data="/DATA/meritnama-data"   # ZimaOS / CasaOS
   ask MN_DATA_DIR "Folder for all data (database, files, backups)" "$default_data"
   ask MN_PORT "Local port for the app" "3000"
 

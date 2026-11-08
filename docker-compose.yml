@@ -31,6 +31,7 @@ services:
   migrate:
     build: { context: ., target: migrate }
     image: meritnama-app-migrate:local
+    pull_policy: never   # built here (or loaded with meritnama.sh load), never pulled
     environment:
       DATABASE_URL: *db-url
     depends_on:
@@ -41,6 +42,7 @@ services:
   app:
     build: { context: ., target: runtime }
     image: meritnama-app:local
+    pull_policy: never   # built here (or loaded with meritnama.sh load), never pulled
     restart: unless-stopped
     environment:
       DATABASE_URL: *db-url
@@ -101,6 +103,7 @@ services:
   worker:
     build: { context: ., target: runtime }
     image: meritnama-app:local
+    pull_policy: never   # built here (or loaded with meritnama.sh load), never pulled
     restart: unless-stopped
     command: ["node", "scripts/worker.mjs"]
     environment:
