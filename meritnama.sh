@@ -241,7 +241,7 @@ case "$cmd" in
   restore) need_docker; sh scripts/restore.sh "${2:?usage: ./meritnama.sh restore <backup directory>}" ;;
   update)
     need_docker
-    say "Backing up first …"; sh scripts/backup.sh
+    if [ -z "${MN_SKIP_BACKUP:-}" ]; then say "Backing up first …"; sh scripts/backup.sh; fi
     if [ -d .git ] && command -v git >/dev/null 2>&1; then say "Pulling the latest code …"; git pull --ff-only
     else say "Not a git checkout: rebuilding the files as they are (upload the new ZIP over this folder first)."; fi
     compose up -d --build

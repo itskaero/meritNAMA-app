@@ -62,19 +62,48 @@ tar -xzf "$work/code.tar.gz" -C "$work/src" --strip-components=1 || die "The dow
 [ -f "$work/src/meritnama.sh" ] && [ -f "$work/src/docker-compose.yml" ] || die "The archive does not look like meritNAMA (no meritnama.sh)."
 ok "Downloaded $(du -sh "$work/src" | cut -f1)."
 
-# ── 2. Put the code in place, keeping configuration ───────────────────────────────
-mkdir -p "$(dirname "$MN_DIR")"
+# ── 2. Put the code in place, keeping configuration and data ────────────────────
+# The folder itself stays (shells and Docker keep pointing at it). Only code files are
+# swapped; .env, install.conf and var/ (database and files, when MERITNAMA_DATA_DIR=./var)
+# are never moved or copied. On an update the stack is backed up and stopped first.
+mkdir -p "$MN_DIR"
 first=1
-if [ -d "$MN_DIR" ]; then
-  [ -f "$MN_DIR/.env" ] && first=0
-  for keep in .env install.conf; do [ -f "$MN_DIR/$keep" ] && cp -p "$MN_DIR/$keep" "$work/src/$keep"; done
-  # Data kept inside the code folder (MERITNAMA_DATA_DIR=./var) moves with it.
-  [ -d "$MN_DIR/var" ] && mv "$MN_DIR/var" "$work/src/var"
-  rm -rf "$MN_DIR.previous"
-  mv "$MN_DIR" "$MN_DIR.previous"
-  ok "Previous code kept in $MN_DIR.previous"
+[ -f "$MN_DIR/.env" ] && first=0
+
+dc() { if docker compose version >/dev/null 2>&1; then docker compose "$@"; else docker-compose "$@"; fi; }
+if [ "$first" = 0 ]; then
+  cd "$MN_DIR"
+  if [ -z "${MN_SKIP_BACKUP:-}" ]; then
+    say "Backing up before the update …"
+    sh scripts/backup.sh || die "The backup failed, so nothing was changed. Fix the database first (docs/NAS-SETUP.md, troubleshooting), or run again with MN_SKIP_BACKUP=1 to update without a backup."
+  fi
+  say "Stopping the running containers …"
+  dc stop >/dev/null 2>&1 || true
+  cd /
 fi
-mv "$work/src" "$MN_DIR"
+
+# Stage next to the target (same disk, so moves are renames, never copies).
+stage="$(dirname "$MN_DIR")/.meritnama-new.$$"
+rm -rf "$stage"; mkdir -p "$stage"
+mv "$work/src"/* "$stage"/ 2>/dev/null || true
+for f in "$work/src"/.[!.]*; do [ -e "$f" ] && mv "$f" "$stage"/; done
+
+if [ "$first" = 0 ] || [ -n "$(ls -A "$MN_DIR" 2>/dev/null)" ]; then
+  prev="$MN_DIR.previous"
+  rm -rf "$prev"; mkdir -p "$prev"
+  for f in "$MN_DIR"/* "$MN_DIR"/.[!.]*; do
+    [ -e "$f" ] || continue
+    case "$(basename "$f")" in .env|install.conf|var|install.log) continue ;; esac
+    mv "$f" "$prev"/
+  done
+  ok "Previous code kept in $prev"
+fi
+for f in "$stage"/* "$stage"/.[!.]*; do
+  [ -e "$f" ] || continue
+  case "$(basename "$f")" in .env|install.conf|var) continue ;; esac
+  mv "$f" "$MN_DIR"/
+done
+rm -rf "$stage"
 chmod +x "$MN_DIR/meritnama.sh" "$MN_DIR"/scripts/*.sh 2>/dev/null || true
 printf '%s\n' "$REF" > "$MN_DIR/.meritnama-ref"
 ok "Code in $MN_DIR"
@@ -87,5 +116,5 @@ say "Running: meritnama.sh $cmd"
 if [ "$cmd" = install ] && [ -r /dev/tty ] && [ -z "${MN_UNATTENDED:-}" ] && ( : < /dev/tty ) 2>/dev/null; then
   exec bash ./meritnama.sh "$cmd" < /dev/tty
 else
-  exec bash ./meritnama.sh "$cmd" --yes
+  MN_SKIP_BACKUP=1 exec bash ./meritnama.sh "$cmd" --yes
 fi

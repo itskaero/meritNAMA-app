@@ -395,6 +395,7 @@ Database migrations run automatically before the new version starts.
 | Cloudflare "Bad gateway" (502) or error 1033 | Tunnel public hostname must be `http://app:3000`; `docker compose ps` should show `tunnel` and `app` running; `docker compose logs tunnel`. |
 | "Too many redirects" | 5B with Cloudflare proxy on: set *SSL/TLS → Overview* to **Full (strict)**. |
 | "address already in use" on 127.0.0.1:3000 | Another app has port 3000 (common on ZimaOS/CasaOS). Set `APP_PORT=3010` in `.env` and `docker compose up -d`; with a NAS reverse proxy, point it at the new port. The tunnel (`app:3000`) needs no change. `meritnama.sh install/start` now picks a free port by itself. |
+| Backup fails with `could not open file "global/pg_filenode.map"` | The database container lost its files (an older get.sh moved `var/` while it ran). `cd /DATA/meritnama && docker compose down && docker compose up -d --build`, then `docker compose logs --tail 30 db`. If Postgres still cannot start and nothing was imported yet: `docker compose down && mv var/postgres var/postgres.broken && docker compose up -d --build` (a fresh, empty database). |
 | `migrate` exited with an error | `docker compose logs migrate`; usually a wrong `POSTGRES_PASSWORD` after the database was created. |
 | Health says `degraded` | `docker compose logs db`; check free disk space on the data volume. |
 | Google sign-in error "redirect_uri_mismatch" | The OAuth client's redirect URI must be exactly `https://meritnama.online/auth/google/callback`. |
