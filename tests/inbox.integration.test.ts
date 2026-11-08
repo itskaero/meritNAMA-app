@@ -34,6 +34,7 @@ describe.skipIf(!url)("inbox (integration)", () => {
     const rs = await db.select({ id: schema.meritRounds.id }).from(schema.meritRounds).where(eq(schema.meritRounds.inductionId, IND));
     if (rs.length) await db.delete(schema.meritRounds).where(inArray(schema.meritRounds.id, rs.map((r) => r.id)));
     await db.delete(schema.inductions).where(eq(schema.inductions.id, IND));
+    await db.delete(schema.referenceDocuments).where(eq(schema.referenceDocuments.createdBy, editor.email));
   };
   beforeAll(async () => {
     await wipe();
@@ -95,5 +96,23 @@ describe.skipIf(!url)("inbox (integration)", () => {
     const audit = await db.select().from(schema.auditLog).where(eq(schema.auditLog.entityId, "merit/round_2.json"));
     expect(audit[0]).toMatchObject({ action: "inbox.skip", reason: "broken export" });
     await db.delete(schema.auditLog).where(eq(schema.auditLog.entityId, "merit/round_2.json"));
+  });
+
+  it("imports reference documents from inbox/reference as a new version", async () => {
+    const cpsp = [{ hospital: "MAYO HOSPITAL (LAHORE)", city: "Lahore", programs: [{ speciality: "OPHTHALMOLOGY", unit: "Unit-I", type: "F.A.", since: "01-01-2010" }] }];
+    writeFileSync(inbox("reference", "cpsp_accreditation.json"), JSON.stringify(cpsp));
+    writeFileSync(inbox("reference", "induction960_specialty_groups.json"), "{}");
+    writeFileSync(inbox("reference", "random.json"), "{}");
+    const items = await listInbox(db, editor, opts);
+    const ok = items.find((i) => i.name === "cpsp_accreditation.json")!;
+    expect(ok).toMatchObject({ kind: "reference", canImport: true, issues: [] });
+    expect(ok.target).toContain("CPSP accreditation");
+    expect(items.find((i) => i.name === "induction960_specialty_groups.json")!.canImport).toBe(false); // fails its schema
+    expect(items.find((i) => i.name === "random.json")!.kind).toBe("unrecognised");
+    const r = await importFromInbox(db, editor, { kind: "reference", name: "cpsp_accreditation.json", reason: "test import" }, opts);
+    expect(r).toMatchObject({ applied: true });
+    expect(r.message).toMatch(/^CPSP accreditation saved as version \d+/);
+    expect(existsSync(inbox("reference", "cpsp_accreditation.json"))).toBe(false);
+    expect(readdirSync(inbox("processed")).some((f) => f.endsWith("-imported-reference-cpsp_accreditation.json"))).toBe(true);
   });
 });

@@ -73,6 +73,8 @@ $MERITNAMA_DATA_DIR/storage/inbox/
   merit/      round_<n>.json (also i20_round_6.json …): merit rounds; the induction is read from the file
   seats/      induction<n>_seats.json: seat matrices
   policy/     scoring_policy.json
+  reference/  disciplineFullData.json, induction<n>_specialty_groups.json, cpsp_accreditation.json
+              (each import saves a new version; older versions stay)
   processed/  where files go after Import or Skip, prefixed with a UTC timestamp
 ```
 

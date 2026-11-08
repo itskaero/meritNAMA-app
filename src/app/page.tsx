@@ -7,8 +7,17 @@ import { checkDatabase, getDb } from "@/lib/db/client";
 import { loadFeatures } from "@/lib/data/settings";
 
 export const metadata = {
-  title: { absolute: "meritNAMA · where your score can take you" },
-  description: "Merit lists, seats and a score finder for postgraduate inductions, with a community of candidates.",
+  title: { absolute: "meritNAMA · where your merit can take you" },
+  description: "Closing merit, seats and every published merit round for PHF postgraduate inductions, with a free marks check and a score finder. Independent; not an official admissions authority.",
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    url: "/",
+    title: "meritNAMA · where your merit can take you",
+    description: "Closing merit, seats and every published merit round for PHF postgraduate inductions, from the published record.",
+    // Repeated here: a page's openGraph replaces the layout's rather than merging.
+    images: [{ url: "/images/brand/hero-library-study.jpg", width: 2400, height: 1018, alt: "A young doctor writing notes at a lamp-lit desk in an old arched library" }],
+  },
 };
 
 /** Signed-in people go to their area; everyone else gets the public story page. */

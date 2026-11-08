@@ -19,3 +19,6 @@ storage/
 data/private/
 
 .DS_Store
+
+# ./meritnama.sh bundle output
+meritnama-images.tar.gz

@@ -10,6 +10,44 @@ once Docker Compose is available.
 
 ---
 
+## Quick start: one command
+
+After steps 0–3 below (NAS ready, code on it, a Gmail app password, and either a
+Cloudflare Tunnel token or ports 80/443 forwarded), everything else is:
+
+```bash
+cd /volume1/docker/meritnama
+sudo ./meritnama.sh install
+```
+
+It asks for your email, the Gmail app password and how the site is reached (tunnel,
+proxy or local), then generates the database password and candidate key, writes
+`.env`, creates the data folders under `/volume1/meritnama-data`, builds, starts, and
+waits until the site is healthy. Afterwards:
+
+| Command | What it does |
+|---|---|
+| `./meritnama.sh status` | containers and health |
+| `./meritnama.sh logs` | follow the app's logs |
+| `./meritnama.sh backup` | database + files backup |
+| `./meritnama.sh update` | backup, `git pull`, rebuild, restart |
+| `./meritnama.sh restore <dir>` | restore a backup |
+| `./meritnama.sh stop` / `start` | stop or start everything |
+
+**NAS too slow to build, or without internet?** Build on a PC and carry one file:
+
+```bash
+# on the PC (match the NAS: linux/amd64 for Intel/AMD, linux/arm64 for ARM)
+./meritnama.sh bundle linux/amd64          # → meritnama-images.tar.gz
+# copy the repository folder and that file to the NAS, then on the NAS:
+sudo ./meritnama.sh load meritnama-images.tar.gz
+```
+
+Building for a different CPU than the PC's (an Intel PC for an ARM NAS) runs under
+emulation: Docker Desktop has it built in; it is slower but works.
+
+The rest of this guide is the same steps done by hand, with the background.
+
 ## 0. What you need
 
 - A NAS with Docker and Compose v2 (Synology DSM 7.2+ with *Container Manager*;
@@ -18,8 +56,8 @@ once Docker Compose is available.
 - SSH access to the NAS as an administrator.
 - The domain **meritnama.online**, with access to its registrar.
 - A free **Cloudflare** account (recommended way in, step 5A).
-- An **email sending** account for sign-in links (step 3), e.g. Brevo, Zoho Mail,
-  Resend, Amazon SES or your host's SMTP.
+- The Gmail account **namamerit@gmail.com** with 2-Step Verification, for sign-in
+  emails (step 3).
 - Access to the private GitHub repository `itskaero/meritNAMA-app`.
 
 ## 1. Prepare the NAS
@@ -58,20 +96,38 @@ No `git` on the NAS? Run it from a container instead:
 docker run --rm -it -v /volume1/docker:/git alpine/git clone https://github.com/itskaero/meritNAMA-app.git /git/meritnama
 ```
 
-## 3. Set up email for sign-in links
+## 3. Set up email for sign-in links (Gmail)
 
 meritNAMA signs people in with a one-time link by email, so this must work before
-anyone can log in.
+anyone can log in. It sends through the Gmail account **namamerit@gmail.com**.
 
-1. In your mail provider, add the domain `meritnama.online` and create SMTP
-   credentials.
-2. Add the DNS records it gives you (do this in Cloudflare after step 5, or at your
-   registrar now): **SPF** (TXT on `meritnama.online`), **DKIM** (TXT or CNAME), and a
-   **DMARC** record such as `_dmarc` TXT `v=DMARC1; p=quarantine; rua=mailto:you@meritnama.online`.
-   Without them, sign-in emails land in spam.
-3. Note the SMTP URL in this form (password URL-encoded if it has symbols):
-   `smtps://USERNAME:PASSWORD@smtp.provider.com:465`, or
-   `smtp://USERNAME:PASSWORD@smtp.provider.com:587` for STARTTLS.
+1. Sign in to that Google account and turn on **2-Step Verification**
+   (Google Account → Security).
+2. Create an **App Password**: Google Account → Security → *App passwords* (or open
+   https://myaccount.google.com/apppasswords), name it `meritnama-nas`. Google shows a
+   16-letter password once: copy it **without the spaces**.
+3. Your SMTP URL is then (note `%40` in place of `@` in the username):
+
+   ```text
+   smtps://namamerit%40gmail.com:<16-letter app password>@smtp.gmail.com:465
+   ```
+
+4. The sender must be the Gmail address itself (Gmail rewrites any other From):
+   `MAIL_FROM="meritNAMA <namamerit@gmail.com>"`.
+
+Good to know:
+
+- No DNS records are needed for email: mail goes out as `@gmail.com`, so SPF and DKIM
+  are Gmail's. (Sending as `no-reply@meritnama.online` would need a mail provider
+  that supports your domain, such as Google Workspace, Zoho or Brevo; switch later by
+  changing `SMTP_URL` and `MAIL_FROM`.)
+- A free Gmail account sends about **500 emails a day**. Each sign-in is one email,
+  so that is plenty to start; on round days with many new sign-ins, move to a
+  provider with higher limits.
+- If Google ever revokes the app password (for example after a password change),
+  sign-ins stop: create a new app password and update `.env`, then
+  `docker compose up -d`.
+- Replies to sign-in emails land in namamerit@gmail.com's inbox.
 
 ## 4. Fill in `.env`
 
@@ -90,8 +146,8 @@ POSTGRES_PASSWORD=<first generated value>
 APP_URL=https://meritnama.online
 MERITNAMA_DOMAIN=meritnama.online
 PUBLIC_SITE_ORIGIN=
-SMTP_URL=smtps://USERNAME:PASSWORD@smtp.provider.com:465
-MAIL_FROM="meritNAMA <no-reply@meritnama.online>"
+SMTP_URL=smtps://namamerit%40gmail.com:<16-letter app password>@smtp.gmail.com:465
+MAIL_FROM="meritNAMA <namamerit@gmail.com>"
 OWNER_EMAILS=<your own email address>
 CANDIDATE_INDEX_SECRET=<second generated value>
 MERITNAMA_DATA_DIR=/volume1/meritnama-data
@@ -194,7 +250,7 @@ Open **https://meritnama.online**: the homepage should load with the padlock.
 ## 7. First sign-in and data
 
 1. On https://meritnama.online choose **Sign in** and use the address in
-   `OWNER_EMAILS`. The email arrives from `no-reply@meritnama.online`. That account
+   `OWNER_EMAILS`. The email arrives from `namamerit@gmail.com`. That account
    becomes the **owner**.
 2. *Team & roles*: give other staff their roles; check that **Backups** shows a
    warning (none yet, fixed in step 8).
@@ -244,7 +300,7 @@ Database migrations run automatically before the new version starts.
 | Symptom | Fix |
 |---|---|
 | Sign-in email links point to `localhost` | `APP_URL` is wrong in `.env`. Set `https://meritnama.online`, then `docker compose up -d`. |
-| No sign-in email arrives | `docker compose logs app \| grep -i smtp`; check `SMTP_URL`, and the SPF/DKIM records (step 3). Look in spam. |
+| No sign-in email arrives | `docker compose logs app \| grep -i -E "smtp\|mail"`. "Invalid login" or 535: the app password is wrong or revoked (step 3), or `@` was not written as `%40`. Look in spam. |
 | Cloudflare "Bad gateway" (502) or error 1033 | Tunnel public hostname must be `http://app:3000`; `docker compose ps` should show `tunnel` and `app` running; `docker compose logs tunnel`. |
 | "Too many redirects" | 5B with Cloudflare proxy on: set *SSL/TLS → Overview* to **Full (strict)**. |
 | Port 3000 already in use | Change `APP_PORT` (e.g. 3010) and the reverse proxy destination to match. |

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { env } from "@/lib/env";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Source_Serif_4 } from "next/font/google";
@@ -11,13 +12,30 @@ const sans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "
 const serif = Source_Serif_4({ subsets: ["latin"], weight: ["400", "500", "600", "700"], style: ["normal", "italic"], variable: "--mn-font-serif-loaded", display: "swap" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["500", "600"], variable: "--mn-font-mono-loaded", display: "swap" });
 
-export const metadata: Metadata = {
-  title: { default: "meritNAMA", template: "%s · meritNAMA" },
-  description: "Merit lists, seats and scoring for postgraduate inductions.",
-  robots: { index: false, follow: false },
-};
+/**
+ * Site-wide metadata. Built per request so APP_URL (e.g. https://meritnama.online) is
+ * read at run time, not baked in at build: it makes canonical and social-preview URLs
+ * absolute. Pages are not indexed by default; the public homepage opts in.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const base = new URL(env().APP_URL);
+  return {
+    metadataBase: base,
+    title: { default: "meritNAMA", template: "%s · meritNAMA" },
+    description: "Merit lists, seats and scoring for postgraduate inductions.",
+    applicationName: "meritNAMA",
+    robots: { index: false, follow: false },
+    openGraph: {
+      type: "website",
+      siteName: "meritNAMA",
+      locale: "en_PK",
+      images: [{ url: "/images/brand/hero-library-study.jpg", width: 2400, height: 1018, alt: "A young doctor writing notes at a lamp-lit desk in an old arched library" }],
+    },
+    twitter: { card: "summary_large_image" },
+  };
+}
 
-export const viewport: Viewport = { themeColor: "#142536" };
+export const viewport: Viewport = { themeColor: "#10243A" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Render per request, so the Content Security Policy's nonce (src/proxy.ts) reaches every page's scripts.

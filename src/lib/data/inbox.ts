@@ -10,7 +10,9 @@ import { seatFileSchema } from "@/lib/domain/reference-data";
 import { scoringPolicyFileSchema } from "@/lib/domain/scoring-policy";
 import { env } from "@/lib/env";
 import { UserFacingError } from "@/lib/errors";
+import { DOCUMENT_KINDS, type DocumentKind } from "@/lib/domain/reference-data";
 import { proposeMeritRound, proposePolicyFile, proposeSeatFile, type Proposal } from "./changes";
+import { saveReferenceDocument } from "./reference-data";
 import { requireReason, writeAudit } from "./shared";
 
 /**
@@ -18,6 +20,8 @@ import { requireReason, writeAudit } from "./shared";
  *   <APP_STORAGE_DIR>/inbox/merit/   round_<n>.json  (or i20_round_6.json …)
  *   <APP_STORAGE_DIR>/inbox/seats/   induction<n>_seats.json
  *   <APP_STORAGE_DIR>/inbox/policy/  scoring_policy.json
+ *   <APP_STORAGE_DIR>/inbox/reference/  disciplineFullData.json, induction<n>_specialty_groups.json,
+ *                                       cpsp_accreditation.json
  * are listed with their validation result; an admin imports them with one click,
  * through the same preview → publish path as uploads, and the file then moves to
  * inbox/processed/. Only names matching a folder's pattern are ever opened;
@@ -28,10 +32,27 @@ export const INBOX_KINDS = {
   merit: { folder: "merit", pattern: /^(?:[a-z0-9]{1,12}[_-])?round[_-]?(\d{1,2})\.json$/i, capability: "data.edit", label: "Merit round" },
   seats: { folder: "seats", pattern: /^induction(\d{1,3})_seats\.json$/i, capability: "data.edit", label: "Seat matrix" },
   policy: { folder: "policy", pattern: /^scoring_policy\.json$/i, capability: "policy.edit", label: "Scoring policy file" },
+  reference: { folder: "reference", pattern: /^(?:disciplineFullData|induction(\d{1,3})_specialty_groups|cpsp_accreditation)\.json$/i, capability: "data.edit", label: "Reference document" },
 } as const satisfies Record<string, { folder: string; pattern: RegExp; capability: Capability; label: string }>;
 export type InboxKind = keyof typeof INBOX_KINDS;
 
 const MAX_BYTES = 3 * 1024 * 1024;
+
+/** Which reference document a file in inbox/reference/ is, by its name. */
+function referenceKind(name: string): { kind: DocumentKind; induction: number | null } | null {
+  const n = name.toLowerCase();
+  if (n === "disciplinefulldata.json") return { kind: "disciplines", induction: null };
+  if (n === "cpsp_accreditation.json") return { kind: "cpsp_accreditation", induction: null };
+  const m = /^induction(\d{1,3})_specialty_groups\.json$/.exec(n);
+  return m ? { kind: "specialty_groups", induction: Number(m[1]) } : null;
+}
+
+const PATTERN_HINT: Record<InboxKind, string> = {
+  merit: "round_<n>.json",
+  seats: "induction<n>_seats.json",
+  policy: "scoring_policy.json",
+  reference: "disciplineFullData.json, induction<n>_specialty_groups.json or cpsp_accreditation.json",
+};
 
 export type InboxItem = {
   kind: InboxKind | "unrecognised";
@@ -88,7 +109,7 @@ export async function listInbox(db: Database, session: Session | null, opts: { r
       const base = { folder: k.folder, name: d.name, target: null, replaces: false, issues: [] as string[] };
       const st = await lstat(path.join(/* turbopackIgnore: true */ root, k.folder, d.name));
       if (!k.pattern.test(d.name) || !st.isFile() || st.isSymbolicLink()) {
-        items.push({ ...base, kind: "unrecognised", size: st.size, modifiedAt: st.mtime, canImport: false, issues: [`Not opened: names in ${k.folder}/ must look like ${kind === "merit" ? "round_<n>.json" : kind === "seats" ? "induction<n>_seats.json" : "scoring_policy.json"}${st.isSymbolicLink() ? " (symlinks are refused)" : ""}.`] });
+        items.push({ ...base, kind: "unrecognised", size: st.size, modifiedAt: st.mtime, canImport: false, issues: [`Not opened: names in ${k.folder}/ must look like ${PATTERN_HINT[kind]}${st.isSymbolicLink() ? " (symlinks are refused)" : ""}.`] });
         continue;
       }
       const item: InboxItem = { ...base, kind, size: st.size, modifiedAt: st.mtime, canImport: can(session, k.capability) };
@@ -115,6 +136,12 @@ export async function listInbox(db: Database, session: Session | null, opts: { r
               const [n] = await db.select({ n: count() }).from(inductionSeats).where(eq(inductionSeats.inductionId, ind));
               item.replaces = (n?.n ?? 0) > 0;
             }
+          } else if (kind === "reference") {
+            const ref = referenceKind(d.name)!;
+            const r = DOCUMENT_KINDS[ref.kind].schema.safeParse(data);
+            item.issues = issuesOf(r);
+            // Reference documents are versioned: importing adds a new version, the old ones stay.
+            if (r.success) item.target = `${DOCUMENT_KINDS[ref.kind].label}${ref.induction ? `, induction ${ref.induction}` : ""} · saved as a new version`;
           } else {
             const r = scoringPolicyFileSchema.safeParse(data);
             item.issues = issuesOf(r);
@@ -168,6 +195,11 @@ export async function importFromInbox(
   } else if (input.kind === "seats") {
     const induction = Number(k.pattern.exec(input.name)![1]);
     result = await proposeSeatFile(db, session, { induction, calendarYear: input.calendarYear, file: data, reason: why });
+  } else if (input.kind === "reference") {
+    const ref = referenceKind(input.name);
+    if (!ref) throw new UserFacingError("The document type is not in the file name.");
+    const saved = await saveReferenceDocument(db, session, { kind: ref.kind, induction: ref.induction, data, reason: why });
+    result = { applied: true, message: `${DOCUMENT_KINDS[ref.kind].label} saved as version ${saved.version}: ${saved.summary}.` };
   } else {
     result = await proposePolicyFile(db, session, { file: data, reason: why });
   }
