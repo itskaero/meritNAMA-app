@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
 import { InductionTimeline } from "@/components/charts/induction-timeline";
 import { StatTiles } from "@/components/charts/stat-tiles";
@@ -59,6 +60,7 @@ export default async function MeritListsPage() {
               {seats.byProgram.map((p) => <li key={p.program} className="rounded-full px-3 py-1.5 ring-1 ring-line-strong">{p.program} <span className="font-mono">{p.values[0]?.toLocaleString("en-US")}</span></li>)}
             </ul>
           )}
+          <ChartSource tone="official" data="seats" source="PHF seat matrices, one per induction" />
         </Card>
       ) : null}
       {inductions.length === 0 ? (

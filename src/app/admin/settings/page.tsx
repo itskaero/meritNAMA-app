@@ -9,9 +9,9 @@ import { listTeam } from "@/lib/data/team";
 import { getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
 import { Badge } from "@/components/ui/badge";
-import { backupStatus, featureFlags, retentionPreview, retentionSettings, RETENTION, type RetentionKey } from "@/lib/data/settings";
+import { RETENTION, backupStatus, featureFlags, mailStatus, retentionPreview, retentionSettings, type RetentionKey } from "@/lib/data/settings";
 import { formatUtc } from "@/lib/format";
-import { AddMemberForm, ApplyRetentionForm, FeaturesForm, RetentionForm, RoleRow } from "./forms";
+import { AddMemberForm, ApplyRetentionForm, FeaturesForm, RetentionForm, RoleRow, TestEmailForm } from "./forms";
 
 export const metadata = { title: "Team & roles" };
 export const dynamic = "force-dynamic";
@@ -35,6 +35,7 @@ export default async function TeamPage() {
   const team = await listTeam(db, session);
   const flags = await featureFlags(db, session);
   const retention = await retentionSettings(db, session);
+  const mail = await mailStatus(session);
   const due = await retentionPreview(db, session);
   const dueTotal = Object.values(due).reduce((a, b) => a + b, 0);
   const backups = await backupStatus(session);
@@ -103,9 +104,22 @@ export default async function TeamPage() {
         </Card>
       </div>
       <Card>
+        <CardHeader title="Email" description="Sign-in links are emailed. Settings live in .env on the server (SMTP_URL, MAIL_FROM); see docs/NAS-SETUP.md, step 3." />
+        {mail.configured ? (
+          <dl className="mb-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+            <dt className="text-muted">Server</dt><dd className="font-mono">{mail.host}:{mail.port}</dd>
+            <dt className="text-muted">Account</dt><dd className="font-mono">{mail.user || "—"}</dd>
+            <dt className="text-muted">From</dt><dd>{mail.from}</dd>
+          </dl>
+        ) : (
+          <p className="mb-4 text-sm text-amber">SMTP_URL is not set: sign-in emails cannot be sent{process.env.NODE_ENV === "production" ? "" : " (in development they go to /dev/mailbox)"}.</p>
+        )}
+        <TestEmailForm />
+      </Card>
+      <Card>
         <CardHeader
           title="Data retention"
-          description={`Short-lived data is removed once a day, after a staff page loads. The audit history, merit data and accounts are never removed here. ${retention.lastRun ? `Last run ${formatUtc(retention.lastRun)} UTC.` : "Not run yet."}`}
+          description={`Short-lived data is removed once a day by the background worker (or after a staff page loads). The audit history, merit data and accounts are never removed here. ${retention.lastRun ? `Last run ${formatUtc(retention.lastRun)} UTC.` : "Not run yet."}`}
         />
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           <RetentionForm days={retention.days} />

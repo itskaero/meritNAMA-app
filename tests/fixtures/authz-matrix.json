@@ -141,6 +141,8 @@
  "settings#retentionPreview": "owner",
  "settings#applyRetention": "owner",
  "settings#backupStatus": "owner",
+ "settings#mailStatus": "owner",
+ "settings#sendTestEmail": "owner",
  "simulation#listSimulationFolders": "data_editor policy_editor verifier moderator owner",
  "simulation#listDatasets": "data_editor policy_editor verifier moderator owner",
  "simulation#importConsentRounds": "data_editor owner",

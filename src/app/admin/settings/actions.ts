@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { formInt, formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { applyRetention, setFeatures, setRetention } from "@/lib/data/settings";
+import { applyRetention, sendTestEmail, setFeatures, setRetention } from "@/lib/data/settings";
 import { setUserRole } from "@/lib/data/team";
 import { FEATURES, RETENTION, type Feature, type RetentionKey } from "@/lib/domain/settings";
 import { getDb } from "@/lib/db/client";
@@ -46,6 +46,15 @@ export async function applyRetentionAction(_prev: ActionState, form: FormData): 
     const total = Object.values(r).reduce((a, b) => a + b, 0);
     revalidatePath("/admin/settings");
     return { status: "success", message: total ? `Removed ${total.toLocaleString("en-US")} item${total === 1 ? "" : "s"}.` : "Nothing was past its retention period." };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+export async function sendTestEmailAction(_prev: ActionState): Promise<ActionState> {
+  try {
+    const r = await sendTestEmail(getDb(), await getSession());
+    return { status: "success", message: `Sent to ${r.to}. Check that inbox (and spam).` };
   } catch (err) {
     return toActionState(err);
   }

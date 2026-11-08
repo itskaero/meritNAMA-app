@@ -5,8 +5,9 @@ import { and, eq, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 import { cache } from "react";
 import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
-import { appSettings, candidateLinks, devOutbox, loginTokens, notifications, sessions, simulationRuns } from "@/lib/db/schema";
+import { appSettings, candidateLinks, devOutbox, loginTokens, notifications, roundRoomMessages, sessions, simulationRuns } from "@/lib/db/schema";
 import { env } from "@/lib/env";
+import { sendMail } from "@/lib/mail";
 import { UserFacingError } from "@/lib/errors";
 import { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
 import { requireReason, writeAudit, type Db } from "./shared";
@@ -107,6 +108,7 @@ function retentionScopes(days: Retention) {
     devMailbox: lt(devOutbox.createdAt, before(days.devMailbox)),
     readNotifications: and(isNotNull(notifications.readAt), lt(notifications.readAt, before(days.readNotifications)))!,
     whatIfRuns: and(isNotNull(simulationRuns.ownerUserId), lt(simulationRuns.createdAt, before(days.whatIfRuns)), inArray(simulationRuns.status, ["done", "failed"]))!,
+    roomMessages: and(eq(roundRoomMessages.kind, "message"), lt(roundRoomMessages.createdAt, before(days.roomMessages)))!,
     evidence: and(isNotNull(candidateLinks.evidenceFile), inArray(candidateLinks.status, ["verified", "rejected"]), lt(candidateLinks.reviewedAt, before(days.evidence)))!,
   };
 }
@@ -123,7 +125,8 @@ export async function retentionPreview(db: Database, session: Session | null): P
   const [d] = await db.select({ n: count }).from(notifications).where(w.readNotifications);
   const [e] = await db.select({ n: count }).from(simulationRuns).where(w.whatIfRuns);
   const [f] = await db.select({ n: count }).from(candidateLinks).where(w.evidence);
-  return { signInLinks: a?.n ?? 0, sessions: b?.n ?? 0, devMailbox: c?.n ?? 0, readNotifications: d?.n ?? 0, whatIfRuns: e?.n ?? 0, evidence: f?.n ?? 0 };
+  const [g] = await db.select({ n: count }).from(roundRoomMessages).where(w.roomMessages);
+  return { signInLinks: a?.n ?? 0, sessions: b?.n ?? 0, devMailbox: c?.n ?? 0, readNotifications: d?.n ?? 0, whatIfRuns: e?.n ?? 0, evidence: f?.n ?? 0, roomMessages: g?.n ?? 0 };
 }
 
 /**
@@ -148,6 +151,7 @@ async function purge(db: Database, actor: string, reason: string, opts: { root?:
       devMailbox: await n(tx.delete(devOutbox).where(w.devMailbox).returning({ id: devOutbox.id })),
       readNotifications: await n(tx.delete(notifications).where(w.readNotifications).returning({ id: notifications.id })),
       whatIfRuns: await n(tx.delete(simulationRuns).where(w.whatIfRuns).returning({ id: simulationRuns.id })),
+      roomMessages: await n(tx.delete(roundRoomMessages).where(w.roomMessages).returning({ id: roundRoomMessages.id })),
       evidence: evidence.length
         ? await n(tx.update(candidateLinks).set({ evidenceFile: null }).where(inArray(candidateLinks.id, evidence.map((e) => e.id))).returning({ id: candidateLinks.id }))
         : 0,
@@ -209,4 +213,40 @@ export async function backupStatus(session: Session | null, opts: { dir?: string
   const newest = backups.find((b) => b.database);
   const state = !newest ? "missing" : Date.now() - newest.at.getTime() > 26 * 3_600_000 ? "stale" : "ok";
   return { dir, readable: true, backups, state };
+}
+
+// ── Email ──────────────────────────────────────────────────────────────────────
+
+/** Where sign-in emails go out from (never the password), for the Team & roles page. */
+export async function mailStatus(session: Session | null) {
+  assertCan(session, "roles.manage");
+  const { SMTP_URL, MAIL_FROM } = env();
+  if (!SMTP_URL) return { configured: false as const, from: MAIL_FROM };
+  const u = new URL(SMTP_URL);
+  return { configured: true as const, host: u.hostname, port: u.port || (u.protocol === "smtps:" ? "465" : "587"), user: decodeURIComponent(u.username), from: MAIL_FROM };
+}
+
+/**
+ * Send a test email to the signed-in owner, so the SMTP settings can be checked
+ * from the browser. Common failures are explained without echoing secrets.
+ */
+export async function sendTestEmail(db: Database, session: Session | null) {
+  assertCan(session, "roles.manage");
+  try {
+    await sendMail(db, {
+      to: session.email,
+      subject: "meritNAMA test email",
+      text: `This is a test from meritNAMA at ${env().APP_URL}.\n\nIf you can read it, sign-in emails work.`,
+    });
+  } catch (e) {
+    const err = e as { code?: string; responseCode?: number; message?: string };
+    const why =
+      err.code === "EAUTH" || err.responseCode === 535 ? "The mail server refused the login. For Gmail: use an App Password (not your normal password), and write the @ in the username as %40 in SMTP_URL."
+      : err.code === "ECONNECTION" || err.code === "ETIMEDOUT" || err.code === "ESOCKET" || err.code === "EDNS" ? "Could not reach the mail server. Check the host and port in SMTP_URL, and that the NAS may connect out on that port (465 for smtps)."
+      : err.message === "SMTP_URL is not configured" ? "SMTP_URL is not set in .env."
+      : "Sending failed. See the app's logs for details.";
+    console.error("test email failed", err.code ?? "", err.responseCode ?? "");
+    throw new UserFacingError(why);
+  }
+  return { to: session.email };
 }

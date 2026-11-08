@@ -54,6 +54,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       CANDIDATE_INDEX_SECRET: ${CANDIDATE_INDEX_SECRET:?set CANDIDATE_INDEX_SECRET in .env}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-}
     volumes:
       - ${MERITNAMA_DATA_DIR:-./var}/storage:/app/storage
       # Read-only: the app only reports on backups (Team & roles); scripts/backup.sh writes them.
@@ -94,10 +95,21 @@ services:
     depends_on: [app]
     networks: [web]
 
-  # Background worker for long simulations / imports — added in delivery 3.
-  # worker:
-  #   build: { context: ., target: worker }
-  #   environment: { DATABASE_URL: *db-url }
+  # Background jobs, once a minute: start simulation runs left queued by a restart,
+  # fail runs that died, apply data retention daily. Same image as the app; it only
+  # calls the app's /api/internal/tick over the internal network (INTERNAL_TOKEN).
+  worker:
+    build: { context: ., target: runtime }
+    image: meritnama-app:local
+    restart: unless-stopped
+    command: ["node", "scripts/worker.mjs"]
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-}
+      TICK_URL: http://app:3000/api/internal/tick
+    healthcheck: { disable: true }
+    depends_on:
+      app: { condition: service_healthy }
+    networks: [internal]
 
 networks:
   internal: { internal: true }

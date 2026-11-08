@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { PageSections } from "@/components/ui/page-sections";
+import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { LineChart } from "@/components/charts/line-chart";
@@ -67,11 +69,23 @@ export default async function SpecialityPage({ params, searchParams }: {
       title={h.speciality.name}
       description={`Closing merit across ${inductionsSeen.length} induction${inductionsSeen.length === 1 ? "" : "s"} and their rounds.`}
     >
+      {h.rows.length ? (
+        <PageSections
+          items={[
+            { id: "trend", label: "Closing merit" },
+            ...(latest && ladder && ladder.rows.length ? [{ id: "ladder", label: "Merit ladder" }] : []),
+            ...(latest && flow.length ? [{ id: "flow", label: "Seat flow" }] : []),
+            ...(said.length ? [{ id: "reviews", label: "Reviews" }] : []),
+            ...(latest ? [{ id: "hospitals", label: "By hospital" }] : []),
+            { id: "discussion", label: "Questions" },
+          ]}
+        />
+      ) : null}
       {h.rows.length === 0 ? (
         <EmptyState title="No merit data for this speciality yet" />
       ) : (
         <>
-          <Card>
+          <Card id="trend">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <CardHeader title={`Closing merit · ${track}`} description={allKnown ? "Percent of each induction's total marks, so inductions scored out of 60 and 35 compare fairly." : "Marks as published."} />
               <form method="get" className="flex min-w-0 max-w-full flex-wrap items-end gap-2">
@@ -94,21 +108,24 @@ export default async function SpecialityPage({ params, searchParams }: {
               format={(v) => (allKnown ? `${v.toFixed(1)}%` : v.toFixed(2))}
               height={260}
             />
+            <ChartSource source="PHF merit lists, every imported induction" />
           </Card>
           {latest && ladder && ladder.rows.length ? (
-            <Card>
+            <Card id="ladder">
               <CardHeader title={`Merit ladder · induction ${latest.induction_id}`} description="Lowest closing merit for each programme and quota, round by round." />
               <MeritLadder rows={ladder.rows} rounds={ladder.rounds} total={h.maxMarks[latest.induction_id] ?? null} linkRows={false} caption={`${h.speciality.name}, induction ${latest.induction_id}: lowest closing merit per programme and quota by round`} />
+              <ChartSource source={`PHF merit lists, induction ${latest.induction_id}`} induction={latest.induction_id} />
             </Card>
           ) : null}
           {latest && flow.length ? (
-            <Card>
+            <Card id="flow">
               <CardHeader title={`Seat flow · induction ${latest.induction_id}`} description="Seats accepted, and seats declined or not taken that go back into the pool for the next round." />
               <SeatFlow panels={flow} caption={`${h.speciality.name}, induction ${latest.induction_id}: accepted and released seats per round by programme and quota`} />
+              <ChartSource source={`PHF merit lists and consent, induction ${latest.induction_id}`} induction={latest.induction_id} />
             </Card>
           ) : null}
           {said.length ? (
-            <Card>
+            <Card id="reviews">
               <CardHeader title="What trainees say" description={`Reviews of ${h.speciality.name} by verified candidates, per hospital. Higher is better. Not official.`} />
               <div tabIndex={0} role="region" aria-label="Average review ratings per hospital" className="relative overflow-x-auto">
                 <table className="w-full min-w-[640px] text-sm">
@@ -132,17 +149,17 @@ export default async function SpecialityPage({ params, searchParams }: {
             </Card>
           ) : null}
           {latest ? (
-            <Card>
+            <Card id="hospitals">
               <CardHeader title={`By hospital · induction ${latest.induction_id}, round ${latest.round_no}`} description="The latest round with this speciality." />
               <DataTable
                 caption="Closing merit by hospital"
                 rows={h.byHospital}
                 rowKey={(r) => `${r.hospital}|${r.program}|${r.quota}`}
                 columns={[
-                  { key: "h", header: "Hospital", cell: (r) => <EntityLink kind="hospital" id={r.hospital_id} name={r.hospital} /> },
-                  { key: "pq", header: "Programme · quota", tone: "muted", cell: (r) => `${r.program} · ${r.quota}` },
-                  { key: "n", header: "Allocated", align: "right", cell: (r) => r.allocations },
-                  { key: "c", header: "Closing", align: "right", tone: "mono", cell: (r) => formatMarks(Number(r.closing)) },
+                  { key: "h", header: "Hospital", sort: (r) => r.hospital, cell: (r) => <EntityLink kind="hospital" id={r.hospital_id} name={r.hospital} /> },
+                  { key: "pq", header: "Programme · quota", tone: "muted", sort: (r) => `${r.program} ${r.quota}`, cell: (r) => `${r.program} · ${r.quota}` },
+                  { key: "n", header: "Allocated", align: "right", sort: (r) => Number(r.allocations), cell: (r) => r.allocations },
+                  { key: "c", header: "Closing", align: "right", tone: "mono", sort: (r) => Number(r.closing), cell: (r) => formatMarks(Number(r.closing)) },
                   ...(acc ? [{ key: "cpsp", header: "CPSP", cell: (r: (typeof h.byHospital)[number]) => (accredited.has(r.hospital) ? <Badge tone="success">accredited</Badge> : <span className="text-xs text-subtle">not matched</span>) }] : []),
                 ]}
               />

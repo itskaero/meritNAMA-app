@@ -773,6 +773,21 @@ export async function getRun(db: Database, session: Session | null, id: string) 
   return { ...r, summary: r.summary as RunSummary | null };
 }
 
+/**
+ * Internal (the worker's tick): run queued runs that nobody started, oldest first.
+ * A run is normally started right after the request that queued it; if the server
+ * restarted in between, it waits here. executeRun's queued → running update means a
+ * run is never executed twice.
+ */
+export async function processQueuedRuns(db: Database, opts: { olderThanSeconds?: number; limit?: number } = {}) {
+  const cutoff = new Date(Date.now() - (opts.olderThanSeconds ?? 60) * 1000);
+  const waiting = await db.select({ id: simulationRuns.id }).from(simulationRuns)
+    .where(and(eq(simulationRuns.status, "queued"), lt(simulationRuns.createdAt, cutoff)))
+    .orderBy(simulationRuns.createdAt).limit(opts.limit ?? 3);
+  for (const r of waiting) await executeRun(db, r.id);
+  return waiting.length;
+}
+
 /** Runs that were queued or running when the server stopped: mark them failed so they can be re-run. */
 export async function failInterruptedRuns(db: Database, olderThanMinutes = 30) {
   const cutoff = new Date(Date.now() - olderThanMinutes * 60_000);

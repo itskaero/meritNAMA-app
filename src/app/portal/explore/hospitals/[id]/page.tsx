@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { PageSections } from "@/components/ui/page-sections";
+import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { BarList } from "@/components/charts/bar-list";
@@ -59,8 +61,17 @@ export default async function HospitalPage({ params, searchParams }: { params: P
       title={p.hospital.name}
       description="Seats by speciality from the latest seat matrix, and closing merit in the latest merit round."
     >
+      <PageSections
+        items={[
+          ...(totalSeats || closings.length ? [{ id: "summary", label: "Summary" }] : []),
+          ...(seatItems.length || p.closing.length ? [{ id: "seats", label: "Seats and closing merit" }] : []),
+          ...(acc ? [{ id: "accreditation", label: "CPSP accreditation" }] : []),
+          { id: "reviews", label: "Reviews" },
+          { id: "discussion", label: "Questions" },
+        ]}
+      />
       {totalSeats || closings.length ? (
-        <section aria-label="Summary" className="grid gap-5 rounded-xl bg-feature p-6 text-feature-ink shadow-[var(--mn-shadow-2)] sm:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)] sm:p-7">
+        <section id="summary" aria-label="Summary" className="scroll-mt-20 grid gap-5 rounded-xl bg-feature p-6 text-feature-ink shadow-[var(--mn-shadow-2)] sm:grid-cols-[repeat(3,minmax(0,1fr))_minmax(0,1.4fr)] sm:p-7">
           <div><p className="text-xs text-feature-muted">Seats{p.seats[0] ? ` · induction ${p.seats[0].induction_id}` : ""}</p><p className="mt-1 font-serif text-4xl font-semibold tabular-nums">{totalSeats.toLocaleString("en-US")}</p></div>
           <div><p className="text-xs text-feature-muted">Specialities</p><p className="mt-1 font-serif text-4xl font-semibold tabular-nums">{seatsBySpec.size}</p></div>
           <div>
@@ -84,10 +95,11 @@ export default async function HospitalPage({ params, searchParams }: { params: P
       {seatItems.length === 0 && p.closing.length === 0 ? (
         <EmptyState title="No seats or merit data for this hospital yet" />
       ) : (
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
+        <div id="seats" className="grid scroll-mt-20 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
           <Card className="self-start">
             <CardHeader title={p.seats[0] ? `Seats · induction ${p.seats[0].induction_id}` : "Seats"} description="All programmes and quotas together." />
             {seatItems.length ? <BarList items={seatItems} /> : <p className="text-sm text-muted">Not in a seat matrix yet.</p>}
+            <ChartSource tone="official" data="seats" source="PHF seat matrix" />
           </Card>
           <Card className="min-w-0">
             <CardHeader title={latest ? `Closing merit · induction ${latest.induction_id}, round ${latest.round_no}` : "Closing merit"} description={max ? `Out of ${max}.` : undefined} />
@@ -97,10 +109,10 @@ export default async function HospitalPage({ params, searchParams }: { params: P
                 rows={p.closing}
                 rowKey={(r) => `${r.speciality}|${r.program}|${r.quota}`}
                 columns={[
-                  { key: "s", header: "Speciality", cell: (r) => <EntityLink kind="speciality" id={r.speciality_id} name={r.speciality} /> },
-                  { key: "pq", header: "Programme · quota", cell: (r) => <ProgramTag program={r.program} quota={r.quota} /> },
-                  { key: "n", header: "Allocated", align: "right", cell: (r) => r.allocations },
-                  { key: "c", header: "Closing", align: "right", tone: "mono", cell: (r) => formatMarks(Number(r.closing)) },
+                  { key: "s", header: "Speciality", sort: (r) => r.speciality, cell: (r) => <EntityLink kind="speciality" id={r.speciality_id} name={r.speciality} /> },
+                  { key: "pq", header: "Programme · quota", sort: (r) => `${r.program} ${r.quota}`, cell: (r) => <ProgramTag program={r.program} quota={r.quota} /> },
+                  { key: "n", header: "Allocated", align: "right", sort: (r) => Number(r.allocations), cell: (r) => r.allocations },
+                  { key: "c", header: "Closing", align: "right", tone: "mono", sort: (r) => Number(r.closing), cell: (r) => formatMarks(Number(r.closing)) },
                 ]}
               />
             ) : <p className="text-sm text-muted">No merit rounds include this hospital yet.</p>}
@@ -108,7 +120,7 @@ export default async function HospitalPage({ params, searchParams }: { params: P
         </div>
       )}
       {acc ? (
-        <Card>
+        <Card id="accreditation">
           <CardHeader
             title="CPSP accreditation"
             description={acc.matched ? `Matched by name to “${acc.matched}” in CPSP's list. Check with CPSP before relying on it.` : "No entry in CPSP's accreditation list matches this hospital's name. That does not mean it is not accredited."}

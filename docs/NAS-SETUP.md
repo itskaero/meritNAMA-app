@@ -78,23 +78,56 @@ The rest of this guide is the same steps done by hand, with the background.
    If `docker compose` is not found on an older DSM, use `docker-compose` with the same arguments
    everywhere below.
 
-## 2. Get the code
+## 2. Get the code onto the NAS
 
-The repository is private, so use a GitHub personal access token with read access to
-`itskaero/meritNAMA-app` (GitHub → Settings → Developer settings → Fine-grained tokens).
+Pick whichever works for you. **A** needs nothing but a browser; **B** and **C** need SSH.
+
+### A. No git, no SSH: upload a ZIP and run the installer from DSM
+
+1. On your PC, open the repository on GitHub (signed in), choose the branch
+   (`main`, or `ccr-3e305929-39xqcm` until it is merged), then **Code → Download ZIP**.
+2. In DSM **File Station**, open the `docker` shared folder, **Upload** the ZIP, then
+   right-click it → **Extract** → *Extract here*. Rename the extracted folder to
+   `meritnama` (GitHub names it `meritNAMA-app-<branch>`).
+3. On your PC, open `install.conf.example` from the ZIP in a text editor, fill it in
+   (your email, the Gmail app password from step 3 below, `tunnel` and its token), and
+   save it as **`install.conf`**. Upload it into `/docker/meritnama/` with File Station.
+4. DSM → **Control Panel → Task Scheduler → Create → Triggered Task →
+   User-defined script**:
+   - General: name `meritnama install`, user **root**, event *Boot-up*, untick
+     *Enabled* (it is only run by hand).
+   - Task Settings → Run command:
+
+     ```bash
+     bash /volume1/docker/meritnama/meritnama.sh install > /volume1/docker/meritnama/install.log 2>&1
+     ```
+
+5. Select the task → **Run**. The first build takes 5–20 minutes. Open
+   `/docker/meritnama/install.log` in File Station (right-click → *Open with Text
+   Editor*) to follow it; it ends with **"meritNAMA is running"**. The installer deletes
+   `install.conf` once `.env` is written.
+6. For later updates: upload the new ZIP, extract it **over** the same folder (keep
+   `.env`), and run a second task with `bash /volume1/docker/meritnama/meritnama.sh update`.
+   Make a third with `... meritnama.sh backup`, scheduled daily (step 8).
+
+### B. With SSH and git
 
 ```bash
 cd /volume1/docker
-git clone https://github.com/itskaero/meritNAMA-app.git meritnama
-# Prompted for a password: paste the token.
-cd meritnama
+git clone https://github.com/itskaero/meritNAMA-app.git meritnama   # password: a GitHub token
+cd meritnama && sudo ./meritnama.sh install
 ```
 
-No `git` on the NAS? Run it from a container instead:
+For the token: GitHub → Settings → Developer settings → Fine-grained tokens, read
+access to `itskaero/meritNAMA-app`.
 
-```bash
-docker run --rm -it -v /volume1/docker:/git alpine/git clone https://github.com/itskaero/meritNAMA-app.git /git/meritnama
-```
+### C. Build on your PC, carry one file (slow NAS, or no internet on it)
+
+Needs Docker Desktop on the PC. In the downloaded code folder:
+`./meritnama.sh bundle linux/amd64` (or `linux/arm64` for an ARM NAS). Upload the
+folder and `meritnama-images.tar.gz` as in A, then run
+`bash /volume1/docker/meritnama/meritnama.sh load /volume1/docker/meritnama/meritnama-images.tar.gz`
+from Task Scheduler or SSH.
 
 ## 3. Set up email for sign-in links (Gmail)
 
@@ -128,6 +161,11 @@ Good to know:
   sign-ins stop: create a new app password and update `.env`, then
   `docker compose up -d`.
 - Replies to sign-in emails land in namamerit@gmail.com's inbox.
+- **Check it works:** after installing, sign in as the owner → *Team & roles* →
+  **Email** → **Send me a test email**. The card shows the server and account in use
+  (never the password) and, if sending fails, why: a refused login means the app
+  password or the `%40` is wrong; "could not reach" means the NAS cannot connect out
+  on port 465.
 
 ## 4. Fill in `.env`
 

@@ -139,7 +139,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   return (
     <AreaPage {...frame}>
       {query ? <div><SaveView href={`/portal/finder?${query}`} label={`Finder${sp.marks ? `: ${sp.marks} marks` : ""}${sp.track ? `, ${sp.track.replace("|", " · ")}` : ""}`} /></div> : null}
-      <Card>
+      <Card className="lg:sticky lg:top-0 lg:z-20 lg:rounded-t-none lg:shadow-[var(--mn-shadow-2)]">
         <form method="get" className="grid gap-4 md:grid-cols-[repeat(4,minmax(0,1fr))_auto] md:items-end">
           <label className="grid gap-1.5 text-sm font-medium">
             Your marks
@@ -164,12 +164,14 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
           <input type="hidden" name="view" value={view} />
           <Button type="submit" className="md:self-end">Find options</Button>
         </form>
-        {own ? <p className="mt-3 text-xs font-medium text-success">Filled in from your verified record: induction {own.induction}, round {own.roundNo} (out of {total}).</p> : null}
-        <p className="mt-3 text-xs text-subtle">
-          {opts.activePolicy ? `Your marks are on the current policy (${opts.activePolicy}, out of ${opts.defaultTotal}). ` : ""}
-          Inductions are compared in percent of their total, so a score out of 30 lines up with one out of 35. Weights of the parts differ between years, so treat this as a guide, not a guarantee.
-        </p>
       </Card>
+      <div className="-mt-2 px-1">
+          {own ? <p className="mt-3 text-xs font-medium text-success">Filled in from your verified record: induction {own.induction}, round {own.roundNo} (out of {total}).</p> : null}
+          <p className="mt-3 text-xs text-subtle">
+            {opts.activePolicy ? `Your marks are on the current policy (${opts.activePolicy}, out of ${opts.defaultTotal}). ` : ""}
+            Inductions are compared in percent of their total, so a score out of 30 lines up with one out of 35. Weights of the parts differ between years, so treat this as a guide, not a guarantee.
+          </p>
+      </div>
 
       {error ? <Notice tone="warning" title="Check your marks">{error}</Notice> : null}
 

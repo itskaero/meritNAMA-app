@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChartSource } from "@/components/charts/chart-source";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { snippetParam } from "@/lib/domain/community";
@@ -93,7 +94,9 @@ export default async function RoundPage({ params, searchParams }: {
       />
       <Card>
         <RoundBeam rounds={ind.rounds.map((r) => r.roundNo)} current={roundNo} hrefFor={(r) => `/portal/history/${induction}/rounds/${r}`} />
-        <form method="get" className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto] xl:items-end">
+      </Card>
+      <Card className="lg:sticky lg:top-0 lg:z-20 lg:rounded-t-none lg:shadow-[var(--mn-shadow-2)]">
+        <form method="get" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto] xl:items-end">
           {FILTERS.map(([k, label]) => (
             <label key={k} className="grid gap-1.5 text-sm font-medium">
               {label}
@@ -122,6 +125,7 @@ export default async function RoundPage({ params, searchParams }: {
             <Card>
               <CardHeader title="Most allocations" description={filtered ? "Within your filters. Select a speciality to filter by it." : "Select a speciality to filter by it."} />
               <BarList items={topSpecs.map(([label, value]) => ({ label, value, href: `${base}?speciality=${encodeURIComponent(label)}` }))} />
+              <ChartSource tone="official" source={`PHF merit list, induction ${induction} round ${roundNo}`} induction={induction} />
             </Card>
           )}
           <Card>
@@ -131,15 +135,16 @@ export default async function RoundPage({ params, searchParams }: {
               rows={groups.slice(0, LIMIT)}
               rowKey={(g) => `${g.program}|${g.quota}|${g.speciality}|${g.hospital}`}
               columns={[
-                { key: "s", header: "Speciality", cell: (g) => <EntityLink kind="speciality" id={g.specialityId} name={g.speciality} /> },
-                { key: "h", header: "Hospital", tone: "muted", cell: (g) => <EntityLink kind="hospital" id={g.hospitalId} name={g.hospital} /> },
-                { key: "pq", header: "Programme · quota", tone: "muted", cell: (g) => `${g.program} · ${g.quota}` },
-                { key: "n", header: "Allocated", align: "right", cell: (g) => g.allocations },
-                { key: "c", header: "Closing", align: "right", tone: "mono", cell: (g) => formatMarks(g.closing) },
+                { key: "s", header: "Speciality", sort: (g) => g.speciality, cell: (g) => <EntityLink kind="speciality" id={g.specialityId} name={g.speciality} /> },
+                { key: "h", header: "Hospital", tone: "muted", sort: (g) => g.hospital, cell: (g) => <EntityLink kind="hospital" id={g.hospitalId} name={g.hospital} /> },
+                { key: "pq", header: "Programme · quota", tone: "muted", sort: (g) => `${g.program} ${g.quota}`, cell: (g) => `${g.program} · ${g.quota}` },
+                { key: "n", header: "Allocated", align: "right", sort: (g) => g.allocations, cell: (g) => g.allocations },
+                { key: "c", header: "Closing", align: "right", tone: "mono", sort: (g) => g.closing, cell: (g) => formatMarks(g.closing) },
                 {
                   key: "d",
                   header: `vs R${prev?.roundNo ?? "–"}`,
                   align: "right",
+                  sort: (g) => (g.prevClosing == null || g.closing == null ? null : g.closing - g.prevClosing),
                   cell: (g) => (prev ? <MeritDelta value={g.prevClosing == null ? null : (g.closing ?? 0) - g.prevClosing} /> : <span className="text-subtle">—</span>),
                 },
                 ...(back ? [{

@@ -55,7 +55,7 @@ export default async function CandidateRecordsPage({ searchParams }: { searchPar
   return (
     <AreaPage {...frame}>
       <CandidateTabs current="/admin/candidates/records" />
-      <Card>
+      <Card className="lg:sticky lg:top-0 lg:z-20 lg:rounded-t-none lg:shadow-[var(--mn-shadow-2)]">
         <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[9rem_minmax(0,1fr)_12rem_14rem_auto] lg:items-end">
           <label className="grid gap-1.5 text-sm font-medium">Induction
             <select name="i" defaultValue={induction} className={fieldClass}>
@@ -92,11 +92,11 @@ export default async function CandidateRecordsPage({ searchParams }: { searchPar
           rowKey={(r) => r.applicantId}
           empty={<EmptyState title="No one matches">Try a shorter applicant ID or another filter.</EmptyState>}
           columns={[
-            { key: "id", header: "Applicant", tone: "mono", cell: (r) => <Link href={`/admin/candidates/records/${r.applicantId}?i=${induction}`} className="font-semibold text-signal hover:underline">{r.applicantId}</Link> },
+            { key: "id", header: "Applicant", tone: "mono", sort: (r) => r.applicantId, cell: (r) => <Link href={`/admin/candidates/records/${r.applicantId}?i=${induction}`} className="font-semibold text-signal hover:underline">{r.applicantId}</Link> },
             { key: "seat", header: "Latest seat", cell: (r) => (r.lastSeat ? <><span className="text-muted">R{r.lastRound} · </span>{r.lastSeat}</> : <span className="text-subtle">Not placed</span>) },
-            { key: "best", header: "Merit", align: "right", tone: "mono", cell: (r) => (r.bestMarks == null ? "—" : formatMarks(r.bestMarks)) },
-            { key: "base", header: "Base marks", align: "right", tone: "mono", cell: (r) => (r.baseMarks == null ? "—" : formatMarks(r.baseMarks)) },
-            { key: "status", header: "Profile", cell: (r) => r.profileStatus ?? <span className="text-subtle">No sim data</span> },
+            { key: "best", header: "Merit", align: "right", tone: "mono", sort: (r) => r.bestMarks, cell: (r) => (r.bestMarks == null ? "—" : formatMarks(r.bestMarks)) },
+            { key: "base", header: "Base marks", align: "right", tone: "mono", sort: (r) => r.baseMarks, cell: (r) => (r.baseMarks == null ? "—" : formatMarks(r.baseMarks)) },
+            { key: "status", header: "Profile", sort: (r) => r.profileStatus ?? null, cell: (r) => r.profileStatus ?? <span className="text-subtle">No sim data</span> },
             {
               key: "flags", header: "", cell: (r) => (
                 <span className="flex flex-wrap gap-1">

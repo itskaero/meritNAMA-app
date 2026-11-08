@@ -155,11 +155,23 @@ figures are published, calculated or an estimate.
   dashboard's reachable options, and a "Popular near your marks" card. Below three
   nothing renders.
 
+## Tables, sections and loading
+
+- **Sortable tables:** a `DataTable` column with a `sort` accessor gets a header
+  button (ascending, descending, back to the original order; empty values last). Sorting
+  happens in the browser; the server still decides which rows are sent.
+- **Sticky filter bars** on the round page, the score finder and candidate records
+  (wide screens only; on phones they would cover too much).
+- **Chart captions:** `ChartSource` under every chart: Official / Calculated /
+  Estimate, the source, and when the merit lists were last imported.
+- **Section bars:** long detail pages (induction, hospital, speciality) have a sticky
+  "On this page" row that marks the section in view (`PageSections`).
+- **Loading:** `PageSkeleton` layouts (table, detail, finder, list) in each long
+  page's `loading.tsx`, shaped like what arrives.
+- **Allocation rules** are edited as a form, with JSON one tab away.
+
 ## Next increments
 
-1. Sortable columns and a sticky filter bar on the long tables (finder, round lists,
-   candidate records), with grouped, collapsible results.
-2. Source and date captions on every chart, using the provenance badges.
-3. Page tabs on the long detail pages (induction, hospital, speciality).
-4. Allocation rules edited as a form instead of JSON.
-5. Loading skeletons matched to each page's layout.
+1. Grouped, collapsible results in the score finder.
+2. Real photography of trainees, wards and campuses (with consent) in place of the
+   generated illustrations.

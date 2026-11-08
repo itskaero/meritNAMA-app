@@ -1,4 +1,5 @@
 import { SaveView } from "@/components/workspace/save-view";
+import { ChartSource } from "@/components/charts/chart-source";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { BarList } from "@/components/charts/bar-list";
@@ -49,6 +50,7 @@ export default async function ComparePage({ params, searchParams }: {
           {drops.length ? (
             <BarList tone="teal" format={(v) => `−${v.toFixed(2)}`} items={drops.map((g) => ({ label: g.speciality, detail: `${g.program} · ${g.quota}`, value: -(g.delta ?? 0), href: g.specialityId ? `/portal/explore/specialities/${g.specialityId}` : undefined }))} />
           ) : <p className="text-sm text-muted">Closing merit did not fall anywhere.</p>}
+          <ChartSource source={`PHF merit lists, induction ${induction}, rounds ${from} and ${to}`} induction={induction} />
         </Card>
         <Card className="min-w-0">
           <CardHeader title="All groups" />
@@ -58,11 +60,11 @@ export default async function ComparePage({ params, searchParams }: {
             rows={cmp.groups}
             rowKey={(g) => `${g.program}|${g.quota}|${g.speciality}`}
             columns={[
-              { key: "s", header: "Speciality", cell: (g) => <EntityLink kind="speciality" id={g.specialityId} name={g.speciality} /> },
-              { key: "pq", header: "Programme · quota", tone: "muted", cell: (g) => `${g.program} · ${g.quota}` },
-              { key: "f", header: `R${from}`, align: "right", tone: "mono", cell: (g) => formatMarks(g.fromClosing) },
-              { key: "t", header: `R${to}`, align: "right", tone: "mono", cell: (g) => formatMarks(g.closing) },
-              { key: "d", header: "Change", align: "right", cell: (g) => <MeritDelta value={g.delta} /> },
+              { key: "s", header: "Speciality", sort: (g) => g.speciality, cell: (g) => <EntityLink kind="speciality" id={g.specialityId} name={g.speciality} /> },
+              { key: "pq", header: "Programme · quota", tone: "muted", sort: (g) => `${g.program} ${g.quota}`, cell: (g) => `${g.program} · ${g.quota}` },
+              { key: "f", header: `R${from}`, align: "right", tone: "mono", sort: (g) => g.fromClosing, cell: (g) => formatMarks(g.fromClosing) },
+              { key: "t", header: `R${to}`, align: "right", tone: "mono", sort: (g) => g.closing, cell: (g) => formatMarks(g.closing) },
+              { key: "d", header: "Change", align: "right", sort: (g) => g.delta, cell: (g) => <MeritDelta value={g.delta} /> },
             ]}
           />
         </Card>

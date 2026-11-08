@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { PageSections } from "@/components/ui/page-sections";
+import { ChartSource } from "@/components/charts/chart-source";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
@@ -63,6 +65,19 @@ export default async function InductionPage({ params, searchParams }: { params: 
       title={`Induction ${induction} · ${ind.rounds[0]!.cycleName}`}
       description={`${ind.rounds[0]!.cycleCode} · ${ind.rounds.length} rounds published${max ? ` · scored out of ${max}` : ""}. Open a round to see closing merit by speciality and hospital.`}
     >
+      <PageSections
+        items={[
+          ...(settling ? [{ id: "settling", label: "Still moving" }] : []),
+          ...(ladder && ladder.rows.length ? [{ id: "ladder", label: "Merit ladder" }] : []),
+          ...(ladder && ladder.rows.length && ladder.rounds.length > 1 ? [{ id: "moved", label: "Where merit moved" }] : []),
+          { id: "predictions", label: "Predictions" },
+          ...(flow.length ? [{ id: "flow", label: "Seat flow" }] : []),
+          { id: "by-round", label: "By round" },
+          { id: "rounds", label: "Rounds" },
+          ...(ind.rounds.length > 1 ? [{ id: "compare", label: "Compare" }] : []),
+          { id: "discussion", label: "Questions" },
+        ]}
+      />
       {gauge ? (
         <Card>
           <CardHeader title="Cycle progress" description="How far this cycle is through its published schedule." />
@@ -89,18 +104,21 @@ export default async function InductionPage({ params, searchParams }: { params: 
             }
           />
           <RoundFunnel final={settling.final} rounds={settling.rounds} caption={`Induction ${induction}${track ? `, ${track.replace("|", " ")}` : ""}: candidates still moving by round`} />
+          <ChartSource source={`PHF merit lists, induction ${induction}`} induction={induction} />
         </Card>
       ) : null}
       {ladder && ladder.rows.length ? (
         <Card id="ladder">
           <CardHeader title={`Merit ladder · ${ladderLabel}`} description={`Each speciality's lowest closing merit${max ? ` as percent of ${max}` : ""}. Step through the rounds to see where merit fell.${track ? "" : " Pick a programme above to change it."}`} />
           <MeritLadder rows={ladder.rows} rounds={ladder.rounds} total={max ?? null} caption={`Induction ${induction}, ${ladderLabel}: lowest closing merit per speciality by round`} />
+          <ChartSource source={`PHF merit lists, induction ${induction}`} induction={induction} />
         </Card>
       ) : null}
       {ladder && ladder.rows.length && ladder.rounds.length > 1 ? (
-        <Card>
+        <Card id="moved">
           <CardHeader title="Where merit moved" description={`Change in each speciality's lowest closing marks between rounds, ${ladderLabel}. Teal: fell (easier). Amber: rose. A dot: no change.`} />
           <MeritMoveHeat rows={ladder.rows} rounds={ladder.rounds} caption={`Induction ${induction}, ${ladderLabel}: change in closing merit between rounds per speciality`} />
+          <ChartSource source={`PHF merit lists, induction ${induction}`} induction={induction} />
         </Card>
       ) : null}
       <Card id="predictions">
@@ -153,13 +171,14 @@ export default async function InductionPage({ params, searchParams }: { params: 
         </div>
       </Card>
       {flow.length ? (
-        <Card>
+        <Card id="flow">
           <CardHeader title="Seat flow" description="The six largest specialities: seats accepted, and seats declined or not taken that are offered again next round." />
           <SeatFlow panels={flow} caption={`Induction ${induction}: accepted and released seats per round, six largest specialities`} />
+          <ChartSource source={`PHF merit lists and consent, induction ${induction}`} induction={induction} />
         </Card>
       ) : null}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <Card>
+        <Card id="by-round">
           <CardHeader title="Allocations and consent by round" description="Seats free up as candidates reject or are not available." />
           <RoundColumns
             title={`Induction ${induction}: allocations by consent per round`}
@@ -172,29 +191,31 @@ export default async function InductionPage({ params, searchParams }: { params: 
               ],
             }))}
           />
+          <ChartSource tone="official" source={`PHF merit lists, induction ${induction}`} induction={induction} />
         </Card>
         <Card>
           <CardHeader title="Median closing merit" description={`The middle of every programme, quota and speciality\u2019s closing marks${max ? `, out of ${max}` : ""}.`} />
           <LineChart title={`Induction ${induction}: median closing merit per round`} xLabels={timeline.map((t) => `R${t.roundNo}`)} series={[{ label: "Median closing merit", values: timeline.map((t) => t.medianClosing) }]} />
+          <ChartSource source={`PHF merit lists, induction ${induction}`} induction={induction} />
         </Card>
       </div>
-      <Card>
+      <Card id="rounds">
         <CardHeader title="Rounds" />
         <DataTable
           caption={`Induction ${induction} rounds`}
           rows={timeline}
           rowKey={(t) => String(t.roundNo)}
           columns={[
-            { key: "r", header: "Round", cell: (t) => <Link href={`/portal/history/${induction}/rounds/${t.roundNo}`} className="font-medium text-signal hover:underline">Round {t.roundNo}</Link> },
-            { key: "a", header: "Allocations", cell: (t) => t.allocations.toLocaleString("en-US"), align: "right" },
-            { key: "c", header: "Candidates", cell: (t) => t.applicants.toLocaleString("en-US"), align: "right" },
-            { key: "acc", header: "Accepted", cell: (t) => t.accepted.toLocaleString("en-US"), align: "right" },
-            { key: "med", header: "Median closing", cell: (t) => formatMarks(t.medianClosing), align: "right" },
+            { key: "r", header: "Round", sort: (t) => t.roundNo, cell: (t) => <Link href={`/portal/history/${induction}/rounds/${t.roundNo}`} className="font-medium text-signal hover:underline">Round {t.roundNo}</Link> },
+            { key: "a", header: "Allocations", sort: (t) => t.allocations, cell: (t) => t.allocations.toLocaleString("en-US"), align: "right" },
+            { key: "c", header: "Candidates", sort: (t) => t.applicants, cell: (t) => t.applicants.toLocaleString("en-US"), align: "right" },
+            { key: "acc", header: "Accepted", sort: (t) => t.accepted, cell: (t) => t.accepted.toLocaleString("en-US"), align: "right" },
+            { key: "med", header: "Median closing", sort: (t) => t.medianClosing, cell: (t) => formatMarks(t.medianClosing), align: "right" },
           ]}
         />
       </Card>
       {ind.rounds.length > 1 ? (
-        <Card>
+        <Card id="compare">
           <CardHeader title="Compare two rounds" description="Closing merit changes and how many candidates entered, left or moved." />
           <form method="get" action={`/portal/history/${induction}/compare`} className="flex flex-wrap items-end gap-3">
             <label className="grid gap-1.5 text-sm font-medium">From

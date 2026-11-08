@@ -33,6 +33,8 @@ export const envSchema = z
      * Required in production; changing it means re-indexing (npm run index:candidates).
      */
     CANDIDATE_INDEX_SECRET: z.string().min(32).optional(),
+    /** Shared with the worker container: authorises POST /api/internal/tick. Unset: the route is off. */
+    INTERNAL_TOKEN: z.string().min(32).optional(),
     /** Google sign-in (optional). Both or neither; the button shows only when set. */
     GOOGLE_CLIENT_ID: z.string().regex(/^[\w.-]+\.apps\.googleusercontent\.com$/, "must be a Google OAuth client ID").optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(10).optional(),

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
 import { CycleGauge, gaugeProps } from "@/components/charts/cycle-gauge";
 import { LineChart } from "@/components/charts/line-chart";
@@ -195,6 +196,7 @@ export default async function PortalDashboard() {
               height={220}
             />
             <p className="mt-3 text-xs text-muted">Closing merit is the lowest mark allocated to a programme, quota and speciality in a round. Source: PHF merit lists, induction {latest.id}{previous.length > 1 ? ` and ${inductions[1]!.id}` : ""}.</p>
+            <ChartSource source={`PHF merit lists, inductions ${latest.id}${inductions[1] ? ` and ${inductions[1].id}` : ""}`} />
           </Card>
 
           {/* ── Round-wise movement ────────────────────────────────────── */}
@@ -337,6 +339,7 @@ export default async function PortalDashboard() {
             action={<Link href={`/portal/history/${latest.id}#settling`} className="text-sm font-medium text-signal hover:underline">By programme</Link>}
           />
           <RoundFunnel final={settling.final} rounds={settling.rounds} caption={`Induction ${latest.id}: candidates still moving by round`} />
+          <ChartSource source={`PHF merit lists, induction ${latest.id}`} induction={latest.id} />
         </Card>
       ) : null}
 

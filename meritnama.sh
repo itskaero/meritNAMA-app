@@ -18,6 +18,10 @@
 #                                      (platform: linux/amd64 or linux/arm64; default: this machine)
 #   ./meritnama.sh load <file>         on the NAS: load that file and start without building
 #
+# No SSH? Put install.conf (from install.conf.example) next to this script and run
+#   bash /volume1/docker/meritnama/meritnama.sh install > /volume1/docker/meritnama/install.log 2>&1
+# from DSM → Control Panel → Task Scheduler (user: root). See docs/NAS-SETUP.md.
+#
 # Unattended install: set the answers as environment variables and add --yes, e.g.
 #   MN_OWNER=you@example.com MN_GMAIL_APP_PASSWORD=abcdabcdabcdabcd MN_ACCESS=tunnel \
 #   MN_TUNNEL_TOKEN=eyJ... ./meritnama.sh install --yes
@@ -25,6 +29,8 @@
 # MN_GMAIL_APP_PASSWORD, MN_ACCESS (tunnel|proxy|local), MN_TUNNEL_TOKEN, MN_DATA_DIR, MN_PORT.
 set -euo pipefail
 cd "$(dirname "$0")"
+# DSM's Task Scheduler runs with a short PATH; Docker lives in /usr/local/bin there.
+export PATH="$PATH:/usr/local/bin:/usr/local/sbin:/usr/sbin:/sbin"
 
 say()  { printf '\033[1;36m▸\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m✓\033[0m %s\n' "$*"; }
@@ -33,6 +39,22 @@ die()  { printf '\033[1;31m✗\033[0m %s\n' "$*" >&2; exit 1; }
 
 YES=0
 for a in "$@"; do [ "$a" = "--yes" ] && YES=1; done
+
+# Answers can come from install.conf next to this script (copy install.conf.example),
+# for a NAS without SSH: then the install runs unattended (e.g. from DSM's Task
+# Scheduler). The file holds the Gmail app password, so it is deleted once .env exists.
+CONF="$(pwd)/install.conf"
+if [ -f "$CONF" ]; then
+  # Read MN_* lines only (not sourced, so a pasted "abcd efgh ijkl mnop" is fine).
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%$'\r'}"
+    case "$line" in MN_[A-Z_]*=*) ;; *) continue ;; esac
+    key="${line%%=*}"; val="${line#*=}"
+    val="${val#\"}"; val="${val%\"}"; val="${val#\'}"; val="${val%\'}"
+    [ -n "$val" ] && [ -z "${!key:-}" ] && export "$key=$val"
+  done < "$CONF"
+  YES=1
+fi
 
 # Docker Compose v2 ("docker compose"), or the standalone v2 binary on older NAS systems.
 compose() {
@@ -116,6 +138,7 @@ configure() {
   local user="${MN_GMAIL%@*}" domain="${MN_GMAIL#*@}"
   setenv POSTGRES_PASSWORD "$(rand 40)"
   setenv CANDIDATE_INDEX_SECRET "$(rand 64)"
+  setenv INTERNAL_TOKEN "$(rand 48)"
   setenv APP_URL "https://$MN_DOMAIN"
   setenv MERITNAMA_DOMAIN "$MN_DOMAIN"
   setenv PUBLIC_SITE_ORIGIN ""
@@ -132,6 +155,7 @@ configure() {
     local)  setenv COMPOSE_PROFILES "" ;;
   esac
   ok "Wrote .env (secrets generated). Keep a copy of it in a password manager."
+  if [ -f "$CONF" ]; then rm -f "$CONF"; ok "Deleted install.conf (its answers are now in .env)."; fi
 }
 
 prepare_dirs() {
@@ -189,12 +213,13 @@ case "$cmd" in
   stop)    need_docker; compose stop ;;
   status)  need_docker; compose ps; load_env; curl -fsS "http://127.0.0.1:${APP_PORT:-3000}/api/health" && echo || warn "Health check failed." ;;
   logs)    need_docker; compose logs -f --tail 100 "${2:-app}" ;;
-  backup)  need_docker; scripts/backup.sh ;;
-  restore) need_docker; scripts/restore.sh "${2:?usage: ./meritnama.sh restore <backup directory>}" ;;
+  backup)  need_docker; sh scripts/backup.sh ;;
+  restore) need_docker; sh scripts/restore.sh "${2:?usage: ./meritnama.sh restore <backup directory>}" ;;
   update)
     need_docker
-    say "Backing up first …"; scripts/backup.sh
-    if [ -d .git ]; then say "Pulling the latest code …"; git pull --ff-only; else warn "Not a git checkout; rebuilding the code as it is."; fi
+    say "Backing up first …"; sh scripts/backup.sh
+    if [ -d .git ] && command -v git >/dev/null 2>&1; then say "Pulling the latest code …"; git pull --ff-only
+    else say "Not a git checkout: rebuilding the files as they are (upload the new ZIP over this folder first)."; fi
     compose up -d --build
     wait_healthy
     ;;

@@ -7,7 +7,7 @@ import { ActionResult, Field, fieldClass, ReasonField } from "@/components/ui/fo
 import { idleState } from "@/lib/action-state";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, ROLES, type Role } from "@/lib/auth/roles";
 import { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
-import { applyRetentionAction, setFeaturesAction, setRetentionAction, setRoleAction } from "./actions";
+import { applyRetentionAction, sendTestEmailAction, setFeaturesAction, setRetentionAction, setRoleAction } from "./actions";
 
 /** Give someone a role by email (works before their first sign-in). */
 export function AddMemberForm() {
@@ -110,6 +110,17 @@ export function ApplyRetentionForm({ pending: due }: { pending: number }) {
       <ReasonField placeholder="e.g. Clean-up before the NAS backup" />
       <div><Button type="submit" variant="secondary" disabled={pending || !due}>Remove {due.toLocaleString("en-US")} item{due === 1 ? "" : "s"} now</Button></div>
       <ActionResult state={res} />
+    </form>
+  );
+}
+
+/** Sends a test email to the signed-in owner, to check SMTP_URL. */
+export function TestEmailForm() {
+  const [state, action, pending] = useActionState(sendTestEmailAction, idleState);
+  return (
+    <form action={action} className="grid gap-3">
+      <div><Button type="submit" variant="secondary" disabled={pending}>{pending ? "Sending…" : "Send me a test email"}</Button></div>
+      <ActionResult state={state} />
     </form>
   );
 }

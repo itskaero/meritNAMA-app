@@ -7,7 +7,7 @@ import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
 import { createList } from "@/lib/data/preferences";
-import { applyRetention, backupStatus, featureFlags, loadRetention, retentionIfDue, retentionPreview, setFeatures, setRetention } from "@/lib/data/settings";
+import { applyRetention, backupStatus, featureFlags, loadRetention, mailStatus, retentionIfDue, retentionPreview, sendTestEmail, setFeatures, setRetention } from "@/lib/data/settings";
 import { ensureUser } from "@/lib/data/users";
 import * as schema from "@/lib/db/schema";
 
@@ -110,5 +110,32 @@ describe.skipIf(!url)("workspace settings (integration)", () => {
     expect(s.backups).toHaveLength(2);
     expect(s.backups[0]).toMatchObject({ database: true, storage: true, checksums: true, bytes: 3 });
     await expect(backupStatus(editor, { dir })).rejects.toThrow("forbidden");
+  });
+
+  it("sends a test email to the owner (dev mailbox without SMTP) and shows no password", async () => {
+    await expect(sendTestEmail(db, editor)).rejects.toThrow("forbidden");
+    const before = await db.select().from(schema.devOutbox).where(eq(schema.devOutbox.to, owner.email));
+    expect(await sendTestEmail(db, owner)).toEqual({ to: owner.email });
+    const after = await db.select().from(schema.devOutbox).where(eq(schema.devOutbox.to, owner.email));
+    expect(after.length).toBe(before.length + 1);
+    expect(after.at(-1)!.subject).toBe("meritNAMA test email");
+    const st = await mailStatus(owner);
+    expect(JSON.stringify(st)).not.toMatch(/password/i);
+    await db.delete(schema.devOutbox).where(eq(schema.devOutbox.to, owner.email));
+  });
+
+  it("keeps round-day posts and removes old members' room messages", async () => {
+    const me = await ensureUser(db, owner);
+    const old = new Date(Date.now() - 800 * 86_400_000);
+    await db.insert(schema.roundRoomMessages).values([
+      { induction: 977, roundNo: 1, authorId: me.id, kind: "message", body: "old", createdAt: old },
+      { induction: 977, roundNo: 1, authorId: null, kind: "system", body: "round day", createdAt: old },
+      { induction: 977, roundNo: 1, authorId: me.id, kind: "message", body: "new" },
+    ]);
+    expect((await retentionPreview(db, owner)).roomMessages).toBeGreaterThanOrEqual(1);
+    await applyRetention(db, owner, { reason: "test room retention" });
+    const left = await db.select({ body: schema.roundRoomMessages.body }).from(schema.roundRoomMessages).where(eq(schema.roundRoomMessages.induction, 977));
+    expect(left.map((r) => r.body).sort()).toEqual(["new", "round day"]);
+    await db.delete(schema.roundRoomMessages).where(eq(schema.roundRoomMessages.induction, 977));
   });
 });

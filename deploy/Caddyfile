@@ -8,6 +8,8 @@
 		Strict-Transport-Security "max-age=31536000"
 		-Server
 	}
+	# Background-job endpoint: only for the worker container, never from outside.
+	respond /api/internal/* 404
 	reverse_proxy app:3000
 }
 

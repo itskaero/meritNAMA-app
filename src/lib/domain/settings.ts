@@ -17,6 +17,7 @@ export const RETENTION = {
   readNotifications: { label: "Read inbox notifications", min: 7, max: 3650, default: 180 },
   whatIfRuns: { label: "Candidates' what-if simulation runs", min: 7, max: 3650, default: 90 },
   evidence: { label: "Proof documents of decided verification requests", min: 7, max: 3650, default: 180 },
+  roomMessages: { label: "Members' round-room messages (round-day posts are kept)", min: 30, max: 3650, default: 730 },
 } as const;
 export type RetentionKey = keyof typeof RETENTION;
 export type Retention = Record<RetentionKey, number>;

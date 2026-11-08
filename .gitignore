@@ -22,3 +22,6 @@ data/private/
 
 # ./meritnama.sh bundle output
 meritnama-images.tar.gz
+# installer answers (hold the Gmail app password)
+install.conf
+install.log
