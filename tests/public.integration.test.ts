@@ -6,7 +6,7 @@ import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
 import { importMeritRound } from "@/lib/data/merit";
-import { landingFigures } from "@/lib/data/public";
+import { landingCheck, landingFigures, landingTracks } from "@/lib/data/public";
 import * as schema from "@/lib/db/schema";
 
 /** DISPOSABLE database only (TEST_DATABASE_URL). Uses induction 950. */
@@ -45,8 +45,28 @@ describe.skipIf(!url)("public landing figures (integration)", () => {
     expect(f.rounds).toBeGreaterThanOrEqual(2);
     expect(f.latest?.induction).toBe(IND);
     expect(f.latest?.trend.map((t) => t.round)).toEqual([1, 2]);
-    expect(f.sample).toMatchObject({ pct: 65 });
+    // The example uses the median allocated mark of the busiest track, out of the induction's total.
+    expect(f.sample).toMatchObject({ total: 35 });
+    expect(f.sample!.marks).toBeGreaterThan(0);
+    expect(f.sample!.pct).toBe(Math.round((f.sample!.marks / 35) * 100));
     const text = JSON.stringify(f);
     for (const leak of ["A1000", "Test Candidate", "Test Parent", "0000-X", "example.test", "applicant"]) expect(text).not.toContain(leak);
+  });
+
+  it("answers the homepage marks check with counts only, and refuses bad input", async () => {
+    const t = (await landingTracks(db))!;
+    expect(t.induction).toBe(IND);
+    expect(t.total).toBe(35);
+    const track = `${t.tracks[0]!.program}|${t.tracks[0]!.quota}`;
+    expect(await landingCheck(db, { marks: undefined, track })).toBeNull();
+    expect(await landingCheck(db, { marks: "99", track })).toEqual({ ok: false, message: "Enter your marks out of 35, for example 24.5." });
+    expect(await landingCheck(db, { marks: "abc", track })).toMatchObject({ ok: false });
+    const r = (await landingCheck(db, { marks: "20", track }))!;
+    expect(r).toMatchObject({ ok: true, induction: IND, total: 35, marks: 20 });
+    if (r.ok) expect(r.safe + r.borderline + r.out).toBeGreaterThan(0);
+    // An unknown track falls back to the busiest one rather than failing.
+    expect(await landingCheck(db, { marks: "20", track: "NOPE|NOPE" })).toMatchObject({ ok: true });
+    const text = JSON.stringify(r);
+    for (const leak of ["A1000", "Test Candidate", "applicant"]) expect(text).not.toContain(leak);
   });
 });

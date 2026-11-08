@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import type { LandingFigures } from "@/lib/data/public";
+import type { LandingCheck, LandingFigures } from "@/lib/data/public";
 import type { FeatureFlags } from "@/lib/domain/settings";
 import { LogoMark, Wordmark } from "../brand";
 import { LineChart } from "../charts/line-chart";
@@ -42,7 +42,7 @@ function Photo({ photo, sizes, className, priority = false, parallax = false }: 
 /** One step of the journey: a large photograph and a text panel that overlaps it on wide screens. */
 function Chapter({ n, kicker, title, photo, flip = false, children, aside }: { n: string; kicker: string; title: ReactNode; photo: Photo; flip?: boolean; children: ReactNode; aside?: ReactNode }) {
   return (
-    <section className={cn(wrap, "group grid items-center gap-8 py-14 md:grid-cols-12 md:gap-0 md:py-24")} aria-label={kicker}>
+    <section className={cn(wrap, "group grid items-center gap-8 py-12 md:grid-cols-12 md:gap-0 md:py-16")} aria-label={kicker}>
       <Photo photo={photo} sizes="(min-width: 768px) 700px, 100vw" parallax className={cn("aspect-[4/3] rounded-xl md:col-span-7 md:row-start-1 md:aspect-[5/4]", flip ? "md:col-start-6" : "md:col-start-1")} />
       <div className={cn("mn-reveal relative md:col-span-6 md:row-start-1", flip ? "md:col-start-1" : "md:col-start-7")}>
         <div className="rounded-xl border border-line bg-surface p-6 shadow-[var(--mn-shadow-2)] sm:p-8">
@@ -60,15 +60,78 @@ function Chapter({ n, kicker, title, photo, flip = false, children, aside }: { n
   );
 }
 
+type Tracks = { induction: number; total: number; tracks: { program: string; quota: string }[] } | null;
+
+/**
+ * "Check your marks": a plain GET form answered on the server, so it works without
+ * JavaScript. It returns counts only; which options they are is in the score finder.
+ */
+function MarksCheck({ tracks, check, query }: { tracks: Tracks; check: LandingCheck | null; query: { marks: string; track: string } }) {
+  if (!tracks || !tracks.tracks.length) {
+    return (
+      <Link href="/portal/finder" className="inline-flex items-center gap-2 justify-self-start rounded-lg bg-gold px-5 py-3 font-semibold text-navy transition-colors hover:bg-ivory">
+        Find where your score can go <Icon name="arrow" className="h-4 w-4" />
+      </Link>
+    );
+  }
+  const selected = query.track || `${tracks.tracks[0]!.program}|${tracks.tracks[0]!.quota}`;
+  return (
+    <div id="check" className="grid max-w-xl scroll-mt-6 gap-3 rounded-xl border border-ivory/15 bg-navy/70 p-4 backdrop-blur-sm sm:p-5">
+      <form method="get" action="/" className="grid gap-3 sm:grid-cols-[7.5rem_minmax(0,1fr)_auto] sm:items-end">
+        <label className="grid gap-1.5 text-xs font-medium text-ivory/80">
+          Your marks <span className="sr-only">out of {tracks.total}</span>
+          <span className="flex items-center gap-1.5">
+            <input name="marks" inputMode="decimal" autoComplete="off" defaultValue={query.marks} placeholder={(tracks.total * 0.7).toFixed(1)} className="h-11 w-full min-w-0 rounded-lg border border-ivory/25 bg-ivory px-3 font-mono text-base text-navy placeholder:text-slate/60" />
+            <span aria-hidden className="text-sm text-ivory/70">/{tracks.total}</span>
+          </span>
+        </label>
+        <label className="grid gap-1.5 text-xs font-medium text-ivory/80">
+          Programme and quota
+          <select name="track" defaultValue={selected} className="h-11 w-full min-w-0 rounded-lg border border-ivory/25 bg-ivory px-3 text-sm text-navy">
+            {tracks.tracks.map((t) => <option key={`${t.program}|${t.quota}`} value={`${t.program}|${t.quota}`}>{t.program} · {t.quota}</option>)}
+          </select>
+        </label>
+        <button type="submit" className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-gold px-5 font-semibold text-navy transition-colors hover:bg-ivory">
+          Check <Icon name="arrow" className="h-4 w-4" />
+        </button>
+      </form>
+      <div aria-live="polite">
+        {check?.ok ? (
+          <div className="grid gap-3 border-t border-ivory/15 pt-3">
+            <p className="text-sm text-ivory/85">
+              Against induction {check.induction}&apos;s closing merit, {check.marks} of {check.total} in {check.program} · {check.quota} would have been:
+            </p>
+            <ul className="grid grid-cols-3 gap-2">
+              {([["safe", check.safe], ["borderline", check.borderline], ["out", check.out]] as const).map(([k, v]) => (
+                <li key={k} className="rounded-lg bg-ivory/10 px-3 py-2">
+                  <p className="text-2xl font-semibold tabular-nums text-ivory">{v}</p>
+                  <p className="text-xs text-ivory/75">{k === "out" ? "out of reach" : k}</p>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-ivory/70">
+              From past rounds, not a prediction. <Link href={`/portal/finder?marks=${encodeURIComponent(String(check.marks))}&total=${check.total}&induction=${check.induction}&track=${encodeURIComponent(`${check.program}|${check.quota}`)}`} className="font-medium text-gold underline underline-offset-2">Sign in to see which options</Link>
+            </p>
+          </div>
+        ) : check && !check.ok ? (
+          <p role="alert" className="text-sm text-gold">{check.message}</p>
+        ) : (
+          <p className="text-xs text-ivory/70">Free, no sign-in needed. Counts only, from induction {tracks.induction}&apos;s published lists.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 type Capability = { icon: IconName; title: string; body: string; href: string; estimate?: boolean };
 
 /**
- * The public story page at "/" for signed-out visitors: a cinematic hero, then the
- * candidate's journey in five chapters, each alternating with live figures from the
- * published record. Every number is live and aggregate; images are illustrations
- * (src/components/landing/photos.ts) and never captioned as a real institution.
+ * The public story page at "/" for signed-out visitors: a cinematic hero with a
+ * marks check anyone can use, then the journey in three chapters alternating with
+ * live figures from the published record. Every number is live and aggregate; images
+ * are illustrations (src/components/brand-assets.ts), never captioned as a real institution.
  */
-export function Landing({ f, features }: { f: LandingFigures; features: FeatureFlags }) {
+export function Landing({ f, features, tracks, check, query }: { f: LandingFigures; features: FeatureFlags; tracks: Tracks; check: LandingCheck | null; query: { marks: string; track: string } }) {
   const hero = PHOTOS.hero;
   const maxComponent = Math.max(1, ...(f.policy?.components.map((c) => c.max) ?? [1]));
   const updated = dateOf(f.updatedAt);
@@ -121,7 +184,7 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
           </div>
         </nav>
 
-        <div className={cn(wrap, "relative grid min-h-[min(84vh,760px)] content-end gap-6 pb-12 pt-[44vh] md:content-center md:gap-7 md:pb-24 md:pt-16")}>
+        <div className={cn(wrap, "relative grid min-h-[min(84vh,760px)] content-end gap-6 pb-12 pt-[44vh] md:content-center md:gap-6 md:pb-20 md:pt-12")}>
           <p className={cn(eyebrow, "text-gold")}>Postgraduate merit, from the published record</p>
           <h1 className="max-w-[13ch] font-serif text-[clamp(2.7rem,6.6vw,5.2rem)] font-semibold leading-[0.98] tracking-[-0.02em] text-ivory">
             Know where your merit <em className="font-normal text-gold">can take you.</em>
@@ -129,12 +192,8 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
           <p className="max-w-lg text-lg leading-relaxed text-ivory/85">
             meritNAMA turns PHF&apos;s published merit lists, seat matrices and scoring policy into a clear record of closing merit, seats and rounds, so you plan with evidence rather than rumour.
           </p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/portal/finder" className="inline-flex items-center gap-2 rounded-lg bg-gold px-5 py-3 font-semibold text-navy transition-colors hover:bg-ivory">
-              Find where your score can go <Icon name="arrow" className="h-4 w-4" />
-            </Link>
-            <a href="#trends" className="rounded-lg border border-ivory/35 px-5 py-3 font-medium text-ivory transition-colors hover:bg-ivory/10">See how merit moved</a>
-          </div>
+          <MarksCheck tracks={tracks} check={check} query={query} />
+          <a href="#trends" className="justify-self-start text-sm font-medium text-ivory/85 underline-offset-4 hover:text-ivory hover:underline">or see how merit moved in the last induction ↓</a>
           <p className="text-sm text-ivory/70">Independent and free to use. Not an official admissions authority.</p>
         </div>
       </header>
@@ -150,10 +209,10 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
             </div>
             <dl className="grid grid-cols-2 gap-y-8 md:grid-cols-4">
               {([
-                [f.rounds, "merit rounds published", `${f.inductions} induction${f.inductions === 1 ? "" : "s"}`],
-                [f.allocations, "seat allocations", "every row of every list"],
+                [f.allocations, "seat allocations", "every row of every published list"],
                 [f.seats, "seats in the latest matrix", `${f.specialities} specialities`],
                 [f.hospitals, "hospitals", "with seats in the latest matrix"],
+                [f.rounds, "merit rounds", `across ${f.inductions} induction${f.inductions === 1 ? "" : "s"}`],
               ] as const).map(([v, l, hint], i) => (
                 <div key={l} className={cn("mn-reveal grid gap-1 pr-4", i % 2 === 1 && "border-l border-navy/15 pl-5", i >= 1 && "md:border-l md:border-navy/15 md:pl-6")}>
                   <dd className="order-1 font-serif text-[clamp(2.4rem,5vw,3.6rem)] font-semibold leading-none tracking-tight tabular-nums">{fmt(v)}</dd>
@@ -167,9 +226,9 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
         </section>
 
         <div id="journey" className="scroll-mt-6">
-          <div className={cn(wrap, "pt-16 md:pt-24")}>
+          <div className={cn(wrap, "pt-14 md:pt-20")}>
             <p className={cn(eyebrow, "text-signal")}>The journey</p>
-            <h2 className={cn(h2, "mt-3 max-w-3xl text-heading")}>From the library desk to the training post, <em className="font-normal">one decision at a time.</em></h2>
+            <h2 className={cn(h2, "mt-3 max-w-3xl text-heading")}>From the library desk to a training post, <em className="font-normal">in three steps.</em></h2>
           </div>
 
           {/* 01 · Preparing */}
@@ -215,6 +274,8 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
                   <strong className="font-semibold text-ivory">{f.latest.trend[0]!.median.toFixed(2)}</strong> to <strong className="font-semibold text-ivory">{f.latest.trend.at(-1)!.median.toFixed(2)}</strong>
                   {f.latest.maxMarks ? ` out of ${f.latest.maxMarks}` : ""} over {f.latest.trend.length} rounds.
                 </p>
+                <p className="mt-4 max-w-lg text-ivory/80">Every list is kept whole, so you can see who entered, moved or left between any two rounds.{features.community ? " On round day each round's room opens with its figures." : ""}</p>
+                <Link href="/portal/history" className="mt-6 inline-flex items-center gap-2 rounded-lg border border-ivory/35 px-5 py-3 font-medium text-ivory transition-colors hover:bg-ivory/10">Browse every merit list <Icon name="arrow" className="h-4 w-4" /></Link>
               </div>
               <figure className="mn-reveal m-0 rounded-xl bg-surface p-5 text-ink shadow-[var(--mn-shadow-2)] sm:p-6">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -227,35 +288,22 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
                   series={[{ label: "Median closing merit", values: f.latest.trend.map((t) => t.median) }]}
                   height={220}
                 />
-                <p className="mt-3 text-xs text-muted">Closing merit is the lowest mark allocated to a programme, quota and speciality in a round; the median is across all of them. Source: PHF merit lists, rounds 1–{f.latest.trend.length}.</p>
+                <p className="mt-3 text-xs text-muted">
+                  The scale starts at {Math.floor(Math.min(...f.latest.trend.map((t) => t.median)) * 5) / 5} to show the movement: the whole change is{" "}
+                  {Math.abs(f.latest.trend.at(-1)!.median - f.latest.trend[0]!.median).toFixed(2)} marks{f.latest.maxMarks ? ` of ${f.latest.maxMarks}` : ""}.
+                  Closing merit is the lowest mark allocated to a programme, quota and speciality in a round; the median is across all of them. Source: PHF merit lists, rounds 1–{f.latest.trend.length}.
+                </p>
               </figure>
             </div>
           </section>
         ) : null}
 
-        {/* 02 · Entering training */}
+        {/* 02 · Exploring postgraduate options */}
         <Chapter
           n="02"
-          kicker="Entering training"
+          kicker="Exploring options"
           photo={PHOTOS.doctor}
           flip
-          title="Every round, as it was published."
-          aside={
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <Link href="/portal/history" className={textLink}>Browse merit lists <Icon name="arrow" className="h-4 w-4" /></Link>
-              {f.rounds ? <span className="text-sm text-muted"><strong className="font-semibold text-heading tabular-nums">{fmt(f.rounds)}</strong> rounds across {f.inductions} induction{f.inductions === 1 ? "" : "s"}</span> : null}
-            </div>
-          }
-        >
-          <p>Each induction runs through several rounds as seats are declined and re-allotted. Every list is kept whole, so you can see who entered, who moved and who left between any two rounds.</p>
-          {features.community ? <p>On round day, the round&apos;s own room opens with its figures, and candidates who hold a verified record compare notes in one-line messages.</p> : null}
-        </Chapter>
-
-        {/* 03 · Exploring postgraduate options */}
-        <Chapter
-          n="03"
-          kicker="Exploring options"
-          photo={PHOTOS.planning}
           title="Safe, borderline, out of reach."
           aside={
             f.sample ? (
@@ -269,7 +317,7 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
                     </li>
                   ))}
                 </ul>
-                <p className="text-xs text-muted">What {f.sample.pct}% would have reached in {f.sample.program} · {f.sample.quota}, induction {f.latest?.induction}. A worked example on past rounds, not a prediction.</p>
+                <p className="text-xs text-muted">What {f.sample.marks} of {f.sample.total} (the median allocated mark in {f.sample.program} · {f.sample.quota}) reached in induction {f.latest?.induction}. A worked example on past rounds, not a prediction.</p>
                 <div className="flex flex-wrap gap-x-6 gap-y-2">
                   <Link href="/portal/finder" className={textLink}>Open the score finder <Icon name="arrow" className="h-4 w-4" /></Link>
                   {features.planner ? <Link href="/portal/preferences" className={textLink}>Plan your preferences <Icon name="arrow" className="h-4 w-4" /></Link> : null}
@@ -280,17 +328,17 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
             )
           }
         >
-          <p>Enter your marks and every speciality and hospital is sorted against past closing merit, so the long list of programmes becomes a short list you can act on.</p>
+          <p>Enter your marks and every speciality and hospital is sorted against past closing merit, so the long list of programmes becomes a short list you can act on. Try it in the box at the top of this page.</p>
         </Chapter>
 
-        {/* 04 · Comparing institutions: full-bleed photograph with the figures over it */}
+        {/* 03 · Comparing institutions: full-bleed photograph with the figures over it */}
         <section aria-labelledby="ch-institutions" className="group relative isolate overflow-hidden bg-navy">
           <Image src={PHOTOS.hospital.src} alt={PHOTOS.hospital.alt} fill sizes="100vw" className="mn-parallax -z-10 object-cover" style={{ objectPosition: PHOTOS.hospital.position }} />
           <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-navy/95 via-navy/55 to-navy/10" />
-          <div className={cn(wrap, "grid min-h-[620px] content-end gap-8 py-14 md:grid-cols-12 md:items-end md:py-20")}>
+          <div className={cn(wrap, "grid min-h-[560px] content-end gap-8 py-14 md:grid-cols-12 md:items-end md:py-20")}>
             <div className="mn-reveal text-ivory md:col-span-6">
               <p className={cn(eyebrow, "flex items-center gap-3 text-gold")}>
-                <span className="font-serif text-2xl font-semibold tracking-normal">04</span><span aria-hidden className="h-px w-8 bg-ivory/30" />Comparing institutions
+                <span className="font-serif text-2xl font-semibold tracking-normal">03</span><span aria-hidden className="h-px w-8 bg-ivory/30" />Comparing institutions
               </p>
               <h2 id="ch-institutions" className={cn(h2, "mt-3 text-ivory")}>{fmt(f.hospitals)} hospitals, {fmt(f.specialities)} specialities.</h2>
               <p className={cn(lead, "text-ivory/85")}>Every hospital and speciality has its own page: seats by programme and quota, closing merit round by round, CPSP accreditation where it can be matched, and reviews from verified trainees.</p>
@@ -333,27 +381,10 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
           </div>
         </section>
 
-        {/* 05 · Deciding */}
-        <Chapter
-          n="05"
-          kicker="Deciding"
-          photo={PHOTOS.graduate}
-          flip
-          title="Choose with the whole picture."
-          aside={
-            <div className="flex flex-wrap gap-3">
-              <Link href="/sign-in" className="inline-flex items-center gap-2 rounded-lg bg-signal px-5 py-3 font-medium text-signal-ink transition-colors hover:bg-signal-strong">Start with your record <Icon name="arrow" className="h-4 w-4" /></Link>
-              {features.simulation ? <Link href="/portal/simulation" className="inline-flex items-center rounded-lg border border-line-strong px-5 py-3 font-medium text-ink hover:bg-hover">Try a what-if</Link> : null}
-            </div>
-          }
-        >
-          <p>Link your merit record and everything above becomes personal: your seat and its closing merit, what your marks reach, alerts when a shortlisted seat moves, and the people near your marks weighing the same options, counted anonymously.</p>
-        </Chapter>
-
         {/* ── Methodology and data sources ────────────────────────────────────── */}
         <section id="method" className="relative isolate scroll-mt-6 overflow-hidden bg-ivory text-navy" aria-labelledby="ch-method">
           <Image src={ART.paperIvory} alt="" fill sizes="100vw" className="-z-10 object-cover opacity-70" />
-          <div className={cn(wrap, "grid gap-12 py-16 md:grid-cols-[minmax(0,1fr)_260px] md:py-24")}>
+          <div className={cn(wrap, "py-16 md:py-20")}>
             <div>
               <p className={cn(eyebrow, "text-slate")}>Methodology</p>
               <h2 id="ch-method" className={cn(h2, "mt-3 max-w-2xl text-navy")}>Where every number comes from.</h2>
@@ -374,21 +405,28 @@ export function Landing({ f, features }: { f: LandingFigures; features: FeatureF
                 CPSP accreditation comes from CPSP&apos;s published list and is matched to hospitals by name, so a missing match is not proof that a unit is unaccredited. Personal details on merit lists (names, phone numbers, CNICs) are never stored.
               </p>
             </div>
-            <Image src={ART.seal} alt="" width={712} height={711} className="mn-reveal hidden h-auto w-full self-center opacity-90 md:block" />
           </div>
         </section>
 
-        {/* ── Closing band ─────────────────────────────────────────────────────── */}
-        <section className="relative isolate overflow-hidden bg-navy py-24 text-center text-ivory">
-          <Image src={ART.paperWaves} alt="" fill sizes="100vw" className="-z-10 object-cover opacity-35" />
-          <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-navy/70 to-navy/90" />
-          <div className={wrap}>
-            <h2 className="mx-auto max-w-3xl font-serif text-[clamp(2.1rem,4.8vw,3.6rem)] font-semibold leading-[1.06] text-ivory">
-              Between your score and your seat, <em className="font-normal text-gold">there is a record.</em>
-            </h2>
-            <div className="mt-9 flex flex-wrap justify-center gap-3">
-              <Link href="/sign-in" className="rounded-lg bg-gold px-5 py-3 font-semibold text-navy transition-colors hover:bg-ivory">Sign in to start</Link>
-              <Link href="/portal/history" className="rounded-lg border border-ivory/35 px-5 py-3 font-medium text-ivory transition-colors hover:bg-ivory/10">Browse merit lists</Link>
+        {/* ── Closing band: deciding, with the whole picture ───────────────────── */}
+        <section className="group relative isolate overflow-hidden bg-navy text-ivory" aria-labelledby="ch-decide">
+          <div className="absolute inset-y-0 right-0 -z-10 hidden w-[52%] md:block">
+            <Image src={PHOTOS.graduate.src} alt={PHOTOS.graduate.alt} fill sizes="52vw" className="object-cover" style={{ objectPosition: PHOTOS.graduate.position }} />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-navy via-navy/30 to-transparent" />
+          </div>
+          <div className={cn(wrap, "grid min-h-[480px] content-center py-20 md:py-24")}>
+            <div className="mn-reveal max-w-xl">
+              <p className={cn(eyebrow, "text-gold")}>Deciding</p>
+              <h2 id="ch-decide" className="mt-3 font-serif text-[clamp(2.1rem,4.8vw,3.4rem)] font-semibold leading-[1.06] text-ivory">
+                Between your score and your seat, <em className="font-normal text-gold">there is a record.</em>
+              </h2>
+              <p className="mt-5 text-[1.05rem] leading-relaxed text-ivory/85">
+                Link your merit record and everything becomes personal: your seat and its closing merit, what your marks reach, alerts when a shortlisted seat moves, and how many people near your marks weigh the same options, counted anonymously.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/sign-in" className="inline-flex items-center gap-2 rounded-lg bg-gold px-5 py-3 font-semibold text-navy transition-colors hover:bg-ivory">Sign in to start <Icon name="arrow" className="h-4 w-4" /></Link>
+                {features.simulation ? <Link href="/portal/simulation" className="rounded-lg border border-ivory/35 px-5 py-3 font-medium text-ivory transition-colors hover:bg-ivory/10">Try a what-if</Link> : null}
+              </div>
             </div>
           </div>
         </section>

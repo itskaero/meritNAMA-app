@@ -1,5 +1,7 @@
 # Deployment — self-hosting on a NAS
 
+New install? Follow [NAS-SETUP.md](NAS-SETUP.md) step by step; this page is the reference.
+
 Works on any Linux host or NAS that runs Docker Engine with Compose v2 (amd64 or
 arm64). Nothing here assumes a particular NAS vendor. Budget ~1 GB RAM for app + DB.
 
@@ -17,7 +19,7 @@ Edit `.env`:
 |---|---|
 | `POSTGRES_PASSWORD` | `openssl rand -base64 32 \| tr -d '/+='` (letters/digits keep the URL valid) |
 | `MERITNAMA_DATA_DIR` | A path on a redundant, backed-up volume, e.g. `/volume1/meritnama` |
-| `APP_URL` | The URL users will open, e.g. `https://app.example.org` |
+| `APP_URL` | The URL users will open: `https://meritnama.online` |
 | `PUBLIC_SITE_ORIGIN` | `https://itskaero.github.io` (lets the public site probe `/api/health`) |
 | `APP_PORT` | Host port, default `3000` (bound to 127.0.0.1) |
 | `SMTP_URL` | Your mail provider, e.g. `smtps://user:pass@smtp.example.org:465` (sign-in links) |

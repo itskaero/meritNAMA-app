@@ -77,7 +77,7 @@ scripts/backup.sh                      # pg_dump + storage archive under $MERITN
 scripts/restore.sh <backup-dir>
 ```
 
-Full NAS guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Step-by-step NAS setup at meritnama.online: [docs/NAS-SETUP.md](docs/NAS-SETUP.md). Reference for updates, backups and restores: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Environment
 

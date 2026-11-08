@@ -18,8 +18,6 @@ export const PHOTOS = {
   studyDesk: p("study-desk.jpg", 2400, 1792, "45% 60%", "Open textbooks, handwritten notes, highlighters and a stethoscope on a library table"),
   /** 16:9. A doctor in navy scrubs with a tablet in a bright hospital corridor; she stands left of centre facing right. */
   doctor: p("doctor-corridor.jpg", 2400, 1340, "38% 35%", "A doctor in scrubs with a tablet, looking down a bright hospital corridor"),
-  /** 4:3. A doctor reading training handbooks and specialty pathway leaflets in a library. */
-  planning: p("postgraduate-planning.jpg", 2400, 1792, "50% 45%", "A doctor reading postgraduate training handbooks and specialty leaflets at a library table"),
   /** 16:9. An aerial view of a large modern hospital with stone screens at golden hour. */
   hospital: p("hospital-aerial.jpg", 2400, 1340, "50% 40%", "An aerial view of a large modern teaching hospital at golden hour"),
   /** 4:3. A red-brick heritage medical college beside a modern glass block, students on the lawns. */
@@ -31,10 +29,8 @@ export const PHOTOS = {
 /** Backgrounds and line art. Decorative: always rendered with alt="" / aria-hidden. */
 export const ART = {
   contourNavy: "/images/brand/texture-contour-navy.jpg",
-  paperWaves: "/images/brand/texture-paper-waves.jpg",
   paperIvory: "/images/brand/texture-paper-ivory.jpg",
   /** Transparent line art (alpha taken from the white background). */
-  seal: "/images/brand/art-seal.webp",
   divider: "/images/brand/art-divider.webp",
   contour: "/images/brand/art-contour.webp",
   skyline: "/images/brand/art-skyline.webp",

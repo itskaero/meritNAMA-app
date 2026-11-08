@@ -1,5 +1,7 @@
-# Caddy obtains and renews HTTPS certificates automatically for a public domain.
-# For LAN-only or VPN-only access use `tls internal` and trust Caddy's root CA.
+# Caddy obtains and renews HTTPS certificates automatically for a public domain
+# (MERITNAMA_DOMAIN, e.g. meritnama.online; its DNS must point at this machine and
+# ports 80/443 must reach it). For LAN-only or VPN-only access use `tls internal`
+# and trust Caddy's root CA.
 {$MERITNAMA_DOMAIN} {
 	encode zstd gzip
 	header {
@@ -7,4 +9,9 @@
 		-Server
 	}
 	reverse_proxy app:3000
+}
+
+# www.meritnama.online → meritnama.online
+www.{$MERITNAMA_DOMAIN} {
+	redir https://{$MERITNAMA_DOMAIN}{uri} permanent
 }

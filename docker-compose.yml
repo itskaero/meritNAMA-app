@@ -81,6 +81,19 @@ services:
     depends_on: [app]
     networks: [web]
 
+  # Optional Cloudflare Tunnel (no open ports on your router):  docker compose --profile tunnel up -d
+  # Create the tunnel in Cloudflare Zero Trust and point its public hostname at http://app:3000
+  # (see docs/NAS-SETUP.md). Use either this or the Caddy proxy, not both.
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.7
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on: [app]
+    networks: [web]
+
   # Background worker for long simulations / imports — added in delivery 3.
   # worker:
   #   build: { context: ., target: worker }

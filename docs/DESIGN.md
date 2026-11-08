@@ -96,19 +96,25 @@ text, intrinsic size and the focal point (`object-position`) of each photograph.
 |---|---|---|
 | `hero-library-study.jpg` | 2.36:1; doctor right of centre, dark left half | Homepage hero (full bleed on desktop, top half on phones) |
 | `study-desk.jpg` | 4:3; textbooks and stethoscope | Journey 01, Preparing (with the scoring policy) |
-| `doctor-corridor.jpg` | 16:9; doctor left of centre facing right | Journey 02, Entering training; sign-in panel |
-| `postgraduate-planning.jpg` | 4:3; reading training handbooks | Journey 03, Exploring options (with the finder sample) |
-| `hospital-aerial.jpg` | 16:9; building mass upper half | Journey 04 full-bleed band; Browse hospitals search band |
-| `campus-heritage.jpg` | 4:3; heritage block left | Journey 04 inset |
-| `graduate-courtyard.jpg` | 4:3; face upper centre | Journey 05, Deciding |
+| `doctor-corridor.jpg` | 16:9; doctor left of centre facing right | Journey 02, Exploring options (with the finder example); sign-in panel |
+| `hospital-aerial.jpg` | 16:9; building mass upper half | Journey 03 full-bleed band; Browse hospitals search band |
+| `campus-heritage.jpg` | 4:3; heritage block left | Journey 03 inset |
+| `graduate-courtyard.jpg` | 4:3; face upper centre | Closing band (right half, desktop) |
 | `texture-contour-navy.jpg` | dark contours, amber dots | Homepage "Merit moves every round" data band |
 | `texture-paper-ivory.jpg` | ivory paper, window light | "The record so far" and Methodology |
-| `texture-paper-waves.jpg` | navy, teal and ivory paper waves | Closing band |
-| `art-*.webp` (transparent) | seal, divider, contour, skyline, botanical | Methodology seal; figures divider; contour behind the features list, the dashboard's feature card and the error state; skyline in the footer and 404; a sprig in every empty state and behind sign-in |
+| `art-*.webp` (transparent) | divider, contour, skyline, botanical | Figures divider; contour behind the features list, the dashboard's feature card and the error state; skyline in the footer and 404; a sprig in every empty state and behind sign-in |
 
 Not used, so not shipped: the isometric "network of buildings" (glowing lines read as
-a tech product, against the brief), the dark window-light texture and the flowing
-line waves (no section needed them), and a second copy of the hospital aerial.
+a tech product, against the brief); the seal (an official-looking crest beside "not
+an official admissions authority" implies an accreditation we do not have); the
+postgraduate-planning photograph (its leaflets carry garbled generated text); the
+paper waves, dark window texture and line waves (no section needed them); and a
+second copy of the hospital aerial.
+
+The homepage has three chapters (Preparing, Exploring options, Comparing
+institutions) between live-data bands, and a "check your marks" box in the hero: a
+plain GET form answered on the server with counts only (`landingCheck` in
+`src/lib/data/public.ts`), so anyone can try the finder before signing in.
 
 Line art is stored with transparency (alpha from the white background) and mostly
 painted through `.mn-mask` in a theme colour, so it follows light and dark. Images are
