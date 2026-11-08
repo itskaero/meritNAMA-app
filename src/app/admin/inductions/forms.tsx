@@ -2,10 +2,10 @@
 
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, fieldClass, ReasonField } from "@/components/ui/form";
+import { ActionResult, Field, fieldClass, ReasonField } from "@/components/ui/form";
 import { cn } from "@/components/ui/cn";
 import { idleState } from "@/lib/action-state";
-import { deleteRoundAction, importInboxAction, importRoundsAction, saveAliasAction, skipInboxAction } from "./actions";
+import { deleteRoundAction, importAllInboxAction, importInboxAction, importRoundsAction, saveAliasAction, skipInboxAction } from "./actions";
 
 type FileResult = { name: string; state: "waiting" | "importing" | "done" | "failed"; message?: string; href?: string };
 
@@ -133,6 +133,22 @@ export function AliasForm({ kind, name, rows, options }: { kind: "speciality" | 
 }
 
 /** One inbox file: Import (new data applies, a replacement is staged) or Skip, with a reason. */
+/** One button for the whole inbox: imports every valid new file, in a safe order. */
+export function ImportAllForm({ count }: { count: number }) {
+  const [state, action, pending] = useActionState(importAllInboxAction, idleState);
+  return (
+    <form action={action} className="mb-4 grid gap-3 rounded-xl border border-line bg-tint p-4">
+      <p className="text-sm">
+        <span className="font-semibold">{count} new file{count === 1 ? "" : "s"} ready.</span>{" "}
+        <span className="text-muted">Imports them in order: scoring policy, reference documents, merit rounds (oldest first), then seat matrices. Files that would replace data stay below for review. Large batches take a few minutes.</span>
+      </p>
+      <ReasonField placeholder="e.g. Initial import of the public merit lists" />
+      <div><Button type="submit" disabled={pending}>{pending ? "Importing… keep this page open" : `Import all ${count}`}</Button></div>
+      <ActionResult state={state} />
+    </form>
+  );
+}
+
 export function InboxRow({ item }: { item: { kind: string; name: string; target: string | null; replaces: boolean; issues: string[]; canImport: boolean; folder: string; needsYear: boolean } }) {
   const [imp, importAction, importing] = useActionState(importInboxAction, idleState);
   const [skip, skipAction, skipping] = useActionState(skipInboxAction, idleState);

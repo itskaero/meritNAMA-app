@@ -12,7 +12,7 @@ import { listAllLookups } from "@/lib/data/reference-data";
 import { getDb } from "@/lib/db/client";
 import { formatUtc, isUuid } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
-import { AliasForm, DeleteRoundForm, ImportRoundsForm, InboxRow } from "./forms";
+import { AliasForm, DeleteRoundForm, ImportAllForm, ImportRoundsForm, InboxRow } from "./forms";
 import { listInbox } from "@/lib/data/inbox";
 
 export const metadata = { title: "Inductions & merit lists" };
@@ -71,9 +71,14 @@ export default async function AdminInductionsPage({ searchParams }: { searchPara
         ) : inbox.length === 0 ? (
           <p className="text-sm text-muted">Nothing waiting. Drop round_&lt;n&gt;.json files into inbox/merit on the server, or upload below.</p>
         ) : (
+          <>
+          {inbox.filter((i) => i.kind !== "unrecognised" && i.canImport && !i.replaces && !i.issues.length).length > 1 ? (
+            <ImportAllForm count={inbox.filter((i) => i.kind !== "unrecognised" && i.canImport && !i.replaces && !i.issues.length).length} />
+          ) : null}
           <ul className="grid gap-2">
             {inbox.map((i) => <InboxRow key={`${i.folder}/${i.name}`} item={{ ...i, needsYear: i.kind === "seats" && !i.replaces }} />)}
           </ul>
+          </>
         )}
       </Card>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">

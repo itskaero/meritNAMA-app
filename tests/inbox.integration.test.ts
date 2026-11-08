@@ -6,7 +6,7 @@ import { eq, inArray, like } from "drizzle-orm";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
-import { importFromInbox, listInbox, skipInboxFile } from "@/lib/data/inbox";
+import { importAllFromInbox, importFromInbox, listInbox, skipInboxFile } from "@/lib/data/inbox";
 import { getRound } from "@/lib/data/merit";
 import * as schema from "@/lib/db/schema";
 
@@ -114,5 +114,18 @@ describe.skipIf(!url)("inbox (integration)", () => {
     expect(r.message).toMatch(/^CPSP accreditation saved as version \d+/);
     expect(existsSync(inbox("reference", "cpsp_accreditation.json"))).toBe(false);
     expect(readdirSync(inbox("processed")).some((f) => f.endsWith("-imported-reference-cpsp_accreditation.json"))).toBe(true);
+  });
+
+  it("imports every valid new file at once, oldest round first, and leaves the rest", async () => {
+    writeFileSync(inbox("merit", "i960_round_8.json"), round(25));
+    writeFileSync(inbox("merit", "i960_round_7.json"), round(24));
+    writeFileSync(inbox("merit", "i960_round_9.json"), "{ broken");
+    // A moderator is staff but may not edit data: nothing is imported for them.
+    expect((await importAllFromInbox(db, moderator, { reason: "bulk" }, opts)).imported).toEqual([]);
+    const r = await importAllFromInbox(db, editor, { reason: "bulk test" }, opts);
+    expect(r.imported).toEqual(["merit/i960_round_7.json", "merit/i960_round_8.json"]);
+    expect(r.failed).toEqual([]);
+    expect((await listInbox(db, editor, opts)).map((i) => i.name)).toContain("i960_round_9.json");
+    expect(await getRound(db, editor, IND, 8)).not.toBeNull();
   });
 });

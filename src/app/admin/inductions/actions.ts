@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { formInt, formOptionalInt, formText, proposalState, readJsonUpload, toActionState, type ActionState } from "@/lib/action-state";
-import { importFromInbox, INBOX_KINDS, skipInboxFile, type InboxKind } from "@/lib/data/inbox";
+import { importAllFromInbox, importFromInbox, INBOX_KINDS, listInbox, skipInboxFile, type InboxKind } from "@/lib/data/inbox";
+import { requireReason } from "@/lib/data/shared";
 import { getSession } from "@/lib/auth/session";
 import { proposeDeleteRound, proposeMeritRound } from "@/lib/data/changes";
 import { saveNameAlias } from "@/lib/data/merit";
@@ -111,4 +113,30 @@ export async function skipInboxAction(_prev: ActionState, form: FormData): Promi
     return toActionState(err);
   }
   redirect(target);
+}
+
+/**
+ * Import every valid new file in the inbox (policy, reference, merit, seats). It runs
+ * after the response: a large batch takes minutes, longer than a proxy such as
+ * Cloudflare waits for one request. Progress shows as files leave the inbox; each
+ * import is in the audit history.
+ */
+export async function importAllInboxAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const db = getDb();
+    const session = await getSession();
+    const reason = formText(form, "reason");
+    requireReason(reason, "imports");
+    const items = await listInbox(db, session);
+    const n = items.filter((i) => i.kind !== "unrecognised" && i.canImport && !i.replaces && !i.issues.length).length;
+    if (!n) return { status: "error", message: "No new valid files to import." };
+    after(async () => {
+      const r = await importAllFromInbox(db, session, { reason });
+      console.log(`bulk import: ${r.imported.length} imported, ${r.failed.length} failed, ${r.leftForReview} left for review`);
+      for (const f of r.failed) console.log(`bulk import failed: ${f.name}: ${f.message}`);
+    });
+    return { status: "success", message: `Importing ${n} file${n === 1 ? "" : "s"} in the background. Reload this page in a minute or two: imported files leave the list; any that fail stay with their reason.` };
+  } catch (err) {
+    return toActionState(err);
+  }
 }

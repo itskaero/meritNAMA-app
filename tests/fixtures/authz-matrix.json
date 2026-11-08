@@ -61,6 +61,7 @@
  "inbox#listInbox": "data_editor policy_editor verifier moderator owner",
  "inbox#importFromInbox": "data_editor policy_editor verifier moderator owner",
  "inbox#skipInboxFile": "data_editor policy_editor verifier moderator owner",
+ "inbox#importAllFromInbox": "data_editor policy_editor verifier moderator owner",
  "insights#roundSettling": "candidate data_editor policy_editor verifier moderator owner",
  "insights#inductionTracks": "candidate data_editor policy_editor verifier moderator owner",
  "insights#closingLadder": "candidate data_editor policy_editor verifier moderator owner",

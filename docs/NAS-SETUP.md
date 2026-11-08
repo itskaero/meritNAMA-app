@@ -315,23 +315,48 @@ Open **https://meritnama.online**: the homepage should load with the padlock.
 
 ## 7. First sign-in and data
 
-1. On https://meritnama.online choose **Sign in** and use the address in
-   `OWNER_EMAILS`. The email arrives from `namamerit@gmail.com`. That account
-   becomes the **owner**.
-2. *Team & roles*: give other staff their roles; check that **Backups** shows a
-   warning (none yet, fixed in step 8).
-3. Load data: copy PHF merit-round files, seat matrices and the scoring policy into
-   `/volume1/meritnama-data/storage/inbox/` (File Station or SMB works), then import
-   them under *Admin → Processing*. Details: DEPLOYMENT.md, "Importing from the inbox".
-4. If rounds were imported before candidates signed up, index them once so sign-in
-   emails match records:
+**Sign in**
 
-   ```bash
-   set -a; . ./.env; set +a
-   docker compose run --rm -e CANDIDATE_INDEX_SECRET \
-     -v "$MERITNAMA_DATA_DIR/storage:/storage:ro" \
-     migrate node scripts/index-candidates.mjs /storage/inbox/processed
-   ```
+1. Open https://meritnama.online → **Sign in**, enter the address in `OWNER_EMAILS`,
+   press **Email me a sign-in link**.
+2. Open the email (from `namamerit@gmail.com`; check spam the first time) and click the
+   link. That account becomes the **owner**; the admin area is at
+   https://meritnama.online/admin.
+3. *Team & roles*: send yourself a test email, give other staff their roles.
+
+**Load the published data** (merit lists of every induction, seat matrix, scoring
+policy, CPSP accreditation, disciplines and specialty groups) from the public site's
+repository:
+
+```bash
+cd /DATA/meritnama            # or /volume1/docker/meritnama
+./meritnama.sh fetch-data      # add --with-simulation for induction 21's simulation files
+```
+
+Then in the app: **Admin → Inductions & merit lists → Inbox → Import all** (give a
+reason, e.g. "Initial import"). It runs in the background, policy first, then
+reference documents, merit rounds oldest first, then seat matrices; reload the page
+after a minute or two. Files that would replace data, and any with problems, stay in
+the list with the reason.
+
+- The repository holds induction 21's rounds only in a reduced form (no consent
+  replies), so they are not copied. Put PHF's original round files into
+  `<data>/storage/inbox/merit/` as `i21_round_1.json`, `i21_round_2.json` … and press
+  Import all again; induction 21's seat matrix imports after them.
+- New rounds later: drop PHF's file into `inbox/merit/` (any `iNN_round_N.json` name),
+  or upload it on the same page.
+- `--with-simulation` copies candidate marks and preferences into
+  `storage/simulation/induction21/`; import them under **Admin → Processing**.
+
+If rounds were imported before candidates signed up, index them once so sign-in
+emails match records:
+
+```bash
+set -a; . ./.env; set +a
+docker compose run --rm -e CANDIDATE_INDEX_SECRET \
+  -v "$MERITNAMA_DATA_DIR/storage:/storage:ro" \
+  migrate node scripts/index-candidates.mjs /storage/inbox/processed
+```
 
 ## 8. Backups (do this on day one)
 

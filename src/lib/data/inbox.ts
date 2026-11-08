@@ -219,3 +219,43 @@ export async function skipInboxFile(db: Database, session: Session | null, input
   await moveToProcessed(root, input.kind, file, input.name, "skipped");
   await writeAudit(db, session.email, { action: "inbox.skip", entityType: "inbox_file", entityId: `${k.folder}/${input.name}`, reason });
 }
+
+/**
+ * Import every inbox file that is valid, new and allowed, in a safe order: the scoring
+ * policy, reference documents, merit rounds (oldest induction and round first; they
+ * create their inductions), then seat matrices. Files that would replace data stay in
+ * the inbox for a one-by-one review; failures are reported and the rest go on.
+ */
+export async function importAllFromInbox(
+  db: Database,
+  session: Session | null,
+  input: { reason: string },
+  opts: { root?: string } = {},
+): Promise<{ imported: string[]; failed: { name: string; message: string }[]; leftForReview: number }> {
+  assertCan(session, "staff");
+  requireReason(input.reason, "imports");
+  const items = await listInbox(db, session, opts);
+  const rank: Record<string, number> = { policy: 0, reference: 1, merit: 2, seats: 3 };
+  const nums = (s: string) => (s.match(/\d+/g) ?? []).map(Number);
+  const cmp = (a: string, b: string) => {
+    const x = nums(a), y = nums(b);
+    for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] ?? -1) !== (y[i] ?? -1)) return (x[i] ?? -1) - (y[i] ?? -1);
+    return a.localeCompare(b);
+  };
+  const todo = items
+    .filter((i): i is InboxItem & { kind: InboxKind } => i.kind !== "unrecognised" && i.canImport && !i.replaces && i.issues.length === 0)
+    .sort((a, b) => rank[a.kind]! - rank[b.kind]! || cmp(a.name, b.name));
+  const imported: string[] = [];
+  const failed: { name: string; message: string }[] = [];
+  for (const it of todo) {
+    try {
+      await importFromInbox(db, session, { kind: it.kind, name: it.name, reason: input.reason }, opts);
+      imported.push(`${it.folder}/${it.name}`);
+    } catch (e) {
+      failed.push({ name: `${it.folder}/${it.name}`, message: e instanceof UserFacingError ? e.message : "Import failed; see the server log." });
+      if (!(e instanceof UserFacingError)) console.error("bulk import", it.name, e);
+    }
+  }
+  const leftForReview = items.filter((i) => i.kind !== "unrecognised" && i.replaces).length;
+  return { imported, failed, leftForReview };
+}

@@ -12,6 +12,9 @@
 #   ./meritnama.sh backup         database + storage backup (scripts/backup.sh)
 #   ./meritnama.sh restore <dir>  restore a backup (scripts/restore.sh)
 #   ./meritnama.sh stop | start   stop or start everything
+#   ./meritnama.sh fetch-data [--with-simulation]
+#                                 copy the public site's merit lists, seats, policy and
+#                                 reference files into the inbox (then Admin → Import all)
 #
 # Moving to a slow or offline NAS (build elsewhere, carry one file):
 #   ./meritnama.sh bundle [platform]   on a PC: build images and save meritnama-images.tar.gz
@@ -234,6 +237,7 @@ case "$cmd" in
   status)  need_docker; compose ps; load_env; curl -fsS "http://127.0.0.1:${APP_PORT:-3000}/api/health" && echo || warn "Health check failed." ;;
   logs)    need_docker; compose logs -f --tail 100 "${2:-app}" ;;
   backup)  need_docker; sh scripts/backup.sh ;;
+  fetch-data) bash scripts/fetch-public-data.sh "${@:2}" ;;
   restore) need_docker; sh scripts/restore.sh "${2:?usage: ./meritnama.sh restore <backup directory>}" ;;
   update)
     need_docker
@@ -271,6 +275,6 @@ case "$cmd" in
     finish_msg
     ;;
   help|-h|--help|*)
-    sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
     ;;
 esac
