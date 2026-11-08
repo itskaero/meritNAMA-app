@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TaskCards } from "@/components/task-cards";
 import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
 import { CycleGauge, gaugeProps } from "@/components/charts/cycle-gauge";
@@ -45,7 +46,7 @@ const day = (iso: string | null) => (iso ? new Date(`${iso}T00:00:00Z`).toLocale
  */
 export default async function PortalDashboard() {
   const s = findSection("/portal");
-  const frame = { area: "portal" as const, trail: [{ label: s.label }], isRoot: true, title: s.label, description: "Your merit, the current induction and how closing merit is moving." };
+  const frame = { area: "portal" as const, trail: [{ label: s.label }], isRoot: true, title: s.label, description: "Start here: pick what you want to do, or read your merit at a glance below." };
   const down = await whenDatabaseDown(frame);
   if (down) return down;
 
@@ -102,6 +103,19 @@ export default async function PortalDashboard() {
   return (
     <AreaPage {...frame}>
       {currentEstimates.length ? <EstimateListCard estimates={currentEstimates} title="Estimated merit list out" /> : null}
+      <TaskCards
+        tasks={[
+          { href: merit ? `/portal/history/find?id=${merit.applicantId}` : "/portal/history/find", icon: "search", title: "Find myself in the merit lists", body: "Your seat, marks and consent in every round, by applicant ID." },
+          { href: "/portal/finder", icon: "target", title: "Where can my marks get a seat?", body: "Every speciality and hospital, sorted against past closing merit." },
+          latest && lastRound
+            ? { href: `/portal/history/${latest.id}/rounds/${lastRound.roundNo}`, icon: "trend", title: `See the latest list (round ${lastRound.roundNo})`, body: `Induction ${latest.id}: closing merit for every seat.` }
+            : { href: "/portal/history", icon: "trend", title: "See the merit lists", body: "Every round of every induction." },
+          { href: "/portal/simulation", icon: "pulse", title: "What if someone rejects?", body: "Change anyone's consent and see how the next list moves." },
+          { href: "/portal/explore", icon: "building", title: "Look up a hospital", body: "Seats, closing merit, accreditation and reviews." },
+          { href: "/portal/community", icon: "chat", title: "Ask other doctors", body: "Questions, answers, and a chat room for every round." },
+        ]}
+      />
+      <h2 className="mt-2 font-serif text-xl font-semibold text-heading">Your merit at a glance</h2>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         {/* ── Your merit: the page's one feature surface ──────────────────── */}
         <section aria-labelledby="your-merit" className="relative isolate overflow-hidden rounded-xl bg-feature p-6 text-feature-ink shadow-[var(--mn-shadow-2)] sm:p-7">

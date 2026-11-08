@@ -170,6 +170,24 @@ figures are published, calculated or an estimate.
   page's `loading.tsx`, shaped like what arrives.
 - **Allocation rules** are edited as a form, with JSON one tab away.
 
+## Simple navigation
+
+See `docs/IA.md` for the section map and the reasons behind it.
+
+- **Menu**: six sections named after questions (Home, Merit lists, My chances,
+  Hospitals, What if, Ask & chat), then Mine (My record, Saved, Inbox, Help). Pages
+  reached only through tabs set `hideInNav` and are covered by their parent's `match`.
+- **Phone tab bar** (`BottomTabs`): Home, Lists, Chances, What if, Ask; fixed to the
+  bottom below `lg`, with labels under the icons.
+- **Task cards** on Home (`TaskCards`): large, plain-language "What do you want to do?"
+  links, the first one personalised with the linked applicant ID.
+- **Big tabs** (`ChancesTabs`) group the finder, calculator and preference list.
+- **Find yourself** (`/portal/history/find`): one large ID field, the latest seat on a
+  navy card, then every list and who shares the seat. `FindBox` puts the same field on
+  Merit lists.
+- **Help** (`/portal/guide`): the induction in five steps, "I want to…" answers and a
+  glossary.
+
 ## Next increments
 
 1. Grouped, collapsible results in the score finder.

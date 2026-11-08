@@ -16,5 +16,8 @@ export default async function PortalLayout({ children }: { children: React.React
   const flags = !isStaff(session) && (await checkDatabase()) === "ok" ? await featureFlags(getDb(), session) : null;
   const hidden = new Set(flags ? Object.entries(FEATURES).filter(([k]) => !flags[k as keyof typeof flags]).map(([, f]) => f.href as string) : []);
   const sections = candidateSections.filter((s) => !hidden.has(s.href));
-  return <AppShell area="Candidate portal" sections={sections} links={links} session={session}>{children}</AppShell>;
+  // Phones: the main sections as a bottom tab bar, with short names.
+  const short: Record<string, string> = { "/portal": "Home", "/portal/history": "Lists", "/portal/finder": "Chances", "/portal/simulation": "What if", "/portal/community": "Ask" };
+  const bottomTabs = sections.filter((s) => s.href in short).map((s) => ({ href: s.href, label: short[s.href]!, icon: s.icon, match: s.match }));
+  return <AppShell area="Candidate portal" sections={sections} links={links} session={session} bottomTabs={bottomTabs}>{children}</AppShell>;
 }

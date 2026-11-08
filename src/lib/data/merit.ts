@@ -553,3 +553,60 @@ export async function seatTrends(db: Database, session: Session | null) {
     byProgram: programs.map((p) => ({ program: p, values: inductions.map((i) => (rows.some((r) => r.induction_id === i && r.program === p) ? at(i, p) : null)) })),
   };
 }
+
+// ── Find an applicant (as the public site's "find yourself") ─────────────────────
+
+export type ApplicantRound = {
+  induction: number; roundNo: number; program: string; quota: string; speciality: string; specialityId: number | null;
+  hospital: string; hospitalId: number | null; marks: number; preferenceNo: number; consent: string; closing: number; groupSize: number;
+};
+
+/**
+ * Everything published about one applicant id: their allocation in every round of every
+ * induction (with that seat group's closing merit), their place in published estimates,
+ * and, for their latest seats, everyone else in the same seat group. Applicant ids, marks
+ * and seats only, as PHF publishes them; names are never stored.
+ */
+export async function findApplicant(db: Database, session: Session | null, rawId: string) {
+  assertCan(session, "portal");
+  const id = String(rawId ?? "").replace(/\D/g, "").slice(0, 12);
+  if (!id) return null;
+  const rounds = (await db.execute(sql`
+    select r.induction_id as induction, r.round_no, m.program, m.quota, m.speciality, m.speciality_id, m.hospital, m.hospital_id,
+           m.marks, m.preference_no, m.consent, m.round_id,
+           (select min(x.marks) from merit_allocations x where x.round_id = m.round_id and x.program = m.program and x.quota = m.quota and x.speciality = m.speciality and x.hospital = m.hospital) as closing,
+           (select count(*) from merit_allocations x where x.round_id = m.round_id and x.program = m.program and x.quota = m.quota and x.speciality = m.speciality and x.hospital = m.hospital)::int as group_size
+    from merit_allocations m join merit_rounds r on r.id = m.round_id
+    where m.applicant_id = ${id}
+    order by r.induction_id desc, r.round_no desc, m.program`)) as unknown as {
+    induction: number; round_no: number; program: string; quota: string; speciality: string; speciality_id: number | null; hospital: string; hospital_id: number | null;
+    marks: number; preference_no: number; consent: string; round_id: number; closing: number; group_size: number;
+  }[];
+  const estimates = (await db.execute(sql`
+    select s.run_id, sr.induction_id as induction, case when sr.kind = 'next_round' then sr.from_round + 1 else 1 end as round_no,
+           s.program, s.quota, s.speciality, s.hospital, s.mark, s.preference_no
+    from simulation_placements s join simulation_runs sr on sr.id = s.run_id
+    where s.applicant_id = ${id} and sr.published_at is not null
+    order by sr.published_at desc`)) as unknown as { run_id: string; induction: number; round_no: number; program: string; quota: string; speciality: string; hospital: string; mark: number; preference_no: number }[];
+
+  // Who else holds the same seats in their latest round.
+  const latest = rounds[0] ? rounds.filter((r) => r.induction === rounds[0]!.induction && r.round_no === rounds[0]!.round_no) : [];
+  const neighbours = await Promise.all(latest.map(async (r) => ({
+    program: r.program.trim(), quota: r.quota.trim(), speciality: r.speciality.trim(), hospital: r.hospital.trim(),
+    people: ((await db.execute(sql`
+      select applicant_id, marks, preference_no, consent from merit_allocations
+      where round_id = ${r.round_id} and program = ${r.program} and quota = ${r.quota} and speciality = ${r.speciality} and hospital = ${r.hospital}
+      order by marks desc`)) as unknown as { applicant_id: string; marks: number; preference_no: number; consent: string }[])
+      .map((p) => ({ applicantId: p.applicant_id, marks: Number(p.marks), preferenceNo: p.preference_no, consent: p.consent })),
+  })));
+
+  return {
+    applicantId: id,
+    rounds: rounds.map((r): ApplicantRound => ({
+      induction: r.induction, roundNo: r.round_no, program: r.program.trim(), quota: r.quota.trim(), speciality: r.speciality.trim(), specialityId: r.speciality_id,
+      hospital: r.hospital.trim(), hospitalId: r.hospital_id, marks: Number(r.marks), preferenceNo: r.preference_no, consent: r.consent, closing: Number(r.closing), groupSize: r.group_size,
+    })),
+    estimates: estimates.map((e) => ({ runId: e.run_id, induction: e.induction, roundNo: e.round_no, program: e.program, quota: e.quota, speciality: e.speciality, hospital: e.hospital, mark: Number(e.mark), preferenceNo: e.preference_no })),
+    neighbours,
+  };
+}

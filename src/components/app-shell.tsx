@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { BottomTabs, type BottomTab } from "./bottom-tabs";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { signOutAction } from "@/app/_actions/auth";
@@ -70,9 +71,11 @@ function AccountMenu({ session, mode, theme, verified }: { session: Session; mod
  * wide screens) and the content inside a framed panel. The mode comes from a cookie
  * so the server renders the right layout; Ctrl/⌘K opens the jump palette in both modes.
  */
-export async function AppShell({ area, sections, links = [], commands = [], session, children }: {
+export async function AppShell({ area, sections, links = [], commands = [], session, children, bottomTabs }: {
   area: string;
   sections: Section[];
+  /** Phones: these sections as a bottom tab bar (the candidate portal). */
+  bottomTabs?: BottomTab[];
   /** Extra sidebar links that are not sections of this area (e.g. admin → candidate portal). */
   links?: NavItem[];
   /** Extra palette entries beyond the sidebar items (quick actions). */
@@ -91,7 +94,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
     .filter((n) => n.at.getTime() > seen)
     .map((n) => ({ text: n.text, href: n.href, at: n.at.toISOString() }));
   const pro = mode === "pro";
-  const items: NavItem[] = [...sections.map(({ href, label, group, icon }) => ({ href, label, group, icon })), ...links];
+  const items: NavItem[] = [...sections.filter((x) => !x.hideInNav).map(({ href, label, group, icon, match }) => ({ href, label, group, icon, match })), ...links];
   const palette: Command[] = [
     ...items.map((i) => ({ label: i.label, hint: i.group, href: i.href, icon: i.icon })),
     ...commands,
@@ -127,12 +130,13 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
         profile={<AccountMenu session={session} mode={mode} theme={theme} verified={verified} />}
       />
       <div className="min-w-0">
-        <main id="main" className="min-h-screen bg-canvas">
+        <main id="main" className={cn("min-h-screen bg-canvas", Boolean(bottomTabs?.length) && "pb-20 lg:pb-0")}>
           {news.length ? <WhatsNew items={news} /> : null}
           {children}
         </main>
       </div>
       <CommandPalette commands={palette} />
+      {bottomTabs?.length ? <BottomTabs tabs={bottomTabs} /> : null}
     </div>
   );
 }

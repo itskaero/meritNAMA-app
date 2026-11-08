@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChancesTabs } from "@/components/chances-tabs";
 import { AreaPage } from "@/components/area-page";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
@@ -110,7 +111,8 @@ export default async function CalculatorPage({ searchParams }: { searchParams: P
   const sp = await searchParams;
   const session = (await getSession())!;
   const page = (children: React.ReactNode) => (
-    <AreaPage area="portal" trail={[{ label: "Merit calculator" }]} title="Merit calculator" description="Enter your own details to work out your merit marks under a scoring policy. This is your estimate, not your official merit.">
+    <AreaPage area="portal" trail={[{ label: "My chances", href: "/portal/finder" }, { label: "Calculate my marks" }]} title="Calculate my marks" description="Enter your own details to work out your merit marks under the published scoring policy. This is your estimate, not your official merit.">
+      <ChancesTabs current="/portal/calculator" />
       {children}
     </AreaPage>
   );

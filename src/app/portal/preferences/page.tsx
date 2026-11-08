@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChancesTabs } from "@/components/chances-tabs";
 import { AreaPage } from "@/components/area-page";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PreferencesPage() {
   const s = findSection("/portal/preferences");
-  const frame = { area: "portal" as const, trail: [{ label: s.label }], title: s.label, description: s.description };
+  const frame = { area: "portal" as const, trail: [{ label: "My chances", href: "/portal/finder" }, { label: s.label }], title: s.label, description: s.description };
   const down = await whenDatabaseDown(frame);
   if (down) return down;
   const db = getDb();
@@ -31,6 +32,7 @@ export default async function PreferencesPage() {
 
   return (
     <AreaPage {...frame}>
+      <ChancesTabs current="/portal/preferences" />
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <Card className="min-w-0">
           <CardHeader title="Your lists" description={`Private drafts, up to ${LIST_LIMITS.lists}. Each is checked against the latest induction's closing merit.`} />

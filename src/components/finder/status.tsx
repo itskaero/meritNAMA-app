@@ -4,7 +4,7 @@ import { cn } from "../ui/cn";
 
 export const STATUS_STYLE: Record<FinderStatus, { pill: string; cell: string; text: string }> = {
   safe: { pill: "border-success/40 bg-success/10 text-success", cell: "bg-success/70 hover:bg-success", text: "text-success" },
-  borderline: { pill: "border-amber/40 bg-amber/10 text-amber", cell: "bg-amber/70 hover:bg-amber", text: "text-amber" },
+  borderline: { pill: "border-amber/50 bg-surface text-amber", cell: "bg-amber/70 hover:bg-amber", text: "text-amber" },
   out: { pill: "border-line-strong text-subtle", cell: "bg-elevated hover:bg-hover", text: "text-subtle" },
 };
 

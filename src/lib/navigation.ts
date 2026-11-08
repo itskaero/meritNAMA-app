@@ -15,86 +15,34 @@ export type Section = {
   description: string;
   /** Admin sections: what a staff member needs to see and open it. */
   capability?: Capability;
+  /** Not a menu item of its own (reached through another section's tabs). */
+  hideInNav?: boolean;
+  /** Other paths that light this menu item up (e.g. My chances owns the calculator). */
+  match?: string[];
 };
 
+/*
+ * The candidate menu, in plain words and in the order people need it (Nov 2026, after
+ * the old site's "I want to…" guide): six things to do, then their own things.
+ */
 export const candidateSections: Section[] = [
+  { href: "/portal", group: "Start", icon: "dashboard", label: "Home", description: "Your merit, the latest list, and what you can do next." },
+  { href: "/portal/history", group: "Start", icon: "trend", label: "Merit lists", description: "Every merit list, official and estimated. Find yourself, or anyone, by applicant ID." },
   {
-    href: "/portal",
-    group: "Merit",
-    icon: "dashboard",
-    label: "Dashboard",
-    description: "Your programme, induction, merit and plans at a glance.",
+    href: "/portal/finder", group: "Start", icon: "target", label: "My chances",
+    description: "Where your marks can get a seat, based on past closing merit.",
+    match: ["/portal/calculator", "/portal/preferences"],
   },
-  {
-    href: "/portal/calculator",
-    group: "Merit",
-    icon: "calculator",
-    label: "Merit calculator",
-    description: "Work out your merit marks under the scoring policy from your own details.",
-  },
-  {
-    href: "/portal/finder",
-    group: "Merit",
-    icon: "target",
-    label: "Score finder",
-    description: "Enter your marks and see which specialities and hospitals they would have reached in past rounds.",
-  },
-  {
-    href: "/portal/history",
-    group: "Merit",
-    icon: "trend",
-    label: "Merit lists",
-    description: "Every round of every induction: closing merit by programme, quota, speciality and hospital.",
-  },
-  {
-    href: "/portal/explore",
-    group: "Merit",
-    icon: "building",
-    label: "Browse hospitals",
-    description: "Each speciality and hospital, its seats and its closing merit across inductions.",
-  },
-  {
-    href: "/portal/profile",
-    group: "Merit",
-    icon: "user",
-    label: "Merit profile",
-    description: "Your verified merit record: every round you appeared in, with closing merit.",
-  },
-  {
-    href: "/portal/preferences",
-    group: "Merit",
-    icon: "list",
-    label: "Preference planner",
-    description: "Put your options in order and see where the list is likely to place you.",
-  },
-  {
-    href: "/portal/simulation",
-    group: "More",
-    icon: "pulse",
-    label: "What-if simulation",
-    description: "Seat-allocation simulation using the existing engine.",
-  },
-  {
-    href: "/portal/community",
-    group: "More",
-    icon: "chat",
-    label: "Community",
-    description: "Ask and answer questions about inductions, rounds, specialities and hospitals.",
-  },
-  {
-    href: "/portal/workspace",
-    group: "More",
-    icon: "folder",
-    label: "Workspace",
-    description: "Your shortlist of speciality and hospital options, saved on your account.",
-  },
-  {
-    href: "/portal/inbox",
-    group: "More",
-    icon: "inbox",
-    label: "Inbox",
-    description: "New answers, accepted answers, new questions and new rounds for what you follow.",
-  },
+  { href: "/portal/explore", group: "Start", icon: "building", label: "Hospitals", description: "Every hospital and speciality: seats, closing merit, accreditation and reviews." },
+  { href: "/portal/simulation", group: "Start", icon: "pulse", label: "What if", description: "What if someone accepts or rejects? Change consent and see the next list." },
+  { href: "/portal/community", group: "Start", icon: "chat", label: "Ask & chat", description: "Questions and answers, and a chat room for every round." },
+  { href: "/portal/profile", group: "Mine", icon: "user", label: "My record", description: "Your merit record: every round you appeared in, with closing merit." },
+  { href: "/portal/workspace", group: "Mine", icon: "folder", label: "Saved", description: "Seats you saved, views you saved, and what you follow." },
+  { href: "/portal/inbox", group: "Mine", icon: "inbox", label: "Inbox", description: "New lists, answers and alerts about what you follow." },
+  { href: "/portal/guide", group: "Mine", icon: "book", label: "Help", description: "How the merit lists work, in plain words, and what each term means." },
+  // Tabs of My chances, not menu items of their own.
+  { href: "/portal/calculator", group: "Start", icon: "calculator", label: "Merit calculator", description: "Work out your merit marks from your own details, under the published scoring policy.", hideInNav: true },
+  { href: "/portal/preferences", group: "Start", icon: "list", label: "Preference list", description: "Put your options in order and see where the list is likely to place you.", hideInNav: true },
 ];
 
 export const adminSections: Section[] = [

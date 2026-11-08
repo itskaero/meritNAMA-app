@@ -83,6 +83,7 @@
  "merit#meritOverview": "candidate data_editor policy_editor verifier moderator owner",
  "merit#latestRoundChange": "candidate data_editor policy_editor verifier moderator owner",
  "merit#seatTrends": "candidate data_editor policy_editor verifier moderator owner",
+ "merit#findApplicant": "candidate data_editor policy_editor verifier moderator owner",
  "notifications#isFollowing": "candidate data_editor policy_editor verifier moderator owner",
  "notifications#setFollow": "candidate data_editor policy_editor verifier moderator owner",
  "notifications#unreadCount": "candidate data_editor policy_editor verifier moderator owner",

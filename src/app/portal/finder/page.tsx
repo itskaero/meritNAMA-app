@@ -1,4 +1,5 @@
 import { SaveView } from "@/components/workspace/save-view";
+import { ChancesTabs } from "@/components/chances-tabs";
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { LineChart } from "@/components/charts/line-chart";
@@ -68,6 +69,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   if (opts.inductions.length === 0) {
     return (
       <AreaPage {...frame}>
+        <ChancesTabs current="/portal/finder" />
         <EmptyState title="No merit data to compare with yet">The finder needs imported merit rounds and the scoring policy file (for each induction&apos;s total marks).</EmptyState>
       </AreaPage>
     );
@@ -138,6 +140,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   const query = new URLSearchParams(Object.entries(sp).filter((e): e is [string, string] => typeof e[1] === "string" && e[1] !== "")).toString();
   return (
     <AreaPage {...frame}>
+      <ChancesTabs current="/portal/finder" />
       {query ? <div><SaveView href={`/portal/finder?${query}`} label={`Finder${sp.marks ? `: ${sp.marks} marks` : ""}${sp.track ? `, ${sp.track.replace("|", " · ")}` : ""}`} /></div> : null}
       <Card className="lg:sticky lg:top-0 lg:z-20 lg:rounded-t-none lg:shadow-[var(--mn-shadow-2)]">
         <form method="get" className="grid gap-4 md:grid-cols-[repeat(4,minmax(0,1fr))_auto] md:items-end">

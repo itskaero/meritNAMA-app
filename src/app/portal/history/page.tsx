@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FindBox } from "@/components/find-box";
 import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
 import { InductionTimeline } from "@/components/charts/induction-timeline";
@@ -35,6 +36,7 @@ export default async function MeritListsPage() {
           { label: "Seats in the latest matrix", value: overview.seats, hint: `${overview.hospitals} hospitals` },
         ]}
       />
+      <FindBox />
       <EstimateListCard estimates={estimates} />
       {inductions.length ? (
         <Card>

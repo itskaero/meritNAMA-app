@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "./icon";
 import { cn } from "./ui/cn";
 
-export type NavItem = { href: string; label: string; group: string; icon: IconName };
+export type NavItem = { href: string; label: string; group: string; icon: IconName; match?: string[] };
 
 /**
  * Persistent sidebar on wide screens, drawer on phones. Brand and search at the top,
@@ -59,8 +59,8 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
 
   const groups = [...new Set(items.map((i) => i.group))];
   // Section roots (/admin, /portal) match exactly; other items also own their sub-routes.
-  const isActive = (href: string) =>
-    pathname === href || (href.split("/").length > 2 && pathname.startsWith(`${href}/`));
+  const under = (href: string) => pathname === href || (href.split("/").length > 2 && pathname.startsWith(`${href}/`));
+  const isActive = (href: string) => under(href) || Boolean(items.find((i) => i.href === href)?.match?.some(under));
 
   return (
     <>
