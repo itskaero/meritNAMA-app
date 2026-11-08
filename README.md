@@ -77,7 +77,7 @@ scripts/backup.sh                      # pg_dump + storage archive under $MERITN
 scripts/restore.sh <backup-dir>
 ```
 
-One-command NAS install: `sudo ./meritnama.sh install`. Step-by-step setup at meritnama.online: [docs/NAS-SETUP.md](docs/NAS-SETUP.md). Reference for updates, backups and restores: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+One-command NAS install: download and install with one `curl` (see the top of [docs/NAS-SETUP.md](docs/NAS-SETUP.md)), or `sudo ./meritnama.sh install` from a checkout. Step-by-step setup at meritnama.online: [docs/NAS-SETUP.md](docs/NAS-SETUP.md). Reference for updates, backups and restores: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Environment
 

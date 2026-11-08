@@ -10,7 +10,35 @@ once Docker Compose is available.
 
 ---
 
-## Quick start: one command
+## Quickest: one curl command (downloads and installs)
+
+Needs SSH on the NAS (step 1), the Gmail app password (step 3) and, for the tunnel,
+its token (step 5A). Make a GitHub token once: GitHub → Settings → Developer settings
+→ **Fine-grained tokens** → *Generate*, repository access *Only select* →
+`itskaero/meritNAMA-app`, permission **Contents: Read-only**, expiry as you like.
+
+```bash
+ssh admin@<nas-ip>
+GH_TOKEN=github_pat_xxxxxxxx      # the token you just made
+curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github.raw" \
+  "https://api.github.com/repos/itskaero/meritNAMA-app/contents/scripts/get.sh?ref=main" \
+  | sudo GH_TOKEN="$GH_TOKEN" MN_REF=main bash
+```
+
+It downloads the code to `/volume1/docker/meritnama`, asks its questions (owner
+email, Gmail app password, tunnel/proxy/local, tunnel token), builds, starts and waits
+until the site is healthy. **Run the same command again to update**: it keeps `.env`,
+keeps the previous code as `meritnama.previous`, backs up and rebuilds.
+
+- Until the pull request is merged, use the branch name instead of `main` in both
+  places: `?ref=ccr-3e305929-39xqcm` and `MN_REF=ccr-3e305929-39xqcm`.
+- Unattended (e.g. from DSM's Task Scheduler, no terminal): put the answers in the
+  command, `sudo GH_TOKEN=... MN_OWNER=you@example.com MN_GMAIL_APP_PASSWORD=...
+  MN_ACCESS=tunnel MN_TUNNEL_TOKEN=... MN_UNATTENDED=1 bash`. A Task Scheduler task
+  stores that text, so delete the task afterwards.
+- Other folder: add `MN_DIR=/volume2/apps/meritnama`.
+
+## Quick start: one command (code already on the NAS)
 
 After steps 0–3 below (NAS ready, code on it, a Gmail app password, and either a
 Cloudflare Tunnel token or ports 80/443 forwarded), everything else is:
