@@ -10,6 +10,8 @@ import { getSession } from "@/lib/auth/session";
 import { listInductionsWithRounds, meritOverview, seatTrends } from "@/lib/data/merit";
 import { LineChart } from "@/components/charts/line-chart";
 import { getDb } from "@/lib/db/client";
+import { publishedEstimates } from "@/lib/data/simulation";
+import { EstimateListCard } from "@/components/estimate-list-card";
 import { findSection } from "@/lib/navigation";
 
 export const metadata = { title: "Merit lists" };
@@ -21,7 +23,7 @@ export default async function MeritListsPage() {
   if (down) return down;
   const db = getDb();
   const session = await getSession();
-  const [inductions, overview, seats] = await Promise.all([listInductionsWithRounds(db, session), meritOverview(db, session), seatTrends(db, session)]);
+  const [inductions, overview, seats, estimates] = await Promise.all([listInductionsWithRounds(db, session), meritOverview(db, session), seatTrends(db, session), publishedEstimates(db, session)]);
 
   return (
     <AreaPage area="portal" trail={[{ label: s.label }]} title={s.label} description={s.description}>
@@ -33,6 +35,7 @@ export default async function MeritListsPage() {
           { label: "Seats in the latest matrix", value: overview.seats, hint: `${overview.hospitals} hospitals` },
         ]}
       />
+      <EstimateListCard estimates={estimates} />
       {inductions.length ? (
         <Card>
           <CardHeader title="Timeline" description="Each induction's cycle; select a round to open its merit list." />

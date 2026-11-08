@@ -38,7 +38,7 @@ const NO_SESSION = new Set([
   "merit#inductionMaxMarks",
   "notifications#parseFollowTarget", "notifications#autoFollow", "notifications#notifyFollowers", "notifications#notifyUser", "notifications#notifyShortlists", "rooms#postRoundDay", "social#peerKey", "social#reputationSql",
   "predictions#inductionRunning",
-  "public#landingFigures", "public#landingTracks", "public#landingCheck", "sources#lastMeritImport", "simulation#processQueuedRuns",
+  "public#landingFigures", "public#landingTracks", "public#landingCheck", "sources#lastMeritImport", "simulation#processQueuedRuns", "simulation#runRoundNo",
   "settings#loadFeatures", "settings#loadRetention", "settings#retentionIfDue",
   "shared#requireReason", "shared#writeAudit",
   "simulation#importProblem", "simulation#runList", "simulation#toListAllocations", "simulation#officialReplies", "simulation#publishedRound", "simulation#executeRun", "simulation#failInterruptedRuns",

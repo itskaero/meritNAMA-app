@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { lstat, mkdir, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
@@ -71,6 +71,7 @@ const ROLES = {
   marks: /^(?:induction\d{1,3}_)?(?:candidate_?)?marks\.json$/i,
   preferences: /^(?:induction\d{1,3}_)?preferences\.json$/i,
   candidates: /^(?:induction\d{1,3}_)?candidates\.json$/i,
+  gazette: /^(?:induction\d{1,3}_)?gazette(?:_\d{1,3})?\.json$/i,
   components: /^(?:induction\d{1,3}_)?components\.json$/i,
   certificates: /^(?:induction\d{1,3}_)?certificates\.json$/i,
   profileStatus: /^(?:(?:induction\d{1,3}_)?profile_?status|ProfileStatus)\.json$/i,
@@ -84,8 +85,11 @@ const folderFor = (root: string, induction: number) => path.join(/* turbopackIgn
 export function importProblem(files: { role: Role }[]): string | null {
   const has = (r: Role) => files.some((f) => f.role === r);
   if (has("candidates") && (has("marks") || has("preferences"))) return "The folder has both the split files and a combined candidates.json; keep one format.";
-  if (has("marks") !== has("preferences")) return has("marks") ? "preferences.json is missing (marks.json needs it)." : "marks.json is missing (preferences.json needs it).";
-  if (!has("candidates") && !has("marks")) return "Put marks.json and preferences.json (or a combined candidates.json) here.";
+  if (has("marks") && !has("preferences")) return "preferences.json is missing (marks.json needs it).";
+  if (has("preferences") && !has("marks") && !has("gazette")) return "marks.json (or the gazette, gazette_<n>.json) is missing: preferences.json needs one.";
+  if (!has("candidates") && !has("preferences")) return has("gazette")
+    ? "The gazette has marks but no preferences: add preferences.json (or a combined candidates.json)."
+    : "Put marks.json and preferences.json (or gazette_<n>.json and preferences.json, or a combined candidates.json) here.";
   return null;
 }
 const canImport = (files: { role: Role }[]) => importProblem(files) === null;
@@ -235,6 +239,7 @@ export async function importSimulationDataset(db: Database, session: Session | n
   }
   const { candidates, summary } = sanitizeSimDataset({
     marks: data.marks,
+    gazette: data.gazette,
     preferences: data.preferences,
     candidates: data.candidates,
     components: data.components,
@@ -769,8 +774,64 @@ export async function getRun(db: Database, session: Session | null, id: string) 
   assertCan(session, "portal");
   const [r] = await db.select().from(simulationRuns).where(eq(simulationRuns.id, id)).limit(1);
   if (!r) return null;
-  if (r.ownerUserId ? r.ownerUserId !== (await ensureUser(db, session)).id : !can(session, "staff")) return null;
+  // Published estimates are for everyone; otherwise a run is its owner's (what-if) or staff's.
+  if (!r.publishedAt && (r.ownerUserId ? r.ownerUserId !== (await ensureUser(db, session)).id : !can(session, "staff"))) return null;
   return { ...r, summary: r.summary as RunSummary | null };
+}
+
+export const runRoundNo = (r: { kind: string; fromRound: number | null }) => (r.kind === "next_round" ? r.fromRound! + 1 : 1);
+
+/**
+ * Publish a finished staff simulation as an estimated merit list (or take it down).
+ * Members then see the whole list, labelled Estimate, and can play what-if on it.
+ */
+export async function publishEstimate(db: Database, session: Session | null, input: { id: string; publish: boolean; reason: string }) {
+  assertCan(session, "data.edit");
+  const reason = requireReason(input.reason, "publishing an estimate");
+  const [run] = await db.select().from(simulationRuns).where(eq(simulationRuns.id, input.id)).limit(1);
+  if (!run || run.ownerUserId) throw new UserFacingError("That run does not exist.");
+  if (run.status !== "done") throw new UserFacingError("Only a finished run can be published.");
+  await db.update(simulationRuns)
+    .set(input.publish ? { publishedAt: new Date(), publishedBy: session.email } : { publishedAt: null, publishedBy: null })
+    .where(eq(simulationRuns.id, run.id));
+  await writeAudit(db, session.email, {
+    action: input.publish ? "simulation.publish_estimate" : "simulation.unpublish_estimate",
+    entityType: "simulation_run",
+    entityId: run.id,
+    after: { induction: run.inductionId, round: runRoundNo(run) },
+    reason,
+  });
+}
+
+/**
+ * Published estimates, newest first. `official` is true once PHF's own list for that
+ * round is imported (the estimate is then kept for comparison, no longer current).
+ */
+export async function publishedEstimates(db: Database, session: Session | null, opts: { induction?: number } = {}) {
+  assertCan(session, "portal");
+  const rows = await db
+    .select({ id: simulationRuns.id, inductionId: simulationRuns.inductionId, kind: simulationRuns.kind, fromRound: simulationRuns.fromRound, publishedAt: simulationRuns.publishedAt, summary: simulationRuns.summary })
+    .from(simulationRuns)
+    .where(and(isNotNull(simulationRuns.publishedAt), opts.induction ? eq(simulationRuns.inductionId, opts.induction) : undefined))
+    .orderBy(desc(simulationRuns.publishedAt));
+  const official = await db.select({ inductionId: meritRounds.inductionId, roundNo: meritRounds.roundNo }).from(meritRounds);
+  return rows.map((r) => {
+    const roundNo = runRoundNo(r);
+    const placed = (r.summary as RunSummary | null)?.placed ?? null;
+    return { id: r.id, induction: r.inductionId, roundNo, publishedAt: r.publishedAt!, placed, official: official.some((o) => o.inductionId === r.inductionId && o.roundNo === roundNo) };
+  });
+}
+
+/**
+ * A simulated list in full (applicant id, mark, seat, preference), for a published
+ * estimate or a run the person may see (their own what-if, or any run for staff).
+ */
+export async function estimateList(db: Database, session: Session | null, runId: string) {
+  const run = await getRun(db, session, runId);
+  if (!run || run.status !== "done") return null;
+  const rows = await runList(db, run.id);
+  rows.sort((a, b) => a.program.localeCompare(b.program) || a.quota.localeCompare(b.quota) || a.speciality.localeCompare(b.speciality) || a.hospital.localeCompare(b.hospital) || b.mark - a.mark);
+  return { run, roundNo: runRoundNo(run), published: Boolean(run.publishedAt), rows };
 }
 
 /**

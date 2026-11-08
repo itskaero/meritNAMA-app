@@ -8,7 +8,7 @@ const STATUSES: ConsentStatus[] = ["Accepted", "Rejected", "Awaited"];
 const tone: Record<ConsentStatus, string> = {
   Accepted: "bg-[var(--mn-cyan-soft)] text-signal-strong ring-teal/60",
   Rejected: "bg-danger/15 text-danger ring-danger/50",
-  Awaited: "bg-amber/15 text-amber ring-amber/50",
+  Awaited: "bg-surface text-amber ring-amber/60",
 };
 
 /**
@@ -54,7 +54,7 @@ export function ConsentToggle(props: {
         })}
       </div>
       {props.changed ? (
-        <span className="rounded-full border border-amber/40 bg-amber/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-amber">simulated</span>
+        <span className="rounded-full border border-amber/40 bg-[var(--mn-amber-soft)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-amber">simulated</span>
       ) : null}
     </div>
   );

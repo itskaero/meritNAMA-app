@@ -103,9 +103,30 @@ describe("simulation dataset import", () => {
 
   it("refuses mixed or incomplete formats", () => {
     expect(() => sanitizeSimDataset({ marks: [], preferences: [], candidates })).toThrow(/not both/);
-    expect(() => sanitizeSimDataset({ marks: [] })).toThrow(/both marks/);
+    expect(() => sanitizeSimDataset({ marks: [] })).toThrow(/needs preferences/);
     expect(() => sanitizeSimDataset({})).toThrow(/No marks/);
     expect(() => sanitizeSimDataset({ marks: [{ applicantId: 1, marksTotal: 1 }, { applicantId: 1, marksTotal: 2 }], preferences: [] })).toThrow(/twice/);
+  });
+
+  it("reads the gazette: official marks, score parts and eligibility, never names", () => {
+    const gazette = { Table: [{}], Table5: [
+      { rowNo: 1, applicantId: 101, marksTotal: 24.07, degree: 12.31, houseJob: 5, experience: 5, fsc: 0, statusId: 1, status: "Eligible", nameFull: "Synthetic Person", pmdcNo: "12345-P" },
+      { rowNo: 2, applicantId: 102, marksTotal: 19.5, degree: 10, statusId: 2, status: "Rejected", nameFull: "Another Person", pmdcNo: "999-P" },
+      { rowNo: 3, applicantId: 103, marksTotal: 18, degree: 9, statusId: 1 },
+    ] };
+    // Gazette + preferences: the gazette stands in for marks.json.
+    const preferences = [{ applicantId: 101, ...pref(1) }, { applicantId: 102, ...pref(1) }];
+    const { candidates: out, summary } = sanitizeSimDataset({ gazette, preferences });
+    expect(out.map((c) => [c.applicantId, c.baseMarks, c.profileStatus, c.preferences.length])).toEqual([["101", 24.07, 1, 1], ["102", 19.5, 2, 1], ["103", 18, 1, 0]]);
+    expect(out[0]!.params).toMatchObject({ degree: 12.31, houseJob: 5, experience: 5 });
+    expect(Object.keys(out[0]!.params)).not.toContain("rowNo");
+    expect(JSON.stringify(out)).not.toMatch(/Synthetic|Another|12345|999-P/);
+    expect(summary).toMatchObject({ format: "split", gazette: { rows: 3, matched: 3 } });
+    // With the portal's combined file, the gazette's marks win; a status file still wins over the gazette.
+    const combined = sanitizeSimDataset({ gazette, candidates: [{ applicantId: 101, marksTotal: 30, preferences: [pref(1)] }], profileStatus: { entries: [{ applicantId: 101, statusId: 2, statusTypeId: 132 }] } });
+    expect(combined.candidates[0]).toMatchObject({ applicantId: "101", baseMarks: 24.07, profileStatus: 2 });
+    expect(combined.summary.gazette).toEqual({ rows: 3, matched: 1 });
+    expect(() => sanitizeSimDataset({ gazette })).toThrow(/No marks/);
   });
 
   it("lets a later status type override an earlier one", () => {

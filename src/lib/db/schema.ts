@@ -782,6 +782,13 @@ export const simulationRuns = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     startedAt: timestamp("started_at", { withTimezone: true }),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
+    /**
+     * Published as an estimated merit list: every signed-in member sees the whole list
+     * (applicant ids, marks, seats; never names) with the Estimate label, and can play
+     * what-if on it. Only staff runs (no owner) can be published.
+     */
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    publishedBy: text("published_by"),
   },
   (t) => [index("simulation_runs_induction_idx").on(t.inductionId, t.createdAt)],
 );

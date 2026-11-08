@@ -17,7 +17,7 @@ import { RUN_TONE } from "./status";
 export const metadata = { title: "Processing & simulation" };
 export const dynamic = "force-dynamic";
 
-const ROLE_LABEL = { marks: "Candidate marks", preferences: "Preferences", candidates: "Candidates (combined, legacy)", components: "Corrected marks", certificates: "Certificates", profileStatus: "Profile status" } as const;
+const ROLE_LABEL = { marks: "Candidate marks", preferences: "Preferences", candidates: "Candidates (combined, legacy)", gazette: "Gazette (official marks)", components: "Corrected marks", certificates: "Certificates", profileStatus: "Profile status" } as const;
 const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
 
 export default async function ProcessingPage() {

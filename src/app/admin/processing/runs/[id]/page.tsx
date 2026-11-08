@@ -11,6 +11,7 @@ import { getDb } from "@/lib/db/client";
 import { describeRules } from "@/lib/engine/rules";
 import { formatMarks, formatUtc, isUuid } from "@/lib/format";
 import { RUN_TONE } from "../../status";
+import { PublishEstimateForm } from "../../forms";
 import { Refresh } from "./refresh";
 
 export const metadata = { title: "Simulation run" };
@@ -67,6 +68,18 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
         </div>
       ) : null}
 
+      {run.status === "done" && !run.ownerUserId ? (
+        <Card>
+          <CardHeader
+            title={run.publishedAt ? `Published estimate · since ${formatUtc(run.publishedAt)} UTC` : "Publish as an estimated merit list"}
+            description={run.publishedAt
+              ? `Members see this list under Merit lists as "Estimated round ${run.kind === "next_round" ? run.fromRound! + 1 : 1}", in full (applicant ids, marks, seats; never names), and can play what-if on it. Published by ${run.publishedBy}.`
+              : "Members will see the whole simulated list under Merit lists, labelled Estimate (applicant ids, marks, seats; never names), and can change anyone's consent on it in What-if to see the next list. It stays until you take it down; once PHF's own list for the round is imported it is shown as superseded."}
+            action={run.publishedAt ? <Badge tone="simulated">Published</Badge> : undefined}
+          />
+          <PublishEstimateForm id={run.id} published={Boolean(run.publishedAt)} />
+        </Card>
+      ) : null}
       {s ? (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { PageSections } from "@/components/ui/page-sections";
+import { EstimateListCard } from "@/components/estimate-list-card";
+import { publishedEstimates } from "@/lib/data/simulation";
 import { ChartSource } from "@/components/charts/chart-source";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
@@ -34,6 +36,7 @@ export default async function InductionPage({ params, searchParams }: { params: 
   if (induction === null) notFound();
   const db = getDb();
   const session = await getSession();
+  const estimates = await publishedEstimates(db, session, { induction });
   const [all, timeline, maxMarks] = await Promise.all([listInductionsWithRounds(db, session), inductionTimeline(db, session, induction), inductionMaxMarks(db)]);
   const ind = all.find((i) => i.id === induction);
   if (!ind) notFound();
@@ -65,6 +68,7 @@ export default async function InductionPage({ params, searchParams }: { params: 
       title={`Induction ${induction} · ${ind.rounds[0]!.cycleName}`}
       description={`${ind.rounds[0]!.cycleCode} · ${ind.rounds.length} rounds published${max ? ` · scored out of ${max}` : ""}. Open a round to see closing merit by speciality and hospital.`}
     >
+      <EstimateListCard estimates={estimates} title={`Estimated lists for induction ${induction}`} />
       <PageSections
         items={[
           ...(settling ? [{ id: "settling", label: "Still moving" }] : []),

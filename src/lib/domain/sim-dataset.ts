@@ -161,6 +161,8 @@ export type SimDatasetSummary = {
   preferencesWithoutMarks: number;
   /** "split" (marks + preferences files) or "combined" (legacy candidates file). */
   format: "split" | "combined";
+  /** When a gazette was given: its rows, and how many candidates took their marks from it. */
+  gazette?: { rows: number; matched: number };
 };
 
 const programMarksOf = (o: Record<string, unknown> | null | undefined) => {
@@ -200,6 +202,41 @@ type RawCandidate = {
 
 const duplicate = (id: string, file: string) => new z.ZodError([{ code: "custom", path: [file, id], message: "applicant appears twice", input: undefined }]);
 
+/**
+ * PHF's gazette (the eligible-candidates list published before round 1): one row per
+ * applicant in Table5, with total marks, the parts of the score and eligibility.
+ * Names and PMDC numbers in it are never read.
+ */
+export const gazetteFileSchema = z.looseObject({
+  Table5: z.array(
+    z.looseObject({
+      applicantId: z.union([z.number().int(), z.string().min(1)]).transform(String),
+      marksTotal: z.number(),
+      statusId: z.number().int().nullish(),
+      status: z.string().nullish(),
+    }),
+  ).min(1, "the gazette has no candidates"),
+});
+/** Parts of the score the gazette prints; kept as base-marks formula parameters. */
+export const GAZETTE_PARAMS = ["matric", "fsc", "degree", "attempts", "houseJob", "experience", "hardArea", "research", "position"] as const;
+
+export type GazetteMarks = { marksTotal: number; params: Record<string, number>; profileStatus: number | null };
+
+/** Gazette rows by applicant: marks, score parts, and eligibility (Eligible → 1, Rejected → 2). */
+export function fromGazette(file: unknown): Map<string, GazetteMarks> {
+  const g = gazetteFileSchema.parse(file);
+  const out = new Map<string, GazetteMarks>();
+  for (const r of g.Table5) {
+    const row = r as Record<string, unknown>;
+    const params: Record<string, number> = {};
+    for (const k of GAZETTE_PARAMS) if (typeof row[k] === "number" && Number.isFinite(row[k])) params[k] = row[k] as number;
+    const st = (r.status ?? "").toLowerCase();
+    const profileStatus = r.statusId === 1 || st === "eligible" ? 1 : r.statusId === 2 || st === "rejected" ? 2 : null;
+    out.set(r.applicantId, { marksTotal: r.marksTotal, params, profileStatus });
+  }
+  return out;
+}
+
 /** The legacy combined file → raw candidates. */
 function fromCombined(file: unknown): RawCandidate[] {
   const parsed = candidatesFileSchema.parse(file);
@@ -234,6 +271,8 @@ function fromSplit(marksFile: unknown, preferencesFile: unknown): { list: RawCan
  */
 export function sanitizeSimDataset(files: {
   candidates?: unknown;
+  /** PHF's gazette: official marks (and eligibility) that override the portal's. */
+  gazette?: unknown;
   marks?: unknown;
   preferences?: unknown;
   components?: unknown;
@@ -243,11 +282,28 @@ export function sanitizeSimDataset(files: {
   candidates: SimCandidate[];
   summary: SimDatasetSummary;
 } {
-  const split = files.marks != null || files.preferences != null;
+  const gazette = files.gazette == null ? null : fromGazette(files.gazette);
+  // The gazette can stand in for marks.json: gazette + preferences.json is a split dataset.
+  const marksSource = files.marks ?? (gazette && files.preferences != null && files.candidates == null
+    ? [...gazette].map(([applicantId, g]) => ({ applicantId, marksTotal: g.marksTotal }))
+    : undefined);
+  const split = marksSource != null || files.preferences != null;
   if (split && files.candidates != null) throw new Error("Use either marks.json + preferences.json or candidates.json, not both.");
-  if (split && (files.marks == null || files.preferences == null)) throw new Error("The split format needs both marks.json and preferences.json.");
-  if (!split && files.candidates == null) throw new Error("No marks.json + preferences.json (or legacy candidates.json) to import.");
-  const { list, orphans } = split ? fromSplit(files.marks, files.preferences) : { list: fromCombined(files.candidates), orphans: 0 };
+  if (split && (marksSource == null || files.preferences == null)) throw new Error("The split format needs preferences.json and marks.json (or the gazette).");
+  if (!split && files.candidates == null) throw new Error("No marks.json + preferences.json (or gazette + preferences.json, or legacy candidates.json) to import.");
+  const { list, orphans } = split ? fromSplit(marksSource, files.preferences) : { list: fromCombined(files.candidates), orphans: 0 };
+  // Official gazette marks win over the portal's; its parts become formula parameters.
+  let gazetteMatched = 0;
+  if (gazette) {
+    for (const c of list) {
+      const g = gazette.get(c.id);
+      if (!g) continue;
+      gazetteMatched++;
+      c.marksTotal = g.marksTotal;
+      c.params = { ...c.params, ...g.params };
+      if (c.profileStatus == null) c.profileStatus = g.profileStatus;
+    }
+  }
   const components = files.components == null ? {} : componentsFileSchema.parse(files.components);
   const certParsed = files.certificates == null ? {} : certificatesFileSchema.parse(files.certificates);
   const certificates: Record<string, z.infer<typeof certificateSchema>[]> = {};
@@ -317,6 +373,7 @@ export function sanitizeSimDataset(files: {
       }, {}),
       preferencesWithoutMarks: orphans,
       format: split ? "split" : "combined",
+      ...(gazette ? { gazette: { rows: gazette.size, matched: gazetteMatched } } : {}),
     },
   };
 }

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { ActionResult, ReasonField } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
-import { importConsentAction, importDatasetAction, startRunAction } from "./actions";
+import { importConsentAction, importDatasetAction, publishEstimateAction, startRunAction } from "./actions";
 
 export function ImportDatasetForm({ induction, replaces }: { induction: number; replaces: boolean }) {
   const [state, action, pending] = useActionState(importDatasetAction, idleState);
@@ -56,6 +56,20 @@ export function ImportConsentForm({ induction }: { induction: number }) {
       <input type="hidden" name="induction" value={induction} />
       <ReasonField placeholder="e.g. Round 3 consent fetched from the portal" />
       <div><Button type="submit" variant="secondary" disabled={pending}>{pending ? "Importing…" : "Import consent files"}</Button></div>
+      <ActionResult state={state} />
+    </form>
+  );
+}
+
+/** Publish a finished run as the estimated merit list members see (or take it down). */
+export function PublishEstimateForm({ id, published }: { id: string; published: boolean }) {
+  const [state, action, pending] = useActionState(publishEstimateAction, idleState);
+  return (
+    <form action={action} className="grid gap-3">
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="publish" value={published ? "0" : "1"} />
+      <ReasonField placeholder={published ? "e.g. Official round 1 is out" : "e.g. Estimated round 1 from the gazette and portal preferences"} />
+      <div><Button type="submit" variant={published ? "secondary" : "primary"} disabled={pending}>{pending ? "Saving…" : published ? "Take down the estimate" : "Publish as estimated merit list"}</Button></div>
       <ActionResult state={state} />
     </form>
   );

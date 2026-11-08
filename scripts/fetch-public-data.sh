@@ -91,6 +91,8 @@ if [ "$WITH_SIM" = 1 ]; then
       [ -f "$f" ] && cp "$f" "$dest/"
     done
     [ -f "$SRC/data/ProfileStatus.json" ] && cp "$SRC/data/ProfileStatus.json" "$dest/"
+    # PHF's gazette: official marks and eligibility (they override the portal's marks).
+    [ -f "$SRC/inductions/$ind/gazette/gazette_$ind.json" ] && cp "$SRC/inductions/$ind/gazette/gazette_$ind.json" "$dest/"
     chmod -R go-rwx "$dest" 2>/dev/null || true
     ok "Simulation files for induction $ind → $dest (Admin → Processing)"
   done

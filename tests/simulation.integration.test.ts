@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
 import { createPolicyDraft } from "@/lib/data/policies";
 import { importSeatFile } from "@/lib/data/reference-data";
-import { executeRun, getRun, importConsentRounds, importSimulationDataset, listDatasets, listSimulationFolders, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
+import { estimateList, executeRun, getRun, importConsentRounds, importSimulationDataset, listDatasets, listSimulationFolders, publishEstimate, publishedEstimates, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
 import { importMeritRound } from "@/lib/data/merit";
 import { getWhatIf, queueWhatIfRun, resetSimulatedConsent, setSimulatedConsent } from "@/lib/data/what-if";
 import * as schema from "@/lib/db/schema";
@@ -162,7 +162,7 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
     expect(keep.summary!.resolved.cascade.awaitedConsent).toBe("keep");
   });
 
-  it("what if: private simulated consent, own seats only for candidates, official consent untouched", async () => {
+  it("what if: everyone sees the list and may change anyone's consent, privately; official consent untouched", async () => {
     const official = await db.select().from(schema.simConsent).where(eq(schema.simConsent.inductionId, IND));
     const base = { kind: "published" as const, round: 1 };
     // A candidate linked to an applicant who holds a seat in round 1.
@@ -173,10 +173,18 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
     await db.insert(schema.candidateLinks).values({ userId: u!.id, applicantId: seat.applicantId, status: "verified", method: "manual" });
 
     const mine = await getWhatIf(db, cand, { induction: IND, base });
-    expect(mine.rows.every((r) => r.applicantId === seat.applicantId)).toBe(true);
-    expect(mine.total).toBe(view0.total);
+    // The whole list, as on the public site; their own rows are marked.
+    expect(mine.rows.length).toBe(view0.total);
+    expect(mine.rows.filter((r) => r.mine).every((r) => r.applicantId === seat.applicantId)).toBe(true);
+    // Anyone's consent may be changed on their private copy.
     const other = view0.rows.find((r) => r.applicantId !== seat.applicantId)!;
-    await expect(setSimulatedConsent(db, cand, { induction: IND, base, applicantId: other.applicantId, seatKey: other.seatKey, status: "Rejected" })).rejects.toThrow(/only your own/);
+    const flip = other.official === "Rejected" ? "Accepted" : "Rejected";
+    await setSimulatedConsent(db, cand, { induction: IND, base, applicantId: other.applicantId, seatKey: other.seatKey, status: flip });
+    expect((await getWhatIf(db, cand, { induction: IND, base })).rows.find((r) => r.applicantId === other.applicantId && r.seatKey === other.seatKey)).toMatchObject({ simulated: flip, changed: true });
+    await setSimulatedConsent(db, cand, { induction: IND, base, applicantId: other.applicantId, seatKey: other.seatKey, status: null });
+    // A member without a linked record can play too.
+    const guest: Session = { userId: "s-g1", email: "sim-guest@test.local", role: "candidate", isStub: false };
+    expect((await getWhatIf(db, guest, { induction: IND, base })).rows.length).toBe(view0.total);
 
     await setSimulatedConsent(db, cand, { induction: IND, base, applicantId: seat.applicantId, seatKey: seat.seatKey, status: "Rejected" });
     expect((await getWhatIf(db, cand, { induction: IND, base })).rows.find((r) => r.seatKey === seat.seatKey)).toMatchObject({ simulated: "Rejected", changed: true });
@@ -205,5 +213,25 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
 
     await resetSimulatedConsent(db, cand, { induction: IND, base });
     expect((await getWhatIf(db, cand, { induction: IND, base })).changes).toBe(0);
+  });
+
+  it("publishes a staff run as an estimated list that every member can open, and takes it down", async () => {
+    const id = await queueFirstRoundRun(db, owner, { induction: IND });
+    await executeRun(db, id);
+    const member: Session = { userId: "s-m1", email: "sim-member@test.local", role: "candidate", isStub: false };
+    expect(await getRun(db, member, id)).toBeNull();
+    expect(await estimateList(db, member, id)).toBeNull();
+    await expect(publishEstimate(db, member, { id, publish: true, reason: "x" })).rejects.toThrow("forbidden");
+    await publishEstimate(db, owner, { id, publish: true, reason: "estimate from the gazette" });
+    const list = await publishedEstimates(db, member, { induction: IND });
+    // Round 1 is already published in this test, so the estimate shows as superseded.
+    expect(list.find((e) => e.id === id)).toMatchObject({ induction: IND, roundNo: 1, official: true });
+    const est = (await estimateList(db, member, id))!;
+    expect(est).toMatchObject({ roundNo: 1, published: true });
+    expect(est.rows.length).toBeGreaterThan(0);
+    expect(Object.keys(est.rows[0]!).sort()).toEqual(["applicantId", "hospital", "mark", "preferenceNo", "program", "quota", "speciality"]);
+    await publishEstimate(db, owner, { id, publish: false, reason: "taken down" });
+    expect(await estimateList(db, member, id)).toBeNull();
+    expect((await publishedEstimates(db, member, { induction: IND })).some((e) => e.id === id)).toBe(false);
   });
 });

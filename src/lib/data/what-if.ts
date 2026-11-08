@@ -6,7 +6,7 @@ import { meritRounds, simConsentScenarios, simDatasets, simPreferences, simulati
 import { allocationKey, isConsentStatus, officialStatuses, type ConsentStatus, type ListAllocation } from "@/lib/domain/what-if";
 import { UserFacingError } from "@/lib/errors";
 import { verifiedApplicant } from "./candidates";
-import { getRun, officialReplies, publishedRound, queueRun, runList, toListAllocations, type RunSummary } from "./simulation";
+import { getRun, officialReplies, publishedRound, queueRun, runList, runRoundNo, toListAllocations, type RunSummary } from "./simulation";
 import { assertFeature } from "./settings";
 import { ensureUser } from "./users";
 
@@ -15,8 +15,9 @@ import { ensureUser } from "./users";
  * a published round or a simulated run's list — and can simulate the next round with it.
  * The official consent (sim_consent) is never changed.
  *
- * Staff may change anyone's consent on their own copy; a candidate only their own
- * allocations, and sees only their own allocations and anonymous aggregates.
+ * Everyone sees the whole list (applicant ids, marks and seats, as PHF publishes them;
+ * never names) and may change anyone's consent on their own private copy, as on the
+ * public site. A linked record only marks the person's own rows.
  */
 
 export type WhatIfBase = { kind: "published"; round: number } | { kind: "run"; runId: string };
@@ -38,7 +39,6 @@ async function actor(db: Database, session: Session | null): Promise<Actor> {
   const me = await ensureUser(db, session);
   const staff = can(session, "staff");
   const applicantId = await verifiedApplicant(db, me.id);
-  if (!staff && !applicantId) throw new UserFacingError("Link your merit record first: what-if simulations use your own allocations.");
   return { userId: me.id, staff, applicantId };
 }
 
@@ -52,7 +52,7 @@ async function loadBase(db: Database, session: Session | null, induction: number
   }
   const run = await getRun(db, session, base.runId);
   if (!run || run.inductionId !== induction || run.status !== "done") throw new UserFacingError("That simulated list is not available.");
-  const roundNo = run.kind === "next_round" ? run.fromRound! + 1 : 1;
+  const roundNo = runRoundNo(run);
   // A simulated round has no official replies yet: everyone is Awaited.
   return { roundNo, allocations: toListAllocations(await runList(db, run.id)), official: new Map<string, ConsentStatus>(), runId: run.id };
 }
@@ -68,10 +68,7 @@ async function scenario(db: Database, userId: string, induction: number, key: st
 
 export type WhatIfRow = ListAllocation & { official: ConsentStatus; simulated: ConsentStatus; changed: boolean; mine: boolean };
 
-/**
- * A list with the caller's simulated consent. Staff get every allocation; a candidate only
- * their own, plus counts.
- */
+/** A list with the caller's simulated consent: every allocation, with counts. */
 export async function getWhatIf(db: Database, session: Session | null, input: { induction: number; base: WhatIfBase }) {
   const me = await actor(db, session);
   const b = await loadBase(db, session, input.induction, input.base);
@@ -88,7 +85,7 @@ export async function getWhatIf(db: Database, session: Session | null, input: { 
     roundNo: b.roundNo,
     staff: me.staff,
     applicantId: me.applicantId,
-    rows: me.staff ? rows : rows.filter((r) => r.mine),
+    rows,
     total: rows.length,
     counts,
     changes: rows.filter((r) => r.changed).length,
@@ -102,7 +99,6 @@ export async function setSimulatedConsent(
   input: { induction: number; base: WhatIfBase; applicantId: string; seatKey: string; status: ConsentStatus | null },
 ) {
   const me = await actor(db, session);
-  if (!me.staff && input.applicantId !== me.applicantId) throw new UserFacingError("You can change only your own consent.");
   if (input.status !== null && !isConsentStatus(input.status)) throw new UserFacingError("Unknown consent status.");
   const b = await loadBase(db, session, input.induction, input.base);
   if (!b.allocations.some((a) => a.applicantId === input.applicantId && a.seatKey === input.seatKey)) throw new UserFacingError("That allocation is not on this list.");
@@ -161,9 +157,9 @@ export async function myWhatIfRuns(db: Database, session: Session | null, induct
 }
 
 /**
- * A candidate's view of a simulated round: their own seats in it, and for each of their
- * preferences in those programmes, how many were placed there and the closing mark.
- * No other applicant is identified.
+ * A simulated round from the caller's point of view: their own seats in it, and for each
+ * of their preferences, how many were placed there and the closing mark. The full list
+ * is on the estimate page (estimateList).
  */
 export async function myWhatIfResult(db: Database, session: Session | null, runId: string) {
   const me = await actor(db, session);
@@ -193,5 +189,5 @@ export async function myWhatIfResult(db: Database, session: Session | null, runI
       return { program: nm(p.program), preferenceNo: p.preferenceNo, quota: nm(p.quota), speciality, hospital: nm(p.hospital), placed: g?.placed ?? 0, closing: g ? g.closing : null, held };
     })
     .sort((a, b) => a.program.localeCompare(b.program) || a.preferenceNo - b.preferenceNo);
-  return { run, roundNo: run.kind === "next_round" ? run.fromRound! + 1 : 1, mySeats, preferences };
+  return { run, roundNo: runRoundNo(run), mySeats, preferences, placed: list.length };
 }

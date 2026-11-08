@@ -106,6 +106,9 @@ $MERITNAMA_DATA_DIR/storage/simulation/induction22/
   preferences.json    required: one row per preference (as set on the official portal)
   certificates.json   optional: certificate marks
   ProfileStatus.json  optional but needed for realistic results (or profile_status.json)
+  gazette_22.json     optional: PHF's gazette; its marks and eligibility override the portal's,
+                      and with preferences.json it stands in for marks.json (estimate round 1
+                      before PHF's list)
   components.json     optional: corrected marks (override marks.json)
   consent_round1.json consent replies fetched from the portal after round 1, then round 2 …
 ```

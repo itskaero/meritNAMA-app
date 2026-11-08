@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { formInt, formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { executeRun, importConsentRounds, importSimulationDataset, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
+import { executeRun, importConsentRounds, importSimulationDataset, publishEstimate, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
 import { getDb } from "@/lib/db/client";
 
 /** Reachable by direct POST: the data layer checks the caller's capability. */
@@ -53,4 +53,18 @@ export async function startRunAction(_prev: ActionState, form: FormData): Promis
   }
   revalidatePath("/admin/processing");
   redirect(`/admin/processing/runs/${id}`);
+}
+
+/** Publish a finished run as an estimated merit list for members (or take it down). */
+export async function publishEstimateAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const id = formText(form, "id");
+    const publish = formText(form, "publish") === "1";
+    await publishEstimate(getDb(), await getSession(), { id, publish, reason: formText(form, "reason") });
+    revalidatePath(`/admin/processing/runs/${id}`);
+    revalidatePath("/portal", "layout");
+    return { status: "success", message: publish ? "Published. Members now see it under Merit lists as an estimate." : "Taken down. Members no longer see it." };
+  } catch (err) {
+    return toActionState(err);
+  }
 }

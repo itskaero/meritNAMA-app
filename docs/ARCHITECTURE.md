@@ -328,9 +328,21 @@ one. `consentRows` turns statuses into replies as the legacy site did. A what-if
 private to its owner (`simulation_runs.owner_user_id`), records the changes it used
 (`consent_overrides`) and what it carries forward (`carry`: who is out, track and
 programme bans), so the next round can be simulated from it (`base_run_id`).
-Candidates (`/portal/simulation`) see and change only their own allocations, and see
-their own seats plus anonymous counts and closing marks; staff
-(`/admin/processing/consent`) can change anyone's on their own copy. Rebuilt from
+As on the public site (owner's decision, Nov 2026), every member sees the whole list
+(applicant ids, marks, seats; names, PMDC numbers and emails are never stored) and may
+change anyone's consent on their own private copy (`/portal/simulation`, filters and a
+toggle per row); a linked record only marks their own rows. Staff do the same at
+`/admin/processing/consent`.
+
+**Estimated merit lists.** A finished staff run can be published
+(`simulation_runs.published_at`, `publishEstimate`, audited): members then see it under
+Merit lists as "Estimated round N" in full (`/portal/history/<n>/estimates/<run>`,
+labelled Estimate), with estimated closing merit per seat group, and can start a
+what-if from it. Once PHF's own round N is imported the estimate is shown as superseded.
+Round 1 is estimated before PHF's list from the **gazette** (`gazette_<n>.json` in the
+simulation folder: official marks, score parts and eligibility, which override the
+portal's) with the preferences collected from the portal; names and PMDC numbers in
+the gazette are never read. Rebuilt from
 unchanged official statuses, consent reproduces the official run within about ±1%.
 
 **Merit calculator (Nov 2026).** `src/lib/engine/score.ts` computes merit marks from a

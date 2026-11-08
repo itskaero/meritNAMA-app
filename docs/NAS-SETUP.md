@@ -348,6 +348,15 @@ the list with the reason.
 - `--with-simulation` copies candidate marks and preferences into
   `storage/simulation/induction21/`; import them under **Admin → Processing**.
 
+**Estimated merit lists (before PHF's).** Put the gazette (`gazette_<n>.json`) and the
+preferences from the portal (`preferences.json`, or the combined `candidates.json`) in
+`<data>/storage/simulation/induction<n>/` (`fetch-data --with-simulation` does this
+for the public site's files), import them under **Admin → Processing**, press
+**Simulate round 1**, open the run and **Publish as estimated merit list**. Members
+see it under Merit lists, in full, and can change anyone's consent in **What-if** to
+see the next list. After PHF publishes, import its round as usual; for the next
+estimate, import the consent file and **Simulate round r+1**, then publish that run.
+
 If rounds were imported before candidates signed up, index them once so sign-in
 emails match records:
 
