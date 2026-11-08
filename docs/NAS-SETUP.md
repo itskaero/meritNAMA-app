@@ -369,7 +369,7 @@ Database migrations run automatically before the new version starts.
 | No sign-in email arrives | `docker compose logs app \| grep -i -E "smtp\|mail"`. "Invalid login" or 535: the app password is wrong or revoked (step 3), or `@` was not written as `%40`. Look in spam. |
 | Cloudflare "Bad gateway" (502) or error 1033 | Tunnel public hostname must be `http://app:3000`; `docker compose ps` should show `tunnel` and `app` running; `docker compose logs tunnel`. |
 | "Too many redirects" | 5B with Cloudflare proxy on: set *SSL/TLS → Overview* to **Full (strict)**. |
-| Port 3000 already in use | Change `APP_PORT` (e.g. 3010) and the reverse proxy destination to match. |
+| "address already in use" on 127.0.0.1:3000 | Another app has port 3000 (common on ZimaOS/CasaOS). Set `APP_PORT=3010` in `.env` and `docker compose up -d`; with a NAS reverse proxy, point it at the new port. The tunnel (`app:3000`) needs no change. `meritnama.sh install/start` now picks a free port by itself. |
 | `migrate` exited with an error | `docker compose logs migrate`; usually a wrong `POSTGRES_PASSWORD` after the database was created. |
 | Health says `degraded` | `docker compose logs db`; check free disk space on the data volume. |
 | Google sign-in error "redirect_uri_mismatch" | The OAuth client's redirect URI must be exactly `https://meritnama.online/auth/google/callback`. |

@@ -169,6 +169,24 @@ prepare_dirs() {
   ok "Data folder: $d"
 }
 
+# True when something already listens on 127.0.0.1:$1.
+port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+
+# Before starting: if APP_PORT is taken by something that is not meritNAMA (common on
+# ZimaOS/CasaOS, where other apps use 3000), move to the next free port. Inside Docker
+# the app keeps port 3000, so the tunnel's "app:3000" is unaffected.
+ensure_port() {
+  load_env
+  local p="${APP_PORT:-3000}"
+  if compose ps --status running --services 2>/dev/null | grep -qx app; then return; fi
+  port_busy "$p" || return 0
+  local n=$((p + 1))
+  while port_busy "$n" && [ "$n" -lt $((p + 100)) ]; do n=$((n + 1)); done
+  port_busy "$n" && die "Port $p is in use and no free port was found up to $n. Set APP_PORT in .env."
+  setenv APP_PORT "$n"
+  say "Port $p is used by another program; meritNAMA will listen on $n instead (APP_PORT in .env)."
+}
+
 wait_healthy() {
   load_env
   local port="${APP_PORT:-3000}" i
@@ -204,13 +222,14 @@ case "$cmd" in
     need_docker
     configure
     prepare_dirs
+    ensure_port
     say "Building and starting (the first build takes 5–20 minutes on a NAS) …"
     compose up -d --build
     wait_healthy
     finish_msg
     ;;
   configure) configure ;;
-  start)   need_docker; compose up -d; wait_healthy ;;
+  start)   need_docker; ensure_port; compose up -d; wait_healthy ;;
   stop)    need_docker; compose stop ;;
   status)  need_docker; compose ps; load_env; curl -fsS "http://127.0.0.1:${APP_PORT:-3000}/api/health" && echo || warn "Health check failed." ;;
   logs)    need_docker; compose logs -f --tail 100 "${2:-app}" ;;
@@ -246,6 +265,7 @@ case "$cmd" in
     gunzip -c "$file" | docker load
     configure
     prepare_dirs
+    ensure_port
     compose up -d --no-build
     wait_healthy
     finish_msg
