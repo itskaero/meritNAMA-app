@@ -52,6 +52,9 @@ export default async function AdminInductionsPage({ searchParams }: { searchPara
           { label: "Names to map", value: toMap, hint: "Published names with no hospital or speciality" },
         ]}
       />
+      <Notice title="Adding data is now on the Data page">
+        Drop JSON files or a whole folder, or sync a data repository, on <Link href="/admin/data" className="font-semibold text-signal hover:underline">Data</Link>. The inbox below still works for files already in it.
+      </Notice>
       <Card id="inbox">
         <CardHeader
           title={`Inbox · ${inbox?.length ?? 0}`}
