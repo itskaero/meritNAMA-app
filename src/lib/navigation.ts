@@ -19,6 +19,10 @@ export type Section = {
   hideInNav?: boolean;
   /** Other paths that light this menu item up (e.g. My chances owns the calculator). */
   match?: string[];
+  /** Admin: left out of the menu in Simple mode (the page still works, and the Advanced hub links to it). */
+  proOnly?: boolean;
+  /** Admin: shown in Simple mode only, in place of the Pro-only pages it leads to. */
+  simpleOnly?: boolean;
 };
 
 /*
@@ -49,7 +53,7 @@ export const adminSections: Section[] = [
   {
     href: "/admin",
     capability: "staff",
-    group: "Menu",
+    group: "Today",
     icon: "dashboard",
     label: "Overview",
     description: "Active induction, datasets, processing and system health.",
@@ -57,7 +61,7 @@ export const adminSections: Section[] = [
   {
     href: "/admin/data",
     capability: "data.edit",
-    group: "Menu",
+    group: "Data",
     icon: "upload",
     label: "Data",
     description: "Drop JSON files or a data folder, or sync a data repository. New data goes live; replacements show what changes first.",
@@ -66,7 +70,7 @@ export const adminSections: Section[] = [
   {
     href: "/admin/candidates",
     capability: "candidates.verify",
-    group: "Menu",
+    group: "People",
     icon: "users",
     label: "Candidates",
     description: "Verify account links, look up and correct candidate records, and find duplicates.",
@@ -74,15 +78,34 @@ export const adminSections: Section[] = [
   {
     href: "/admin/inductions",
     capability: "data.edit",
-    group: "Menu",
+    group: "Data",
+    proOnly: true,
     icon: "calendar",
     label: "Inductions & merit lists",
     description: "Import merit-round files, replace or remove rounds, and map published names to hospitals and specialities.",
   },
   {
+    href: "/admin/community",
+    capability: "community.moderate",
+    group: "Community",
+    icon: "flag",
+    label: "Community moderation",
+    description: "Reported posts, hidden content and locked discussions.",
+  },
+  {
+    href: "/admin/advanced",
+    capability: "staff",
+    group: "Advanced",
+    simpleOnly: true,
+    icon: "sliders",
+    label: "Advanced",
+    description: "Scoring policies, allocation rules, simulation runs, changes waiting for review and the audit history.",
+  },
+  {
     href: "/admin/policies",
     capability: "policy.edit",
-    group: "Configuration",
+    group: "Advanced",
+    proOnly: true,
     icon: "sliders",
     label: "Scoring policies",
     description: "Versioned scoring-policy definitions.",
@@ -90,7 +113,8 @@ export const adminSections: Section[] = [
   {
     href: "/admin/rules",
     capability: "policy.edit",
-    group: "Configuration",
+    group: "Advanced",
+    proOnly: true,
     icon: "target",
     label: "Allocation rules",
     description: "How each induction's seats are allocated in the simulation: certificate and parent bonuses, tracks, later rounds.",
@@ -98,7 +122,8 @@ export const adminSections: Section[] = [
   {
     href: "/admin/reference-data",
     capability: "data.edit",
-    group: "Configuration",
+    group: "Data",
+    proOnly: true,
     icon: "database",
     label: "Reference data",
     description: "Seat matrices, lookups, disciplines, specialty groups and CPSP accreditation.",
@@ -106,7 +131,8 @@ export const adminSections: Section[] = [
   {
     href: "/admin/processing",
     capability: "data.edit",
-    group: "Operations",
+    group: "Advanced",
+    proOnly: true,
     icon: "cpu",
     label: "Processing & simulation",
     description: "Server-side pipelines and simulation runs.",
@@ -114,7 +140,8 @@ export const adminSections: Section[] = [
   {
     href: "/admin/changes",
     capability: "staff",
-    group: "Operations",
+    group: "Advanced",
+    proOnly: true,
     icon: "history",
     label: "Changes to review",
     description: "Risky changes wait here with a before/after preview. Publish, discard, or roll back a published change.",
@@ -122,23 +149,16 @@ export const adminSections: Section[] = [
   {
     href: "/admin/audit",
     capability: "staff",
-    group: "Operations",
+    group: "Advanced",
+    proOnly: true,
     icon: "history",
     label: "Audit history",
     description: "Who changed what, when and why.",
   },
   {
-    href: "/admin/community",
-    capability: "community.moderate",
-    group: "Operations",
-    icon: "flag",
-    label: "Community moderation",
-    description: "Reported posts, hidden content and locked discussions.",
-  },
-  {
     href: "/admin/settings",
     capability: "roles.manage",
-    group: "System",
+    group: "People",
     icon: "settings",
     label: "Team & roles",
     description: "Who is on the team and what each person may do; candidate feature switches, data retention and backups.",
@@ -162,6 +182,11 @@ export function findSection(href: string): Section {
   const s = [...candidateSections, ...adminSections].find((x) => x.href === href);
   if (!s) throw new Error(`Unknown section ${href}`);
   return s;
+}
+
+/** Simple mode hides the Pro-only pages behind the Advanced hub; Pro mode shows them all and hides the hub. */
+export function forMode(sections: Section[], mode: "simple" | "pro"): Section[] {
+  return sections.filter((x) => (mode === "pro" ? !x.simpleOnly : !x.proOnly));
 }
 
 /** Admin sections and quick actions this session may use. */
