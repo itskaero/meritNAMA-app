@@ -1,6 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { checkDatabase, getDb } from "@/lib/db/client";
+import { autoImportDataFolder } from "@/lib/data/datastore";
 import { failInterruptedRuns, processQueuedRuns } from "@/lib/data/simulation";
+import { syncIfDue } from "@/lib/data/sync";
 import { retentionIfDue } from "@/lib/data/settings";
 import { env } from "@/lib/env";
 
@@ -11,7 +13,9 @@ export const dynamic = "force-dynamic";
  * service "worker") over the internal Docker network:
  *   - start simulation runs that were queued but never started (e.g. after a restart),
  *   - mark runs that died mid-way as failed, so they can be run again,
- *   - apply data retention once a day, without waiting for a staff visit.
+ *   - apply data retention once a day, without waiting for a staff visit,
+ *   - sync the data repository (at most hourly, when one is set), then rescan the data folder
+ *     and publish new files when auto-publish is on. Replacements are never applied here.
  * Off unless INTERNAL_TOKEN is set. Requests that came through a proxy or tunnel are
  * refused, so it is never reachable from the internet even with the token.
  */
@@ -31,6 +35,8 @@ export async function POST(req: Request) {
   const db = getDb();
   const started = await processQueuedRuns(db).catch((e) => { console.error("worker: queued runs", e); return -1; });
   await failInterruptedRuns(db).catch((e) => console.error("worker: interrupted runs", e));
+  const synced = await syncIfDue(db).catch((e) => { console.error("worker: data sync", e); return false; });
+  const data = await autoImportDataFolder(db).catch((e) => { console.error("worker: data folder", e); return null; });
   const retention = await retentionIfDue(db).catch((e) => { console.error("worker: retention", e); return false; });
-  return Response.json({ ok: true, startedRuns: started, retentionRan: retention }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ ok: true, startedRuns: started, retentionRan: retention, dataSynced: synced, dataApplied: data?.applied ?? 0 }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -55,6 +55,15 @@ export const adminSections: Section[] = [
     description: "Active induction, datasets, processing and system health.",
   },
   {
+    href: "/admin/data",
+    capability: "data.edit",
+    group: "Menu",
+    icon: "upload",
+    label: "Data",
+    description: "Drop JSON files or a data folder, or sync a data repository. New data goes live; replacements show what changes first.",
+    match: ["/admin/inductions", "/admin/reference-data"],
+  },
+  {
     href: "/admin/candidates",
     capability: "candidates.verify",
     group: "Menu",
