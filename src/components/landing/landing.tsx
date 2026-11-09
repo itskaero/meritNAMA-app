@@ -200,12 +200,12 @@ export function Landing({ f, features, tracks, check, query }: { f: LandingFigur
 
       <main id="main">
         {/* ── The record so far ───────────────────────────────────────────────── */}
-        <section aria-labelledby="in-numbers" className="relative isolate overflow-hidden bg-ivory text-navy">
+        <section aria-labelledby="in-numbers" className="relative isolate overflow-hidden bg-surface text-ink mn-dots">
           <Image src={ART.paperIvory} alt="" fill sizes="100vw" className="-z-10 object-cover opacity-70" />
           <div className={cn(wrap, "py-14 md:py-16")}>
             <div className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
-              <h2 id="in-numbers" className={cn(eyebrow, "text-slate")}>The record so far</h2>
-              <p className="text-sm text-slate">From published lists{updated ? `, last updated ${updated}` : ""}</p>
+              <h2 id="in-numbers" className={cn(eyebrow, "text-muted")}>The record so far</h2>
+              <p className="text-sm text-muted">From published lists{updated ? `, last updated ${updated}` : ""}</p>
             </div>
             <dl className="grid grid-cols-2 gap-y-8 md:grid-cols-4">
               {([
@@ -214,10 +214,10 @@ export function Landing({ f, features, tracks, check, query }: { f: LandingFigur
                 [f.hospitals, "hospitals", "with seats in the latest matrix"],
                 [f.rounds, "merit rounds", `across ${f.inductions} induction${f.inductions === 1 ? "" : "s"}`],
               ] as const).map(([v, l, hint], i) => (
-                <div key={l} className={cn("mn-reveal grid gap-1 pr-4", i % 2 === 1 && "border-l border-navy/15 pl-5", i >= 1 && "md:border-l md:border-navy/15 md:pl-6")}>
+                <div key={l} className={cn("mn-reveal grid gap-1 pr-4", i % 2 === 1 && "border-l border-line pl-5", i >= 1 && "md:border-l md:border-line md:pl-6")}>
                   <dd className="order-1 font-serif text-[clamp(2.4rem,5vw,3.6rem)] font-semibold leading-none tracking-tight tabular-nums">{fmt(v)}</dd>
                   <dt className="order-2 mt-1 text-sm font-medium">{l}</dt>
-                  <dd className="order-3 text-xs text-slate">{hint}</dd>
+                  <dd className="order-3 text-xs text-muted">{hint}</dd>
                 </div>
               ))}
             </dl>
@@ -382,26 +382,26 @@ export function Landing({ f, features, tracks, check, query }: { f: LandingFigur
         </section>
 
         {/* ── Methodology and data sources ────────────────────────────────────── */}
-        <section id="method" className="relative isolate scroll-mt-6 overflow-hidden bg-ivory text-navy" aria-labelledby="ch-method">
+        <section id="method" className="relative isolate scroll-mt-6 overflow-hidden bg-surface text-ink mn-dots" aria-labelledby="ch-method">
           <Image src={ART.paperIvory} alt="" fill sizes="100vw" className="-z-10 object-cover opacity-70" />
           <div className={cn(wrap, "py-16 md:py-20")}>
             <div>
-              <p className={cn(eyebrow, "text-slate")}>Methodology</p>
-              <h2 id="ch-method" className={cn(h2, "mt-3 max-w-2xl text-navy")}>Where every number comes from.</h2>
+              <p className={cn(eyebrow, "text-muted")}>Methodology</p>
+              <h2 id="ch-method" className={cn(h2, "mt-3 max-w-2xl text-heading")}>Where every number comes from.</h2>
               <div className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-3">
                 {[
                   { tone: "official" as const, label: "Official", title: "Published by PHF", body: "Merit lists for every round, seat matrices and the scoring policy, imported as published. Nothing is edited." },
                   { tone: "calculated" as const, label: "Calculated", title: "Worked out from the record", body: "Closing merit (the lowest mark allocated to a seat in a round), medians, movement between rounds and your own aggregate." },
                   { tone: "simulated" as const, label: "Estimate", title: "Marked as estimates", body: "Next-round ranges and what-if simulations are labelled as estimates on every page and never shown as official results." },
                 ].map((x) => (
-                  <div key={x.title} className="mn-reveal grid content-start gap-2 border-t border-navy/15 pt-5">
+                  <div key={x.title} className="mn-reveal grid content-start gap-2 border-t border-line pt-5">
                     <Badge tone={x.tone} className="justify-self-start bg-surface">{x.label}</Badge>
-                    <h3 className="font-serif text-xl font-semibold text-navy">{x.title}</h3>
-                    <p className="text-sm leading-relaxed text-slate">{x.body}</p>
+                    <h3 className="font-serif text-xl font-semibold text-heading">{x.title}</h3>
+                    <p className="text-sm leading-relaxed text-muted">{x.body}</p>
                   </div>
                 ))}
               </div>
-              <p className="mt-10 max-w-2xl text-sm text-slate">
+              <p className="mt-10 max-w-2xl text-sm text-muted">
                 CPSP accreditation comes from CPSP&apos;s published list and is matched to hospitals by name, so a missing match is not proof that a unit is unaccredited. Personal details on merit lists (names, phone numbers, CNICs) are never stored.
               </p>
             </div>
@@ -433,7 +433,7 @@ export function Landing({ f, features, tracks, check, query }: { f: LandingFigur
       </main>
 
       <footer className="bg-canvas">
-        <span aria-hidden className="mn-mask mx-auto block aspect-[1522/345] w-full max-w-5xl text-slate opacity-[0.14]" style={mask(ART.skyline)} />
+        <span aria-hidden className="mn-mask mx-auto block aspect-[1522/345] w-full max-w-5xl text-muted opacity-[0.14]" style={mask(ART.skyline)} />
         <div className={cn(wrap, "grid gap-3 border-t border-line py-8 text-sm text-muted md:grid-cols-[auto_1fr] md:items-start md:gap-10")}>
           <span className="flex items-center gap-2 text-heading"><LogoMark className="h-5 w-5" />meritNAMA</span>
           <div className="grid gap-1 md:justify-items-end md:text-right">

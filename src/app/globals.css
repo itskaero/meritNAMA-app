@@ -15,6 +15,9 @@
   --color-signal: var(--mn-cyan);
   --color-signal-strong: var(--mn-cyan-strong);
   --color-signal-ink: var(--mn-cyan-ink);
+  --color-action: var(--mn-action);
+  --color-action-strong: var(--mn-action-strong);
+  --color-action-ink: var(--mn-action-ink);
   --color-amber: var(--mn-amber);
   --color-danger: var(--mn-danger);
   --color-success: var(--mn-success);
@@ -104,6 +107,23 @@ html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger te
 .mn-beam-flow { background-size: 200% 100%; animation: mn-beam 6s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .mn-draw, .mn-grow-x, .mn-grow-y, .mn-rise, .mn-beam-flow, .mn-pulse { animation: none; }
+}
+
+/*
+ * v3 look: dotted grid, glow, drifting aurora, hover lift. Each is decoration only and is
+ * switched off under prefers-reduced-motion (the static look stays).
+ */
+.mn-dots { background-image: radial-gradient(color-mix(in srgb, var(--mn-text) 9%, transparent) 1px, transparent 1px); background-size: 18px 18px; }
+.mn-glow { position: relative; overflow: hidden; }
+.mn-glow::after { content: ""; position: absolute; left: 8%; right: 8%; bottom: -46px; height: 90px; background: radial-gradient(closest-side, var(--mn-glow), transparent); pointer-events: none; animation: mn-pulse 4s ease-in-out infinite; }
+.mn-aurora { background: radial-gradient(60% 90% at 50% 120%, var(--mn-glow), transparent 70%), radial-gradient(40% 60% at 85% 110%, var(--mn-glow-warm), transparent 70%); background-size: 140% 140%; animation: mn-drift 12s ease-in-out infinite alternate; }
+.mn-lift { transition: transform .25s var(--mn-ease), box-shadow .25s var(--mn-ease), border-color .25s var(--mn-ease); }
+.mn-lift:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--mn-cyan) 45%, transparent); box-shadow: 0 12px 40px -12px var(--mn-glow); }
+.mn-pop-in { animation: mn-rise .6s var(--mn-ease) both; }
+@keyframes mn-drift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+@media (prefers-reduced-motion: reduce) {
+  .mn-glow::after, .mn-aurora, .mn-pop-in { animation: none; }
+  .mn-lift, .mn-lift:hover { transition: none; transform: none; }
 }
 
 /* Printing a preference list: only the page content, dark on white. */

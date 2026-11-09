@@ -38,6 +38,16 @@ describe.each(Object.entries(themes))("design token contrast (%s)", (_name, src)
 
   it("text on primary buttons is AA", () => {
     expect(contrast(token("mn-cyan-ink"), token("mn-cyan"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token("mn-action-ink"), token("mn-action"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(token("mn-action-ink"), token("mn-action-strong"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("the action colour stands out from every surface (3:1 for a button edge)", () => {
+    for (const bg of surfaces) expect(contrast(token("mn-action"), token(bg))).toBeGreaterThanOrEqual(3);
+  });
+
+  it("feature-card text is AA on the feature surface", () => {
+    for (const fg of ["mn-feature-ink", "mn-feature-muted", "mn-feature-accent"]) expect(contrast(token(fg), token("mn-feature-bg"))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("subtle text meets AA on the page background", () => {

@@ -12,6 +12,10 @@
  * Token names from v1 are kept as the semantic layer ("navy-950" = page background,
  * "cyan" = primary action), so components did not have to change names.
  *
+ * v3.0 (Nov 2026): dark is the default theme (src/lib/ui-mode.ts); light is kept as an option.
+ * Surfaces #0A0A0D / #121216 / #18181D / #202027, violet #7557F8 for actions (a shade under the mockup #7C5CFF, which is 4.35:1 with white text), teal #2DD4BF for
+ * good news, ember #FF6A3D for the brand, amber #F5B94A for estimates.
+ *
  * v2.1 (Nov 2026): brand palette for the redesign with the generated imagery: Deep
  * Navy #10243A, Slate Blue #263C4D, Teal #176B67, Amber #E5A04B, Terracotta #D97861,
  * Mint #E9F0ED, Warm Ivory #F3EEE5, Charcoal #283747. Teal is dark enough to be the
@@ -52,6 +56,11 @@
   --mn-cyan-strong: #11524F;   /* hover */
   --mn-cyan-ink: #FFFFFF;      /* text on primary */
   --mn-cyan-soft: rgba(23, 107, 103, 0.11);
+  --mn-action: #176B67;          /* primary buttons: teal in light, violet in dark */
+  --mn-action-strong: #11524F;
+  --mn-action-ink: #FFFFFF;
+  --mn-glow: rgba(23, 107, 103, 0.18);
+  --mn-glow-warm: rgba(217, 120, 97, 0.18);
   --mn-teal-deep: #E9F0ED;     /* tinted panels (mint) */
   --mn-amber: #8A5D12;         /* warnings, estimates */
   --mn-amber-soft: rgba(176, 125, 40, 0.12);
@@ -137,107 +146,121 @@
   --mn-duration: 160ms;
 }
 
-/* Dark: navy and charcoal surfaces. Explicit choice, or "system" with a dark OS. */
+/* Dark (the default since v3). Explicit choice, or "system" with a dark OS. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --mn-navy-950: #0E1823;
-  --mn-navy-900: #142536;
-  --mn-navy-800: #1B2F42;
-  --mn-navy-700: #243A4E;
-  --mn-border: #263C4D;
-  --mn-border-strong: #36506A;
-  --mn-text: #E8EDF1;
-  --mn-text-heading: #F3F5F7;
-  --mn-text-muted: #A7B4BE;
-  --mn-text-subtle: #93A1AB;
-  --mn-text-decor: #7E8D98;
-  --mn-cyan: #7DB8AA;
-  --mn-cyan-strong: #95C8BC;
-  --mn-cyan-ink: #0E1823;
-  --mn-cyan-soft: rgba(125, 184, 170, 0.16);
-  --mn-teal-deep: #173A3C;
-  --mn-amber: #D9B377;
-  --mn-amber-soft: rgba(217, 179, 119, 0.14);
-  --mn-danger: #EE9590;
-  --mn-success: #86C9A2;
-  --mn-ember: #E0A07F;
-  --mn-ember-hot: #E8B497;
-  --mn-ember-deep: #C27A57;
-  --mn-chart-1: #E8EDF1;
-  --mn-chart-2: #7DB8AA;
-  --mn-chart-3: #E0A07F;
-  --mn-chart-4: #7E8D98;
-  --mn-chart-easier: #7DB8AA;
-  --mn-chart-harder: #E0A07F;
-  --mn-chart-neutral: #7E8D98;
-  --mn-chart-grid: #263C4D;
-  --mn-chart-axis: #93A1AB;
-  --mn-feature-bg: #213A50;
-  --mn-feature-ink: #F3F0EA;
-  --mn-feature-muted: #C5CDD3;
-  --mn-feature-accent: #E5A04B;
-  --mn-feature-line: rgba(231, 226, 216, 0.18);
+  /* v3: near-black canvas, layered surfaces, hairline borders (white at 8% / 16%). */
+  --mn-navy-950: #0A0A0D;
+  --mn-navy-900: #121216;
+  --mn-navy-800: #18181D;
+  --mn-navy-700: #202027;
+  --mn-border: rgba(255, 255, 255, 0.08);
+  --mn-border-strong: rgba(255, 255, 255, 0.16);
+  --mn-text: #EDEDF2;
+  --mn-text-heading: #F7F7FA;
+  --mn-text-muted: #A0A0AE;
+  --mn-text-subtle: #9A9AA8;
+  --mn-text-decor: #7A7A88;
+  /* Links, active nav text and focus: soft violet. Buttons use --mn-action (below). */
+  --mn-cyan: #A594FF;
+  --mn-cyan-strong: #C9BEFF;
+  --mn-cyan-ink: #0A0A0D;
+  --mn-cyan-soft: rgba(124, 92, 255, 0.18);
+  --mn-teal-deep: #1A1930;
+  --mn-action: #7557F8;
+  --mn-action-strong: #6A47F5;
+  --mn-action-ink: #FFFFFF;
+  --mn-glow: rgba(124, 92, 255, 0.55);
+  --mn-glow-warm: rgba(255, 106, 61, 0.35);
+  --mn-amber: #F5B94A;
+  --mn-amber-soft: rgba(245, 185, 74, 0.14);
+  --mn-danger: #FF8A80;
+  --mn-success: #2DD4BF;
+  --mn-ember: #FF8A63;
+  --mn-ember-hot: #FFA283;
+  --mn-ember-deep: #FF6A3D;
+  --mn-chart-1: #EDEDF2;
+  --mn-chart-2: #2DD4BF;
+  --mn-chart-3: #FF8A63;
+  --mn-chart-4: #8A8A98;
+  --mn-chart-easier: #2DD4BF;
+  --mn-chart-harder: #FF8A63;
+  --mn-chart-neutral: #8A8A98;
+  --mn-chart-grid: #26262E;
+  --mn-chart-axis: #9A9AA8;
+  --mn-feature-bg: #16151F;
+  --mn-feature-ink: #EDEDF2;
+  --mn-feature-muted: #B4B4C2;
+  --mn-feature-accent: #F5B94A;
+  --mn-feature-line: rgba(255, 255, 255, 0.1);
   --mn-prog-fcps: #8FB5D6;
   --mn-prog-ms: #C7A3D4;
   --mn-prog-md: #86C2B4;
   --mn-prog-mds: #E0AE84;
   --mn-prog-fcps-dentistry: #BCC77F;
-  --mn-prog-other: #A7B4BE;
-  --mn-glass: rgba(14, 24, 35, 0.82);
-  --mn-glass-border: rgba(231, 226, 216, 0.14);
-  --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --mn-shadow-2: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --mn-prog-other: #A0A0AE;
+  --mn-glass: rgba(10, 10, 13, 0.8);
+  --mn-glass-border: rgba(255, 255, 255, 0.12);
+  --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --mn-shadow-2: 0 12px 32px -12px rgba(0, 0, 0, 0.7);
 }
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"] {
     color-scheme: dark;
-    --mn-navy-950: #0E1823;
-    --mn-navy-900: #142536;
-    --mn-navy-800: #1B2F42;
-    --mn-navy-700: #243A4E;
-    --mn-border: #263C4D;
-    --mn-border-strong: #36506A;
-    --mn-text: #E8EDF1;
-    --mn-text-heading: #F3F5F7;
-    --mn-text-muted: #A7B4BE;
-    --mn-text-subtle: #93A1AB;
-    --mn-text-decor: #7E8D98;
-    --mn-cyan: #7DB8AA;
-    --mn-cyan-strong: #95C8BC;
-    --mn-cyan-ink: #0E1823;
-    --mn-cyan-soft: rgba(125, 184, 170, 0.16);
-    --mn-teal-deep: #173A3C;
-    --mn-amber: #D9B377;
-    --mn-amber-soft: rgba(217, 179, 119, 0.14);
-    --mn-danger: #EE9590;
-    --mn-success: #86C9A2;
-    --mn-ember: #E0A07F;
-    --mn-ember-hot: #E8B497;
-    --mn-ember-deep: #C27A57;
-    --mn-chart-1: #E8EDF1;
-    --mn-chart-2: #7DB8AA;
-    --mn-chart-3: #E0A07F;
-    --mn-chart-4: #7E8D98;
-    --mn-chart-easier: #7DB8AA;
-    --mn-chart-harder: #E0A07F;
-    --mn-chart-neutral: #7E8D98;
-    --mn-chart-grid: #263C4D;
-    --mn-chart-axis: #93A1AB;
-    --mn-feature-bg: #213A50;
-    --mn-feature-ink: #F3F0EA;
-    --mn-feature-muted: #C5CDD3;
-    --mn-feature-accent: #E5A04B;
-    --mn-feature-line: rgba(231, 226, 216, 0.18);
+    /* v3: near-black canvas, layered surfaces, hairline borders (white at 8% / 16%). */
+    --mn-navy-950: #0A0A0D;
+    --mn-navy-900: #121216;
+    --mn-navy-800: #18181D;
+    --mn-navy-700: #202027;
+    --mn-border: rgba(255, 255, 255, 0.08);
+    --mn-border-strong: rgba(255, 255, 255, 0.16);
+    --mn-text: #EDEDF2;
+    --mn-text-heading: #F7F7FA;
+    --mn-text-muted: #A0A0AE;
+    --mn-text-subtle: #9A9AA8;
+    --mn-text-decor: #7A7A88;
+    /* Links, active nav text and focus: soft violet. Buttons use --mn-action (below). */
+    --mn-cyan: #A594FF;
+    --mn-cyan-strong: #C9BEFF;
+    --mn-cyan-ink: #0A0A0D;
+    --mn-cyan-soft: rgba(124, 92, 255, 0.18);
+    --mn-teal-deep: #1A1930;
+    --mn-action: #7557F8;
+    --mn-action-strong: #6A47F5;
+    --mn-action-ink: #FFFFFF;
+    --mn-glow: rgba(124, 92, 255, 0.55);
+    --mn-glow-warm: rgba(255, 106, 61, 0.35);
+    --mn-amber: #F5B94A;
+    --mn-amber-soft: rgba(245, 185, 74, 0.14);
+    --mn-danger: #FF8A80;
+    --mn-success: #2DD4BF;
+    --mn-ember: #FF8A63;
+    --mn-ember-hot: #FFA283;
+    --mn-ember-deep: #FF6A3D;
+    --mn-chart-1: #EDEDF2;
+    --mn-chart-2: #2DD4BF;
+    --mn-chart-3: #FF8A63;
+    --mn-chart-4: #8A8A98;
+    --mn-chart-easier: #2DD4BF;
+    --mn-chart-harder: #FF8A63;
+    --mn-chart-neutral: #8A8A98;
+    --mn-chart-grid: #26262E;
+    --mn-chart-axis: #9A9AA8;
+    --mn-feature-bg: #16151F;
+    --mn-feature-ink: #EDEDF2;
+    --mn-feature-muted: #B4B4C2;
+    --mn-feature-accent: #F5B94A;
+    --mn-feature-line: rgba(255, 255, 255, 0.1);
     --mn-prog-fcps: #8FB5D6;
     --mn-prog-ms: #C7A3D4;
     --mn-prog-md: #86C2B4;
     --mn-prog-mds: #E0AE84;
     --mn-prog-fcps-dentistry: #BCC77F;
-    --mn-prog-other: #A7B4BE;
-    --mn-glass: rgba(14, 24, 35, 0.82);
-    --mn-glass-border: rgba(231, 226, 216, 0.14);
-    --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-    --mn-shadow-2: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+    --mn-prog-other: #A0A0AE;
+    --mn-glass: rgba(10, 10, 13, 0.8);
+    --mn-glass-border: rgba(255, 255, 255, 0.12);
+    --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --mn-shadow-2: 0 12px 32px -12px rgba(0, 0, 0, 0.7);
   }
 }
 
