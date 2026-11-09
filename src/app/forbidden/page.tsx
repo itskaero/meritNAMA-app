@@ -1,3 +1,4 @@
+import { BrandLockup } from "@/components/brand";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -5,7 +6,8 @@ export const metadata = { title: "Access denied" };
 
 export default function Forbidden() {
   return (
-    <main id="main" className="grid min-h-screen place-items-center px-4">
+    <main id="main" className="grid min-h-screen place-content-center justify-items-center gap-8 px-4">
+      <BrandLockup className="text-lg" />
       <EmptyState title="You don’t have access to this area" action={<ButtonLink href="/" variant="secondary">Go to your home</ButtonLink>}>
         Your account’s role does not include this section. If you think this is wrong, contact an administrator.
       </EmptyState>

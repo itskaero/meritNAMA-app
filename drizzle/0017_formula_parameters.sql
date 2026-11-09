@@ -1,0 +1,3 @@
+ALTER TABLE "candidate_corrections" DROP CONSTRAINT "candidate_corrections_field";--> statement-breakpoint
+ALTER TABLE "sim_candidates" ADD COLUMN "params" json DEFAULT '{}'::json NOT NULL;--> statement-breakpoint
+ALTER TABLE "candidate_corrections" ADD CONSTRAINT "candidate_corrections_field" CHECK ("candidate_corrections"."field" in ('base_marks', 'program_marks', 'profile_status', 'parameter'));

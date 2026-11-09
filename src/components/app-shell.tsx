@@ -1,63 +1,142 @@
+import { cookies } from "next/headers";
+import { BottomTabs, type BottomTab } from "./bottom-tabs";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { Session } from "@/lib/auth/roles";
+import { signOutAction } from "@/app/_actions/auth";
+import { ROLE_LABELS, type Session } from "@/lib/auth/roles";
+import { myLink } from "@/lib/data/candidates";
+import { unreadCount } from "@/lib/data/notifications";
+import { Icon } from "./icon";
 import type { Section } from "@/lib/navigation";
-import { Badge } from "./ui/badge";
-import { SideNav } from "./side-nav";
+import { whatsNew } from "@/lib/data/whats-new";
+import { getDb } from "@/lib/db/client";
+import { parseTheme, parseUiMode, THEME_COOKIE, UI_MODE_COOKIE, WHATS_NEW_COOKIE, type Theme, type UiMode } from "@/lib/ui-mode";
+import { LogoMark, Wordmark } from "./brand";
+import { CommandPalette, PaletteButton, type Command } from "./command-palette";
+import { ModeToggle } from "./mode-toggle";
+import { ThemeToggle } from "./theme-toggle";
+import { WhatsNew } from "./whats-new";
+import { SideNav, type NavItem } from "./side-nav";
+import { cn } from "./ui/cn";
 
-export function BrandMark({ className = "h-7 w-7" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden className={`${className} text-signal`}>
-      <rect x="3" y="18" width="5" height="10" rx="1.5" opacity=".55" />
-      <rect x="10" y="12" width="5" height="16" rx="1.5" opacity=".75" />
-      <rect x="17" y="7" width="5" height="21" rx="1.5" />
-      <path d="M24 4h5v5M29 4l-6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function ProfileCard({ session }: { session: Session }) {
+/**
+ * The account row at the foot of the sidebar: who is signed in, and a menu (opening
+ * upward) with the colour theme, interface mode and sign out. A <details> element, so
+ * it works before scripts load.
+ */
+function AccountMenu({ session, mode, theme, verified }: { session: Session; mode: UiMode; theme: Theme; verified: boolean }) {
   const initials = session.email.slice(0, 2).toUpperCase();
+  const pro = mode === "pro";
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 shadow-[inset_0_1px_0_rgba(242,246,252,0.04)]">
-      <span aria-hidden className="grid h-10 w-10 flex-none place-items-center rounded-full bg-gradient-to-br from-signal/30 to-elevated text-sm font-bold text-ink ring-1 ring-line-strong">
-        {initials}
-      </span>
-      <div className="min-w-0">
-        <p className="truncate text-sm font-semibold" title={session.email}>{session.email}</p>
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-ink px-2 py-px text-[0.68rem] font-bold capitalize text-canvas">{session.role}</span>
-          {session.isStub ? <Badge tone="warning" className="py-px text-[0.6rem]">Dev stub</Badge> : null}
+    <details className="group relative">
+      <summary
+        className={cn("flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-hover [&::-webkit-details-marker]:hidden", pro && "lg:justify-center lg:px-0")}
+        title={pro ? `${session.email} · ${ROLE_LABELS[session.role]}` : undefined}
+      >
+        <span aria-hidden className="grid h-8 w-8 flex-none place-items-center rounded-full bg-navy text-xs font-semibold text-ivory">{initials}</span>
+        <span className={cn("min-w-0 flex-1", pro && "lg:sr-only")}>
+          <span className="block truncate text-sm font-medium text-ink">{session.email}</span>
+          <span className="flex items-center gap-1.5 text-xs text-muted">
+            {ROLE_LABELS[session.role]}
+            {verified ? <span className="inline-flex items-center gap-0.5 text-success"><Icon name="check" className="h-3 w-3" />Verified</span> : null}
+            {session.isStub ? <span className="text-amber">· dev stub</span> : null}
+          </span>
+        </span>
+        <Icon name="more" className={cn("h-4 w-4 text-decor", pro && "lg:hidden")} />
+        <span className="sr-only">Account menu</span>
+      </summary>
+      <div className={cn("absolute bottom-full z-40 mb-2 grid w-64 gap-3 rounded-xl border border-line bg-surface p-3 shadow-[var(--mn-shadow-2)]", pro ? "left-0 lg:left-full lg:bottom-0 lg:mb-0 lg:ml-2" : "left-0")}>
+        <div className="grid gap-1.5">
+          <p className="text-xs font-semibold text-muted">Theme</p>
+          <ThemeToggle theme={theme} />
         </div>
+        <div className="grid gap-1.5">
+          <p className="text-xs font-semibold text-muted">Interface</p>
+          <ModeToggle mode={mode} />
+        </div>
+        {session.isStub ? null : (
+          <form action={signOutAction} className="border-t border-line pt-2">
+            <button type="submit" className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-ink hover:bg-hover">
+              <Icon name="logout" className="h-4 w-4 text-decor" />Sign out
+            </button>
+          </form>
+        )}
       </div>
-    </div>
+    </details>
   );
 }
 
 /**
- * Two-pane layout from the dashboard references: a quiet sidebar with a profile
- * card and grouped menu, and the content inside a framed panel with a breadcrumb bar.
+ * Two-pane layout: a sidebar (labelled in Simple mode, an icon rail in Pro mode on
+ * wide screens) and the content inside a framed panel. The mode comes from a cookie
+ * so the server renders the right layout; Ctrl/⌘K opens the jump palette in both modes.
  */
-export function AppShell({ area, sections, session, children }: { area: string; sections: Section[]; session: Session; children: ReactNode }) {
+export async function AppShell({ area, sections, links = [], commands = [], session, children, bottomTabs }: {
+  area: string;
+  sections: Section[];
+  /** Phones: these sections as a bottom tab bar (the candidate portal). */
+  bottomTabs?: BottomTab[];
+  /** Extra sidebar links that are not sections of this area (e.g. admin → candidate portal). */
+  links?: NavItem[];
+  /** Extra palette entries beyond the sidebar items (quick actions). */
+  commands?: Command[];
+  session: Session;
+  children: ReactNode;
+}) {
+  const jar = await cookies();
+  const mode = parseUiMode(jar.get(UI_MODE_COOKIE)?.value);
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
+  // "What's new": newest events after the last dismissal; quietly empty if the database is down.
+  const seen = Number(jar.get(WHATS_NEW_COOKIE)?.value ?? 0) || 0;
+  const verified = session.role === "candidate" && (await myLink(getDb(), session).catch(() => null))?.status === "verified";
+  const unread = await unreadCount(getDb(), session).catch(() => 0);
+  const news = (await whatsNew(getDb(), session).catch(() => []))
+    .filter((n) => n.at.getTime() > seen)
+    .map((n) => ({ text: n.text, href: n.href, at: n.at.toISOString() }));
+  const pro = mode === "pro";
+  const items: NavItem[] = [...sections.filter((x) => !x.hideInNav).map(({ href, label, group, icon, match }) => ({ href, label, group, icon, match })), ...links];
+  const palette: Command[] = [
+    ...items.map((i) => ({ label: i.label, hint: i.group, href: i.href, icon: i.icon })),
+    ...commands,
+  ];
+
   return (
-    <div className="min-h-screen bg-canvas lg:grid lg:grid-cols-[272px_1fr]">
+    <div data-mode={mode} className={cn("min-h-screen bg-canvas lg:grid", pro ? "lg:grid-cols-[72px_1fr]" : "lg:grid-cols-[256px_1fr]")}>
       <SideNav
         area={area}
-        items={sections.map(({ href, label, group, icon }) => ({ href, label, group, icon }))}
+        items={items}
+        pro={pro}
         brand={
-          <Link href="/" className="flex items-center gap-2.5 font-extrabold tracking-tight">
-            <BrandMark />
-            <span>Merit<span className="text-signal">Nama</span></span>
+          <Link href="/" className="flex items-center gap-2.5 rounded-md text-heading" aria-label="meritNAMA home">
+            <LogoMark className={pro ? "h-7 w-7" : "h-6 w-6"} />
+            <Wordmark className={pro ? "lg:hidden" : undefined} />
           </Link>
         }
-        profile={<ProfileCard session={session} />}
-        footer={<p className="text-xs text-subtle">{area} · scaffold v0.1</p>}
+        bell={
+          <Link
+            href="/portal/inbox"
+            aria-label={unread ? `Inbox, ${unread} unread` : "Inbox"}
+            className="relative grid h-11 w-11 place-items-center rounded-lg text-muted hover:bg-hover hover:text-ink lg:h-9 lg:w-9"
+          >
+            <Icon name="bell" className="h-5 w-5" />
+            {unread ? (
+              <span aria-hidden className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-signal px-1 text-[0.6rem] font-bold text-signal-ink">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            ) : null}
+          </Link>
+        }
+        tools={pro ? <><PaletteButton compact className="hidden lg:inline-flex" /><PaletteButton className="w-full lg:hidden" /></> : <PaletteButton className="w-full" />}
+        profile={<AccountMenu session={session} mode={mode} theme={theme} verified={verified} />}
       />
-      <div className="min-w-0 lg:py-3 lg:pr-3">
-        <main id="main" className="min-h-full bg-canvas lg:min-h-[calc(100vh-1.5rem)] lg:rounded-[1.75rem] lg:border lg:border-line lg:bg-[linear-gradient(180deg,var(--mn-navy-900),var(--mn-navy-950)_40%)]">
+      <div className="min-w-0">
+        <main id="main" className={cn("min-h-screen bg-canvas", Boolean(bottomTabs?.length) && "pb-20 lg:pb-0")}>
+          {news.length ? <WhatsNew items={news} /> : null}
           {children}
         </main>
       </div>
+      <CommandPalette commands={palette} />
+      {bottomTabs?.length ? <BottomTabs tabs={bottomTabs} /> : null}
     </div>
   );
 }

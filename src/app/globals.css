@@ -18,20 +18,125 @@
   --color-amber: var(--mn-amber);
   --color-danger: var(--mn-danger);
   --color-success: var(--mn-success);
+  --color-ember: var(--mn-ember);
+  --color-ember-hot: var(--mn-ember-hot);
+  --color-ember-deep: var(--mn-ember-deep);
+  --color-heading: var(--mn-text-heading);
+  --color-decor: var(--mn-text-decor);
+  --color-navy: var(--mn-brand-navy);
+  --color-slate: var(--mn-brand-slate);
+  --color-teal: var(--mn-brand-teal);
+  --color-ivory: var(--mn-brand-ivory);
+  --color-gold: var(--mn-brand-amber);
+  --color-terracotta: var(--mn-brand-terracotta);
+  --color-mint: var(--mn-brand-mint);
+  --color-charcoal: var(--mn-brand-charcoal);
+  --color-tint: var(--mn-teal-deep);
+  --color-feature: var(--mn-feature-bg);
+  --color-feature-ink: var(--mn-feature-ink);
+  --color-feature-muted: var(--mn-feature-muted);
+  --color-feature-accent: var(--mn-feature-accent);
+  --color-feature-line: var(--mn-feature-line);
+  --color-easier: var(--mn-chart-easier);
+  --color-harder: var(--mn-chart-harder);
+  --color-neutral-series: var(--mn-chart-neutral);
   --font-sans: var(--mn-font-sans);
+  --font-serif: var(--mn-font-serif);
   --font-mono: var(--mn-font-mono);
+  --font-display: var(--mn-font-display);
+  /* Restrained radii: cards 10px, larger surfaces 12px; nothing rounder except pills. */
   --radius-sm: var(--mn-radius-sm);
   --radius-md: var(--mn-radius-md);
   --radius-lg: var(--mn-radius-lg);
   --radius-xl: var(--mn-radius-xl);
+  --radius-2xl: 12px;
+  --radius-3xl: 14px;
+  /* Tailwind's transition-* utilities follow the token, so reduced motion turns them off. */
+  --default-transition-duration: var(--mn-duration);
+  --default-transition-timing-function: var(--mn-ease);
 }
 
-html { color-scheme: dark; }
-body {
-  background: var(--mn-navy-950);
-  color: var(--mn-text);
-  font-family: var(--mn-font-sans);
-  -webkit-font-smoothing: antialiased;
+/*
+ * In the base layer so utilities (rounded-full, ring-*) still win: a pill keeps its
+ * shape while focused. The transparent outline is what forced-colors mode draws,
+ * since box-shadows are dropped there.
+ */
+@layer base {
+  body {
+    background: var(--mn-navy-950);
+    color: var(--mn-text);
+    font-family: var(--mn-font-sans);
+    font-feature-settings: "tnum" 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { color: var(--mn-text-heading); text-wrap: balance; }
+  /* Figures line up in tables and metric cards. */
+  table, .tabular-nums, [class*="font-mono"] { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: var(--mn-focus-ring); }
+  ::selection { background: var(--mn-cyan); color: var(--mn-cyan-ink); }
 }
-:focus-visible { outline: none; box-shadow: var(--mn-focus-ring); border-radius: var(--mn-radius-sm); }
-::selection { background: var(--mn-cyan); color: var(--mn-cyan-ink); }
+
+/*
+ * Interface modes (data-mode on the app shell, from the mn_mode cookie).
+ * Unlayered so they win over utility padding; scoped to the mode attribute.
+ */
+html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger text in Simple mode */
+[data-mode="pro"] table th,
+[data-mode="pro"] table td { padding-top: 0.45rem; padding-bottom: 0.45rem; }   /* denser tables in Pro mode */
+
+/*
+ * Motion for dashboards and charts. Elements are complete at rest: animations only
+ * play the entrance (lines draw, bars grow, cards rise) and are removed entirely
+ * under prefers-reduced-motion.
+ */
+@keyframes mn-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes mn-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes mn-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes mn-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes mn-pop { 0% { r: 0; } 70% { r: 7; } 100% { r: 5; } }
+@keyframes mn-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes mn-beam { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+.mn-draw { stroke-dasharray: 1; animation: mn-draw 1.1s var(--mn-ease) both; }
+.mn-grow-x { transform-origin: left center; animation: mn-grow-x .8s var(--mn-ease) both; }
+.mn-grow-y { transform-box: fill-box; transform-origin: bottom; animation: mn-grow-y .7s var(--mn-ease) both; }
+.mn-rise { animation: mn-rise .5s var(--mn-ease) both; }
+.mn-pulse { animation: mn-pulse 1.8s ease-in-out infinite; }
+.mn-beam-flow { background-size: 200% 100%; animation: mn-beam 6s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mn-draw, .mn-grow-x, .mn-grow-y, .mn-rise, .mn-beam-flow, .mn-pulse { animation: none; }
+}
+
+/* Printing a preference list: only the page content, dark on white. */
+@media print {
+  #app-nav, [data-print-hide] { display: none !important; }
+  /* The shell is a two-column grid; with the sidebar gone the content takes the page. */
+  [data-mode] { display: block !important; }
+  html, body, main, [data-mode], [data-mode] > div { background: #fff !important; }
+  main, main * { color: #111 !important; background: transparent !important; box-shadow: none !important; text-shadow: none !important; }
+  main { border: 0 !important; }
+  main li { break-inside: avoid; border-color: #bbb !important; }
+}
+
+/*
+ * Brand imagery helpers.
+ * .mn-mask paints transparent line art (public/images/brand/art-*.webp) in the
+ * element's text colour, so it follows the theme: set --mn-mask: url(...).
+ * .mn-reveal and .mn-parallax are scroll-driven CSS animations: no JavaScript, and
+ * where a browser lacks scroll timelines (or the reader prefers less motion)
+ * content simply shows, never stays hidden.
+ */
+.mn-mask {
+  background-color: currentColor;
+  -webkit-mask: var(--mn-mask) center / contain no-repeat;
+  mask: var(--mn-mask) center / contain no-repeat;
+}
+@keyframes mn-reveal { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes mn-parallax { from { transform: translateY(-5%) scale(1.1); } to { transform: translateY(5%) scale(1.1); } }
+@keyframes mn-hero-in { from { transform: scale(1.06); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: no-preference) {
+  .mn-hero-img { animation: mn-hero-in 1.6s var(--mn-ease) both; }
+  @supports (animation-timeline: view()) {
+    .mn-reveal { animation: mn-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
+    .mn-parallax { animation: mn-parallax linear both; animation-timeline: view(); animation-range: cover; }
+  }
+}

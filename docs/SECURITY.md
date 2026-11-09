@@ -18,12 +18,39 @@
 - Postgres is on an internal Docker network with no published port; the app binds to
   loopback; HTTPS terminates at a reverse proxy or tunnel.
 - Security headers: `X-Content-Type-Options`, `X-Frame-Options: DENY`,
-  `Referrer-Policy`, `Permissions-Policy`; `X-Powered-By` removed. CSP to be added
-  once the page inventory settles (delivery 5).
+  `Referrer-Policy`, `Permissions-Policy`; `X-Powered-By` removed. A Content Security
+  Policy is set per request in `src/proxy.ts` (`src/lib/csp.ts`): scripts only from this
+  app and carrying a fresh nonce (`'strict-dynamic'`), no third-party hosts, no framing,
+  forms only to this app. Styles allow inline attributes (charts size bars with them).
+  Every page renders per request so the nonce reaches it; checked across 25 pages with
+  no violations.
+- Authorization is tested as a matrix (`tests/authz-matrix.test.ts`): every data
+  function is called by every role, and signed out, against a database that throws on
+  use; who gets through is compared with the reviewed `tests/fixtures/authz-matrix.json`.
+  Every admin page must require its own section's capability.
 - `/api/health` is the only unauthenticated API. It returns coarse states only and
   allows cross-origin reads for `PUBLIC_SITE_ORIGIN` only.
+- Sign-in: one-time email links (15 min, single use, used by POST only), rate-limited
+  per email and IP, with an answer that never reveals whether an account exists. Tokens
+  and session ids are stored only as SHA-256. Session cookies are `HttpOnly`,
+  `SameSite=Lax` and `Secure` in production.
+- Google sign-in (optional) uses the authorisation code flow with PKCE and `state`;
+  only Google-verified emails are accepted, and the ID token's issuer, audience and
+  expiry are checked. Errors return to the sign-in page without detail.
+- Candidate emails and PMDC numbers from merit files are kept only as keyed HMACs
+  (`CANDIDATE_INDEX_SECRET`); merit allocations never store them. Matching emails link
+  accounts automatically; any other claim needs a verifier. Proof documents are
+  checked by their bytes, stored under generated names, and served only to verifiers
+  with `no-store`, `nosniff` and a sandboxing CSP.
 - Uploads (delivery 3): size limits, extension + content sniffing, schema validation
   before anything is stored, files written under `APP_STORAGE_DIR` with generated names.
+- Corrections to candidates' marks are staged with a reason, applied over the imported
+  data (never editing it) and can be withdrawn or rolled back; previews naming
+  applicants are shown only to staff with `candidates.verify`. Candidate and run exports
+  are audited, and CSV cells that could be read as formulas are neutralised.
+- Short-lived personal data (sign-in links, expired sessions, read notifications,
+  candidates' what-if runs, proof documents of decided requests) is removed after a
+  retention period an owner sets; the audit history is kept.
 - Processing jobs run fixed, server-defined code paths. Nothing executes
   browser-supplied commands.
 

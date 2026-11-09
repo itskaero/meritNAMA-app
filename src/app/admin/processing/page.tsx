@@ -1,7 +1,149 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+import Link from "next/link";
+import { AreaPage } from "@/components/area-page";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader } from "@/components/ui/card";
+import { DataTable } from "@/components/ui/data-table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Notice } from "@/components/ui/notice";
+import { StatusPill } from "@/components/ui/page-header";
+import { getSession, requireSection } from "@/lib/auth/session";
+import { failInterruptedRuns, importProblem, listDatasets, listRuns, listSimulationFolders } from "@/lib/data/simulation";
+import { checkDatabase, getDb } from "@/lib/db/client";
+import { formatUtc } from "@/lib/format";
+import { findSection } from "@/lib/navigation";
+import { ImportConsentForm, ImportDatasetForm, StartRunForm } from "./forms";
+import { RUN_TONE } from "./status";
 
 export const metadata = { title: "Processing & simulation" };
+export const dynamic = "force-dynamic";
 
-export default function AdminProcessingPage() {
-  return <PlaceholderPage href="/admin/processing" />;
+const ROLE_LABEL = { marks: "Candidate marks", preferences: "Preferences", candidates: "Candidates (combined, legacy)", gazette: "Gazette (official marks)", components: "Corrected marks", certificates: "Certificates", profileStatus: "Profile status" } as const;
+const mb = (n: number) => `${(n / 1024 / 1024).toFixed(1)} MB`;
+
+export default async function ProcessingPage() {
+  await requireSection("/admin/processing");
+  const s = findSection("/admin/processing");
+  const session = await getSession();
+  const dbStatus = await checkDatabase();
+  const db = dbStatus === "ok" ? getDb() : null;
+  if (db) await failInterruptedRuns(db);
+  const folders = await listSimulationFolders(session);
+  const datasets = db ? await listDatasets(db, session) : [];
+  const runs = db ? await listRuns(db, session) : [];
+  const inductions = [...new Set([...folders.map((f) => f.induction), ...datasets.map((d) => d.inductionId)])].sort((a, b) => b - a);
+
+  return (
+    <AreaPage
+      area="admin"
+      trail={[{ label: s.label }]}
+      title={s.label}
+      description="Import an induction's restricted simulation data from the server's storage volume, simulate round 1 under its allocation rules, and compare the result with the round PHF published."
+      status={db ? <StatusPill tone="live">Live data</StatusPill> : <StatusPill tone="warning">Database unavailable</StatusPill>}
+    >
+      <Notice title="Restricted data stays on the server">
+        Put the files your backend exports in <code>simulation/induction&lt;n&gt;/</code> on the storage volume (in Docker:{" "}
+        <code>$MERITNAMA_DATA_DIR/storage/simulation/induction22/</code>): <code>marks.json</code> (candidate marks),{" "}
+        <code>preferences.json</code> (portal preferences) and optionally <code>certificates.json</code> and <code>profile_status.json</code>.
+        A combined legacy <code>candidates.json</code> works instead of the first two. After each round, add the consent replies
+        fetched from the portal as <code>consent_round&lt;r&gt;.json</code>. Importing keeps only marks, preferences,
+        certificate marks and profile status: names, PMDC numbers, emails, phone numbers and CNICs are never stored.
+      </Notice>
+
+      {inductions.length === 0 ? (
+        <EmptyState title="No simulation data yet">Create the induction folder on the storage volume and put its files there, then reload this page.</EmptyState>
+      ) : (
+        inductions.map((n) => {
+          const folder = folders.find((f) => f.induction === n);
+          const ds = datasets.find((d) => d.inductionId === n);
+          return (
+            <Card key={n}>
+              <CardHeader
+                title={`Induction ${n}`}
+                description={ds ? `Imported ${formatUtc(ds.importedAt)} UTC by ${ds.importedBy}` : "Not imported yet"}
+                action={ds ? <Badge tone="current">ready to simulate</Badge> : undefined}
+              />
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div className="grid content-start gap-3">
+                  <h3 className="text-sm font-semibold">Files on the volume</h3>
+                  {folder?.files.length ? (
+                    <ul className="grid gap-1 text-sm">
+                      {folder.files.map((f) => (
+                        <li key={f.name} className="flex justify-between gap-3"><span>{ROLE_LABEL[f.role]} <span className="font-mono text-xs text-subtle">{f.name}</span></span><span className="tabular-nums text-muted">{mb(f.size)}</span></li>
+                      ))}
+                    </ul>
+                  ) : <p className="text-sm text-muted">No files found.</p>}
+                  {folder?.consent.length ? (
+                    <p className="text-sm">Consent files: rounds {folder.consent.map((c) => c.round).join(", ")}</p>
+                  ) : null}
+                  {folder?.ignored.length ? <p className="text-xs text-amber">Not used: {folder.ignored.join(", ")}</p> : null}
+                  {folder && !folder.files.some((f) => f.role === "profileStatus") ? <p className="text-xs text-amber">No profile status file: everyone takes part, so rejected profiles may take seats.</p> : null}
+                  {folder ? (importProblem(folder.files) ? <p className="text-xs text-amber">{importProblem(folder.files)}</p> : <ImportDatasetForm induction={n} replaces={Boolean(ds)} />) : null}
+                </div>
+                <div className="grid content-start gap-3">
+                  <h3 className="text-sm font-semibold">Stored data</h3>
+                  {ds ? (
+                    <>
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                        <dt className="text-muted">Candidates</dt><dd className="tabular-nums">{ds.summary.candidates.toLocaleString("en-US")}</dd>
+                        <dt className="text-muted">Preferences</dt><dd className="tabular-nums">{ds.summary.preferences.toLocaleString("en-US")}</dd>
+                        <dt className="text-muted">Accepted profiles</dt><dd className="tabular-nums">{ds.summary.eligible.toLocaleString("en-US")} of {ds.summary.withStatus.toLocaleString("en-US")} with a status</dd>
+                        <dt className="text-muted">With certificates</dt><dd className="tabular-nums">{ds.summary.withCertificates.toLocaleString("en-US")}</dd>
+                        <dt className="text-muted">Format</dt><dd>{ds.summary.format === "combined" ? "combined candidates file" : "marks + preferences"}</dd>
+                        {ds.summary.preferencesWithoutMarks ? <><dt className="text-amber">Left out</dt><dd className="text-amber tabular-nums">{ds.summary.preferencesWithoutMarks.toLocaleString("en-US")} preferences of applicants missing from marks.json</dd></> : null}
+                        <dt className="text-muted">Corrected marks</dt><dd className="tabular-nums">{ds.summary.correctedMarks.toLocaleString("en-US")}</dd>
+                      </dl>
+                      <StartRunForm induction={n} />
+                      <h3 className="mt-2 text-sm font-semibold">Later rounds</h3>
+                      <p className="text-xs text-muted">Each simulates the next list from a published round and its consent replies.</p>
+                      {ds.consent.length ? (
+                        <ul className="grid gap-2">
+                          {ds.consent.map((c) => (
+                            <li key={c.round} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-elevated px-3 py-2 text-sm">
+                              <span>
+                                Round {c.round} consent: <span className="tabular-nums">{c.accepted.toLocaleString("en-US")}</span> accepted,{" "}
+                                <span className="tabular-nums">{c.rejected.toLocaleString("en-US")}</span> rejected, <span className="tabular-nums">{c.awaited.toLocaleString("en-US")}</span> awaited
+                              </span>
+                              {ds.publishedRounds.includes(c.round) ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Link href={`/admin/processing/consent?induction=${n}&base=published:${c.round}`} className="text-xs font-semibold text-signal underline-offset-4 hover:underline">What if…</Link>
+                                  <StartRunForm induction={n} fromRound={c.round} variant="secondary" />
+                                </div>
+                              ) : (
+                                <span className="text-xs text-amber">Round {c.round} itself is not imported</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <p className="text-sm text-muted">No consent replies imported.</p>}
+                      {folder?.consent.length ? <ImportConsentForm induction={n} /> : null}
+                    </>
+                  ) : <p className="text-sm text-muted">Import the files to simulate this induction.</p>}
+                </div>
+              </div>
+            </Card>
+          );
+        })
+      )}
+
+      <Card>
+        <CardHeader title="Runs" description="Each run records the allocation rules and scoring policy it used. Agreement is the share of the simulated round's published allocations reproduced exactly; for later rounds, compare it with “if nobody moved” (the published round against the one before)." />
+        <DataTable
+          caption="Simulation runs"
+          rows={runs}
+          rowKey={(r) => r.id}
+          empty={<EmptyState title="No runs yet">Import an induction&apos;s data, then simulate round 1.</EmptyState>}
+          columns={[
+            { key: "when", header: "Started (UTC)", cell: (r) => <Link href={`/admin/processing/runs/${r.id}`} className="font-medium text-signal underline-offset-4 hover:underline">{formatUtc(r.createdAt)}</Link> },
+            { key: "n", header: "Induction", cell: (r) => r.inductionId },
+            { key: "kind", header: "Simulates", cell: (r) => <>{r.kind === "next_round" ? `Round ${r.fromRound! + 1} (from ${r.baseRunId ? "simulated " : ""}${r.fromRound})` : "Round 1"}{r.ownerUserId ? <Badge tone="simulated" className="ml-2">what-if</Badge> : null}</> },
+            { key: "status", header: "Status", cell: (r) => <Badge tone={RUN_TONE[r.status]}>{r.status}</Badge> },
+            { key: "rules", header: "Rules · policy", cell: (r) => `${r.rulesOrigin} · ${r.policy ?? "no policy"}` },
+            { key: "placed", header: "Placed", align: "right", cell: (r) => r.summary?.placed.toLocaleString("en-US") ?? "—" },
+            { key: "agree", header: "Agreement", align: "right", cell: (r) => (r.summary?.comparison ? `${r.summary.comparison.agreement}%` : "—") },
+            { key: "base", header: "If nobody moved", align: "right", cell: (r) => (r.summary?.baseline != null ? `${r.summary.baseline}%` : "—") },
+          ]}
+        />
+      </Card>
+    </AreaPage>
+  );
 }

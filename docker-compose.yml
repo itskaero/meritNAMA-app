@@ -31,6 +31,7 @@ services:
   migrate:
     build: { context: ., target: migrate }
     image: meritnama-app-migrate:local
+    pull_policy: never   # built here (or loaded with meritnama.sh load), never pulled
     environment:
       DATABASE_URL: *db-url
     depends_on:
@@ -41,14 +42,25 @@ services:
   app:
     build: { context: ., target: runtime }
     image: meritnama-app:local
+    pull_policy: never   # built here (or loaded with meritnama.sh load), never pulled
     restart: unless-stopped
     environment:
       DATABASE_URL: *db-url
       APP_URL: ${APP_URL:-http://localhost:3000}
       PUBLIC_SITE_ORIGIN: ${PUBLIC_SITE_ORIGIN:-}
       APP_STORAGE_DIR: /app/storage
+      APP_BACKUP_DIR: /app/backups
+      SMTP_URL: ${SMTP_URL:?set SMTP_URL in .env (sign-in links are emailed)}
+      MAIL_FROM: ${MAIL_FROM:-}
+      OWNER_EMAILS: ${OWNER_EMAILS:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      CANDIDATE_INDEX_SECRET: ${CANDIDATE_INDEX_SECRET:?set CANDIDATE_INDEX_SECRET in .env}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-}
     volumes:
       - ${MERITNAMA_DATA_DIR:-./var}/storage:/app/storage
+      # Read-only: the app only reports on backups (Team & roles); scripts/backup.sh writes them.
+      - ${MERITNAMA_DATA_DIR:-./var}/backups:/app/backups:ro
     ports:
       # Loopback only. Expose through a reverse proxy with HTTPS (see docs/DEPLOYMENT.md).
       - "127.0.0.1:${APP_PORT:-3000}:3000"
@@ -72,10 +84,35 @@ services:
     depends_on: [app]
     networks: [web]
 
-  # Background worker for long simulations / imports — added in delivery 3.
-  # worker:
-  #   build: { context: ., target: worker }
-  #   environment: { DATABASE_URL: *db-url }
+  # Optional Cloudflare Tunnel (no open ports on your router):  docker compose --profile tunnel up -d
+  # Create the tunnel in Cloudflare Zero Trust and point its public hostname at http://app:3000
+  # (see docs/NAS-SETUP.md). Use either this or the Caddy proxy, not both.
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.7
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on: [app]
+    networks: [web]
+
+  # Background jobs, once a minute: start simulation runs left queued by a restart,
+  # fail runs that died, apply data retention daily. Same image as the app; it only
+  # calls the app's /api/internal/tick over the internal network (INTERNAL_TOKEN).
+  worker:
+    build: { context: ., target: runtime }
+    image: meritnama-app:local
+    pull_policy: never   # built here (or loaded with meritnama.sh load), never pulled
+    restart: unless-stopped
+    command: ["node", "scripts/worker.mjs"]
+    environment:
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-}
+      TICK_URL: http://app:3000/api/internal/tick
+    healthcheck: { disable: true }
+    depends_on:
+      app: { condition: service_healthy }
+    networks: [internal]
 
 networks:
   internal: { internal: true }

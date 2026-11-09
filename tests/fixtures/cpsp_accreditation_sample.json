@@ -1,0 +1,2774 @@
+[
+  {
+    "hospital": "20 MILITARY DENTAL CENTRE / CIMS DENTAL COLLEGE (MULTAN)",
+    "city": "Multan",
+    "programs": [
+      {
+        "speciality": "DENTISTRY (ORAL AND MAXILLO-FACIAL SURGERY)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "22-05-2017"
+      },
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "DENTISTRY (PROSTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-06-2021"
+      },
+      {
+        "speciality": "OPERATIVE DENTISTRY & ENDODONTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-12-2019"
+      }
+    ]
+  },
+  {
+    "hospital": "28 MILITARY DENTAL CENTRE (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "DENTISTRY (ORAL AND MAXILLO-FACIAL SURGERY)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-06-2021"
+      },
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "26-01-2010"
+      },
+      {
+        "speciality": "DENTISTRY (PROSTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "OPERATIVE DENTISTRY & ENDODONTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2018"
+      }
+    ]
+  },
+  {
+    "hospital": "A.O.CLINIC (KARACHI)",
+    "city": "Karachi",
+    "programs": [
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "P.A.",
+        "since": "16-02-2004"
+      }
+    ]
+  },
+  {
+    "hospital": "ABBAS INSTITUTE OF MEDICAL SCIENCES (MUZAFFARABAD)",
+    "city": "Muzaffarabad",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-07-2023"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2014"
+      },
+      {
+        "speciality": "MICROBIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2014"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-03-2018"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-07-2023"
+      },
+      {
+        "speciality": "PAEDIATRIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-07-2023"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2014"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-03-2024"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2014"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-07-2023"
+      }
+    ]
+  },
+  {
+    "hospital": "ABBASI SHAHEED HOSPITAL / KMDC (KARACHI)",
+    "city": "Karachi",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-12-2003"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "DENTISTRY (ORAL AND MAXILLO-FACIAL SURGERY)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-07-2007"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-01-2011"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-07-2009"
+      },
+      {
+        "speciality": "NEURO SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-12-2010"
+      },
+      {
+        "speciality": "NEUROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-11-2010"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2010"
+      },
+      {
+        "speciality": "PLASTIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "19-04-2011"
+      },
+      {
+        "speciality": "PSYCHIATRY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "31-05-2010"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-10-2003"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-07-2009"
+      }
+    ]
+  },
+  {
+    "hospital": "ABBOTTABAD INTERNATIONAL MEDICAL INSTITUTE (ABBOTTABAD)",
+    "city": "Abbottabad",
+    "programs": [
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-06-2021"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-09-2022"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "13-07-2022"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-08-2022"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-06-2021"
+      }
+    ]
+  },
+  {
+    "hospital": "ABWA MEDICAL COLLEGE & HOSPITAL, FAISALABAD (FAISALABAD)",
+    "city": "Faisalabad",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "FORENSIC MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      }
+    ]
+  },
+  {
+    "hospital": "ADVANCE RADIOLOGY CLINIC (KARACHI)",
+    "city": "Karachi",
+    "programs": [
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "P.A.",
+        "since": "28-10-2003"
+      }
+    ]
+  },
+  {
+    "hospital": "AFIC & NATIONAL INSTITUTE OF HEART DISEASES (RAWALPINDI)",
+    "city": "Rawalpindi",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-10-1991"
+      },
+      {
+        "speciality": "CARDIAC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-05-2009"
+      },
+      {
+        "speciality": "CARDIAC SURGERY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "20-09-2022"
+      },
+      {
+        "speciality": "CARDIAC SURGERY",
+        "unit": "Unit-III",
+        "type": "F.A.",
+        "since": "20-09-2022"
+      },
+      {
+        "speciality": "CARDIAC SURGERY",
+        "unit": "Unit-IV",
+        "type": "F.A.",
+        "since": "20-09-2022"
+      },
+      {
+        "speciality": "CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-05-2009"
+      },
+      {
+        "speciality": "CARDIOTHORACIC ANAESTHESIA",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-07-2004"
+      },
+      {
+        "speciality": "CLINICAL CARDIAC ELECTROPHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "16-11-2013"
+      },
+      {
+        "speciality": "INTERVENTIONAL CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-01-2019"
+      },
+      {
+        "speciality": "PAEDIATRIC AND CONGENITAL CARDIAC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-07-2024"
+      },
+      {
+        "speciality": "PAEDIATRIC AND CONGENITAL CARDIAC SURGERY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "30-07-2024"
+      },
+      {
+        "speciality": "PAEDIATRIC CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-05-2009"
+      }
+    ]
+  },
+  {
+    "hospital": "AGA KHAN UNIVERSITY & HOSPITAL (KARACHI)",
+    "city": "Karachi",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-III",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "BREAST SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "14-10-2019"
+      },
+      {
+        "speciality": "CARDIAC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "19-07-2004"
+      },
+      {
+        "speciality": "CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "CARDIOTHORACIC ANAESTHESIA",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "23-05-2005"
+      },
+      {
+        "speciality": "CHEMICAL PATHOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "CHILD AND ADOLESCENT PSYCHIATRY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "26-07-2022"
+      },
+      {
+        "speciality": "CLINICAL CARDIAC ELECTROPHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "CLINICAL HAEMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-12-2012"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "CRITICAL CARE MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "19-07-2021"
+      },
+      {
+        "speciality": "DENTISTRY (ORAL AND MAXILLO-FACIAL SURGERY)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-07-2025"
+      },
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "23-05-2005"
+      },
+      {
+        "speciality": "DENTISTRY (PROSTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "14-10-2019"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-12-2012"
+      },
+      {
+        "speciality": "DEVELOPMENTAL AND BEHAVIOURAL PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "07-05-2024"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "EMERGENCY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "EMERGENCY MEDICINE",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "ENDOCRINOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "18-12-2018"
+      },
+      {
+        "speciality": "FAMILY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "FAMILY MEDICINE",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "GASTROENTEROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "GYNECOLOGICAL ONCOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-07-2025"
+      },
+      {
+        "speciality": "HAEMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "HISTOPATHOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "INFECTIOUS DISEASES",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-08-2009"
+      },
+      {
+        "speciality": "INTERVENTIONAL CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "INTERVENTIONAL RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2024"
+      },
+      {
+        "speciality": "MATERNAL FOETAL MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "MEDICAL ONCOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "26-06-2006"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-III",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-IV",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "MICROBIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "NEONATAL PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "07-12-2007"
+      },
+      {
+        "speciality": "NEURO SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "NEUROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2002"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "OPERATIVE DENTISTRY & ENDODONTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "23-05-2005"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-01-2003"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "PAEDIATRIC CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "07-08-2008"
+      },
+      {
+        "speciality": "PAEDIATRIC CRITICAL CARE MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-07-2021"
+      },
+      {
+        "speciality": "PAEDIATRIC ENDOCRINOLOGY AND DIABETES",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "22-01-2021"
+      },
+      {
+        "speciality": "PAEDIATRIC HAEMATOLOGY ONCOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "28-02-2011"
+      },
+      {
+        "speciality": "PAEDIATRIC INFECTIOUS DISEASES",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "28-02-2011"
+      },
+      {
+        "speciality": "PAEDIATRIC NEUROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "28-02-2011"
+      },
+      {
+        "speciality": "PAEDIATRIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-III",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "PAIN MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-07-2020"
+      },
+      {
+        "speciality": "PALLIATIVE MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-01-2025"
+      },
+      {
+        "speciality": "PLASTIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "19-07-2004"
+      },
+      {
+        "speciality": "PSYCHIATRY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "23-05-2005"
+      },
+      {
+        "speciality": "RADIATION ONCOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "04-12-2007"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "03-02-2022"
+      },
+      {
+        "speciality": "SURGICAL ONCOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "UROGYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "16-01-2015"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2003"
+      },
+      {
+        "speciality": "VASCULAR SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-09-2015"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-06-2023"
+      }
+    ]
+  },
+  {
+    "hospital": "AKHTAR SAEED MEDCIAL & DENTAL COLLEGE / FAROOQ HOSPITAL (RAWALPINDI)",
+    "city": "Rawalpindi",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-01-2023"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-01-2023"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-01-2023"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-01-2023"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-01-2023"
+      }
+    ]
+  },
+  {
+    "hospital": "AKHTAR SAEED MEDICAL & DENTAL COLLEGE (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2018"
+      },
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-07-2020"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-10-2011"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-12-2025"
+      },
+      {
+        "speciality": "PAEDIATRIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-12-2025"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "07-07-2017"
+      },
+      {
+        "speciality": "PHARMACOLOGY AND THERAPEUTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-12-2022"
+      },
+      {
+        "speciality": "PHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2013"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      }
+    ]
+  },
+  {
+    "hospital": "AKHTAR SAEED MEDICAL & DENTAL COLLEGE / FAROOQ HOSPITAL (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2018"
+      },
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-07-2020"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-10-2011"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-12-2025"
+      },
+      {
+        "speciality": "PAEDIATRIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-12-2025"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "07-07-2017"
+      },
+      {
+        "speciality": "PHARMACOLOGY AND THERAPEUTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-12-2022"
+      },
+      {
+        "speciality": "PHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2013"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      }
+    ]
+  },
+  {
+    "hospital": "AKHTAR SAEED MEDICAL & DENTAL COLLEGE, LAHORE (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2018"
+      },
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-07-2020"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-10-2011"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-12-2025"
+      },
+      {
+        "speciality": "PAEDIATRIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-12-2025"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "07-07-2017"
+      },
+      {
+        "speciality": "PHARMACOLOGY AND THERAPEUTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-12-2022"
+      },
+      {
+        "speciality": "PHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2013"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-ALEEM MEDICAL COLLEGE / GULAB DEVI HOSPITAL (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "26-02-2018"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "16-05-2026"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2025"
+      },
+      {
+        "speciality": "HISTOPATHOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-12-2018"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-2019"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "17-05-2019"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-12-2020"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-06-2025"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-07-2025"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-12-2020"
+      },
+      {
+        "speciality": "PSYCHIATRY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-12-2018"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-12-2018"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-12-2018"
+      },
+      {
+        "speciality": "THORACIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-02-2023"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-ANSAR GENERAL HOSPITAL (MEDINA)",
+    "city": "Medina",
+    "programs": [
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-12-2012"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-FALAH INTERNATION HOSPITAL (RIYADH)",
+    "city": "Riyadh",
+    "programs": [
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2020"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-HADA ARMED FORCES HOSPITAL (TAIF)",
+    "city": "Taif",
+    "programs": [
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2000"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2000"
+      },
+      {
+        "speciality": "PAEDIATRIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "16-12-2018"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-03-2012"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-IBRAHIM EYE HOSPITAL KHI. / INST. OF OPHTH, HYD (KARACHI)",
+    "city": "Karachi",
+    "programs": [
+      {
+        "speciality": "GLAUCOMA",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-03-2025"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "26-07-2001"
+      },
+      {
+        "speciality": "ORBIT AND OCULOPLASTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "22-01-2021"
+      },
+      {
+        "speciality": "PAEDIATRIC OPHTHALMOLOGY AND STRABISMUS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-06-2011"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2008"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-IMAN GENERAL HOSPITAL (RIYADH)",
+    "city": "Riyadh",
+    "programs": [
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2019"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-NAFEES MEDICAL COLLEGE AND HOSPITAL (ISLAMABAD)",
+    "city": "Islamabad",
+    "programs": [
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-11-2014"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-11-2014"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-11-2014"
+      },
+      {
+        "speciality": "PHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-11-2014"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-11-2014"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-NOOR DIAGNOSTIC CENTRE (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "22-01-2021"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-NOOR SPECIALIST HOSPITAL (MAKKAH)",
+    "city": "Makkah",
+    "programs": [
+      {
+        "speciality": "DENTISTRY (ORAL AND MAXILLO-FACIAL SURGERY)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-02-2013"
+      },
+      {
+        "speciality": "GASTROENTEROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "20-12-2004"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "22-12-2011"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2000"
+      },
+      {
+        "speciality": "NEUROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-01-2000"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-01-2012"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-12-2011"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "26-07-2013"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-SHIFA TRUST EYE HOSPITAL (P.I.O) (RAWALPINDI)",
+    "city": "Rawalpindi",
+    "programs": [
+      {
+        "speciality": "GLAUCOMA",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2025"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-III",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-IV",
+        "type": "F.A.",
+        "since": "04-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-V",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-VI",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "ORBIT AND OCULOPLASTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-01-2019"
+      },
+      {
+        "speciality": "PAEDIATRIC OPHTHALMOLOGY AND STRABISMUS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "18-08-2015"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2008"
+      }
+    ]
+  },
+  {
+    "hospital": "AL-SHIFA TRUST EYE HOSPITAL (RAWALPINDI)",
+    "city": "Rawalpindi",
+    "programs": [
+      {
+        "speciality": "GLAUCOMA",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2025"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-III",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-IV",
+        "type": "F.A.",
+        "since": "04-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-V",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-VI",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "ORBIT AND OCULOPLASTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-01-2019"
+      },
+      {
+        "speciality": "PAEDIATRIC OPHTHALMOLOGY AND STRABISMUS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "18-08-2015"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2008"
+      }
+    ]
+  },
+  {
+    "hospital": "ALI FATIMA HOSPITAL (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "31-01-2026"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-07-2025"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-07-2021"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-01-2024"
+      }
+    ]
+  },
+  {
+    "hospital": "ALI FATIMA HOSPITAL (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "31-01-2026"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-07-2025"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-07-2021"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-01-2024"
+      }
+    ]
+  },
+  {
+    "hospital": "ALI FATIMA HOSPITAL, LAHORE (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "31-01-2026"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-07-2025"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-07-2021"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-07-2021"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-01-2024"
+      }
+    ]
+  },
+  {
+    "hospital": "ALI TRUST FREE EYE HOSPITAL (OKARA)",
+    "city": "Okara",
+    "programs": [
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-1",
+        "type": "F.A.",
+        "since": "27-12-2023"
+      }
+    ]
+  },
+  {
+    "hospital": "ALKHIDMAT DIAGNOSTICS, NAZIMABAD (KARACHI)",
+    "city": "Karachi",
+    "programs": [
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-12-2025"
+      }
+    ]
+  },
+  {
+    "hospital": "ALLAMA IQBAL MEDICAL COLLEGE / JINNAH HOSPITAL (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "CARDIAC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-08-2008"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "07-10-2000"
+      },
+      {
+        "speciality": "CRITICAL CARE MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-08-2019"
+      },
+      {
+        "speciality": "DENTISTRY (ORAL AND MAXILLO-FACIAL SURGERY)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "06-06-2024"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2006"
+      },
+      {
+        "speciality": "ENDOCRINOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "GASTROENTEROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "19-07-2014"
+      },
+      {
+        "speciality": "HAEMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-01-2013"
+      },
+      {
+        "speciality": "HISTOPATHOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "INTERVENTIONAL CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-08-2019"
+      },
+      {
+        "speciality": "MEDICAL ONCOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "MICROBIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "16-05-2026"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "NEURO SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-07-2007"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-01-2004"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-II",
+        "type": "F.A.",
+        "since": "08-01-2004"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "23-06-1996"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-10-2003"
+      },
+      {
+        "speciality": "PAEDIATRIC DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-12-2022"
+      },
+      {
+        "speciality": "PAEDIATRIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-07-2014"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "22-01-2004"
+      },
+      {
+        "speciality": "PLASTIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "28-03-2002"
+      },
+      {
+        "speciality": "PSYCHIATRY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "20-04-2001"
+      },
+      {
+        "speciality": "SPINE SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-08-2025"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-12-2009"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-08-2018"
+      }
+    ]
+  },
+  {
+    "hospital": "ALLAMA IQBAL TEACHING HOSPITAL (DERA GHAZI KHAN)",
+    "city": "Dera Ghazi Khan",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-07-2017"
+      },
+      {
+        "speciality": "CARDIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-11-2021"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2016"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "HISTOPATHOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-07-2013"
+      },
+      {
+        "speciality": "NEURO SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "21-04-2022"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-07-2013"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2016"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-07-2013"
+      },
+      {
+        "speciality": "PAEDIATRIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-11-2021"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2016"
+      },
+      {
+        "speciality": "PLASTIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "18-10-2021"
+      },
+      {
+        "speciality": "PSYCHIATRY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-07-2013"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      }
+    ]
+  },
+  {
+    "hospital": "ALMANA GENERAL HOSPITAL (AL KHOBAR)",
+    "city": "Al Khobar",
+    "programs": [
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "04-05-2017"
+      }
+    ]
+  },
+  {
+    "hospital": "ALTAMASH INSTITUTE OF DENTAL MEDICINE (KARACHI)",
+    "city": "Karachi",
+    "programs": [
+      {
+        "speciality": "DENTISTRY (ORAL AND MAXILLO-FACIAL SURGERY)",
+        "unit": "Unit-I",
+        "type": "P.A.",
+        "since": "05-04-2005"
+      },
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-12-2007"
+      },
+      {
+        "speciality": "DENTISTRY (PERIODONTOLOGY)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "DENTISTRY (PROSTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-2022"
+      },
+      {
+        "speciality": "OPERATIVE DENTISTRY & ENDODONTICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-12-2007"
+      }
+    ]
+  },
+  {
+    "hospital": "ALVI DENTAL HOSPITAL (KARACHI)",
+    "city": "Karachi",
+    "programs": [
+      {
+        "speciality": "DENTISTRY (ORTHODONTICS)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-08-2008"
+      }
+    ]
+  },
+  {
+    "hospital": "AMEER-UD-DIN MEDICAL COLLEGE / PGMI, LAHORE GENERAL HOSPITAL LGH (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-08-2005"
+      },
+      {
+        "speciality": "ANATOMY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "CRITICAL CARE MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-2019"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-02-2011"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "28-05-1994"
+      },
+      {
+        "speciality": "FORENSIC MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "GASTROENTEROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-11-2010"
+      },
+      {
+        "speciality": "GLAUCOMA",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-06-2025"
+      },
+      {
+        "speciality": "HAEMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      },
+      {
+        "speciality": "HISTOPATHOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-1975"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-11-2016"
+      },
+      {
+        "speciality": "NEURO SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-11-2000"
+      },
+      {
+        "speciality": "NEUROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-01-2004"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-1975"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-03-1995"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-1975"
+      },
+      {
+        "speciality": "PAEDIATRIC DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-11-2025"
+      },
+      {
+        "speciality": "PAEDIATRIC INFECTIOUS DISEASES",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-07-2007"
+      },
+      {
+        "speciality": "PHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "PLASTIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "20-10-2015"
+      },
+      {
+        "speciality": "PSYCHIATRY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-01-2015"
+      },
+      {
+        "speciality": "SPINE SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-11-2025"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-1975"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-1990"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2008"
+      }
+    ]
+  },
+  {
+    "hospital": "AMEER-UD-DIN MEDICAL COLLEGE / PGMI, LAHORE GENERAL HOSPITAL LGH, LAHORE (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "03-08-2005"
+      },
+      {
+        "speciality": "ANATOMY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "CRITICAL CARE MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-2019"
+      },
+      {
+        "speciality": "DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "09-02-2011"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "28-05-1994"
+      },
+      {
+        "speciality": "FORENSIC MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "GASTROENTEROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-11-2010"
+      },
+      {
+        "speciality": "GLAUCOMA",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "05-06-2025"
+      },
+      {
+        "speciality": "HAEMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      },
+      {
+        "speciality": "HISTOPATHOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-1975"
+      },
+      {
+        "speciality": "NEPHROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "24-11-2016"
+      },
+      {
+        "speciality": "NEURO SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-11-2000"
+      },
+      {
+        "speciality": "NEUROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-11-2016"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-01-2004"
+      },
+      {
+        "speciality": "OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-1975"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "11-03-1995"
+      },
+      {
+        "speciality": "OTORHINOLARYNGOLOGY (E.N.T.)",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-1975"
+      },
+      {
+        "speciality": "PAEDIATRIC DERMATOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-11-2025"
+      },
+      {
+        "speciality": "PAEDIATRIC INFECTIOUS DISEASES",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "25-01-2023"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-07-2007"
+      },
+      {
+        "speciality": "PHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-12-2025"
+      },
+      {
+        "speciality": "PLASTIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "20-10-2015"
+      },
+      {
+        "speciality": "PSYCHIATRY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "06-07-2017"
+      },
+      {
+        "speciality": "PULMONOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "02-01-2015"
+      },
+      {
+        "speciality": "SPINE SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "12-11-2025"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "17-05-1975"
+      },
+      {
+        "speciality": "UROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "01-07-1990"
+      },
+      {
+        "speciality": "VITREO RETINAL OPHTHALMOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "27-06-2008"
+      }
+    ]
+  },
+  {
+    "hospital": "AMNA INAYAT MEDICAL COLLEGE (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2023"
+      },
+      {
+        "speciality": "ANATOMY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-08-2022"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2023"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2023"
+      },
+      {
+        "speciality": "PHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-08-2022"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      }
+    ]
+  },
+  {
+    "hospital": "AMNA INAYAT MEDICAL COLLEGE, LAHORE (LAHORE)",
+    "city": "Lahore",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2023"
+      },
+      {
+        "speciality": "ANATOMY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-08-2022"
+      },
+      {
+        "speciality": "COMMUNITY MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2023"
+      },
+      {
+        "speciality": "MEDICINE",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "OBSTETRICS AND GYNAECOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      },
+      {
+        "speciality": "PAEDIATRICS",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "30-01-2023"
+      },
+      {
+        "speciality": "PHYSIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "10-08-2022"
+      },
+      {
+        "speciality": "SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "29-01-2022"
+      }
+    ]
+  },
+  {
+    "hospital": "ANNAPURNA NEUROLOGICAL INSTITUTE AND ALLIED SCIENCES (KATHMANDU)",
+    "city": "Kathmandu",
+    "programs": [
+      {
+        "speciality": "ANAESTHESIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "31-10-2022"
+      },
+      {
+        "speciality": "DIAGNOSTIC RADIOLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "31-10-2022"
+      },
+      {
+        "speciality": "NEURO SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "31-08-2018"
+      },
+      {
+        "speciality": "NEUROLOGY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "08-08-2024"
+      },
+      {
+        "speciality": "ORTHOPAEDIC SURGERY",
+        "unit": "Unit-I",
+        "type": "F.A.",
+        "since": "31-10-2022"
+      }
+    ]
+  }
+]

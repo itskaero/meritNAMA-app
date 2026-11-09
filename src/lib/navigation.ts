@@ -1,11 +1,10 @@
 import type { IconName } from "@/components/icon";
+import { can, type Capability, type Session } from "@/lib/auth/roles";
 
 /**
- * Single source for app sections: drives the sidebar and the placeholder pages,
- * so a route's planned scope is documented in exactly one place.
+ * Single source for app sections: drives the sidebars, page titles and the admin
+ * section guards (requireSection). What is still to build is listed in the README.
  */
-export type Milestone = "Delivery 2 · Data foundations" | "Delivery 3 · Admin MVP" | "Delivery 4 · Candidate MVP";
-
 export type Section = {
   href: string;
   /** Sidebar group heading. */
@@ -14,153 +13,152 @@ export type Section = {
   icon: IconName;
   label: string;
   description: string;
-  milestone: Milestone;
-  planned: string[];
+  /** Admin sections: what a staff member needs to see and open it. */
+  capability?: Capability;
+  /** Not a menu item of its own (reached through another section's tabs). */
+  hideInNav?: boolean;
+  /** Other paths that light this menu item up (e.g. My chances owns the calculator). */
+  match?: string[];
 };
 
+/*
+ * The candidate menu, in plain words and in the order people need it (Nov 2026, after
+ * the old site's "I want to…" guide): six things to do, then their own things.
+ */
 export const candidateSections: Section[] = [
+  { href: "/portal", group: "Start", icon: "dashboard", label: "Home", description: "Your merit, the latest list, and what you can do next." },
+  { href: "/portal/history", group: "Start", icon: "trend", label: "Merit lists", description: "Every merit list, official and estimated. Find yourself, or anyone, by applicant ID." },
   {
-    href: "/portal",
-    group: "Menu",
-    icon: "dashboard",
-    label: "Dashboard",
-    description: "Your programme, induction, merit and plans at a glance.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Programme and induction", "Merit score and breakdown", "Record-verification state", "Preference-plan summary", "Data-source and update timestamps"],
+    href: "/portal/finder", group: "Start", icon: "target", label: "My chances",
+    description: "Where your marks can get a seat, based on past closing merit.",
+    match: ["/portal/calculator", "/portal/preferences"],
   },
-  {
-    href: "/portal/profile",
-    group: "Menu",
-    icon: "user",
-    label: "Merit profile",
-    description: "Imported marks under the applicable scoring policy.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Verified candidate-record linking", "Component-level breakdown", "Official vs. user-entered data clearly separated", "Missing-data indicators"],
-  },
-  {
-    href: "/portal/preferences",
-    group: "Menu",
-    icon: "list",
-    label: "Preference planner",
-    description: "Draft and compare preference lists.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Search specialties and hospitals", "Programme and quota filters", "Duplicate and eligibility warnings", "Save, duplicate, rename and compare drafts"],
-  },
-  {
-    href: "/portal/simulation",
-    group: "Menu",
-    icon: "target",
-    label: "Simulation",
-    description: "Seat-allocation simulation using the existing engine.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Dataset and assumptions shown", "Predicted placement or unplaced outcome", "Which preference produced the result", "Saved, comparable runs"],
-  },
-  {
-    href: "/portal/history",
-    group: "Explore",
-    icon: "trend",
-    label: "Historical cutoffs",
-    description: "Closing merit across inductions and rounds.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Programme- and quota-aware comparisons", "Seat-count trends", "Round-by-round movement", "Your score vs. historical cutoff"],
-  },
-  {
-    href: "/portal/explore",
-    group: "Explore",
-    icon: "building",
-    label: "Hospitals & specialties",
-    description: "Discover training opportunities.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Canonical hospital and specialty directory", "Programme availability", "Accreditation metadata where available"],
-  },
-  {
-    href: "/portal/workspace",
-    group: "Personal",
-    icon: "folder",
-    label: "Workspace",
-    description: "Saved drafts, scenarios and favourites.",
-    milestone: "Delivery 4 · Candidate MVP",
-    planned: ["Server-side storage scoped to your account", "Favourite institutions", "Saved comparisons"],
-  },
+  { href: "/portal/explore", group: "Start", icon: "building", label: "Hospitals", description: "Every hospital and speciality: seats, closing merit, accreditation and reviews." },
+  { href: "/portal/simulation", group: "Start", icon: "pulse", label: "What if", description: "What if someone accepts or rejects? Change consent and see the next list." },
+  { href: "/portal/community", group: "Start", icon: "chat", label: "Ask & chat", description: "Questions and answers, and a chat room for every round." },
+  { href: "/portal/profile", group: "Mine", icon: "user", label: "My record", description: "Your merit record: every round you appeared in, with closing merit." },
+  { href: "/portal/workspace", group: "Mine", icon: "folder", label: "Saved", description: "Seats you saved, views you saved, and what you follow." },
+  { href: "/portal/inbox", group: "Mine", icon: "inbox", label: "Inbox", description: "New lists, answers and alerts about what you follow." },
+  { href: "/portal/guide", group: "Mine", icon: "book", label: "Help", description: "How the merit lists work, in plain words, and what each term means." },
+  // Tabs of My chances, not menu items of their own.
+  { href: "/portal/calculator", group: "Start", icon: "calculator", label: "Merit calculator", description: "Work out your merit marks from your own details, under the published scoring policy.", hideInNav: true },
+  { href: "/portal/preferences", group: "Start", icon: "list", label: "Preference list", description: "Put your options in order and see where the list is likely to place you.", hideInNav: true },
 ];
 
 export const adminSections: Section[] = [
   {
     href: "/admin",
+    capability: "staff",
     group: "Menu",
     icon: "dashboard",
     label: "Overview",
     description: "Active induction, datasets, processing and system health.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Active induction", "Dataset versions", "Candidate counts", "Validation issues", "Scoring-policy version", "Recent changes"],
   },
   {
     href: "/admin/candidates",
+    capability: "candidates.verify",
     group: "Menu",
     icon: "users",
     label: "Candidates",
-    description: "Search, inspect and correct candidate records.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Search and filter", "Programme-specific marks", "Preference history", "Controlled correction with reason", "Duplicate detection", "Import/export"],
+    description: "Verify account links, look up and correct candidate records, and find duplicates.",
   },
   {
     href: "/admin/inductions",
+    capability: "data.edit",
     group: "Menu",
     icon: "calendar",
-    label: "Inductions",
-    description: "Induction configuration, merit lists and gazettes.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Induction configuration", "Historical merit lists", "Gazette seat data", "Source-data versions", "Before/after comparisons"],
+    label: "Inductions & merit lists",
+    description: "Import merit-round files, replace or remove rounds, and map published names to hospitals and specialities.",
   },
   {
     href: "/admin/policies",
+    capability: "policy.edit",
     group: "Configuration",
     icon: "sliders",
     label: "Scoring policies",
     description: "Versioned scoring-policy definitions.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Schema-validated editor", "Totals check", "Impact preview via the calculation engine", "Explicit activation and rollback"],
+  },
+  {
+    href: "/admin/rules",
+    capability: "policy.edit",
+    group: "Configuration",
+    icon: "target",
+    label: "Allocation rules",
+    description: "How each induction's seats are allocated in the simulation: certificate and parent bonuses, tracks, later rounds.",
   },
   {
     href: "/admin/reference-data",
+    capability: "data.edit",
     group: "Configuration",
     icon: "database",
     label: "Reference data",
-    description: "Specialties, hospitals, quotas and seats.",
-    milestone: "Delivery 2 · Data foundations",
-    planned: ["Canonical identifiers", "Display names and aliases", "Specialty groups", "Quota categories and seat counts", "Missing-reference checks"],
+    description: "Seat matrices, lookups, disciplines, specialty groups and CPSP accreditation.",
   },
   {
     href: "/admin/processing",
+    capability: "data.edit",
     group: "Operations",
     icon: "cpu",
     label: "Processing & simulation",
     description: "Server-side pipelines and simulation runs.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Input selection and preflight validation", "Dataset reconciliation", "Processing logs", "Comparison against reference results", "Versioned, downloadable outputs"],
+  },
+  {
+    href: "/admin/changes",
+    capability: "staff",
+    group: "Operations",
+    icon: "history",
+    label: "Changes to review",
+    description: "Risky changes wait here with a before/after preview. Publish, discard, or roll back a published change.",
   },
   {
     href: "/admin/audit",
+    capability: "staff",
     group: "Operations",
     icon: "history",
     label: "Audit history",
     description: "Who changed what, when and why.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Actor and timestamp", "Previous and new values", "Reason and result", "Reversal where feasible"],
+  },
+  {
+    href: "/admin/community",
+    capability: "community.moderate",
+    group: "Operations",
+    icon: "flag",
+    label: "Community moderation",
+    description: "Reported posts, hidden content and locked discussions.",
   },
   {
     href: "/admin/settings",
+    capability: "roles.manage",
     group: "System",
     icon: "settings",
-    label: "Settings",
-    description: "Application settings and health.",
-    milestone: "Delivery 3 · Admin MVP",
-    planned: ["Feature toggles", "Data retention", "Backup status"],
+    label: "Team & roles",
+    description: "Who is on the team and what each person may do; candidate feature switches, data retention and backups.",
   },
+];
+
+/** Admin quick actions for the Ctrl K palette, beyond the sidebar pages. */
+export const adminCommands: { label: string; hint: string; href: string; icon: IconName; download?: boolean; keywords?: string; capability: Capability }[] = [
+  { label: "Import merit rounds", hint: "Inductions", href: "/admin/inductions", icon: "upload", keywords: "merit list round_ file", capability: "data.edit" },
+  { label: "Import a seat file", hint: "Reference data", href: "/admin/reference-data", icon: "upload", keywords: "seats matrix induction upload", capability: "data.edit" },
+  { label: "Hospitals", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=hospitals", icon: "building", keywords: "rename add hospital", capability: "data.edit" },
+  { label: "Specialities", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=specialities", icon: "target", keywords: "speciality specialty rename", capability: "data.edit" },
+  { label: "Quotas", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=quotas", icon: "list", capability: "data.edit" },
+  { label: "CPSP accreditation", hint: "Reference data · document", href: "/admin/reference-data/documents/cpsp_accreditation", icon: "folder", capability: "data.edit" },
+  { label: "Specialty groups", hint: "Reference data · document", href: "/admin/reference-data/documents/specialty_groups", icon: "folder", capability: "data.edit" },
+  { label: "Disciplines", hint: "Reference data · document", href: "/admin/reference-data/documents/disciplines", icon: "folder", capability: "data.edit" },
+  { label: "Export scoring_policy.json", hint: "Download", href: "/admin/policies/export", icon: "download", download: true, keywords: "policy json calculator", capability: "policy.edit" },
 ];
 
 export function findSection(href: string): Section {
   const s = [...candidateSections, ...adminSections].find((x) => x.href === href);
   if (!s) throw new Error(`Unknown section ${href}`);
   return s;
+}
+
+/** Admin sections and quick actions this session may use. */
+export function sectionsFor(session: Session, sections: Section[]): Section[] {
+  return sections.filter((x) => !x.capability || can(session, x.capability));
+}
+export function commandsFor(session: Session) {
+  return adminCommands.filter((c) => can(session, c.capability));
 }

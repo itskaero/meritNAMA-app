@@ -1,49 +1,111 @@
 /*
- * MeritNama design tokens — v1
+ * meritNAMA design tokens — v2.0
  *
- * Canonical copy lives here (public site). The private application keeps a
- * byte-identical copy at src/styles/tokens.css. If you change one, change the
- * other; see docs/DESIGN_SYSTEM.md. No build step, no cross-repo package.
+ * App copy: src/styles/tokens.css in the app (itskaero/meritnama-app). The public
+ * site's assets/css/tokens.css in the public site (itskaero/meritnama) stays on v1.1
+ * until its pages move into the app; then that copy is retired.
+ * Contrast is checked by tests/tokens.test.ts for both themes.
+ *
+ * v2.0 (Nov 2026): light-first academic palette (Midnight Navy, Slate Blue, Muted
+ * Teal, Warm Ivory). Light is the default; dark (navy and charcoal surfaces) applies
+ * with data-theme="dark" on <html>, or data-theme="system" and a dark OS setting.
+ * Token names from v1 are kept as the semantic layer ("navy-950" = page background,
+ * "cyan" = primary action), so components did not have to change names.
+ *
+ * v2.1 (Nov 2026): brand palette for the redesign with the generated imagery: Deep
+ * Navy #10243A, Slate Blue #263C4D, Teal #176B67, Amber #E5A04B, Terracotta #D97861,
+ * Mint #E9F0ED, Warm Ivory #F3EEE5, Charcoal #283747. Teal is dark enough to be the
+ * primary action and link colour as given. Amber and Terracotta are below 4.5:1 as
+ * text on light surfaces, so they are fills, accents and chart series only; amber
+ * text uses --mn-amber (#8A5D12).
  */
 :root {
-  /* Surfaces */
-  --mn-navy-950: #07111f;   /* page background */
-  --mn-navy-900: #0e1b2c;   /* main surface */
-  --mn-navy-800: #14253a;   /* elevated surface */
-  --mn-navy-700: #1b3049;   /* hover / pressed surface */
-  --mn-border: #26394e;
-  --mn-border-strong: #35506b;
+  color-scheme: light;
+
+  /* Brand */
+  --mn-brand-navy: #10243A;    /* Deep Navy: headings, navigation, identity */
+  --mn-brand-slate: #263C4D;   /* Slate Blue */
+  --mn-brand-teal: #176B67;    /* Teal: fills, chart series, selected states */
+  --mn-brand-amber: #E5A04B;   /* Amber: highlights and accents on navy (not text on light) */
+  --mn-brand-terracotta: #D97861; /* Terracotta: "harder" series, warm accents (not text on light) */
+  --mn-brand-mint: #E9F0ED;    /* Mint: tinted panels */
+  --mn-brand-charcoal: #283747; /* Charcoal: body text */
+  --mn-brand-ivory: #F3EEE5;   /* Warm Ivory: editorial panels, landing, sign-in */
+
+  /* Surfaces (semantic; v1 names) */
+  --mn-navy-950: #F5F6F4;   /* page background */
+  --mn-navy-900: #FFFFFF;   /* surface: cards, workspace */
+  --mn-navy-800: #EEF1EF;   /* raised / table header / tile */
+  --mn-navy-700: #E5EAE8;   /* hover / pressed */
+  --mn-border: #E1E6E5;
+  --mn-border-strong: #C8D1D0;
 
   /* Text */
-  --mn-text: #f2f6fc;
-  --mn-text-muted: #a8b8ca;
-  --mn-text-subtle: #7d90a6;   /* AA on navy-950 for >=14px; avoid for body copy */
+  --mn-text: #283747;
+  --mn-text-heading: #10243A;
+  --mn-text-muted: #56656F;
+  --mn-text-subtle: #5B6A74;   /* AA on the page background and raised surfaces */
+  --mn-text-decor: #71808A;    /* Secondary Text as given: icons and rules, not body copy */
 
   /* Signal */
-  --mn-cyan: #42d6d0;          /* primary action, selection, active nav */
-  --mn-cyan-strong: #6be3de;   /* hover */
-  --mn-cyan-ink: #04201f;      /* text on cyan */
-  --mn-cyan-soft: rgba(66, 214, 208, 0.12);
-  --mn-amber: #e8b878;         /* warnings, sparing distinctions */
-  --mn-amber-soft: rgba(232, 184, 120, 0.12);
-  --mn-danger: #f0767a;
-  --mn-success: #5fd39a;
+  --mn-cyan: #176B67;          /* primary action, links, active nav text (brand teal) */
+  --mn-cyan-strong: #11524F;   /* hover */
+  --mn-cyan-ink: #FFFFFF;      /* text on primary */
+  --mn-cyan-soft: rgba(23, 107, 103, 0.11);
+  --mn-teal-deep: #E9F0ED;     /* tinted panels (mint) */
+  --mn-amber: #8A5D12;         /* warnings, estimates */
+  --mn-amber-soft: rgba(176, 125, 40, 0.12);
+  --mn-danger: #A63A35;
+  --mn-success: #2E6E4A;
 
-  /* Glass (used over imagery only) */
-  --mn-glass: rgba(14, 27, 44, 0.62);
-  --mn-glass-border: rgba(168, 184, 202, 0.18);
+  /* Ember: "harder" in charts (closing merit rose) and "where you are" in a cycle. Never for buttons. */
+  --mn-ember: #9C4F33;
+  --mn-ember-hot: #B5694B;
+  --mn-ember-deep: #7A3B25;
+
+  /* Charts */
+  --mn-chart-1: #10243A;       /* primary series */
+  --mn-chart-2: #176B67;
+  --mn-chart-3: #D97861;
+  --mn-chart-4: #8A97A0;
+  --mn-chart-easier: #176B67;  /* closing merit fell */
+  --mn-chart-harder: #D97861;  /* closing merit rose */
+  --mn-chart-neutral: #8A97A0; /* counts such as seats */
+  --mn-chart-grid: #E1E6E5;
+  --mn-chart-axis: #62717B;
+
+  /* Feature surface: the one hero card per page (your merit, a hospital's summary). */
+  --mn-feature-bg: #10243A;
+  --mn-feature-ink: #F3F0EA;
+  --mn-feature-muted: #C5CDD3;
+  --mn-feature-accent: #E5A04B;
+  --mn-feature-line: rgba(231, 226, 216, 0.16);
+
+  /* Programme colours: muted, distinct, AA as text. One per programme, used everywhere it appears. */
+  --mn-prog-fcps: #2F5F86;
+  --mn-prog-ms: #7A4E8C;
+  --mn-prog-md: #2F6E61;
+  --mn-prog-mds: #8C5426;
+  --mn-prog-fcps-dentistry: #5E6A24;
+  --mn-prog-other: #5B6A74;
+
+  /* Glass (over imagery only) */
+  --mn-glass: rgba(255, 255, 255, 0.86);
+  --mn-glass-border: rgba(16, 36, 58, 0.12);
 
   /* Typography */
-  --mn-font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mn-font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mn-font-serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
   --mn-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --mn-font-display: var(--mn-font-sans);   /* key figures: sans with tabular numerals */
   --mn-text-xs: 0.75rem;
   --mn-text-sm: 0.875rem;
   --mn-text-md: 1rem;
   --mn-text-lg: 1.125rem;
   --mn-text-xl: 1.375rem;
   --mn-text-2xl: 1.75rem;
-  --mn-text-3xl: clamp(1.9rem, 3.4vw, 2.6rem);
-  --mn-text-display: clamp(2.6rem, 6.4vw, 5rem);
+  --mn-text-3xl: clamp(1.9rem, 3.4vw, 2.5rem);
+  --mn-text-display: clamp(2.6rem, 6vw, 4.5rem);
 
   /* Spacing (4px scale) */
   --mn-space-1: 4px;
@@ -56,23 +118,127 @@
   --mn-space-8: 64px;
   --mn-space-9: 96px;
 
-  /* Radii */
-  --mn-radius-sm: 6px;
-  --mn-radius-md: 10px;
-  --mn-radius-lg: 14px;
-  --mn-radius-xl: 20px;   /* panels and metric cards */
+  /* Radii: restrained */
+  --mn-radius-sm: 4px;
+  --mn-radius-md: 6px;
+  --mn-radius-lg: 8px;
+  --mn-radius-xl: 10px;   /* cards and panels */
   --mn-radius-pill: 999px;
 
   /* Elevation */
-  --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --mn-shadow-2: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  --mn-shadow-1: 0 1px 2px rgba(20, 37, 54, 0.06);
+  --mn-shadow-2: 0 10px 30px -14px rgba(20, 37, 54, 0.22);
 
   /* Focus */
-  --mn-focus-ring: 0 0 0 2px var(--mn-navy-950), 0 0 0 4px var(--mn-cyan);
+  --mn-focus-ring: 0 0 0 2px var(--mn-navy-900), 0 0 0 4px var(--mn-cyan);
 
   /* Motion */
   --mn-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --mn-duration: 160ms;
+}
+
+/* Dark: navy and charcoal surfaces. Explicit choice, or "system" with a dark OS. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --mn-navy-950: #0E1823;
+  --mn-navy-900: #142536;
+  --mn-navy-800: #1B2F42;
+  --mn-navy-700: #243A4E;
+  --mn-border: #263C4D;
+  --mn-border-strong: #36506A;
+  --mn-text: #E8EDF1;
+  --mn-text-heading: #F3F5F7;
+  --mn-text-muted: #A7B4BE;
+  --mn-text-subtle: #93A1AB;
+  --mn-text-decor: #7E8D98;
+  --mn-cyan: #7DB8AA;
+  --mn-cyan-strong: #95C8BC;
+  --mn-cyan-ink: #0E1823;
+  --mn-cyan-soft: rgba(125, 184, 170, 0.16);
+  --mn-teal-deep: #173A3C;
+  --mn-amber: #D9B377;
+  --mn-amber-soft: rgba(217, 179, 119, 0.14);
+  --mn-danger: #EE9590;
+  --mn-success: #86C9A2;
+  --mn-ember: #E0A07F;
+  --mn-ember-hot: #E8B497;
+  --mn-ember-deep: #C27A57;
+  --mn-chart-1: #E8EDF1;
+  --mn-chart-2: #7DB8AA;
+  --mn-chart-3: #E0A07F;
+  --mn-chart-4: #7E8D98;
+  --mn-chart-easier: #7DB8AA;
+  --mn-chart-harder: #E0A07F;
+  --mn-chart-neutral: #7E8D98;
+  --mn-chart-grid: #263C4D;
+  --mn-chart-axis: #93A1AB;
+  --mn-feature-bg: #213A50;
+  --mn-feature-ink: #F3F0EA;
+  --mn-feature-muted: #C5CDD3;
+  --mn-feature-accent: #E5A04B;
+  --mn-feature-line: rgba(231, 226, 216, 0.18);
+  --mn-prog-fcps: #8FB5D6;
+  --mn-prog-ms: #C7A3D4;
+  --mn-prog-md: #86C2B4;
+  --mn-prog-mds: #E0AE84;
+  --mn-prog-fcps-dentistry: #BCC77F;
+  --mn-prog-other: #A7B4BE;
+  --mn-glass: rgba(14, 24, 35, 0.82);
+  --mn-glass-border: rgba(231, 226, 216, 0.14);
+  --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --mn-shadow-2: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    color-scheme: dark;
+    --mn-navy-950: #0E1823;
+    --mn-navy-900: #142536;
+    --mn-navy-800: #1B2F42;
+    --mn-navy-700: #243A4E;
+    --mn-border: #263C4D;
+    --mn-border-strong: #36506A;
+    --mn-text: #E8EDF1;
+    --mn-text-heading: #F3F5F7;
+    --mn-text-muted: #A7B4BE;
+    --mn-text-subtle: #93A1AB;
+    --mn-text-decor: #7E8D98;
+    --mn-cyan: #7DB8AA;
+    --mn-cyan-strong: #95C8BC;
+    --mn-cyan-ink: #0E1823;
+    --mn-cyan-soft: rgba(125, 184, 170, 0.16);
+    --mn-teal-deep: #173A3C;
+    --mn-amber: #D9B377;
+    --mn-amber-soft: rgba(217, 179, 119, 0.14);
+    --mn-danger: #EE9590;
+    --mn-success: #86C9A2;
+    --mn-ember: #E0A07F;
+    --mn-ember-hot: #E8B497;
+    --mn-ember-deep: #C27A57;
+    --mn-chart-1: #E8EDF1;
+    --mn-chart-2: #7DB8AA;
+    --mn-chart-3: #E0A07F;
+    --mn-chart-4: #7E8D98;
+    --mn-chart-easier: #7DB8AA;
+    --mn-chart-harder: #E0A07F;
+    --mn-chart-neutral: #7E8D98;
+    --mn-chart-grid: #263C4D;
+    --mn-chart-axis: #93A1AB;
+    --mn-feature-bg: #213A50;
+    --mn-feature-ink: #F3F0EA;
+    --mn-feature-muted: #C5CDD3;
+    --mn-feature-accent: #E5A04B;
+    --mn-feature-line: rgba(231, 226, 216, 0.18);
+    --mn-prog-fcps: #8FB5D6;
+    --mn-prog-ms: #C7A3D4;
+    --mn-prog-md: #86C2B4;
+    --mn-prog-mds: #E0AE84;
+    --mn-prog-fcps-dentistry: #BCC77F;
+    --mn-prog-other: #A7B4BE;
+    --mn-glass: rgba(14, 24, 35, 0.82);
+    --mn-glass-border: rgba(231, 226, 216, 0.14);
+    --mn-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --mn-shadow-2: 0 12px 32px -12px rgba(0, 0, 0, 0.6);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -14,6 +14,11 @@ describe("environment validation", () => {
     expect(() => parseEnv({ NODE_ENV: "production", DEV_AUTH_STUB_ROLE: "admin" })).toThrow(/DEV_AUTH_STUB_ROLE/);
   });
 
+  it("needs both Google settings or neither", () => {
+    expect(() => parseEnv({ NODE_ENV: "development", GOOGLE_CLIENT_ID: "x.apps.googleusercontent.com" })).toThrow(/GOOGLE_CLIENT_SECRET/);
+    expect(parseEnv({ NODE_ENV: "development", GOOGLE_CLIENT_ID: "x.apps.googleusercontent.com", GOOGLE_CLIENT_SECRET: "0123456789ab" }).GOOGLE_CLIENT_ID).toBe("x.apps.googleusercontent.com");
+  });
+
   it("does not echo secret values in errors", () => {
     try {
       parseEnv({ DATABASE_URL: "mysql://user:s3cret@host/db" });

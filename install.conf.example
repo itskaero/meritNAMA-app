@@ -1,0 +1,22 @@
+# Answers for ./meritnama.sh install, for a NAS without SSH.
+# 1. Copy this file to install.conf in the same folder and fill it in.
+# 2. Run the installer (DSM → Control Panel → Task Scheduler, see docs/NAS-SETUP.md).
+# The installer deletes install.conf once .env is written (it holds your app password).
+
+# Your email: it becomes the owner on first sign-in.
+MN_OWNER=you@example.com
+
+# Gmail that sends sign-in links, and its 16-letter App Password
+# (https://myaccount.google.com/apppasswords; spaces are fine).
+MN_GMAIL=namamerit@gmail.com
+MN_GMAIL_APP_PASSWORD=
+
+# How people reach the site: tunnel (Cloudflare Tunnel), proxy (Caddy on 80/443),
+# or local (your NAS's own reverse proxy → http://127.0.0.1:3000).
+MN_ACCESS=tunnel
+# Only for tunnel: the token from Cloudflare Zero Trust → Networks → Tunnels.
+MN_TUNNEL_TOKEN=
+
+MN_DOMAIN=meritnama.online
+MN_DATA_DIR=/volume1/meritnama-data
+MN_PORT=3000

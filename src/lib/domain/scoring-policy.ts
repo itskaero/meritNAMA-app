@@ -29,7 +29,8 @@ export const policyComponentSchema = z
     max_marks: z.number().min(0),
     type: z.enum(COMPONENT_TYPES),
     description: z.string().optional(),
-    included: z.boolean().default(true),
+    /** Absent means included. Not defaulted, so a stored definition stays identical to its source. */
+    included: z.boolean().optional(),
     per_year: z.number().min(0).optional(),
     per_item: z.number().min(0).optional(),
     per_3_months: z.number().min(0).optional(),
@@ -129,3 +130,4 @@ export function policyInductions(p: Pick<Policy, "induction">): number[] {
   const [from, to] = inductionRange(p.induction);
   return Array.from({ length: Math.max(0, to - from + 1) }, (_, i) => from + i);
 }
+

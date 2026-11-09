@@ -1,37 +1,46 @@
 import type { ReactNode } from "react";
+import { DataTableClient } from "./data-table-client";
 
-export type Column<T> = { key: string; header: string; cell: (row: T) => ReactNode; align?: "left" | "right" };
+export type Column<T> = {
+  key: string;
+  header: ReactNode;
+  cell: (row: T) => ReactNode;
+  align?: "left" | "right";
+  /** "mono" for marks and codes; "muted" for secondary text. */
+  tone?: "mono" | "muted";
+  /** The value to sort by. When set, the column header sorts the table (in the browser). */
+  sort?: (row: T) => string | number | null | undefined;
+};
 
-/** Accessible, horizontally scrollable table. Sorting/filtering/pagination arrive with real admin data. */
-export function DataTable<T>({ caption, columns, rows, rowKey, empty }: {
+/**
+ * Accessible table that scrolls inside its own frame. `maxHeight` turns on vertical
+ * scrolling with a sticky header, for long lists; tables over 30 rows do it anyway.
+ * Columns with a `sort` accessor get sortable headers.
+ */
+export function DataTable<T>({ caption, columns, rows, rowKey, empty, maxHeight }: {
   caption: string;
   columns: Column<T>[];
   rows: T[];
   rowKey: (row: T) => string;
   empty?: ReactNode;
+  maxHeight?: string;
 }) {
   if (rows.length === 0 && empty) return <>{empty}</>;
+  // Long tables scroll inside their frame so the header row stays in view.
+  const height = maxHeight ?? (rows.length > 30 ? "70vh" : undefined);
   return (
-    <div className="overflow-x-auto rounded-2xl border border-line">
-      <table className="w-full text-left text-sm">
-        <caption className="sr-only">{caption}</caption>
-        <thead className="bg-elevated text-muted">
-          <tr>
-            {columns.map((c) => (
-              <th key={c.key} scope="col" className={`px-4 py-3 font-medium ${c.align === "right" ? "text-right" : ""}`}>{c.header}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-line">
-          {rows.map((r) => (
-            <tr key={rowKey(r)} className="hover:bg-surface">
-              {columns.map((c) => (
-                <td key={c.key} className={`px-4 py-3 ${c.align === "right" ? "text-right tabular-nums" : ""}`}>{c.cell(r)}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTableClient
+      caption={caption}
+      height={height}
+      columns={columns.map((c) => ({ key: c.key, header: c.header, align: c.align, tone: c.tone, sortable: Boolean(c.sort) }))}
+      rows={rows.map((r) => ({
+        key: rowKey(r),
+        cells: columns.map((c) => c.cell(r)),
+        sort: columns.map((c) => {
+          const v = c.sort?.(r);
+          return v === undefined || (typeof v === "number" && !Number.isFinite(v)) ? null : v;
+        }),
+      }))}
+    />
   );
 }

@@ -20,7 +20,8 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY drizzle ./drizzle
-COPY scripts/migrate.mjs ./scripts/migrate.mjs
+COPY scripts/migrate.mjs scripts/index-candidates.mjs ./scripts/
+COPY scripts/lib ./scripts/lib
 USER node
 CMD ["node", "scripts/migrate.mjs"]
 
@@ -32,6 +33,10 @@ ENV NODE_ENV=production \
 RUN mkdir -p /app/storage && chown node:node /app/storage
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
+# Static files (landing photographs); the standalone output does not include them.
+COPY --from=build --chown=node:node /app/public ./public
+# The worker container runs this image with scripts/worker.mjs (see docker-compose.yml).
+COPY --from=build --chown=node:node /app/scripts/worker.mjs ./scripts/worker.mjs
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
