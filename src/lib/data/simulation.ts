@@ -24,6 +24,7 @@ import {
   specialities,
 } from "@/lib/db/schema";
 import { effectiveCandidates, toCsv, type Correction } from "@/lib/domain/corrections";
+import { SIM_ROLE_PATTERNS, type SimRole } from "@/lib/domain/data-files";
 import { compareRounds, groupKey, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
 import { consentRows, officialStatuses, type ConsentStatus, type ListAllocation, type OfficialReply } from "@/lib/domain/what-if";
@@ -67,16 +68,9 @@ const MAX_BYTES = 200 * 1024 * 1024;
  * do not), so every name the simulation compares goes through this.
  */
 const nm = (s: string) => s.trim().replace(/\s+/g, " ");
-const ROLES = {
-  marks: /^(?:induction\d{1,3}_)?(?:candidate_?)?marks\.json$/i,
-  preferences: /^(?:induction\d{1,3}_)?preferences\.json$/i,
-  candidates: /^(?:induction\d{1,3}_)?candidates\.json$/i,
-  gazette: /^(?:induction\d{1,3}_)?gazette(?:_\d{1,3})?\.json$/i,
-  components: /^(?:induction\d{1,3}_)?components\.json$/i,
-  certificates: /^(?:induction\d{1,3}_)?certificates\.json$/i,
-  profileStatus: /^(?:(?:induction\d{1,3}_)?profile_?status|ProfileStatus)\.json$/i,
-} as const;
-type Role = keyof typeof ROLES;
+// The file-name patterns live in the domain module, shared with the data folder.
+const ROLES = SIM_ROLE_PATTERNS;
+type Role = SimRole;
 
 const simRoot = (root?: string) => path.resolve(/* turbopackIgnore: true */ root ?? env().APP_STORAGE_DIR, "simulation");
 const folderFor = (root: string, induction: number) => path.join(/* turbopackIgnore: true */ root, `induction${induction}`);
