@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { consentRoundFromName, consentFileSchema } from "./sim-dataset";
 import { meritRoundFileSchema, roundNoFromFilename } from "./merit-round";
 import { DOCUMENT_KINDS, seatFileSchema, type DocumentKind } from "./reference-data";
@@ -162,4 +163,31 @@ export function describeClassified(c: Classified): string {
   if (c.round != null) bits.push(`round ${c.round}`);
   if (c.role) bits.push(c.role === "profileStatus" ? "profile status" : c.role);
   return bits.join(" · ");
+}
+
+// ── Sync from a Git repository ─────────────────────────────────────────────────
+
+export type TreeEntry = { path: string; type: string; size?: number; sha: string };
+
+/**
+ * Which files of a repository tree to pull into the data folder: JSON files whose
+ * names we recognise as datasets, within the size limit. Derived and unsupported
+ * files, and everything else (package.json, assets), are counted and left out.
+ */
+export function selectSyncFiles(tree: TreeEntry[], maxBytes: number, maxFiles: number): { take: (TreeEntry & { rel: string })[]; skipped: number; tooMany: boolean } {
+  const take: (TreeEntry & { rel: string })[] = [];
+  let skipped = 0;
+  for (const e of tree) {
+    if (e.type !== "blob" || !/\.json$/i.test(e.path)) continue;
+    const rel = cleanRelPath(e.path);
+    const cls = rel ? classifyByPath(rel) : null;
+    if (!rel || !cls || cls.kind === "derived" || cls.kind === "later" || (e.size ?? 0) > maxBytes) { skipped++; continue; }
+    take.push({ ...e, rel });
+  }
+  return { take: take.slice(0, maxFiles), skipped, tooMany: take.length > maxFiles };
+}
+
+/** The SHA-1 Git gives a file ("blob <size>\0<bytes>"), to tell whether a local copy already matches. */
+export function gitBlobSha(bytes: Uint8Array): string {
+  return createHash("sha1").update(`blob ${bytes.byteLength}\0`).update(bytes).digest("hex");
 }

@@ -878,3 +878,42 @@ export const savedViews = pgTable(
   },
   (t) => [uniqueIndex("saved_views_user_href_uq").on(t.userId, t.href), index("saved_views_user_idx").on(t.userId, t.createdAt)],
 );
+
+/**
+ * Every file in the data folder (<APP_STORAGE_DIR>/data/, laid out like the old public
+ * repository). The folder is the truth; this table remembers what the app made of each
+ * file so a rescan only acts on files that are new or changed (by sha256).
+ */
+export const dataFiles = pgTable(
+  "data_files",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Path inside the data folder, forward slashes: "inductions/21/merit/round_8.json". */
+    path: text("path").notNull().unique(),
+    /** merit, consent, seats, policy, reference, sim_input, later, derived, or unknown. */
+    kind: text("kind").notNull(),
+    induction: integer("induction"),
+    round: integer("round"),
+    sizeBytes: integer("size_bytes").notNull(),
+    /** Hash of the file as last seen. */
+    sha256: text("sha256").notNull(),
+    /** Hash of the file as last applied. Differs from sha256 when the file changed since. */
+    appliedSha256: text("applied_sha256"),
+    /** new = valid, not applied · replaces = would replace live data, waiting for a click · live · held · problem · ignored · missing */
+    status: text("status").notNull(),
+    /** One line about the file, e.g. "1,219 allocations". */
+    summary: text("summary"),
+    /** Plain-words explanation for a problem or a waiting replacement. */
+    message: text("message"),
+    /** Set when applying staged a change for review instead of going live. */
+    changeId: uuid("change_id").references(() => stagedChanges.id, { onDelete: "set null" }),
+    firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    appliedAt: timestamp("applied_at", { withTimezone: true }),
+    appliedBy: text("applied_by"),
+  },
+  (t) => [
+    index("data_files_status_idx").on(t.status),
+    check("data_files_status", sql`${t.status} in ('new', 'replaces', 'live', 'held', 'problem', 'ignored', 'missing')`),
+  ],
+);

@@ -34,6 +34,8 @@ const NO_SESSION = new Set([
   "allocation-rules#parseInduction", "allocation-rules#rulesBaseline", "allocation-rules#scoringPolicyForInduction", "allocation-rules#resolveFor", "allocation-rules#loadInductionRules",
   "candidates#indexCandidates", "candidates#verifiedApplicant", "candidates#verifiedUserIds", "candidates#autoLink", "candidates#sniffEvidence", "candidates#pendingLinkCount",
   "community#describeTopics", "community#voteCount",
+  "datastore#autoImportDataFolder", "datastore#dataRoot", "datastore#loadDataSettings", "datastore#recordSync", "datastore#plainIssues",
+  "sync#syncIfDue",
   "finder#computeOptions",
   "merit#inductionMaxMarks",
   "notifications#parseFollowTarget", "notifications#autoFollow", "notifications#notifyFollowers", "notifications#notifyUser", "notifications#notifyShortlists", "rooms#postRoundDay", "social#peerKey", "social#reputationSql",

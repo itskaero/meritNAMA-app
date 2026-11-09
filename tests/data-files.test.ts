@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { classifyByContents, classifyByPath, cleanRelPath, missingDetail, simulationTarget, SIM_ROLE_PATTERNS } from "@/lib/domain/data-files";
+import { classifyByContents, classifyByPath, cleanRelPath, gitBlobSha, missingDetail, selectSyncFiles, simulationTarget, SIM_ROLE_PATTERNS } from "@/lib/domain/data-files";
 
 const fixture = (f: string) => JSON.parse(readFileSync(path.join(__dirname, "fixtures", f), "utf8")) as unknown;
 
@@ -107,5 +107,32 @@ describe("what is missing, and where inputs go", () => {
       const target = simulationTarget({ kind: "sim_input", induction: 21, round: null, role }, `induction21_${role === "profileStatus" ? "profile_status" : role}.json`)!;
       expect(SIM_ROLE_PATTERNS[role].test(target.split("/")[1]!), `${role} → ${target}`).toBe(true);
     }
+  });
+});
+
+describe("sync selection", () => {
+  const e = (p: string, size = 100, type = "blob") => ({ path: p, type, size, sha: "x" });
+
+  it("takes dataset files and skips the rest", () => {
+    const r = selectSyncFiles(
+      [e("inductions/21/merit/round_8.json"), e("package.json"), e("closing_merit.json"), e("induction21_schedule.json"), e("README.md"), e("inductions", 0, "tree"), e("scoring_policy.json"), e("inductions/21/merit/round_9.json", 99_999_999)],
+      1_000_000, 100,
+    );
+    expect(r.take.map((t) => t.rel)).toEqual(["inductions/21/merit/round_8.json", "scoring_policy.json"]);
+    expect(r.skipped).toBe(4); // package.json, closing_merit, schedule, the oversized round
+    expect(r.tooMany).toBe(false);
+  });
+
+  it("caps the number of files", () => {
+    const tree = Array.from({ length: 5 }, (_, i) => e(`inductions/21/merit/round_${i + 1}.json`));
+    const r = selectSyncFiles(tree, 1000, 3);
+    expect(r.take).toHaveLength(3);
+    expect(r.tooMany).toBe(true);
+  });
+
+  it("matches Git's own blob hash", () => {
+    // `printf 'hello\n' | git hash-object --stdin`
+    expect(gitBlobSha(new TextEncoder().encode("hello\n"))).toBe("ce013625030ba8dba906f756967f9e9ca394464a");
+    expect(gitBlobSha(new Uint8Array())).toBe("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391");
   });
 });
