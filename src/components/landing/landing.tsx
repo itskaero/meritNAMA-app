@@ -439,6 +439,7 @@ export function Landing({ f, features, tracks, check, query }: { f: LandingFigur
           <div className="grid gap-1 md:justify-items-end md:text-right">
             <span>Independent. Not an official admissions authority. Past results do not guarantee placement.</span>
             <span className="text-xs">Images are illustrations of medical education, not photographs of particular institutions.</span>
+            <span className="flex gap-4 text-xs"><Link href="/privacy" className="hover:text-heading">Privacy</Link><Link href="/terms" className="hover:text-heading">Terms</Link><Link href="/contact" className="hover:text-heading">Contact</Link></span>
           </div>
         </div>
       </footer>

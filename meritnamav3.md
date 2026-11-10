@@ -345,6 +345,11 @@ has its own posts and reactions (today it only reads questions and round-day pos
   owner-only settings), and the sign-in page shows Request access while the paywall is on, else the email link.
   Sign-in (link and Google) is refused for anyone not approved; owners, team and (optionally) older accounts are exempt.
 
+- Launch basics: public `/privacy`, `/terms` (with the refund rule from the paywall settings) and `/contact`
+  (`SUPPORT_EMAIL`, else the address in `MAIL_FROM`); `/portal/account` to download all of one's data
+  (`/api/me/export`) or delete the account (anonymises it; community posts stay as "Deleted member"). The legal text is a
+  plain-language draft: have someone qualified read it before launch.
+
 **Next:** phase 6 (docs: IA.md, DESIGN.md, NAS-SETUP.md; PR body; screenshots).
 
 ## Remaining, in order

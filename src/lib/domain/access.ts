@@ -23,6 +23,8 @@ export type AccessSettings = {
   /** Shown above the payment details. */
   note: string;
   closedMessage: string;
+  /** What happens if a payment is made and access is not given; shown on the request form and in the terms. */
+  refundNote: string;
   /** People who already had an account when the paywall went on keep signing in. */
   keepExisting: boolean;
   /** When the paywall was switched on (ISO), for keepExisting. */
@@ -41,6 +43,7 @@ export const DEFAULT_ACCESS: AccessSettings = {
   raastId: "",
   note: "Send the amount to the account below from your banking app, then paste the transaction reference. We check each payment by hand, so approval can take a little while.",
   closedMessage: "Access requests are closed for now. Please check back later.",
+  refundNote: "If your request is rejected, or you ask within 7 days and have not used the site, we send your payment back. Write to us from the Contact page with your transaction reference.",
   keepExisting: true,
   since: null,
 };
@@ -58,6 +61,7 @@ export const accessSettingsSchema = z
     raastId: z.string().trim().max(60),
     note: z.string().trim().max(600),
     closedMessage: z.string().trim().max(300),
+    refundNote: z.string().trim().max(500),
     keepExisting: z.boolean(),
   })
   .refine((s) => s.priceMinPkr <= s.priceMaxPkr, { path: ["priceMaxPkr"], message: "The highest amount cannot be below the lowest." })

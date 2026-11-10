@@ -26,7 +26,7 @@ function Copy({ value }: { value: string }) {
  * Shown on the sign-in page while the paywall is on: how to pay, then email, what was
  * sent and the bank's reference. Approval is by hand; the person is emailed.
  */
-export function RequestAccessForm({ s }: { s: Pick<AccessSettings, "paymentRequired" | "priceMinPkr" | "priceMaxPkr" | "bankName" | "accountNumber" | "accountTitle" | "raastId" | "note" | "requestsOpen" | "closedMessage"> }) {
+export function RequestAccessForm({ s }: { s: Pick<AccessSettings, "paymentRequired" | "priceMinPkr" | "priceMaxPkr" | "bankName" | "accountNumber" | "accountTitle" | "raastId" | "note" | "requestsOpen" | "closedMessage" | "refundNote"> }) {
   const [state, action, pending] = useActionState(requestAccessAction, idleState);
 
   if (!s.requestsOpen) return <p className="rounded-xl border border-line p-4 text-sm text-muted">{s.closedMessage}</p>;
@@ -66,6 +66,7 @@ export function RequestAccessForm({ s }: { s: Pick<AccessSettings, "paymentRequi
       <label className="grid gap-1.5 text-sm font-medium">Message <span className="font-normal text-subtle">(optional)</span>
         <textarea name="message" rows={2} maxLength={500} className="w-full rounded-[10px] border border-line bg-elevated px-3.5 py-2 text-sm text-ink" />
       </label>
+      <p className="text-xs text-subtle">{s.refundNote} See the <a href="/terms" className="text-signal hover:underline">terms</a> and <a href="/privacy" className="text-signal hover:underline">privacy policy</a>.</p>
       <Button type="submit" disabled={pending}>{pending ? "Sending…" : "Request access"}</Button>
       {state.status === "error" ? <ActionResult state={state} /> : null}
     </form>

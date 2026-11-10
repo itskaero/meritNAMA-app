@@ -79,6 +79,7 @@ export function AccessSettingsForm({ s }: { s: AccessSettings }) {
         <label className="grid gap-1.5 text-sm font-medium">Raast ID <span className="font-normal text-subtle">(optional)</span><input name="raastId" defaultValue={s.raastId} className={fieldClass} /></label>
       </div>
       <label className="grid gap-1.5 text-sm font-medium">Note above the payment details<textarea name="note" rows={3} defaultValue={s.note} className={fieldClass} /></label>
+      <label className="grid gap-1.5 text-sm font-medium">Refund rule <span className="font-normal text-subtle">(shown on the request form and in the terms)</span><textarea name="refundNote" rows={3} defaultValue={s.refundNote} className={fieldClass} /></label>
       <label className="grid gap-1.5 text-sm font-medium">Message when requests are closed<input name="closedMessage" defaultValue={s.closedMessage} className={fieldClass} /></label>
       <label className="grid gap-1.5 text-sm font-medium">Reason for this change<input name="reason" required maxLength={200} placeholder="e.g. paywall on for induction 21" className={fieldClass} /></label>
       <div><Button type="submit" disabled={pending}>{pending ? "Saving" : "Save"}</Button></div>

@@ -35,6 +35,8 @@ export const envSchema = z
     CANDIDATE_INDEX_SECRET: z.string().min(32).optional(),
     /** Shared with the worker container: authorises POST /api/internal/tick. Unset: the route is off. */
     INTERNAL_TOKEN: z.string().min(32).optional(),
+    /** Public contact address shown on the Contact page. Falls back to the address in MAIL_FROM. */
+    SUPPORT_EMAIL: z.string().email().optional(),
     /** Token for pulling a private data repository on GitHub (Admin → Data → Sync). Read-only access is enough. */
     GITHUB_TOKEN: z.string().min(20).optional(),
     /** Google sign-in (optional). Both or neither; the button shows only when set. */

@@ -66,6 +66,7 @@ export async function saveAccessSettingsAction(_prev: ActionState, form: FormDat
       raastId: formText(form, "raastId"),
       note: formText(form, "note"),
       closedMessage: formText(form, "closedMessage"),
+      refundNote: formText(form, "refundNote"),
       reason: formText(form, "reason"),
     });
     return done("Saved.");

@@ -6,6 +6,8 @@
  "access#reviewAccessRequest": "verifier owner",
  "access#grantAccess": "verifier owner",
  "access#revokeAccess": "verifier owner",
+ "account#exportMyData": "candidate data_editor policy_editor verifier moderator owner",
+ "account#deleteMyAccount": "candidate data_editor policy_editor verifier moderator owner",
  "accreditation#hospitalAccreditation": "candidate data_editor policy_editor verifier moderator owner",
  "accreditation#specialityAccreditation": "candidate data_editor policy_editor verifier moderator owner",
  "allocation-rules#listRulesVersions": "data_editor policy_editor verifier moderator owner",

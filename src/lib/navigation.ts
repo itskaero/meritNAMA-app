@@ -46,6 +46,7 @@ export const candidateSections: Section[] = [
   { href: "/portal/workspace", group: "Mine", icon: "folder", label: "Me", description: "Your seat, your journey so far, your shortlist, and what you follow." },
   { href: "/portal/inbox", group: "Mine", icon: "inbox", label: "Inbox", description: "New lists, answers and alerts about what you follow." },
   { href: "/portal/guide", group: "Mine", icon: "book", label: "Help", description: "How the merit lists work, in plain words, and what each term means." },
+  { href: "/portal/account", group: "Mine", icon: "settings", label: "Your data", description: "Download everything meritNAMA stores about you, or delete your account.", hideInNav: true },
   // Tabs of My chances, not menu items of their own.
   { href: "/portal/calculator", group: "Start", icon: "calculator", label: "Merit calculator", description: "Work out your merit marks from your own details, under the published scoring policy.", hideInNav: true },
   { href: "/portal/preferences", group: "Start", icon: "list", label: "Preference list", description: "Put your options in order and see where the list is likely to place you.", hideInNav: true },
