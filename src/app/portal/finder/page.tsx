@@ -176,6 +176,17 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
           </p>
       </div>
 
+      {!opts.likeForLike.length ? (
+        <Notice tone="warning" title="No past induction was scored like the current one">
+          {opts.activeLabel ? `The current scoring (${opts.activeLabel}) has no closing-merit history yet. ` : ""}
+          Past inductions below were scored differently, so your marks cannot be placed against them with any confidence. Percent only lines up the totals, not what the marks reward. Use this as a rough guide, and expect real chances to become clear once the first round of this induction is published.
+        </Notice>
+      ) : !induction.likeForLike ? (
+        <Notice tone="warning" title={`Induction ${induction.id} was scored differently`}>
+          {induction.label ? `It used ${induction.label}` : "Its scoring is not recorded"}, not the current scheme. Percent only lines up the totals, not what the marks reward. Inductions scored like the current one: {opts.likeForLike.join(", ")}.
+        </Notice>
+      ) : null}
+
       {error ? <Notice tone="warning" title="Check your marks">{error}</Notice> : null}
 
       {!result ? (
@@ -311,8 +322,17 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                           </span>
                           <span className="sm:order-none"><StatusPill status={o.status} /></span>
                           <span className="col-span-2 text-xs text-muted sm:col-span-1 sm:text-right" title={`Round ${o.firstRound}: ${o.firstClosing.toFixed(2)} · round ${o.lastRound}: ${o.lastClosing.toFixed(2)} (out of ${induction.total})`}>
-                            R{o.firstRound} {pct(o.firstPct)} → R{o.lastRound} <span className="font-semibold text-ink">{pct(o.lastPct)}</span>
-                            <span className="block font-mono text-[0.7rem] text-subtle">{o.lastClosing.toFixed(2)} / {induction.total}</span>
+                            {induction.likeForLike ? (
+                              <>
+                                R{o.firstRound} {o.firstClosing.toFixed(2)} → R{o.lastRound} <span className="font-semibold text-ink">{o.lastClosing.toFixed(2)}</span>
+                                <span className="block font-mono text-[0.7rem] text-subtle">{pct(o.lastPct)} of {induction.total}</span>
+                              </>
+                            ) : (
+                              <>
+                                R{o.firstRound} {pct(o.firstPct)} → R{o.lastRound} <span className="font-semibold text-ink">{pct(o.lastPct)}</span>
+                                <span className="block font-mono text-[0.7rem] text-subtle">{o.lastClosing.toFixed(2)} / {induction.total}</span>
+                              </>
+                            )}
                           </span>
                           <span className="col-start-2 row-start-1 sm:col-start-auto sm:row-start-auto">
                             <Star saved={saved.has(optionKey(o))} item={{ program, quota, speciality: o.speciality, hospital: o.hospital }} label={`${o.speciality} at ${o.hospital}`} />

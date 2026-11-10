@@ -9,7 +9,8 @@ import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { LineChart } from "@/components/charts/line-chart";
 import { RoundBeam } from "@/components/charts/round-beam";
 import { RoundColumns } from "@/components/charts/round-columns";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { gazetteCount } from "@/lib/data/gazette";
 import { Card, CardHeader } from "@/components/ui/card";
 import { selectClass } from "@/components/ui/styles";
 import { DataTable } from "@/components/ui/data-table";
@@ -36,7 +37,7 @@ export default async function InductionPage({ params, searchParams }: { params: 
   if (induction === null) notFound();
   const db = getDb();
   const session = await getSession();
-  const estimates = await publishedEstimates(db, session, { induction });
+  const [estimates, gazetteTotal] = await Promise.all([publishedEstimates(db, session, { induction }), gazetteCount(db, session, induction)]);
   const [all, timeline, maxMarks] = await Promise.all([listInductionsWithRounds(db, session), inductionTimeline(db, session, induction), inductionMaxMarks(db)]);
   const ind = all.find((i) => i.id === induction);
   if (!ind) notFound();
@@ -69,6 +70,11 @@ export default async function InductionPage({ params, searchParams }: { params: 
       description={`${ind.rounds[0]!.cycleCode} · ${ind.rounds.length} rounds published${max ? ` · scored out of ${max}` : ""}. Open a round to see closing merit by speciality and hospital.`}
     >
       <EstimateListCard estimates={estimates} title={`Estimated lists for induction ${induction}`} />
+      {gazetteTotal ? (
+        <Card>
+          <CardHeader title="Candidates list (gazette)" description={`${gazetteTotal.toLocaleString("en-US")} candidates with their marks, as PHF published them before round 1.`} action={<ButtonLink href={`/portal/history/${induction}/gazette`} size="sm">Open the list</ButtonLink>} />
+        </Card>
+      ) : null}
       <PageSections
         items={[
           ...(settling ? [{ id: "settling", label: "Still moving" }] : []),

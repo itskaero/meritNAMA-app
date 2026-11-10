@@ -64,6 +64,8 @@ export const policySchema = z
     policy_ref: z.string().optional(),
     notes: z.string().optional(),
     tidbits: z.array(z.string()).optional(),
+    /** What a candidate must have to apply under this policy (one plain sentence each); shown as a checklist. */
+    eligibility: z.array(z.string().min(1)).max(30).optional(),
     components: z.array(policyComponentSchema).min(1),
   })
   .superRefine((p, ctx) => {

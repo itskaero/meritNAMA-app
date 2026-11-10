@@ -142,6 +142,23 @@ export default async function CalculatorPage({ searchParams }: { searchParams: P
         </p>
       </Card>
 
+      {chosen.policy.eligibility?.length ? (
+        <Card>
+          <CardHeader title="Can you apply?" description="What this policy asks of a candidate. Tick them off for yourself; nothing is stored." />
+          <ul className="grid gap-2 text-sm">
+            {chosen.policy.eligibility.map((e, i) => (
+              <li key={i}>
+                <label className="flex items-start gap-2">
+                  <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[var(--color-signal)]" />
+                  <span>{e}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          {chosen.policy.policy_ref ? <p className="mt-3 text-xs text-subtle">Source: {chosen.policy.policy_ref}. Always check the official notification.</p> : null}
+        </Card>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader title="Your details" description="Leave out what does not apply. Nothing you enter is stored." />

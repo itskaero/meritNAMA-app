@@ -5,6 +5,8 @@ import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import { meritAllocations, meritRounds, scoringPolicies, shortlistItems } from "@/lib/db/schema";
 import { classify, margin, toPercent, type FinderStatus } from "@/lib/domain/finder";
+import { parseInductions } from "@/lib/domain/prediction";
+import { sameScheme, schemeOf, type PolicyLike } from "@/lib/domain/scheme";
 import { UserFacingError } from "@/lib/errors";
 import { inductionMaxMarks } from "./merit";
 import { ensureUser } from "./users";
@@ -32,19 +34,32 @@ export async function finderOptions(db: Database, session: Session | null) {
       .innerJoin(meritRounds, eq(meritRounds.id, meritAllocations.roundId))
       .groupBy(meritRounds.inductionId, meritAllocations.program, meritAllocations.quota)
       .orderBy(desc(meritRounds.inductionId), desc(sql`count(*)`)),
-    db.select({ definition: scoringPolicies.definition, key: scoringPolicies.policyKey }).from(scoringPolicies).where(eq(scoringPolicies.status, "active")).limit(1),
+    db.select({ definition: scoringPolicies.definition, key: scoringPolicies.policyKey, status: scoringPolicies.status }).from(scoringPolicies),
   ]);
+  const activePolicy = active.find((p) => p.status === "active");
+  const scheme = schemeOf(activePolicy ? { key: activePolicy.key, ...(activePolicy.definition as PolicyLike) } : null);
+  const schemeOfInduction = (id: number) => {
+    const p = active.find((x) => parseInductions((x.definition as PolicyLike).induction).includes(id));
+    return p ? schemeOf({ key: p.key, ...(p.definition as PolicyLike) }) : null;
+  };
   const byInduction = new Map<number, Track[]>();
   for (const t of tracks) {
     if (!maxMarks[t.inductionId]) continue; // cannot compare without the induction's total
     (byInduction.get(t.inductionId) ?? byInduction.set(t.inductionId, []).get(t.inductionId)!).push({ program: t.program, quota: t.quota, allocations: t.allocations });
   }
-  const activeTotal = (active[0]?.definition as { total_marks?: number } | undefined)?.total_marks;
+  const activeTotal = (activePolicy?.definition as { total_marks?: number } | undefined)?.total_marks;
+  const inductions = [...byInduction].map(([id, t]) => {
+    const s = schemeOfInduction(id);
+    return { id, total: maxMarks[id]!, tracks: t, likeForLike: sameScheme(scheme, s), label: s?.label ?? null };
+  });
   return {
-    inductions: [...byInduction].map(([id, t]) => ({ id, total: maxMarks[id]!, tracks: t })),
+    inductions,
     /** Total of the active scoring policy: the scale a candidate's own score is on now. */
     defaultTotal: activeTotal ?? null,
-    activePolicy: active[0]?.key ?? null,
+    activePolicy: activePolicy?.key ?? null,
+    activeLabel: scheme?.label ?? null,
+    /** Past inductions scored the same way as the active policy: the only ones whose marks compare like for like. */
+    likeForLike: inductions.filter((i) => i.likeForLike).map((i) => i.id),
   };
 }
 

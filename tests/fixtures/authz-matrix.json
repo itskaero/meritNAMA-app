@@ -99,6 +99,8 @@
  "finder#listShortlist": "candidate data_editor policy_editor verifier moderator owner",
  "finder#toggleShortlist": "candidate data_editor policy_editor verifier moderator owner",
  "freshness#dataSources": "candidate data_editor policy_editor verifier moderator owner",
+ "gazette#gazetteCount": "candidate data_editor policy_editor verifier moderator owner",
+ "gazette#gazetteList": "candidate data_editor policy_editor verifier moderator owner",
  "inbox#listInbox": "data_editor policy_editor verifier moderator owner",
  "inbox#importFromInbox": "data_editor policy_editor verifier moderator owner",
  "inbox#skipInboxFile": "data_editor policy_editor verifier moderator owner",
