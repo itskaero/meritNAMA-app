@@ -340,6 +340,11 @@ has its own posts and reactions (today it only reads questions and round-day pos
   (preference → seat → how close), and a journey timeline of rounds, consent and notices (`src/lib/domain/journey.ts`,
   `src/components/me/`). The induction gantt already existed as `charts/timeline.tsx` (with a Now marker).
 
+- Paywall (from the old meritnama site's access requests, Mashreq transfer, manual approval): `access_requests` table
+  (migration `0023`), settings in `app_settings` (`access`), `/admin/access` (check payment, approve/reject, give access,
+  owner-only settings), and the sign-in page shows Request access while the paywall is on, else the email link.
+  Sign-in (link and Google) is refused for anyone not approved; owners, team and (optionally) older accounts are exempt.
+
 **Next:** phase 6 (docs: IA.md, DESIGN.md, NAS-SETUP.md; PR body; screenshots).
 
 ## Remaining, in order

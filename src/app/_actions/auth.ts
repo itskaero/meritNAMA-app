@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { consumeLoginLink, endSession, requestLoginLink, SESSION_COOKIE, sessionFromId } from "@/lib/auth/login";
+import { submitAccessRequest } from "@/lib/data/access";
 import { getDb } from "@/lib/db/client";
 import { setSessionCookie } from "@/lib/auth/session-cookie";
 
@@ -43,4 +44,21 @@ export async function signOutAction() {
   await endSession(getDb(), jar.get(SESSION_COOKIE)?.value).catch(() => {});
   jar.delete(SESSION_COOKIE);
   redirect("/sign-in?signedOut=1");
+}
+
+/** Ask for access while the paywall is on. The data layer checks the settings, limits and the amount. */
+export async function requestAccessAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const amount = formText(form, "amount").replace(/,/g, "").trim();
+    await submitAccessRequest(getDb(), {
+      email: formText(form, "email"),
+      applicantId: formText(form, "applicantId"),
+      amountPkr: amount === "" ? null : Number(amount),
+      reference: formText(form, "reference"),
+      message: formText(form, "message"),
+    });
+  } catch (err) {
+    return toActionState(err);
+  }
+  return { status: "success", message: "Request received. Once your payment is checked we will email you, and then you can sign in with an email link." };
 }

@@ -376,6 +376,33 @@ export const roundRoomMessages = pgTable(
 );
 
 /**
+ * Sign-in access requests, used while the paywall is on. A person asks with their email,
+ * what they paid and the bank's reference; staff check the payment by hand and approve.
+ * One row per email: asking again after a rejection reopens it.
+ */
+export const accessRequests = pgTable(
+  "access_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    applicantId: text("applicant_id"),
+    amountPkr: doublePrecision("amount_pkr"),
+    reference: text("reference"),
+    message: text("message"),
+    status: text("status").notNull().default("pending"),
+    note: text("note"),
+    reviewedBy: text("reviewed_by"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("access_requests_email_uq").on(t.email),
+    index("access_requests_status_idx").on(t.status, t.createdAt),
+    check("access_requests_status", sql`${t.status} in ('pending', 'approved', 'rejected')`),
+  ],
+);
+
+/**
  * Chats: group rooms and one-to-one messages (round rooms are the table above). A direct
  * chat has `dm_key` (the two user ids, sorted) so a pair has exactly one. `seq` orders
  * messages across all chats and lets a client ask for "after n".

@@ -78,6 +78,14 @@ export const adminSections: Section[] = [
     description: "Verify account links, look up and correct candidate records, and find duplicates.",
   },
   {
+    href: "/admin/access",
+    capability: "candidates.verify",
+    group: "People",
+    icon: "users",
+    label: "Access",
+    description: "Sign-in requests while the paywall is on: check payments, approve or reject, and give access to an email.",
+  },
+  {
     href: "/admin/inductions",
     capability: "data.edit",
     group: "Data",

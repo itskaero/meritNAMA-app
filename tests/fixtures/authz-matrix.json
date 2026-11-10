@@ -1,4 +1,11 @@
 {
+ "access#accessSettings": "data_editor policy_editor verifier moderator owner",
+ "access#saveAccessSettings": "owner",
+ "access#listAccessRequests": "verifier owner",
+ "access#pendingAccessCount": "verifier owner",
+ "access#reviewAccessRequest": "verifier owner",
+ "access#grantAccess": "verifier owner",
+ "access#revokeAccess": "verifier owner",
  "accreditation#hospitalAccreditation": "candidate data_editor policy_editor verifier moderator owner",
  "accreditation#specialityAccreditation": "candidate data_editor policy_editor verifier moderator owner",
  "allocation-rules#listRulesVersions": "data_editor policy_editor verifier moderator owner",

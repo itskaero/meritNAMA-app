@@ -3,6 +3,7 @@ import { and, count, eq, gt, isNull, lt } from "drizzle-orm";
 import type { Database } from "@/lib/db/client";
 import { loginTokens, sessions, users } from "@/lib/db/schema";
 import { autoLink } from "@/lib/data/candidates";
+import { assertMayEnter, mayEnter } from "@/lib/data/access";
 import { writeAudit } from "@/lib/data/shared";
 import { defaultDisplayName } from "@/lib/domain/community";
 import {
@@ -36,6 +37,8 @@ export async function requestLoginLink(db: Database, input: { email: string; ip?
   const email = normalizeEmail(input.email);
   if (!email) throw new UserFacingError("Enter a valid email address.");
   const now = input.now ?? new Date();
+  // While the paywall is on, only approved people get a link; the answer is the same either way.
+  if (!(await mayEnter(db, email))) return { sent: false as const };
   const since = new Date(now.getTime() - LOGIN_LIMITS.windowMs);
   const ipHash = input.ip ? sha256(`ip:${input.ip}`) : null;
 
@@ -92,6 +95,7 @@ export async function createSessionFor(db: Database, input: { email: string; use
   const now = input.now ?? new Date();
   const email = normalizeEmail(input.email);
   if (!email) throw new UserFacingError("That account has no usable email address.");
+  await assertMayEnter(db, email);
   const owner = parseEmailList(env().OWNER_EMAILS).has(email);
   const [created] = await db
     .insert(users)

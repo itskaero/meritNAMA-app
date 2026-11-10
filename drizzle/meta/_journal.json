@@ -162,6 +162,13 @@
       "when": 1794276589324,
       "tag": "0022_chats",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794301069697,
+      "tag": "0023_access_requests",
+      "breakpoints": true
     }
   ]
 }
