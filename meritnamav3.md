@@ -350,7 +350,8 @@ has its own posts and reactions (today it only reads questions and round-day pos
   (`/api/me/export`) or delete the account (anonymises it; community posts stay as "Deleted member"). The legal text is a
   plain-language draft: have someone qualified read it before launch.
 
-**Next:** phase 6 (docs: IA.md, DESIGN.md, NAS-SETUP.md; PR body; screenshots).
+**Phase 6:** docs updated (IA, DESIGN, NAS-SETUP, README) and the PR text is drafted in `docs/PR-v3.md`. No screenshots: there was
+no browser and no database. **Next:** run the integration tests against Postgres, a walkthrough on the NAS, open the PR.
 
 ## Remaining, in order
 1. **Admin Data page** (done):

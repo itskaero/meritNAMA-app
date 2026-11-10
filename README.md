@@ -6,8 +6,9 @@ data management and simulation. Designed to self-host on a NAS with Docker Compo
 The public website lives in the separate public repository `itskaero/meritnama`
 and only links here. Never copy this source into that repository.
 
-> **Status: feature-complete for the candidate portal and admin workspace; release
-> hardening in progress.** Remaining work is listed under [What is left](#what-is-left).
+> **Status: v3 (dark theme, Data page, chats, feed, Me workspace, access requests) is built on branch
+> `feat/v3-data-folder`; release hardening in progress.** The v3 plan and progress are in
+> [meritnamav3.md](meritnamav3.md). Remaining work is listed under [What is left](#what-is-left).
 
 ## What it does
 
@@ -28,6 +29,12 @@ folder on the NAS); versioned scoring policies and allocation rules, each with a
 compared with what PHF published, with downloadable outputs; risky changes previewed
 before publishing, with rollback; community moderation; the audit history; team and
 roles, candidate feature switches, data retention and backup status.
+
+**New in v3:** a dark default theme; an admin **Data** page (drop files or a folder, or sync a GitHub
+data repository, with a plain-words checklist); the admin menu grouped by module with a Simple and a Pro mode;
+group and direct **chats** with live updates, a **feed**, and a **Me** workspace with the seat graph and
+journey timeline; an optional **paywall** (request access, manual payment check, approve); public privacy,
+terms and contact pages; download or delete your own data.
 
 **Simulation accuracy** on induction 21 (real data, back-tested): round 1 reproduces
 98.9% of PHF's allocations; each later round 96–99%. Details and the rules behind them
@@ -109,6 +116,8 @@ docs/               ARCHITECTURE, DESIGN, DEPLOYMENT, SECURITY, DATA_CONTRACTS
 
 Needs the operator, a decision or access this repository does not have:
 
+- **Real-database test run:** the data folder, chats, access and account code is unit-tested but has not
+  been run against Postgres (the integration tests need `TEST_DATABASE_URL`).
 - **NAS rehearsal:** fresh install, update, rollback and the restore drill on the NAS
   itself (the steps are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md); backup → restore
   was verified in development).

@@ -43,13 +43,31 @@ Semantic tokens keep their v1 names (`--mn-navy-950` is the page background,
 role: `bg-canvas`, `bg-surface`, `bg-elevated`, `text-ink`, `text-heading`,
 `text-muted`, `text-signal`, `bg-teal`, `bg-navy`, `bg-ivory`, `bg-tint`.
 
-Dark mode uses navy and charcoal surfaces (`#0E1823`, `#142536`, `#1B2F42`). It applies
+Dark mode now uses the v3 values below (the older navy surfaces are gone). It applies
 with `data-theme="dark"`, or `data-theme="system"` on a device set to dark. People
 choose Light, Dark or Device in the account menu; the choice is a cookie, so the server
 renders the right theme without a flash. `tests/tokens.test.ts` checks contrast for both
 themes and that the system block repeats the dark values.
 
-No glows, neon borders or decorative gradients. Gradients appear only as photo scrims.
+Light mode keeps the plain look: no glows or decorative gradients. The v3 dark theme (below) is
+the default and does use a soft glow on a few things.
+
+## v3 dark theme (the default)
+
+People who have not chosen get dark (`parseTheme` in `src/lib/ui-mode.ts`); Light and Device stay in the
+account menu. Values live in `src/styles/tokens.css`; `tests/tokens.test.ts` checks every pair.
+
+- **Surfaces** `#0A0A0D` canvas, `#121216` surface, `#18181D` elevated, `#202027` hover. Borders are
+  white at 8% and 16%. Text `#EDEDF2`.
+- **Action violet** `--mn-action: #7557F8` (hover `#6A47F5`, text `#FFFFFF`): primary buttons
+  (`bg-action text-action-ink`). White on the mockup's `#7C5CFF` is only 4.35:1, so it was darkened to
+  4.69:1. Links use the lighter `#A594FF` (`--mn-cyan`).
+- **Status colours** teal `#2DD4BF` (safe, now, success), amber `#F5B94A` (estimates, borderline), ember
+  `#FF8A63` (brand marks).
+- **Fonts** Plus Jakarta Sans for the interface, Archivo for display headings.
+- **Motion utilities** (`globals.css`): `.mn-dots` (dotted band), `.mn-glow` (soft light under a card),
+  `.mn-aurora` (slow gradient), `.mn-lift` (raise and glow on hover), `.mn-pop-in`, and the live pulse.
+  Every one switches off under `prefers-reduced-motion`. Not built: the count-up number effect.
 
 ## Typography
 
@@ -155,6 +173,13 @@ figures are published, calculated or an estimate.
   dashboard's reachable options, and a "Popular near your marks" card. Below three
   nothing renders.
 
+- **Chats** (`ChatRoom`): own messages in a solid action-violet bubble on the right, others on a hover
+  surface on the left. Reactions are a fixed set of six, shown as small counters; Report and Block sit
+  behind the message. Unread shows as a violet count on the chat row and on the Chats phone tab.
+- **Feed**: one card per item (a round-day post, a question or an answer) that lifts on hover.
+- **Me**: the seat is a glowing card with three connected nodes; the journey is a vertical line with a dot
+  per event (teal when the marks cleared closing merit or a seat was accepted, amber when not).
+
 ## Tables, sections and loading
 
 - **Sortable tables:** a `DataTable` column with a `sort` accessor gets a header
@@ -177,7 +202,7 @@ See `docs/IA.md` for the section map and the reasons behind it.
 - **Menu**: six sections named after questions (Home, Merit lists, My chances,
   Hospitals, What if, Ask & chat), then Mine (My record, Saved, Inbox, Help). Pages
   reached only through tabs set `hideInNav` and are covered by their parent's `match`.
-- **Phone tab bar** (`BottomTabs`): Home, Lists, Chances, What if, Ask; fixed to the
+- **Phone tab bar** (`BottomTabs`): Home, Lists, Chances, Chats, Me (with an unread count on Chats); fixed to the
   bottom below `lg`, with labels under the icons.
 - **Task cards** on Home (`TaskCards`): large, plain-language "What do you want to do?"
   links, the first one personalised with the linked applicant ID.

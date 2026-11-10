@@ -30,8 +30,9 @@ email, Gmail app password, tunnel/proxy/local, tunnel token), builds, starts and
 until the site is healthy. **Run the same command again to update**: it keeps `.env`,
 keeps the previous code as `meritnama.previous`, backs up and rebuilds.
 
-- Until the pull request is merged, use the branch name instead of `main` in both
-  places: `?ref=ccr-3e305929-39xqcm` and `MN_REF=ccr-3e305929-39xqcm`.
+- Until the v3 branch is merged, use its name instead of `main` in both places:
+  `?ref=feat/v3-data-folder` and `MN_REF=feat/v3-data-folder`. Updating runs the new database
+  migrations (0021 to 0023) after the automatic backup.
 - Unattended (e.g. from DSM's Task Scheduler, no terminal): put the answers in the
   command, `sudo GH_TOKEN=... MN_OWNER=you@example.com MN_GMAIL_APP_PASSWORD=...
   MN_ACCESS=tunnel MN_TUNNEL_TOKEN=... MN_UNATTENDED=1 bash`. A Task Scheduler task
@@ -366,6 +367,34 @@ docker compose run --rm -e CANDIDATE_INDEX_SECRET \
   -v "$MERITNAMA_DATA_DIR/storage:/storage:ro" \
   migrate node scripts/index-candidates.mjs /storage/inbox/processed
 ```
+
+## 7b. Adding data later (the Data page)
+
+Once signed in as owner or data editor, **Admin → Data** is the one place for data:
+
+- **Drop** JSON files or a whole folder on the page. New data goes live at once; a file that would
+  replace live data waits for you to press *Show what changes*, then review and publish it.
+- **Sync now** pulls a GitHub data repository (set the repository on the same page; for a private one set
+  `GITHUB_TOKEN`, read-only). The worker also syncs hourly. Keep that repository private.
+- **Copy files** into `<data>/storage/data/` on the NAS. The app looks at the folder every minute.
+- Mistakes are shown in plain words per file (for example `Table5 › row 4, marks: expected number`) and
+  nothing is applied.
+
+Names, folder layout and limits: [DATA_FORMATS.md](DATA_FORMATS.md). The older Inbox on the Inductions
+page still works for files already in it.
+
+## 7c. Access (paywall) and the public pages
+
+- **Admin → Access** (the owner changes the settings): turn the paywall on, set the price range, the bank and
+  account (or Raast ID) people pay, and the refund rule. Turning it on needs an account number or Raast ID.
+  Until then sign-in is by email link as before.
+- With the paywall on, the sign-in page shows **Request access**: email, amount sent and the bank's
+  reference. You check the payment in your bank app, then press *Payment checked: approve* (or *Give
+  access to an email* directly). They are emailed and then sign in with an email link. Owners, team
+  members and (if kept) accounts older than the paywall are never locked out.
+- `/privacy`, `/terms` and `/contact` are public. Set `SUPPORT_EMAIL` in `.env` to show a contact address
+  other than the one in `MAIL_FROM`. Have the wording read by someone qualified before launch.
+- People can download or delete their own data at `/portal/account`.
 
 ## 8. Backups (do this on day one)
 
