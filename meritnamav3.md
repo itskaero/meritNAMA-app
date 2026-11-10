@@ -317,13 +317,23 @@ and committed in pieces.
   - `src/lib/data/sync.ts`: GitHub tree sync (optional `GITHUB_TOKEN`), hourly from the worker tick.
   - `/admin/data` page, upload and download routes, `docs/DATA_FORMATS.md`.
   - Authorization matrix: rescans, uploads and raw downloads are data editors only.
-- Tests: 233 unit tests pass; `tests/datastore.integration.test.ts` is written but not yet run (needs
-  `TEST_DATABASE_URL`).
+- Admin menu by module (`6d1dce0`): Today, Data, People, Community, Advanced. Simple mode shows a short menu with an
+  Advanced hub (`/admin/advanced`); Pro mode lists every page.
+- Phase 4, chats (group and one-to-one; round rooms stay as they were and are not migrated):
+  - Tables `chat_rooms`, `chat_members`, `chat_messages` (with `seq`), `chat_reactions`, `chat_blocks`, `chat_reports`, and
+    `users.dm_open` (migration `0022_chats.sql`).
+  - `src/lib/domain/chats.ts` (pure rules and limits) and `src/lib/data/chats.ts`: list, read after a seq, post, react,
+    start a DM (blocks and DM-off respected, a blocked person is never told), join/leave, mute, block, report
+    (3 reporters hide a message), moderator hide.
+  - SSE `/api/chats/stream` (reconnects every 55 s, polling fallback), `/portal/chats` and `/portal/chats/[id]`.
+- Tests: 241 unit tests pass (chat rules included); `tests/datastore.integration.test.ts` is written but not yet run
+  (needs `TEST_DATABASE_URL`). No chat integration test yet.
 
-**Not done from phase 3:** the six admin modules and the Advanced hub; schedule and joining-status files
-(recognised, not imported); a browser walkthrough of `/admin/data` (no database was available).
+**Not done:** schedule and joining-status files (recognised, not imported); a browser walkthrough of `/admin/data`
+and `/portal/chats` (no database was available); a moderator screen for reported chat messages; the phone tabs
+(Home · Lists · Chances · Chats · Me) and the unread badge; the Feed.
 
-**Next:** admin modules, then phase 4 (Chats, Feed), phase 5 (Me workspace), phase 6 (docs, PR).
+**Next:** Feed, phone tabs, then phase 5 (Me workspace) and phase 6 (docs, PR).
 
 ## Remaining, in order
 1. **Admin Data page** (done):

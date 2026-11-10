@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnyPgColumn,
+  bigint,
   bigserial,
   boolean,
   check,
@@ -49,6 +50,8 @@ export const users = pgTable("users", {
   showBand: boolean("show_band").notNull().default(false),
   /** Counted, anonymously, in "people near your marks" figures. On by default; the profile turns it off. */
   peerCounted: boolean("peer_counted").notNull().default(true),
+  /** Others may start a one-to-one chat with this person. On by default; the profile turns it off. */
+  dmOpen: boolean("dm_open").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -370,6 +373,104 @@ export const roundRoomMessages = pgTable(
     check("round_room_messages_kind", sql`${t.kind} in ('message', 'system')`),
     check("round_room_messages_body", sql`char_length(${t.body}) between 1 and 600`),
   ],
+);
+
+/**
+ * Chats: group rooms and one-to-one messages (round rooms are the table above). A direct
+ * chat has `dm_key` (the two user ids, sorted) so a pair has exactly one. `seq` orders
+ * messages across all chats and lets a client ask for "after n".
+ */
+export const chatRooms = pgTable(
+  "chat_rooms",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").notNull(),
+    name: text("name"),
+    dmKey: text("dm_key"),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("chat_rooms_dm_key_uq").on(t.dmKey),
+    check("chat_rooms_kind", sql`${t.kind} in ('group', 'dm')`),
+    check("chat_rooms_shape", sql`(${t.kind} = 'dm' and ${t.dmKey} is not null) or (${t.kind} = 'group' and ${t.name} is not null and ${t.dmKey} is null)`),
+  ],
+);
+
+export const chatMembers = pgTable(
+  "chat_members",
+  {
+    roomId: uuid("room_id").notNull().references(() => chatRooms.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("member"),
+    /** The highest message seq this member has seen: unread = messages after it. */
+    lastReadSeq: bigint("last_read_seq", { mode: "number" }).notNull().default(0),
+    muted: boolean("muted").notNull().default(false),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.roomId, t.userId] }),
+    index("chat_members_user_idx").on(t.userId),
+    check("chat_members_role", sql`${t.role} in ('owner', 'member')`),
+  ],
+);
+
+export const chatMessages = pgTable(
+  "chat_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seq: bigserial("seq", { mode: "number" }).notNull(),
+    roomId: uuid("room_id").notNull().references(() => chatRooms.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id").references(() => users.id, { onDelete: "set null" }),
+    kind: text("kind").notNull().default("message"),
+    body: text("body").notNull(),
+    status: discussionStatus("status").notNull().default("visible"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("chat_messages_seq_uq").on(t.seq),
+    index("chat_messages_room_idx").on(t.roomId, t.seq),
+    index("chat_messages_author_idx").on(t.authorId, t.createdAt),
+    check("chat_messages_kind", sql`${t.kind} in ('message', 'system')`),
+    check("chat_messages_body", sql`char_length(${t.body}) between 1 and 600`),
+  ],
+);
+
+export const chatReactions = pgTable(
+  "chat_reactions",
+  {
+    messageId: uuid("message_id").notNull().references(() => chatMessages.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    emoji: text("emoji").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.userId, t.emoji] })],
+);
+
+export const chatBlocks = pgTable(
+  "chat_blocks",
+  {
+    blockerId: uuid("blocker_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    blockedId: uuid("blocked_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.blockerId, t.blockedId] }),
+    index("chat_blocks_blocked_idx").on(t.blockedId),
+    check("chat_blocks_not_self", sql`${t.blockerId} <> ${t.blockedId}`),
+  ],
+);
+
+/** One report per person per message; enough of them hide the message until a moderator looks. */
+export const chatReports = pgTable(
+  "chat_reports",
+  {
+    messageId: uuid("message_id").notNull().references(() => chatMessages.id, { onDelete: "cascade" }),
+    reporterId: uuid("reporter_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    reason: text("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.messageId, t.reporterId] })],
 );
 
 /**
