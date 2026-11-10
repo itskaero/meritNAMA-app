@@ -330,10 +330,13 @@ and committed in pieces.
   (needs `TEST_DATABASE_URL`). No chat integration test yet.
 
 **Not done:** schedule and joining-status files (recognised, not imported); a browser walkthrough of `/admin/data`
-and `/portal/chats` (no database was available); a moderator screen for reported chat messages; the phone tabs
-(Home · Lists · Chances · Chats · Me) and the unread badge; the Feed.
+and `/portal/chats` (no database was available); a moderator screen for reported chat messages; a Feed that
+has its own posts and reactions (today it only reads questions and round-day posts).
 
-**Next:** Feed, phone tabs, then phase 5 (Me workspace) and phase 6 (docs, PR).
+- Feed (`/portal/feed`, `src/lib/data/feed.ts`): questions, answers and round-day posts, newest first, with a filter.
+  Phone tabs are now Home · Lists · Chances · Chats · Me, with an unread badge on Chats.
+
+**Next:** phase 5 (Me workspace) and phase 6 (docs, PR).
 
 ## Remaining, in order
 1. **Admin Data page** (done):

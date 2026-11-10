@@ -40,6 +40,7 @@ export const candidateSections: Section[] = [
   { href: "/portal/explore", group: "Start", icon: "building", label: "Hospitals", description: "Every hospital and speciality: seats, closing merit, accreditation and reviews." },
   { href: "/portal/simulation", group: "Start", icon: "pulse", label: "What if", description: "What if someone accepts or rejects? Change consent and see the next list." },
   { href: "/portal/community", group: "Start", icon: "chat", label: "Ask & chat", description: "Questions and answers, and a chat room for every round." },
+  { href: "/portal/feed", group: "Start", icon: "pulse", label: "Feed", description: "What happened lately: new merit lists, and questions and answers from the community." },
   { href: "/portal/chats", group: "Mine", icon: "chat", label: "Chats", description: "Group chats and one-to-one messages with other candidates.", match: ["/portal/chats/new"] },
   { href: "/portal/profile", group: "Mine", icon: "user", label: "My record", description: "Your merit record: every round you appeared in, with closing merit." },
   { href: "/portal/workspace", group: "Mine", icon: "folder", label: "Saved", description: "Seats you saved, views you saved, and what you follow." },

@@ -83,6 +83,7 @@
  "datastore#writeDataFile": "data_editor owner",
  "datastore#readDataFile": "data_editor owner",
  "datastore#removeDataFile": "data_editor owner",
+ "feed#listFeed": "candidate data_editor policy_editor verifier moderator owner",
  "finder#finderOptions": "candidate data_editor policy_editor verifier moderator owner",
  "finder#findOptions": "candidate data_editor policy_editor verifier moderator owner",
  "finder#optionHistory": "candidate data_editor policy_editor verifier moderator owner",
