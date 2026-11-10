@@ -336,7 +336,11 @@ has its own posts and reactions (today it only reads questions and round-day pos
 - Feed (`/portal/feed`, `src/lib/data/feed.ts`): questions, answers and round-day posts, newest first, with a filter.
   Phone tabs are now Home · Lists · Chances · Chats · Me, with an unread badge on Chats.
 
-**Next:** phase 5 (Me workspace) and phase 6 (docs, PR).
+- Phase 5, Me (`/portal/workspace`, now the Me phone tab): left rail, "My seat" glow card with the seat-flow graph
+  (preference → seat → how close), and a journey timeline of rounds, consent and notices (`src/lib/domain/journey.ts`,
+  `src/components/me/`). The induction gantt already existed as `charts/timeline.tsx` (with a Now marker).
+
+**Next:** phase 6 (docs: IA.md, DESIGN.md, NAS-SETUP.md; PR body; screenshots).
 
 ## Remaining, in order
 1. **Admin Data page** (done):

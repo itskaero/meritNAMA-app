@@ -18,9 +18,14 @@ import { peerInterest, peerKey } from "@/lib/data/social";
 import { PeerCount } from "@/components/rooms/peer-count";
 import { followedPlaces, listSavedViews } from "@/lib/data/workspace";
 import { formatUtc } from "@/lib/format";
+import { listInbox as listNotices } from "@/lib/data/notifications";
+import { buildJourney, seatFlow } from "@/lib/domain/journey";
+import { JourneyTimeline } from "@/components/me/journey-timeline";
+import { SeatFlowGraph } from "@/components/me/seat-flow";
+import { MeRail } from "@/components/me/me-rail";
 import { deleteViewAction, setAlertsAction } from "./actions";
 
-export const metadata = { title: "Workspace" };
+export const metadata = { title: "Me" };
 export const dynamic = "force-dynamic";
 
 export default async function WorkspacePage({ searchParams }: { searchParams: Promise<{ marks?: string; total?: string }> }) {
@@ -32,7 +37,8 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
   const session = await getSession();
   const [items, opts, mine] = await Promise.all([listShortlist(db, session), finderOptions(db, session), myMerit(db, session).catch(() => null)]);
   const sp = await searchParams;
-  const [views, places, alerts, peers] = await Promise.all([listSavedViews(db, session), followedPlaces(db, session), shortlistAlerts(db, session), peerInterest(db, session, { limit: 200 })]);
+  const [notes, views, places, alerts, peers] = await Promise.all([
+    listNotices(db, session, 12).catch(() => null),listSavedViews(db, session), followedPlaces(db, session), shortlistAlerts(db, session), peerInterest(db, session, { limit: 200 })]);
   const peerOf = new Map(peers.seats.map((p) => [peerKey(p), p.peers]));
   // Marks for the dials: typed here, else the verified record's latest marks.
   const latestInd = opts.inductions[0];
@@ -53,6 +59,8 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
       for (const o of r?.options ?? []) chances.set(`${k}|${o.speciality}|${o.hospital}`, o);
     }));
   }
+  const journey = buildJourney(mine?.rows ?? [], (notes?.items ?? []).map((n) => ({ id: n.id, title: n.title, href: n.href, at: n.createdAt, read: n.readAt != null })));
+  const flow = seatFlow(mine?.rows ?? []);
   const mePct = marks !== null && total ? (marks / total) * 100 : null;
   const groups = new Map<string, typeof items>();
   for (const x of items) {
@@ -62,6 +70,34 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
 
   return (
     <AreaPage {...frame}>
+      <div className="grid gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+      <MeRail items={[
+        { href: "#seat", label: "My seat", icon: "target" },
+        { href: "#journey", label: "My journey", icon: "history", count: journey.rounds.length ? Math.ceil(journey.rounds.length / 2) : undefined },
+        { href: "#shortlist", label: "Shortlist", icon: "list", count: items.length || undefined },
+        { href: "#saved", label: "Saved views", icon: "folder", count: views.length || undefined },
+        { href: "#following", label: "Following", icon: "heart" },
+        { href: "#alerts", label: "Alerts", icon: "inbox" },
+        { href: "/portal/preferences", label: "Preference list", icon: "calculator" },
+        { href: "/portal/profile", label: "My record", icon: "user" },
+      ]} />
+      <div className="grid min-w-0 content-start gap-5">
+      <Card id="seat" className="mn-glow">
+        <CardHeader title="My seat" description={flow ? "Your latest allocation, and how close it was." : "Your latest allocation shows here once your account is linked to your merit record."} />
+        {flow ? <SeatFlowGraph flow={flow} /> : (
+          <ButtonLink href="/portal/profile" size="sm">Link your merit record</ButtonLink>
+        )}
+      </Card>
+      <Card id="journey">
+        <CardHeader title="My journey" description="Your rounds, your consent replies and what the app told you, newest first." />
+        <div className="grid gap-6 md:grid-cols-2">
+          <JourneyTimeline events={journey.rounds} empty="No rounds yet. You will see each round you appear in here." />
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">Notices</p>
+            <JourneyTimeline events={journey.notices} empty="No notices yet." />
+          </div>
+        </div>
+      </Card>
       {items.length ? (
         <Card>
           <form method="get" className="flex flex-wrap items-end gap-3">
@@ -87,7 +123,7 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
         [...groups].map(([track, rows]) => {
           const [program, quota] = track.split(" · ");
           return (
-            <Card key={track}>
+            <Card key={track} id={track === [...groups.keys()][0] ? "shortlist" : undefined}>
               <CardHeader
                 title={track}
                 description={`${rows.length} saved ${rows.length === 1 ? "option" : "options"}`}
@@ -128,7 +164,7 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
         })
       )}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <Card>
+        <Card id="saved">
           <CardHeader title={`Saved views${views.length ? ` · ${views.length}` : ""}`} description="Comparisons and finder results you saved, with their filters. Only you see them." />
           {views.length ? (
             <ul className="divide-y divide-line text-sm">
@@ -147,7 +183,7 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
             </ul>
           ) : <p className="text-sm text-muted">Use “Save this view” on the score finder, a round comparison or your preference comparison to keep it here.</p>}
         </Card>
-        <Card>
+        <Card id="following">
           <CardHeader title="Hospitals and specialities you follow" description="Follow one from its page to see it here and hear about new rounds and questions." />
           {places.hospitals.length || places.specialities.length ? (
             <div className="grid gap-3 text-sm">
@@ -163,13 +199,15 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
           ) : <p className="text-sm text-muted">You follow none yet. Open a hospital or speciality under Hospitals &amp; specialities and choose Follow.</p>}
         </Card>
       </div>
-      <Card>
+      <Card id="alerts">
         <CardHeader title="Shortlist alerts" description={alerts ? "When a new merit round is published, your inbox gets the closing merit of every shortlisted seat in it, and how it moved." : "Alerts are off: new rounds will not message you about your shortlist."} />
         <form action={setAlertsAction}>
           <input type="hidden" name="on" value={alerts ? "0" : "1"} />
           <Button type="submit" variant="secondary" size="sm">{alerts ? "Turn alerts off" : "Turn alerts on"}</Button>
         </form>
       </Card>
+      </div>
+      </div>
     </AreaPage>
   );
 }

@@ -43,7 +43,7 @@ export const candidateSections: Section[] = [
   { href: "/portal/feed", group: "Start", icon: "pulse", label: "Feed", description: "What happened lately: new merit lists, and questions and answers from the community." },
   { href: "/portal/chats", group: "Mine", icon: "chat", label: "Chats", description: "Group chats and one-to-one messages with other candidates.", match: ["/portal/chats/new"] },
   { href: "/portal/profile", group: "Mine", icon: "user", label: "My record", description: "Your merit record: every round you appeared in, with closing merit." },
-  { href: "/portal/workspace", group: "Mine", icon: "folder", label: "Saved", description: "Seats you saved, views you saved, and what you follow." },
+  { href: "/portal/workspace", group: "Mine", icon: "folder", label: "Me", description: "Your seat, your journey so far, your shortlist, and what you follow." },
   { href: "/portal/inbox", group: "Mine", icon: "inbox", label: "Inbox", description: "New lists, answers and alerts about what you follow." },
   { href: "/portal/guide", group: "Mine", icon: "book", label: "Help", description: "How the merit lists work, in plain words, and what each term means." },
   // Tabs of My chances, not menu items of their own.
