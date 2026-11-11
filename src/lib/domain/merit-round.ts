@@ -2,10 +2,10 @@ import { z } from "zod";
 
 /**
  * Data contract for a PHF merit-round export (inductions/<n>/merit/round_<r>.json).
- * `Table[0]` describes the cycle; `Table5` holds one row per allocation. Rows carry
- * personal fields (name, relation, PMDC number, email, employment) that this app
- * does not import; the schema only requires what browsing needs and lets the rest
- * pass unread. CNIC and phone are already stripped at the public repo's HEAD.
+ * `Table[0]` describes the cycle; `Table5` holds one row per allocation. Of the
+ * personal fields in a row, only the candidate's name is kept, because PHF publishes
+ * it on the list (owner's decision, Nov 2026); relation, PMDC number, email and
+ * employment pass unread. CNIC and phone are already stripped at the public repo's HEAD.
  */
 
 const cycleSchema = z.looseObject({
@@ -29,6 +29,8 @@ export const meritRowSchema = z.looseObject({
   applicantId: z.union([z.string().min(1), z.number()]).transform(String),
   preferenceNo: z.number().int().min(0),
   consent: z.string(),
+  /** As published; anything that is not text is ignored. */
+  name: z.unknown().optional(),
 });
 export type MeritRow = z.infer<typeof meritRowSchema>;
 

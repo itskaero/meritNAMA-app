@@ -31,6 +31,7 @@ import { PEER_MIN, PEER_WINDOW } from "@/lib/domain/social";
 import { PeerCount } from "@/components/rooms/peer-count";
 import { EstimateListCard } from "@/components/estimate-list-card";
 import { publishedEstimates } from "@/lib/data/simulation";
+import { currentInduction } from "@/lib/data/lists";
 import { ART } from "@/components/brand-assets";
 import { RepBadge } from "@/components/community/rep-badge";
 
@@ -60,7 +61,9 @@ export default async function PortalDashboard() {
     peerInterest(db, session, { limit: 200 }),
     featureFlags(db, session),
   ]);
-  const currentEstimates = (await publishedEstimates(db, session)).filter((e) => !e.official);
+  // Estimates belong to the cycle that is running; finished inductions show official lists only.
+  const liveCycle = await currentInduction(db, session);
+  const currentEstimates = liveCycle ? (await publishedEstimates(db, session, { induction: liveCycle.induction })).filter((e) => !e.official) : [];
   const pulse = flags.community ? await roomPulse(db, session, { limit: 3 }) : null;
   const peerOf = new Map(peers.seats.map((p) => [peerKey(p), p.peers]));
   const room = pulse?.rooms[0] ?? null;

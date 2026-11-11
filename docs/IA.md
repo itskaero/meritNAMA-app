@@ -41,7 +41,7 @@ a bottom tab bar.
 | Menu | Phone tab | What it answers | Old tabs it replaces |
 | --- | --- | --- | --- |
 | **Home** | Home | "What do you want to do?" task cards, then my merit at a glance | Start Here, candidate dashboard |
-| **Merit lists** | Lists | Every official and estimated list; **Find yourself, or anyone** by ID | Merit Table, Previous Merit Lists, Candidate Pool, Where Merit Falls, Seat Allocation |
+| **Merit lists** | Lists | **Current**: the running induction's gazette, then each round (official, or estimated until PHF publishes it), then "simulate the next round". **Previous**: finished inductions, official lists only. **Find yourself, or anyone** by name or ID | Merit Table, Previous Merit Lists, Candidate Pool, Where Merit Falls, Seat Allocation, gazette |
 | **My chances** | Chances | Three tabs: Where can I go? · Calculate my marks · My preference list | Calculator, My Prediction, Compare |
 | **Hospitals** | (menu) | Seats, closing merit by round, accreditation, reviews | Hospitals, Training Seats, accreditation |
 | **What if** | What if | Change anyone's consent on a private copy and see the next list | Consent What-If |
@@ -55,7 +55,12 @@ Rules this map follows:
 - **One place for each thing.** Calculator and preference list live inside My chances
   (as tabs), so the menu stays short; the sidebar still highlights My chances there.
 - **Every page answers in its first screen**; the detail sits below.
-- **Applicant IDs, never names.** Lists show applicant IDs, marks and seats only.
+- **Names as PHF publishes them** (owner's decision, Nov 2026, reversing the earlier
+  IDs-only rule): lists and the gazette show each candidate's name, applicant ID, marks,
+  seat, preference and consent. CNIC, phone, PMDC number and email are never stored.
+- **A list is a list first.** A round opens on everyone on it (cards on a phone, a
+  table above), with search and folded filters; the lowest and highest merit per seat,
+  speciality or hospital, and the round's room, are the other two views.
 - **Help is one click away** from Home ("New here? Read the 2-minute guide") and the
   menu, with a glossary of every term the app uses.
 

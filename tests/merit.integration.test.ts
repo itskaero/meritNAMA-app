@@ -77,9 +77,13 @@ describe.skipIf(!url)("merit rounds (integration)", () => {
     expect(round).toMatchObject({ cycleCode: "PHF/26/JAN/01", cycleName: "Jan 2026", startsOn: "2025-10-01", endsOn: "2025-12-31" });
   });
 
-  it("stores no personal fields", async () => {
+  it("keeps the published name and no other personal field", async () => {
     const cols = Object.keys(schema.meritAllocations);
-    for (const pii of ["name", "relation", "pmdcNo", "emailId", "empInfo"]) expect(cols).not.toContain(pii);
+    for (const pii of ["name", "relation", "relationType", "pmdcNo", "emailId", "empInfo", "cnic", "contactNumber"]) expect(cols).not.toContain(pii);
+    const round = await getRound(db, admin, IND, 1);
+    const [row] = await db.select().from(schema.meritAllocations).where(eq(schema.meritAllocations.roundId, round!.id)).limit(1);
+    expect(row!.candidateName).toBe(sample.Table5.find((r: { rowNo: number }) => r.rowNo === row!.rowNo).name);
+    expect(JSON.stringify(row)).not.toContain("@example.test");
   });
 
   it("resolves known names and reports the rest", async () => {

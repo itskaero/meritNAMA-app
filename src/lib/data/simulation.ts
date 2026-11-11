@@ -8,6 +8,8 @@ import type { Database } from "@/lib/db/client";
 import {
   candidateCorrections,
   candidateLinks,
+  gazetteEntries,
+  gazettes,
   hospitals,
   inductionSeats,
   meritAllocations,
@@ -25,7 +27,7 @@ import {
 } from "@/lib/db/schema";
 import { effectiveCandidates, toCsv, type Correction } from "@/lib/domain/corrections";
 import { compareRounds, groupKey, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
-import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
+import { consentRoundFromName, gazetteEntries as readGazette, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
 import { consentRows, officialStatuses, type ConsentStatus, type ListAllocation, type OfficialReply } from "@/lib/domain/what-if";
 import { acceptedConsent, programmeBansFromRound, runCascade, seatKeyFromParts, trackBansFromRound, type CascadeCandidate, type CascadeConsentRow, type CascadeStats } from "@/lib/engine/cascade";
 import { effectiveMark, marksContext, parentBonus, programBonus, type EngineCandidate, type MarksContext, type Preference, type SpecialtyGroups } from "@/lib/engine/marks";
@@ -200,6 +202,39 @@ async function writeConsent(tx: Db, induction: number, dir: string, files: SimFo
   return parsed.map((f) => ({ round: f.round, name: f.name, sha256: f.sha256, replies: f.rows.length, ...f.counts }));
 }
 
+/** Replace an induction's browsable gazette (names, marks, status, score parts). */
+async function writeGazette(tx: Db, induction: number, file: unknown, source: { name: string; sha256: string }, by: string) {
+  const entries = readGazette(file);
+  await tx.delete(gazettes).where(eq(gazettes.inductionId, induction)); // cascades to the entries
+  await tx.insert(gazettes).values({ inductionId: induction, entries: entries.length, source, importedBy: by });
+  for (let i = 0; i < entries.length; i += 2000) {
+    await tx.insert(gazetteEntries).values(entries.slice(i, i + 2000).map((e) => ({
+      inductionId: induction, applicantId: e.applicantId, position: e.position, candidateName: e.name, marksTotal: e.marksTotal, status: e.status, parts: e.parts,
+    })));
+  }
+  return { entries: entries.length, eligible: entries.filter((e) => e.status?.toLowerCase() === "eligible").length };
+}
+
+/**
+ * Publish an induction's gazette for browsing (Merit lists → Current → Gazette) from
+ * gazette_<n>.json in its simulation folder. Works before preferences arrive.
+ */
+export async function importGazette(db: Database, session: Session | null, input: { induction: number; reason: string }, opts: { root?: string } = {}) {
+  assertCan(session, "data.edit");
+  const reason = requireReason(input.reason, "imports");
+  if (!Number.isInteger(input.induction) || input.induction <= 0) throw new UserFacingError("Choose an induction folder.");
+  const dir = folderFor(simRoot(opts.root), input.induction);
+  const scan = await scanFolder(dir).catch(() => null);
+  const f = scan?.files.find((x) => x.role === "gazette");
+  if (!f) throw new UserFacingError(`There is no gazette_${input.induction}.json in the simulation/induction${input.induction}/ folder.`);
+  const { data, sha256 } = await readJsonFile(dir, f.name, f.size);
+  return db.transaction(async (tx) => {
+    const r = await writeGazette(tx, input.induction, data, { name: f.name, sha256 }, session.email);
+    await writeAudit(tx, session.email, { action: "gazette.import", entityType: "gazette", entityId: `induction ${input.induction}`, after: { ...r, file: f.name, sha256 }, reason });
+    return r;
+  });
+}
+
 /** Re-read only the consent files (after the portal publishes a round's replies). */
 export async function importConsentRounds(db: Database, session: Session | null, input: { induction: number; reason: string }, opts: { root?: string } = {}) {
   assertCan(session, "data.edit");
@@ -267,6 +302,8 @@ export async function importSimulationDataset(db: Database, session: Session | n
     const prefs = candidates.flatMap((c) => c.preferences.map((p) => ({ inductionId: input.induction, applicantId: c.applicantId, ...p })));
     for (let i = 0; i < prefs.length; i += 2000) await tx.insert(simPreferences).values(prefs.slice(i, i + 2000));
     const consent = await writeConsent(tx, input.induction, dir, scan.consent);
+    const gazetteSource = sources.find((x) => x.role === "gazette");
+    if (gazetteSource) await writeGazette(tx, input.induction, data.gazette, { name: gazetteSource.name, sha256: gazetteSource.sha256 }, session.email);
     await writeAudit(tx, session.email, {
       action: "simulation.import_dataset",
       entityType: "sim_dataset",

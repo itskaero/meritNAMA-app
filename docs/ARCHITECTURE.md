@@ -334,6 +334,16 @@ change anyone's consent on their own private copy (`/portal/simulation`, filters
 toggle per row); a linked record only marks their own rows. Staff do the same at
 `/admin/processing/consent`.
 
+**Merit lists for members (Nov 2026).** `src/lib/data/lists.ts`. The *current*
+induction is the newest with a gazette, an official round or a published estimate,
+while it runs (no official round yet, its cycle not ended, or marked active); the hub
+shows it as gazette → round 1 … (official, else the newest published estimate) →
+"simulate the next round" (`inductionLists`). Finished inductions show official
+rounds only, and a published estimate of a finished induction redirects to the
+official round. Each round lists every allocation with the published name (paged,
+searchable by name or id, filtered by programme, quota, speciality, hospital and
+consent) and the lowest and highest merit per seat, speciality or hospital.
+
 **Estimated merit lists.** A finished staff run can be published
 (`simulation_runs.published_at`, `publishEstimate`, audited): members then see it under
 Merit lists as "Estimated round N" in full (`/portal/history/<n>/estimates/<run>`,
@@ -342,7 +352,8 @@ what-if from it. Once PHF's own round N is imported the estimate is shown as sup
 Round 1 is estimated before PHF's list from the **gazette** (`gazette_<n>.json` in the
 simulation folder: official marks, score parts and eligibility, which override the
 portal's) with the preferences collected from the portal; names and PMDC numbers in
-the gazette are never read. Rebuilt from
+the gazette are never read by the simulation (the browsable gazette keeps the name
+only). Estimate rows take names from the gazette or the official lists. Rebuilt from
 unchanged official statuses, consent reproduces the official run within about ±1%.
 
 **Merit calculator (Nov 2026).** `src/lib/engine/score.ts` computes merit marks from a

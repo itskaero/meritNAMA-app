@@ -8,10 +8,11 @@ import { Notice } from "@/components/ui/notice";
 import { StatusPill } from "@/components/ui/page-header";
 import { getSession, requireSection } from "@/lib/auth/session";
 import { failInterruptedRuns, importProblem, listDatasets, listRuns, listSimulationFolders } from "@/lib/data/simulation";
+import { listGazettes } from "@/lib/data/lists";
 import { checkDatabase, getDb } from "@/lib/db/client";
 import { formatUtc } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
-import { ImportConsentForm, ImportDatasetForm, StartRunForm } from "./forms";
+import { ImportConsentForm, ImportDatasetForm, ImportGazetteForm, StartRunForm } from "./forms";
 import { RUN_TONE } from "./status";
 
 export const metadata = { title: "Processing & simulation" };
@@ -30,6 +31,7 @@ export default async function ProcessingPage() {
   const folders = await listSimulationFolders(session);
   const datasets = db ? await listDatasets(db, session) : [];
   const runs = db ? await listRuns(db, session) : [];
+  const gazetteByInduction = new Map((db ? await listGazettes(db, session) : []).map((g) => [g.induction, g.entries]));
   const inductions = [...new Set([...folders.map((f) => f.induction), ...datasets.map((d) => d.inductionId)])].sort((a, b) => b - a);
 
   return (
@@ -45,8 +47,10 @@ export default async function ProcessingPage() {
         <code>$MERITNAMA_DATA_DIR/storage/simulation/induction22/</code>): <code>marks.json</code> (candidate marks),{" "}
         <code>preferences.json</code> (portal preferences) and optionally <code>certificates.json</code> and <code>profile_status.json</code>.
         A combined legacy <code>candidates.json</code> works instead of the first two. After each round, add the consent replies
-        fetched from the portal as <code>consent_round&lt;r&gt;.json</code>. Importing keeps only marks, preferences,
-        certificate marks and profile status: names, PMDC numbers, emails, phone numbers and CNICs are never stored.
+        fetched from the portal as <code>consent_round&lt;r&gt;.json</code>. PHF&apos;s gazette (<code>gazette_&lt;n&gt;.json</code>)
+        can be published to members on its own, before the preferences arrive. The simulation keeps only marks, preferences,
+        certificate marks and profile status; the gazette keeps names as PHF publishes them. PMDC numbers, emails, phone numbers
+        and CNICs are never stored.
       </Notice>
 
       {inductions.length === 0 ? (
@@ -78,6 +82,16 @@ export default async function ProcessingPage() {
                   {folder?.ignored.length ? <p className="text-xs text-amber">Not used: {folder.ignored.join(", ")}</p> : null}
                   {folder && !folder.files.some((f) => f.role === "profileStatus") ? <p className="text-xs text-amber">No profile status file: everyone takes part, so rejected profiles may take seats.</p> : null}
                   {folder ? (importProblem(folder.files) ? <p className="text-xs text-amber">{importProblem(folder.files)}</p> : <ImportDatasetForm induction={n} replaces={Boolean(ds)} />) : null}
+                  {folder?.files.some((f) => f.role === "gazette") ? (
+                    <div className="mt-2 grid gap-2 rounded-xl bg-elevated p-3">
+                      <h3 className="text-sm font-semibold">Gazette for members</h3>
+                      <p className="text-xs text-muted">
+                        {gazetteByInduction.get(n) ? `Published: ${gazetteByInduction.get(n)!.toLocaleString("en-US")} applicants. ` : "Not published yet. "}
+                        Members browse it under Merit lists → Current, with names, marks and status (CNIC, phone, PMDC and email are never stored). Importing the simulation data also publishes it.
+                      </p>
+                      <ImportGazetteForm induction={n} replaces={gazetteByInduction.has(n)} />
+                    </div>
+                  ) : null}
                 </div>
                 <div className="grid content-start gap-3">
                   <h3 className="text-sm font-semibold">Stored data</h3>

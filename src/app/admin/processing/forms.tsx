@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { ActionResult, ReasonField } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
-import { importConsentAction, importDatasetAction, publishEstimateAction, startRunAction } from "./actions";
+import { importConsentAction, importDatasetAction, importGazetteAction, publishEstimateAction, startRunAction } from "./actions";
 
 export function ImportDatasetForm({ induction, replaces }: { induction: number; replaces: boolean }) {
   const [state, action, pending] = useActionState(importDatasetAction, idleState);
@@ -70,6 +70,19 @@ export function PublishEstimateForm({ id, published }: { id: string; published: 
       <input type="hidden" name="publish" value={published ? "0" : "1"} />
       <ReasonField placeholder={published ? "e.g. Official round 1 is out" : "e.g. Estimated round 1 from the gazette and portal preferences"} />
       <div><Button type="submit" variant={published ? "secondary" : "primary"} disabled={pending}>{pending ? "Saving…" : published ? "Take down the estimate" : "Publish as estimated merit list"}</Button></div>
+      <ActionResult state={state} />
+    </form>
+  );
+}
+
+/** Publish the folder's gazette_<n>.json for members to browse (names, marks, status). */
+export function ImportGazetteForm({ induction, replaces }: { induction: number; replaces: boolean }) {
+  const [state, action, pending] = useActionState(importGazetteAction, idleState);
+  return (
+    <form action={action} className="grid gap-3">
+      <input type="hidden" name="induction" value={induction} />
+      <ReasonField placeholder={`e.g. Gazette of induction ${induction} published by PHF`} />
+      <div><Button type="submit" variant="secondary" disabled={pending}>{pending ? "Publishing…" : replaces ? "Re-publish the gazette" : "Publish the gazette to members"}</Button></div>
       <ActionResult state={state} />
     </form>
   );

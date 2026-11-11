@@ -1,32 +1,36 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
+import { CandidateList, ListFilters, ListNav, Pager, qs, ViewTabs, type CandidateRow } from "@/components/merit-lists";
 import { Badge } from "@/components/ui/badge";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
-import { selectClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
 import { verifiedApplicant } from "@/lib/data/candidates";
+import { inductionLists, namesFor, PAGE_SIZE } from "@/lib/data/lists";
 import { getRound } from "@/lib/data/merit";
 import { estimateList } from "@/lib/data/simulation";
 import { ensureUser } from "@/lib/data/users";
 import { getDb } from "@/lib/db/client";
 import { formatMarks, formatUtc, isUuid } from "@/lib/format";
-import { intParam } from "@/lib/params";
+import { intParam, oneOf } from "@/lib/params";
 
 export const metadata = { title: "Estimated merit list" };
 export const dynamic = "force-dynamic";
 
-const LIMIT = 500;
 const FILTERS = [["program", "Programme"], ["quota", "Quota"], ["speciality", "Speciality"], ["hospital", "Hospital"]] as const;
 type Key = (typeof FILTERS)[number][0];
+const VIEWS = ["list", "merit"] as const;
 
 /**
- * An estimated (simulated) merit list in full, as the public site showed it: applicant
- * id, mark, seat and preference for every allocation, never names. Published estimates
- * are for every member; a person's own what-if runs are private to them.
+ * An estimated (simulated) merit list of the current induction, in full: name (from the
+ * gazette or the official lists), mark, seat and preference for every allocation, and
+ * the lowest and highest merit per seat. Published estimates are for every member; a
+ * person's own what-if runs are private to them. Once the induction is over, a
+ * published estimate gives way to the official list.
  */
 export default async function EstimatePage({ params, searchParams }: {
   params: Promise<{ induction: string; runId: string }>;
@@ -39,40 +43,43 @@ export default async function EstimatePage({ params, searchParams }: {
   const session = await getSession();
   const est = await estimateList(db, session, p.runId);
   if (!est || est.run.inductionId !== induction) notFound();
+  const [official, lists] = await Promise.all([getRound(db, session, induction, est.roundNo), inductionLists(db, session, induction)]);
+  // Finished inductions show official lists only.
+  if (est.published && !lists.current && official) redirect(`/portal/history/${induction}/rounds/${est.roundNo}`);
+
   const sp = await searchParams;
   const one = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
+  const view = oneOf(sp.view, VIEWS) ?? "list";
   const me = session ? await verifiedApplicant(db, (await ensureUser(db, session)).id) : null;
-  const official = await getRound(db, session, induction, est.roundNo);
+  const names = await namesFor(db, session, { induction, applicantIds: est.rows.map((r) => r.applicantId) });
 
   const facets = Object.fromEntries(FILTERS.map(([k]) => [k, [...new Set(est.rows.map((r) => r[k]))].sort()])) as Record<Key, string[]>;
   const filters = Object.fromEntries(FILTERS.map(([k]) => [k, facets[k].includes(one(k)) ? one(k) : ""])) as Record<Key, string>;
-  const q = one("q").replace(/\D/g, "");
-  const mineOnly = one("show") === "mine" && me;
-  const rows = est.rows.filter((r) =>
-    FILTERS.every(([k]) => !filters[k] || r[k] === filters[k]) && (!q || r.applicantId.includes(q)) && (!mineOnly || r.applicantId === me));
+  const q = one("q").trim().slice(0, 60);
+  const qLower = q.toLowerCase();
+  const mineOnly = one("show") === "mine" && Boolean(me);
+  const rows = est.rows
+    .filter((r) => FILTERS.every(([k]) => !filters[k] || r[k] === filters[k])
+      && (!q || (/^\d+$/.test(q) ? r.applicantId.includes(q) : (names.get(r.applicantId) ?? "").toLowerCase().includes(qLower)))
+      && (!mineOnly || r.applicantId === me))
+    .sort((a, b) => b.mark - a.mark);
 
-  // Closing merit per seat group (lowest mark placed), within the filters.
-  const groups = new Map<string, { program: string; quota: string; speciality: string; hospital: string; placed: number; closing: number }>();
-  for (const r of rows) {
-    const k = `${r.program}|${r.quota}|${r.speciality}|${r.hospital}`;
-    const g = groups.get(k) ?? { program: r.program, quota: r.quota, speciality: r.speciality, hospital: r.hospital, placed: 0, closing: Infinity };
-    g.placed++;
-    g.closing = Math.min(g.closing, r.mark);
-    groups.set(k, g);
-  }
-  const groupRows = [...groups.values()].sort((a, b) => b.closing - a.closing);
-  const mySeats = me ? est.rows.filter((r) => r.applicantId === me) : [];
   const base = `/portal/history/${induction}/estimates/${est.run.id}`;
-  const filtered = Object.values(filters).some(Boolean) || q || mineOnly;
+  const filtered = Object.values(filters).some(Boolean) || Boolean(q) || mineOnly;
+  const keepFilters = { ...filters, ...(view === "list" ? { q } : {}), show: mineOnly ? "mine" : undefined };
+  const mySeats = me ? est.rows.filter((r) => r.applicantId === me) : [];
 
   return (
     <AreaPage
       area="portal"
       trail={[{ label: "Merit lists", href: "/portal/history" }, { label: `Induction ${induction}`, href: `/portal/history/${induction}` }, { label: `Estimated round ${est.roundNo}` }]}
       title={`Induction ${induction} · estimated round ${est.roundNo}`}
-      description={`${est.published ? `Published ${formatUtc(est.run.publishedAt)} UTC` : "Your own what-if simulation, visible only to you"} · ${est.rows.length.toLocaleString("en-US")} allocations · ${est.run.kind === "first_round" ? "simulated from the gazette and portal preferences" : `simulated from round ${est.run.fromRound} and its consent replies`}.`}
+      description={`${est.published ? `Published ${formatUtc(est.run.publishedAt)} UTC` : "Your own what-if simulation, visible only to you"} · ${est.rows.length.toLocaleString("en-US")} allocations · ${est.run.kind === "first_round" ? "simulated from the gazette and the preferences on the portal" : `simulated from round ${est.run.fromRound} and its consent replies`}.`}
       status={<Badge tone="simulated" className="mx-2">Estimate · not official</Badge>}
     >
+      <Card>
+        <ListNav steps={lists.steps} current={base} title={`Induction ${induction}: gazette and rounds`} />
+      </Card>
       {official ? (
         <Notice tone="warning" title={`PHF has published round ${est.roundNo}`}>
           This estimate is kept for comparison. <Link href={`/portal/history/${induction}/rounds/${est.roundNo}`} className="font-semibold text-signal hover:underline">Open the official round {est.roundNo} →</Link>
@@ -81,7 +88,6 @@ export default async function EstimatePage({ params, searchParams }: {
 
       <div className="flex flex-wrap gap-2">
         <ButtonLink href={`/portal/simulation?i=${induction}&base=${encodeURIComponent(`run:${est.run.id}`)}`} size="sm">What if… change consent on this list</ButtonLink>
-        {official ? <ButtonLink href={`/portal/history/${induction}/rounds/${est.roundNo}`} variant="secondary" size="sm">Official round {est.roundNo}</ButtonLink> : null}
       </div>
 
       {me ? (
@@ -100,65 +106,77 @@ export default async function EstimatePage({ params, searchParams }: {
         </Card>
       ) : null}
 
-      <Card className="lg:sticky lg:top-0 lg:z-20 lg:rounded-t-none lg:shadow-[var(--mn-shadow-2)]">
-        <form method="get" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_9rem_auto] xl:items-end">
-          {FILTERS.map(([k, label]) => (
-            <label key={k} className="grid gap-1.5 text-sm font-medium">{label}
-              <select name={k} defaultValue={filters[k]} className={selectClass}>
-                <option value="">All</option>
-                {facets[k].map((v) => <option key={v} value={v}>{v}</option>)}
-              </select>
-            </label>
-          ))}
-          <label className="grid gap-1.5 text-sm font-medium">Applicant id
-            <input name="q" inputMode="numeric" defaultValue={q} placeholder="e.g. 27267" className={`${selectClass} font-mono`} />
-          </label>
-          <div className="flex gap-2">
-            <Button type="submit" variant="secondary">Filter</Button>
-            {filtered ? <ButtonLink href={base} variant="ghost">Clear</ButtonLink> : null}
-          </div>
-        </form>
-        <p className="mt-3 text-sm text-muted" aria-live="polite">
-          {rows.length.toLocaleString("en-US")} allocation{rows.length === 1 ? "" : "s"}{filtered ? " match" : ""} · {groupRows.length.toLocaleString("en-US")} seat groups
-          {me ? <> · <Link href={`${base}?show=mine`} className="text-signal underline underline-offset-2">only mine</Link></> : null}
-        </p>
+      <ViewTabs
+        label="View"
+        current={view}
+        items={[
+          { key: "list", href: `${base}${qs({ ...filters, q, show: mineOnly ? "mine" : undefined })}`, label: "Candidates" },
+          { key: "merit", href: `${base}${qs({ view: "merit", ...filters })}`, label: "Merit range" },
+        ]}
+      />
+      <Card>
+        <ListFilters
+          fields={FILTERS.map(([k, label]) => ({ name: k, label, options: facets[k], value: filters[k] }))}
+          search={view === "list" ? { value: q, placeholder: "Name or applicant ID" } : undefined}
+          keep={view === "merit" ? { view } : mineOnly ? { show: "mine" } : {}}
+          clearHref={view === "merit" ? `${base}?view=merit` : base}
+          filtered={filtered}
+        />
+        {me && view === "list" ? <p className="mt-3 text-sm"><Link href={`${base}?show=mine`} className="text-signal underline underline-offset-2">Show only my seats</Link></p> : null}
       </Card>
 
-      <Card>
-        <CardHeader title="Estimated closing merit" description="The lowest mark placed in each seat group in this estimate. Not official." action={<Badge tone="simulated">Estimate</Badge>} />
-        <DataTable
-          caption="Estimated closing merit by seat group"
-          rows={groupRows.slice(0, LIMIT)}
-          rowKey={(g) => `${g.program}|${g.quota}|${g.speciality}|${g.hospital}`}
-          columns={[
-            { key: "s", header: "Speciality", sort: (g) => g.speciality, cell: (g) => g.speciality },
-            { key: "h", header: "Hospital", tone: "muted", sort: (g) => g.hospital, cell: (g) => g.hospital },
-            { key: "pq", header: "Programme · quota", tone: "muted", sort: (g) => `${g.program} ${g.quota}`, cell: (g) => `${g.program} · ${g.quota}` },
-            { key: "n", header: "Placed", align: "right", sort: (g) => g.placed, cell: (g) => g.placed },
-            { key: "c", header: "Closing", align: "right", tone: "mono", sort: (g) => g.closing, cell: (g) => formatMarks(g.closing) },
-          ]}
-        />
-      </Card>
-
-      <Card>
-        <CardHeader
-          title="The list"
-          description={rows.length > LIMIT ? `Showing the first ${LIMIT} of ${rows.length.toLocaleString("en-US")}; filter to narrow down.` : "Every allocation in this estimate. Applicant ids as PHF publishes them; names are never stored."}
-        />
-        <DataTable
-          caption="Estimated allocations"
-          rows={rows.slice(0, LIMIT)}
-          rowKey={(r) => `${r.applicantId}|${r.program}|${r.quota}`}
-          columns={[
-            { key: "id", header: "Applicant", tone: "mono", sort: (r) => Number(r.applicantId), cell: (r) => <>{r.applicantId}{r.applicantId === me ? <Badge tone="current" className="ml-2">you</Badge> : null}</> },
-            { key: "m", header: "Mark", align: "right", tone: "mono", sort: (r) => r.mark, cell: (r) => formatMarks(r.mark) },
-            { key: "pq", header: "Programme · quota", tone: "muted", sort: (r) => `${r.program} ${r.quota}`, cell: (r) => `${r.program} · ${r.quota}` },
-            { key: "s", header: "Speciality", sort: (r) => r.speciality, cell: (r) => r.speciality },
-            { key: "h", header: "Hospital", tone: "muted", sort: (r) => r.hospital, cell: (r) => r.hospital },
-            { key: "p", header: "Pref.", align: "right", sort: (r) => r.preferenceNo, cell: (r) => (r.preferenceNo ? `#${r.preferenceNo}` : "—") },
-          ]}
-        />
-      </Card>
+      {view === "list" ? listView() : meritView()}
     </AreaPage>
   );
+
+  function listView() {
+    if (!rows.length) return <EmptyState title="Nobody in this estimate matches" action={<ButtonLink href={base} variant="secondary">Clear filters</ButtonLink>} />;
+    const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    const page = Math.min(intParam(sp.page, 4) ?? 1, pages);
+    const pageRows: CandidateRow[] = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((r, i) => ({
+      rank: (page - 1) * PAGE_SIZE + i + 1, applicantId: r.applicantId, name: names.get(r.applicantId) ?? null, marks: r.mark,
+      program: r.program, quota: r.quota, speciality: r.speciality, hospital: r.hospital, preferenceNo: r.preferenceNo,
+    }));
+    const href = (n: number) => `${base}${qs({ ...keepFilters, page: n > 1 ? n : undefined })}`;
+    return (
+      <Card>
+        <CardHeader title="Everyone in this estimate" description="Best marks first. Names from the gazette or the official lists. Not official." action={<Badge tone="simulated">Estimate</Badge>} />
+        <div className="grid gap-3">
+          <Pager page={page} pages={pages} total={rows.length} noun="allocations" hrefFor={href} />
+          <CandidateList rows={pageRows} me={me} caption="Estimated allocations" showConsent={false} />
+          <Pager page={page} pages={pages} total={rows.length} noun="allocations" hrefFor={href} />
+        </div>
+      </Card>
+    );
+  }
+
+  function meritView() {
+    const groups = new Map<string, { program: string; quota: string; speciality: string; hospital: string; placed: number; lowest: number; highest: number }>();
+    for (const r of rows) {
+      const k = `${r.program}|${r.quota}|${r.speciality}|${r.hospital}`;
+      const g = groups.get(k) ?? { program: r.program, quota: r.quota, speciality: r.speciality, hospital: r.hospital, placed: 0, lowest: Infinity, highest: -Infinity };
+      g.placed++;
+      g.lowest = Math.min(g.lowest, r.mark);
+      g.highest = Math.max(g.highest, r.mark);
+      groups.set(k, g);
+    }
+    const list = [...groups.values()].sort((a, b) => b.highest - a.highest);
+    if (!list.length) return <EmptyState title="Nothing matches these filters" />;
+    return (
+      <Card>
+        <CardHeader title="Estimated lowest and highest merit" description="Per seat, within each programme and quota. The lowest is the estimated closing merit. Not official." action={<Badge tone="simulated">Estimate</Badge>} />
+        <DataTable
+          caption="Estimated lowest and highest merit by seat"
+          rows={list}
+          rowKey={(g) => `${g.program}|${g.quota}|${g.speciality}|${g.hospital}`}
+          columns={[
+            { key: "s", header: "Seat", sort: (g) => `${g.speciality} ${g.hospital}`, cell: (g) => <><span className="font-medium">{g.speciality}</span><span className="block text-xs text-muted">{g.hospital}</span><span className="block text-xs text-subtle">{g.program} · {g.quota}</span></> },
+            { key: "n", header: "Placed", align: "right", sort: (g) => g.placed, cell: (g) => g.placed },
+            { key: "lo", header: "Lowest", align: "right", tone: "mono", sort: (g) => g.lowest, cell: (g) => formatMarks(g.lowest) },
+            { key: "hi", header: "Highest", align: "right", tone: "mono", sort: (g) => g.highest, cell: (g) => formatMarks(g.highest) },
+          ]}
+        />
+      </Card>
+    );
+  }
 }

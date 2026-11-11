@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { DataTableClient } from "./data-table-client";
 
 export type Column<T> = {
@@ -35,7 +35,8 @@ export function DataTable<T>({ caption, columns, rows, rowKey, empty, maxHeight 
       columns={columns.map((c) => ({ key: c.key, header: c.header, align: c.align, tone: c.tone, sortable: Boolean(c.sort) }))}
       rows={rows.map((r) => ({
         key: rowKey(r),
-        cells: columns.map((c) => c.cell(r)),
+        // Keyed, since the cells travel to the client component as an array.
+        cells: columns.map((c) => <Fragment key={c.key}>{c.cell(r)}</Fragment>),
         sort: columns.map((c) => {
           const v = c.sort?.(r);
           return v === undefined || (typeof v === "number" && !Number.isFinite(v)) ? null : v;

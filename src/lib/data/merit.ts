@@ -14,6 +14,7 @@ import {
   specialities,
 } from "@/lib/db/schema";
 import { isoDay, meritRoundFileSchema, nameKey } from "@/lib/domain/merit-round";
+import { cleanName } from "@/lib/domain/sim-dataset";
 import { UserFacingError } from "@/lib/errors";
 import { notifyFollowers, notifyShortlists } from "./notifications";
 import { postRoundDay } from "./rooms";
@@ -22,8 +23,8 @@ import { requireReason, writeAudit, type Db } from "./shared";
 /**
  * Merit rounds: import (admin) and browsing (any signed-in user).
  *
- * Browsing functions return aggregates only (counts, closing and opening marks per
- * group). Allocation rows, and the applicant ids in them, never leave this module.
+ * Browsing functions here return aggregates (counts, closing and opening marks per
+ * group); the full list of a round, with names, is in ./lists.ts.
  */
 
 const reasonFor = (reason: string) => requireReason(reason, "merit data changes");
@@ -114,6 +115,7 @@ export async function importMeritRound(
       marks: r.marks,
       preferenceNo: r.preferenceNo,
       consent: r.consent.trim(),
+      candidateName: cleanName(r.name),
     }));
     // Chunked: one statement per 1,000 rows keeps well under the bind-parameter limit.
     for (let i = 0; i < rows.length; i += 1000) await tx.insert(meritAllocations).values(rows.slice(i, i + 1000));
@@ -354,16 +356,17 @@ export async function roundGroups(db: Database, session: Session | null, roundId
 /** Distinct values present in a round, for the filter pickers. */
 export async function roundFacets(db: Database, session: Session | null, roundId: number) {
   assertCan(session, "portal");
-  type TextCol = typeof meritAllocations.program | typeof meritAllocations.quota | typeof meritAllocations.speciality | typeof meritAllocations.hospital;
+  type TextCol = typeof meritAllocations.program | typeof meritAllocations.quota | typeof meritAllocations.speciality | typeof meritAllocations.hospital | typeof meritAllocations.consent;
   const distinct = async (col: TextCol) =>
     (await db.selectDistinct({ v: col }).from(meritAllocations).where(eq(meritAllocations.roundId, roundId)).orderBy(asc(col))).map((r) => r.v);
-  const [program, quota, speciality, hospital] = await Promise.all([
+  const [program, quota, speciality, hospital, consent] = await Promise.all([
     distinct(meritAllocations.program),
     distinct(meritAllocations.quota),
     distinct(meritAllocations.speciality),
     distinct(meritAllocations.hospital),
+    distinct(meritAllocations.consent),
   ]);
-  return { program, quota, speciality, hospital };
+  return { program, quota, speciality, hospital, consent: consent.filter(Boolean) };
 }
 
 /**
@@ -565,7 +568,7 @@ export type ApplicantRound = {
  * Everything published about one applicant id: their allocation in every round of every
  * induction (with that seat group's closing merit), their place in published estimates,
  * and, for their latest seats, everyone else in the same seat group. Applicant ids, marks
- * and seats only, as PHF publishes them; names are never stored.
+ * and seats, with the name PHF printed on the lists.
  */
 export async function findApplicant(db: Database, session: Session | null, rawId: string) {
   assertCan(session, "portal");
@@ -573,14 +576,14 @@ export async function findApplicant(db: Database, session: Session | null, rawId
   if (!id) return null;
   const rounds = (await db.execute(sql`
     select r.induction_id as induction, r.round_no, m.program, m.quota, m.speciality, m.speciality_id, m.hospital, m.hospital_id,
-           m.marks, m.preference_no, m.consent, m.round_id,
+           m.marks, m.preference_no, m.consent, m.round_id, m.candidate_name,
            (select min(x.marks) from merit_allocations x where x.round_id = m.round_id and x.program = m.program and x.quota = m.quota and x.speciality = m.speciality and x.hospital = m.hospital) as closing,
            (select count(*) from merit_allocations x where x.round_id = m.round_id and x.program = m.program and x.quota = m.quota and x.speciality = m.speciality and x.hospital = m.hospital)::int as group_size
     from merit_allocations m join merit_rounds r on r.id = m.round_id
     where m.applicant_id = ${id}
     order by r.induction_id desc, r.round_no desc, m.program`)) as unknown as {
     induction: number; round_no: number; program: string; quota: string; speciality: string; speciality_id: number | null; hospital: string; hospital_id: number | null;
-    marks: number; preference_no: number; consent: string; round_id: number; closing: number; group_size: number;
+    marks: number; preference_no: number; consent: string; round_id: number; candidate_name: string | null; closing: number; group_size: number;
   }[];
   const estimates = (await db.execute(sql`
     select s.run_id, sr.induction_id as induction, case when sr.kind = 'next_round' then sr.from_round + 1 else 1 end as round_no,
@@ -594,14 +597,15 @@ export async function findApplicant(db: Database, session: Session | null, rawId
   const neighbours = await Promise.all(latest.map(async (r) => ({
     program: r.program.trim(), quota: r.quota.trim(), speciality: r.speciality.trim(), hospital: r.hospital.trim(),
     people: ((await db.execute(sql`
-      select applicant_id, marks, preference_no, consent from merit_allocations
+      select applicant_id, candidate_name, marks, preference_no, consent from merit_allocations
       where round_id = ${r.round_id} and program = ${r.program} and quota = ${r.quota} and speciality = ${r.speciality} and hospital = ${r.hospital}
-      order by marks desc`)) as unknown as { applicant_id: string; marks: number; preference_no: number; consent: string }[])
-      .map((p) => ({ applicantId: p.applicant_id, marks: Number(p.marks), preferenceNo: p.preference_no, consent: p.consent })),
+      order by marks desc`)) as unknown as { applicant_id: string; candidate_name: string | null; marks: number; preference_no: number; consent: string }[])
+      .map((p) => ({ applicantId: p.applicant_id, name: p.candidate_name, marks: Number(p.marks), preferenceNo: p.preference_no, consent: p.consent })),
   })));
 
   return {
     applicantId: id,
+    name: rounds.find((r) => r.candidate_name)?.candidate_name ?? null,
     rounds: rounds.map((r): ApplicantRound => ({
       induction: r.induction, roundNo: r.round_no, program: r.program.trim(), quota: r.quota.trim(), speciality: r.speciality.trim(), specialityId: r.speciality_id,
       hospital: r.hospital.trim(), hospitalId: r.hospital_id, marks: Number(r.marks), preferenceNo: r.preference_no, consent: r.consent, closing: Number(r.closing), groupSize: r.group_size,

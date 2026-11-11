@@ -205,7 +205,8 @@ const duplicate = (id: string, file: string) => new z.ZodError([{ code: "custom"
 /**
  * PHF's gazette (the eligible-candidates list published before round 1): one row per
  * applicant in Table5, with total marks, the parts of the score and eligibility.
- * Names and PMDC numbers in it are never read.
+ * The simulation never reads names or PMDC numbers; browsing keeps the name only
+ * (gazetteEntries).
  */
 export const gazetteFileSchema = z.looseObject({
   Table5: z.array(
@@ -233,6 +234,36 @@ export function fromGazette(file: unknown): Map<string, GazetteMarks> {
     const st = (r.status ?? "").toLowerCase();
     const profileStatus = r.statusId === 1 || st === "eligible" ? 1 : r.statusId === 2 || st === "rejected" ? 2 : null;
     out.set(r.applicantId, { marksTotal: r.marksTotal, params, profileStatus });
+  }
+  return out;
+}
+
+/** A display name from a published file: trimmed, spaces collapsed, at most 120 characters; null when absent. */
+export function cleanName(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim().replace(/\s+/g, " ").slice(0, 120);
+  return s || null;
+}
+
+export type GazetteEntry = { applicantId: string; position: number; name: string | null; marksTotal: number; status: string | null; parts: Record<string, number> };
+
+/**
+ * Gazette rows for browsing: name, total marks, eligibility as published, and the
+ * parts of the score. Only the name is kept of the personal fields (never CNIC,
+ * phone, PMDC number or email). An applicant listed twice keeps the first row.
+ */
+export function gazetteEntries(file: unknown): GazetteEntry[] {
+  const g = gazetteFileSchema.parse(file);
+  const out: GazetteEntry[] = [];
+  const seen = new Set<string>();
+  for (const r of g.Table5) {
+    if (seen.has(r.applicantId)) continue;
+    seen.add(r.applicantId);
+    const row = r as Record<string, unknown>;
+    const parts: Record<string, number> = {};
+    for (const k of GAZETTE_PARAMS) if (typeof row[k] === "number" && Number.isFinite(row[k])) parts[k] = row[k] as number;
+    const status = cleanName(r.status) ?? (r.statusId === 1 ? "Eligible" : r.statusId === 2 ? "Rejected" : null);
+    out.push({ applicantId: r.applicantId, position: out.length + 1, name: cleanName(row.nameFull) ?? cleanName(row.name), marksTotal: r.marksTotal, status, parts });
   }
   return out;
 }

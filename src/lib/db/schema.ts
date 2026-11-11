@@ -242,6 +242,8 @@ export const meritAllocations = pgTable(
     preferenceNo: integer("preference_no").notNull(),
     /** As published: "Accepted", "Rejected" or "Not Avail". */
     consent: text("consent").notNull(),
+    /** The candidate's name as PHF publishes it on the list (null for rounds imported before names were kept). */
+    candidateName: text("candidate_name"),
   },
   (t) => [
     primaryKey({ columns: [t.roundId, t.rowNo] }),
@@ -720,6 +722,37 @@ export const simPreferences = pgTable(
     index("sim_preferences_candidate_idx").on(t.inductionId, t.applicantId),
     foreignKey({ columns: [t.inductionId, t.applicantId], foreignColumns: [simCandidates.inductionId, simCandidates.applicantId] }).onDelete("cascade"),
   ],
+);
+
+/**
+ * PHF's gazette for an induction (the list of applicants with their merit, published
+ * before round 1), for browsing. One import per induction; re-importing replaces it.
+ */
+export const gazettes = pgTable("gazettes", {
+  inductionId: integer("induction_id").primaryKey(),
+  entries: integer("entries").notNull(),
+  /** File name and SHA-256 hash it was read from. */
+  source: json("source").notNull(),
+  importedBy: text("imported_by").notNull(),
+  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One applicant in a gazette: name, total marks, eligibility and the parts of the score. CNIC, phone and PMDC are never kept. */
+export const gazetteEntries = pgTable(
+  "gazette_entries",
+  {
+    inductionId: integer("induction_id").notNull().references(() => gazettes.inductionId, { onDelete: "cascade" }),
+    applicantId: text("applicant_id").notNull(),
+    /** Order in the file. */
+    position: integer("position").notNull(),
+    candidateName: text("candidate_name"),
+    marksTotal: doublePrecision("marks_total").notNull(),
+    /** As published, e.g. "Eligible" or "Rejected" (null when the file has none). */
+    status: text("status"),
+    /** Parts of the score the gazette prints (matric, fsc, degree, houseJob, …). */
+    parts: json("parts").notNull().default({}),
+  },
+  (t) => [primaryKey({ columns: [t.inductionId, t.applicantId] }), index("gazette_entries_marks_idx").on(t.inductionId, t.marksTotal)],
 );
 
 /**

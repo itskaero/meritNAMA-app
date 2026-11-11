@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { formInt, formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { executeRun, importConsentRounds, importSimulationDataset, publishEstimate, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
+import { executeRun, importConsentRounds, importGazette, importSimulationDataset, publishEstimate, queueFirstRoundRun, queueNextRoundRun } from "@/lib/data/simulation";
 import { getDb } from "@/lib/db/client";
 
 /** Reachable by direct POST: the data layer checks the caller's capability. */
@@ -28,6 +28,17 @@ export async function importConsentAction(_prev: ActionState, form: FormData): P
     const rounds = await importConsentRounds(getDb(), await getSession(), { induction: formInt(form, "induction", "Induction"), reason: formText(form, "reason") });
     revalidatePath("/admin/processing");
     return { status: "success", message: `Imported consent for round${rounds.length > 1 ? "s" : ""} ${rounds.map((r) => r.round).join(", ")} (${rounds.reduce((n, r) => n + r.replies, 0).toLocaleString("en-US")} replies).` };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+export async function importGazetteAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const r = await importGazette(getDb(), await getSession(), { induction: formInt(form, "induction", "Induction"), reason: formText(form, "reason") });
+    revalidatePath("/admin/processing");
+    revalidatePath("/portal/history");
+    return { status: "success", message: `Published the gazette: ${r.entries.toLocaleString("en-US")} applicants (${r.eligible.toLocaleString("en-US")} eligible). Members see it under Merit lists → Current.` };
   } catch (err) {
     return toActionState(err);
   }
