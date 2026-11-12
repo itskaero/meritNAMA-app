@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FindBox } from "@/components/find-box";
 import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
-import { InductionTimeline } from "@/components/charts/induction-timeline";
+import { RoundChips } from "@/components/round-chips";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -37,13 +37,7 @@ export default async function MeritListsPage() {
         ]}
       />
       <FindBox />
-      <EstimateListCard estimates={estimates} />
-      {inductions.length ? (
-        <Card>
-          <CardHeader title="Timeline" description="Each induction's cycle; select a round to open its merit list." />
-          <InductionTimeline inductions={inductions} />
-        </Card>
-      ) : null}
+      <EstimateListCard estimates={estimates} showEmpty />
       {seats.inductions.length ? (
         <Card>
           <CardHeader
@@ -71,29 +65,33 @@ export default async function MeritListsPage() {
       {inductions.length === 0 ? (
         <EmptyState title="No merit lists yet">Merit rounds appear here once an administrator imports them.</EmptyState>
       ) : (
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <section aria-labelledby="browse" className="grid gap-3">
+          <h2 id="browse" className="text-lg font-semibold text-heading">Browse by induction</h2>
+          <p className="-mt-2 text-sm text-muted">Newest first. Tap a round to open its merit list and candidates; swipe sideways for more rounds.</p>
           {inductions.map((ind) => {
-            const first = ind.rounds[0]!, last = ind.rounds[ind.rounds.length - 1]!;
+            const first = ind.rounds[0]!;
             return (
-              <Card key={ind.id} className="mn-rise">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="font-mono text-xs uppercase tracking-[0.14em] text-ember">{first.cycleCode}</p>
-                    <h2 className="mt-1 text-xl font-semibold">
-                      <Link href={`/portal/history/${ind.id}`} className="hover:underline">Induction {ind.id}</Link>{" "}
-                      <span className="font-normal text-muted">· {first.cycleName}</span>
-                    </h2>
-                    <p className="mt-1 text-sm text-muted">
-                      {ind.rounds.length} {ind.rounds.length === 1 ? "round" : "rounds"} · {last.allocations.toLocaleString("en-US")} allocations in round {last.roundNo}
-                      {ind.maxMarks ? ` · scored out of ${ind.maxMarks}` : ""}
-                    </p>
-                  </div>
-                  <Link href={`/portal/history/${ind.id}`} className="rounded-full border border-line-strong px-4 py-2 text-sm font-semibold hover:bg-hover">Open</Link>
+              <Card key={ind.id}>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <h3 className="text-base font-semibold">
+                    <Link href={`/portal/history/${ind.id}`} className="hover:underline">Induction {ind.id}</Link>{" "}
+                    <span className="font-normal text-muted">· {first.cycleName}</span>
+                  </h3>
+                  <p className="text-xs text-subtle">{ind.rounds.length} {ind.rounds.length === 1 ? "round" : "rounds"}{ind.maxMarks ? ` · out of ${ind.maxMarks}` : ""}</p>
+                </div>
+                <div className="mt-3">
+                  <RoundChips
+                    label={`Induction ${ind.id} rounds`}
+                    items={[
+                      ...ind.rounds.map((r) => ({ key: r.roundNo, label: `R${r.roundNo}`, hint: r.allocations.toLocaleString("en-US"), href: `/portal/history/${ind.id}/rounds/${r.roundNo}` })),
+                      { key: "all", label: "Overview", href: `/portal/history/${ind.id}` },
+                    ]}
+                  />
                 </div>
               </Card>
             );
           })}
-        </div>
+        </section>
       )}
     </AreaPage>
   );

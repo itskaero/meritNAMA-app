@@ -7,8 +7,16 @@ type Estimate = { id: string; induction: number; roundNo: number; publishedAt: D
 const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
 /** Published estimated merit lists: current ones first and prominent, superseded ones listed under them. */
-export function EstimateListCard({ estimates, title = "Estimated merit lists" }: { estimates: Estimate[]; title?: string }) {
-  if (!estimates.length) return null;
+export function EstimateListCard({ estimates, title = "Estimated merit lists", showEmpty = false }: { estimates: Estimate[]; title?: string; showEmpty?: boolean }) {
+  if (!estimates.length) {
+    if (!showEmpty) return null;
+    return (
+      <Card className="border-dashed border-amber/50">
+        <CardHeader title={title} description="Simulated lists made from the gazette, portal preferences and consent replies, before PHF publishes the real one." action={<Badge tone="simulated">Estimate</Badge>} />
+        <p className="text-sm text-muted">No estimated list is published right now. One appears here when an induction&apos;s gazette and preferences have been added and an estimate is published, usually just before a round.</p>
+      </Card>
+    );
+  }
   const current = estimates.filter((e) => !e.official);
   const old = estimates.filter((e) => e.official);
   return (

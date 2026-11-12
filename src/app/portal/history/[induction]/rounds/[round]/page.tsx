@@ -6,7 +6,7 @@ import { snippetParam } from "@/lib/domain/community";
 import { DiscussionPanel } from "@/components/community/discussion-panel";
 import { RoundRoomPanel } from "@/components/rooms/round-room-panel";
 import { BarList } from "@/components/charts/bar-list";
-import { RoundBeam } from "@/components/charts/round-beam";
+import { RoundChips } from "@/components/round-chips";
 import { MeritDelta } from "@/components/merit-delta";
 import { ActionBar } from "@/components/ui/action-bar";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { EntityLink } from "@/components/entity-link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/page-header";
 import { getSession } from "@/lib/auth/session";
-import { getRound, inductionMaxMarks, listInductionsWithRounds, roundFacets, roundGroups, type RoundFilters } from "@/lib/data/merit";
+import { getRound, inductionMaxMarks, roundCandidates, listInductionsWithRounds, roundFacets, roundGroups, type RoundFilters } from "@/lib/data/merit";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
 import { inductionRunning, methodCheck, predictRound } from "@/lib/data/predictions";
@@ -28,6 +28,7 @@ export const metadata = { title: "Merit round" };
 export const dynamic = "force-dynamic";
 
 const LIMIT = 400;
+const PAGE = 100;
 const FILTERS = [
   ["program", "Programme"],
   ["quota", "Quota"],
@@ -74,6 +75,17 @@ export default async function RoundPage({ params, searchParams }: {
   for (const g of groups) bySpec.set(g.speciality, (bySpec.get(g.speciality) ?? 0) + g.allocations);
   const topSpecs = [...bySpec].sort((a, b) => b[1] - a[1]).slice(0, 8);
   const base = `/portal/history/${induction}/rounds/${roundNo}`;
+  const q = typeof sp.q === "string" ? sp.q.replace(/D/g, "") : "";
+  const cpage = Math.max(intParam(typeof sp.cp === "string" ? sp.cp : undefined) ?? 1, 1);
+  const cands = await roundCandidates(db, session, { roundId: round.id, filters, q, offset: (cpage - 1) * PAGE, limit: PAGE });
+  const cpages = Math.max(1, Math.ceil(cands.total / PAGE));
+  const keep = (extra: Record<string, string>) => {
+    const u = new URLSearchParams();
+    for (const [k] of FILTERS) if (filters[k]) u.set(k, filters[k]!);
+    if (q) u.set("q", q);
+    for (const [k, v] of Object.entries(extra)) u.set(k, v);
+    return `${base}?${u.toString()}#candidates`;
+  };
 
   return (
     <AreaPage
@@ -93,7 +105,18 @@ export default async function RoundPage({ params, searchParams }: {
         ]}
       />
       <Card>
-        <RoundBeam rounds={ind.rounds.map((r) => r.roundNo)} current={roundNo} hrefFor={(r) => `/portal/history/${induction}/rounds/${r}`} />
+        <div className="grid gap-3">
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-muted">Rounds of induction {induction}</p>
+            <RoundChips label="Rounds" items={ind.rounds.map((r) => ({ key: r.roundNo, label: `R${r.roundNo}`, href: `/portal/history/${induction}/rounds/${r.roundNo}`, current: r.roundNo === roundNo }))} />
+          </div>
+          {all.length > 1 ? (
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-muted">Other inductions (opens their latest round)</p>
+              <RoundChips label="Inductions" items={[...all].sort((a, b) => b.id - a.id).map((i) => ({ key: i.id, label: `I${i.id}`, hint: `${i.rounds.length} rounds`, href: `/portal/history/${i.id}/rounds/${i.rounds.at(-1)!.roundNo}`, current: i.id === induction }))} />
+            </div>
+          ) : null}
+        </div>
       </Card>
       <Card className="lg:sticky lg:top-0 lg:z-20 lg:rounded-t-none lg:shadow-[var(--mn-shadow-2)]">
         <form method="get" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto] xl:items-end">
@@ -184,6 +207,38 @@ export default async function RoundPage({ params, searchParams }: {
           </Card>
         </>
       )}
+      <Card id="candidates">
+        <CardHeader title="Candidates" description={`${cands.total.toLocaleString("en-US")} allocation${cands.total === 1 ? "" : "s"}${filtered || q ? " match" : ""}, best marks first. Applicant ids as PHF publishes them.`} />
+        <form method="get" action={`${base}#candidates`} className="mb-4 flex flex-wrap items-end gap-3">
+          {FILTERS.map(([k]) => (filters[k] ? <input key={k} type="hidden" name={k} value={filters[k]} /> : null))}
+          <label className="grid gap-1.5 text-sm font-medium">Applicant id
+            <input name="q" inputMode="numeric" defaultValue={q} placeholder="e.g. 27267" className={`${selectClass} w-44 font-mono`} />
+          </label>
+          <Button type="submit" variant="secondary">Search</Button>
+          {q ? <ButtonLink href={keep({ q: "" })} variant="ghost">Clear</ButtonLink> : null}
+        </form>
+        <DataTable
+          caption="Candidates in this round"
+          rows={cands.rows}
+          rowKey={(r) => `${r.applicantId}|${r.program}|${r.quota}|${r.speciality}|${r.hospital}`}
+          columns={[
+            { key: "id", header: "Applicant", tone: "mono", sort: (r) => Number(r.applicantId), cell: (r) => <Link href={`/portal/history/find?id=${r.applicantId}`} className="text-signal hover:underline">{r.applicantId}</Link> },
+            { key: "m", header: "Marks", align: "right", tone: "mono", sort: (r) => r.marks, cell: (r) => formatMarks(r.marks) },
+            { key: "s", header: "Speciality", sort: (r) => r.speciality, cell: (r) => r.speciality },
+            { key: "h", header: "Hospital", tone: "muted", sort: (r) => r.hospital, cell: (r) => r.hospital },
+            { key: "pq", header: "Programme · quota", tone: "muted", sort: (r) => `${r.program} ${r.quota}`, cell: (r) => `${r.program} · ${r.quota}` },
+            { key: "p", header: "Pref.", align: "right", sort: (r) => r.preferenceNo ?? 0, cell: (r) => (r.preferenceNo ? `#${r.preferenceNo}` : "—") },
+            { key: "c", header: "Consent", tone: "muted", sort: (r) => r.consent ?? "", cell: (r) => r.consent || "—" },
+          ]}
+        />
+        {cpages > 1 ? (
+          <nav aria-label="Pages" className="mt-4 flex items-center justify-between text-sm">
+            {cpage > 1 ? <ButtonLink href={keep({ cp: String(cpage - 1) })} variant="secondary" size="sm">← Previous</ButtonLink> : <span />}
+            <span className="text-muted">Page {cpage} of {cpages}</span>
+            {cpage < cpages ? <ButtonLink href={keep({ cp: String(cpage + 1) })} variant="secondary" size="sm">Next →</ButtonLink> : <span />}
+          </nav>
+        ) : null}
+      </Card>
       {back || fwd ? (
         <Card>
           <CardHeader title={fwd ? `Likely closing merit in round ${roundNo + 1}` : "How the predictions did"} description={fwd ? "Ranges, not single numbers: where each group's closing merit will probably land next round." : `Each group's range was made from round ${prevNo} using the other inductions. ✓ marks a closing that fell inside.`} />

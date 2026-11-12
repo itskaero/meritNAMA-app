@@ -116,6 +116,7 @@
  "merit#saveNameAlias": "data_editor owner",
  "merit#listInductionsWithRounds": "candidate data_editor policy_editor verifier moderator owner",
  "merit#getRound": "candidate data_editor policy_editor verifier moderator owner",
+ "merit#roundCandidates": "candidate data_editor policy_editor verifier moderator owner",
  "merit#inductionTimeline": "candidate data_editor policy_editor verifier moderator owner",
  "merit#roundGroups": "candidate data_editor policy_editor verifier moderator owner",
  "merit#roundFacets": "candidate data_editor policy_editor verifier moderator owner",

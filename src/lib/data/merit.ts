@@ -23,7 +23,8 @@ import { requireReason, writeAudit, type Db } from "./shared";
  * Merit rounds: import (admin) and browsing (any signed-in user).
  *
  * Browsing functions return aggregates only (counts, closing and opening marks per
- * group). Allocation rows, and the applicant ids in them, never leave this module.
+ * group). The one exception is roundCandidates: a round’s list of applicant ids with marks
+ * and seats, as PHF prints it (never names).
  */
 
 const reasonFor = (reason: string) => requireReason(reason, "merit data changes");
@@ -269,6 +270,49 @@ export async function getRound(db: Database, session: Session | null, induction:
     .where(and(eq(meritRounds.inductionId, inductionSchema.parse(induction)), eq(meritRounds.roundNo, roundNoSchema.parse(roundNo))))
     .limit(1);
   return r ?? null;
+}
+
+/**
+ * The candidates of one round, as PHF prints the list: applicant id, marks, seat, preference
+ * and consent (never names). Best marks first; filters are the round page's, plus an
+ * applicant-id search. Used for the "Candidates" list on the round page only.
+ */
+export async function roundCandidates(
+  db: Database,
+  session: Session | null,
+  input: { roundId: number; filters?: RoundFilters; q?: string; offset?: number; limit?: number },
+) {
+  assertCan(session, "portal");
+  const f = input.filters ?? {};
+  const q = (input.q ?? "").replace(/\D/g, "").slice(0, 10);
+  const where = and(
+    eq(meritAllocations.roundId, input.roundId),
+    f.program ? eq(meritAllocations.program, f.program) : undefined,
+    f.quota ? eq(meritAllocations.quota, f.quota) : undefined,
+    f.speciality ? eq(meritAllocations.speciality, f.speciality) : undefined,
+    f.hospital ? eq(meritAllocations.hospital, f.hospital) : undefined,
+    q ? sql`${meritAllocations.applicantId}::text like ${`%${q}%`}` : undefined,
+  );
+  const [rows, counted] = await Promise.all([
+    db
+      .select({
+        applicantId: meritAllocations.applicantId,
+        marks: meritAllocations.marks,
+        program: meritAllocations.program,
+        quota: meritAllocations.quota,
+        speciality: meritAllocations.speciality,
+        hospital: meritAllocations.hospital,
+        preferenceNo: meritAllocations.preferenceNo,
+        consent: meritAllocations.consent,
+      })
+      .from(meritAllocations)
+      .where(where)
+      .orderBy(desc(meritAllocations.marks), asc(meritAllocations.applicantId))
+      .limit(Math.min(Math.max(input.limit ?? 100, 1), 300))
+      .offset(Math.max(input.offset ?? 0, 0)),
+    db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(meritAllocations).where(where),
+  ]);
+  return { rows, total: counted[0]?.n ?? 0 };
 }
 
 /**

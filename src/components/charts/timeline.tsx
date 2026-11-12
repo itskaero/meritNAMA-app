@@ -99,7 +99,7 @@ export function Timeline({ rows, now = new Date(), caption }: { rows: TimelineRo
                   {/* Label sits right of the bar when there is room, else inside the axis gutter */}
                   <div className="pointer-events-none absolute inset-y-0 flex items-center gap-2 pl-2" style={{ left: `${Math.min(x(e), 78)}%` }}>
                     <span className="whitespace-nowrap text-sm font-semibold">{r.label}</span>
-                    <span className="whitespace-nowrap rounded-md bg-surface px-1.5 py-0.5 font-mono text-[0.68rem] text-muted ring-1 ring-line">{days} days</span>
+                    {days > 0 ? <span className="whitespace-nowrap rounded-md bg-surface px-1.5 py-0.5 font-mono text-[0.68rem] text-muted ring-1 ring-line">{days} days</span> : null}
                     {r.sub ? <span className="whitespace-nowrap text-xs text-subtle">{r.sub}</span> : null}
                   </div>
                 </li>
