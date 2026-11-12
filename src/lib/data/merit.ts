@@ -49,6 +49,33 @@ async function resolver(db: Db, kind: AliasKind) {
   return (name: string) => map.get(nameKey(name)) ?? null;
 }
 
+/**
+ * Link allocations that have no speciality or hospital id yet, by name. Lookups often arrive
+ * after the merit rounds (a seat file adds them), so this runs whenever lookups or seat files
+ * change; without it the hospital and speciality pages show no merit at all. Only rows still
+ * unlinked are touched, so a manual alias is never overwritten. Internal: callers check access.
+ */
+export async function relinkMeritNames(tx: Db) {
+  let updated = 0;
+  for (const kind of ["speciality", "hospital"] as const) {
+    const resolve = await resolver(tx, kind);
+    const col = kind === "speciality" ? meritAllocations.speciality : meritAllocations.hospital;
+    const idCol = kind === "speciality" ? meritAllocations.specialityId : meritAllocations.hospitalId;
+    const names = (await tx.selectDistinct({ name: col }).from(meritAllocations).where(isNull(idCol))).map((r) => r.name);
+    const byId = new Map<number, string[]>();
+    for (const n of names) {
+      const id = resolve(n);
+      if (id != null) (byId.get(id) ?? byId.set(id, []).get(id)!).push(n);
+    }
+    for (const [id, group] of byId) {
+      const set = kind === "speciality" ? { specialityId: id } : { hospitalId: id };
+      const res = await tx.update(meritAllocations).set(set).where(and(isNull(idCol), inArray(col, group))).returning({ r: meritAllocations.rowNo });
+      updated += res.length;
+    }
+  }
+  return { updated };
+}
+
 // ── Import (admin) ─────────────────────────────────────────────────────────────
 
 /**

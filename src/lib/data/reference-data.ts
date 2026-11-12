@@ -4,6 +4,7 @@ import { z } from "zod";
 import { assertCan, type Session } from "@/lib/auth/roles";
 import { UserFacingError } from "@/lib/errors";
 import { requireReason, writeAudit, type Tx } from "./shared";
+import { relinkMeritNames } from "./merit";
 import type { Database } from "@/lib/db/client";
 import {
   hospitals,
@@ -181,6 +182,7 @@ export async function saveLookup(
     const [prev] = await tx.select().from(table).where(eq(table.id, id)).limit(1);
     if (prev) await tx.update(table).set({ name, updatedAt: new Date() }).where(eq(table.id, id));
     else await tx.insert(table).values({ id, name });
+    if (input.kind === "hospitals" || input.kind === "specialities") await relinkMeritNames(tx);
     await writeAudit(tx, session.email, {
       action: prev ? "lookup.rename" : "lookup.create",
       entityType: input.kind,
@@ -248,15 +250,17 @@ export async function importSeatFile(
       })),
     );
     const after = { lines: rows.length, seats: rows.reduce((s, r) => s + r.seats, 0) };
+    // New lookups can name hospitals and specialities that earlier merit rounds could not link.
+    const relinked = (await relinkMeritNames(tx)).updated;
     await writeAudit(tx, session.email, {
       action: "seats.import_file",
       entityType: "induction_seats",
       entityId: `induction:${induction}`,
       before: before?.lines ? { lines: before.lines, seats: before.seats ?? 0 } : null,
-      after: { ...after, addedLookups, renames },
+      after: { ...after, addedLookups, renames, relinked },
       reason,
     });
-    return { ...after, addedLookups, renames, createdInduction: !ind };
+    return { ...after, addedLookups, renames, relinked, createdInduction: !ind };
   });
 }
 
