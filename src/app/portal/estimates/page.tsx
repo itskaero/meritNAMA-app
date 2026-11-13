@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
+import { BuiltOn } from "@/components/built-on";
+import { basisLabel } from "@/lib/ingest/workflow";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { AuroraStat } from "@/components/ui/aurora-header";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +104,7 @@ export default async function EstimatesPage({ searchParams }: { searchParams: Pr
       trail={[{ label: s.label }]}
       title={`Induction ${pick.induction} · estimated round ${pick.roundNo}`}
       description={`Published ${formatUtc(pick.publishedAt)} UTC. Simulated from the gazette, portal preferences and consent replies. The real list can differ.`}
-      status={<Badge tone="simulated" className="mx-2">Estimate · not official</Badge>}
+      status={<Badge tone="simulated" className="mx-2">Estimate{pick.basis ? ` · ${basisLabel(pick.basis)}` : ""} · not official</Badge>}
       aside={
         <div className="grid grid-cols-3 gap-6">
           <AuroraStat label="Allocations" value={(est?.rows.length ?? pick.placed ?? 0).toLocaleString("en-US")} />
@@ -111,6 +113,8 @@ export default async function EstimatesPage({ searchParams }: { searchParams: Pr
         </div>
       }
     >
+      <Card className="py-3 sm:py-3"><BuiltOn basis={pick.basis} /></Card>
+
       {pick.official ? (
         <Card className="border-amber/50">
           <p className="text-sm">PHF has published round {pick.roundNo}; this estimate is kept for comparison. <Link href={`/portal/history/${pick.induction}/rounds/${pick.roundNo}`} className="font-semibold text-signal hover:underline">Open the official list →</Link></p>

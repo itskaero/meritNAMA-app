@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { basisLabel, type Basis } from "@/lib/ingest/workflow";
 import { Badge } from "./ui/badge";
 import { Card, CardHeader } from "./ui/card";
 
-type Estimate = { id: string; induction: number; roundNo: number; publishedAt: Date; placed: number | null; official: boolean };
+type Estimate = { id: string; induction: number; roundNo: number; publishedAt: Date; placed: number | null; official: boolean; basis?: Basis | null };
 
 const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
@@ -33,7 +34,7 @@ export function EstimateListCard({ estimates, title = "Estimated merit lists", s
               <Link href={`/portal/history/${e.induction}/estimates/${e.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-amber/60 bg-[var(--mn-amber-soft)] px-4 py-3 hover:bg-hover">
                 <span>
                   <span className="block font-semibold text-heading">Induction {e.induction} · estimated round {e.roundNo}</span>
-                  <span className="block text-xs text-muted">Published {day(e.publishedAt)}{e.placed != null ? ` · ${e.placed.toLocaleString("en-US")} allocations` : ""}</span>
+                  <span className="block text-xs text-muted">Published {day(e.publishedAt)}{e.placed != null ? ` · ${e.placed.toLocaleString("en-US")} allocations` : ""}{e.basis ? ` · ${basisLabel(e.basis)}` : ""}</span>
                 </span>
                 <span aria-hidden className="text-amber">→</span>
               </Link>

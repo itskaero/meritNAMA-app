@@ -85,7 +85,7 @@ Tick as you go; commit after each step; push only when the user asks.
   - Left (3b): restyle Overview (both stages, video), Merit lists, Round, Hospital/Speciality, My chances, Chats, Community, Me, Sign in, public Landing (with job teaser `jobTeaser`), phone layouts; sidebar estimate card + user card.
 - **Admin + data pipeline (agreed 2026-11-13; mockups AdminToday, AdminData, Joining, Estimate "Built on"):**
   - [x] A1 File kinds as modules: `src/lib/ingest/kind.ts` (FileKind: fromPath/fromContents/missing/check/apply/stage/official), `kinds/*.ts`, `registry.ts`; datastore calls the registry; backups (`_bk`, `_old`, `_copy`) skipped.
-  - [ ] A2 Workflow: `src/lib/ingest/workflow.ts` (stages unofficial → verification → amendment → gazette → estimate → rounds → joining; official replaces unofficial; estimate records its "Built on" basis).
+  - [x] A2 Workflow: `src/lib/ingest/workflow.ts` (stages unofficial → verification → amendment → gazette → estimate → rounds → joining; official replaces unofficial; estimate records its "Built on" basis).
   - [ ] A3 New kinds: unofficial list as its own stage, schedule (PHF steps → Calendar/Overview/notification bar), revisions (→ Amendment corrections), joining status (email/phone/CNIC/job dropped). Source folders: `meritnama-rewrite/meritnama/data`, `meritnama-rewrite/inductions/<n>/{gazette,merit}`.
   - [ ] A4 Triggers in the worker: new layer → rebuild dataset → next estimate, unpublished, into Needs you; official round supersedes its estimate.
   - [ ] A5 Notification bar (`announcements`: automatic from schedule/rounds/estimates + team-posted, dismissible).

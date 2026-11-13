@@ -25,6 +25,7 @@ import {
 } from "@/lib/db/schema";
 import { effectiveCandidates, toCsv, type Correction } from "@/lib/domain/corrections";
 import { SIM_ROLE_PATTERNS, type SimRole } from "@/lib/ingest/sim-roles";
+import type { Basis } from "@/lib/ingest/workflow";
 import { compareRounds, groupKey, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary, type VerificationStep } from "@/lib/domain/sim-dataset";
 import { applicantResults, seatKey as resultSeatKey, type ListSeat } from "@/lib/domain/applicant-result";
@@ -298,6 +299,8 @@ export type RunSummary = {
   cascade?: CascadeStats & { consent: ConsentRoundSummary | null; carriedRejected: number; droppedOut?: number; trackBanned?: number; programmeBanned?: number };
   /** The rules exactly as applied (with the policy's bonus switches and caps). */
   resolved: ResolvedRules;
+  /** What the estimate was built on (unofficial list or gazette, verification, corrections, round and consent). */
+  basis?: Basis;
 };
 
 /** Queue a first-round run with the induction's current rules. Execute it with executeRun. */
@@ -527,6 +530,7 @@ export async function executeRun(db: Database, runId: string): Promise<void> {
     const ctx = marksContext({ specialtyGroups: await specialtyGroups(db, run.inductionId) });
     const { placements, summary, carry } =
       run.kind === "next_round" ? await simulateNextRound(db, run, rules, ctx) : { ...(await simulateFirstRound(db, run, rules, ctx)), carry: null };
+    summary.basis = await runBasis(db, run, summary);
     await db.transaction(async (tx) => {
       await tx.delete(simulationPlacements).where(eq(simulationPlacements.runId, runId));
       for (let i = 0; i < placements.length; i += 2000) await tx.insert(simulationPlacements).values(placements.slice(i, i + 2000));
@@ -539,6 +543,27 @@ export async function executeRun(db: Database, runId: string): Promise<void> {
 }
 
 type Run = typeof simulationRuns.$inferSelect;
+
+/** The layers a run used, read from its induction's dataset as it is now (recorded on the run). */
+async function runBasis(db: Db, run: Run, summary: RunSummary): Promise<Basis> {
+  const [ds] = await db.select({ sources: simDatasets.sources }).from(simDatasets).where(eq(simDatasets.inductionId, run.inductionId)).limit(1);
+  const roles = ((ds?.sources ?? []) as { role: string }[]).map((x) => x.role);
+  const [v] = await db.select({
+    verified: sql<number>`count(*) filter (where ${simCandidates.verification}::jsonb @> '[{"type":131}]')::int`,
+    amended: sql<number>`count(*) filter (where ${simCandidates.verification}::jsonb @> '[{"type":132}]')::int`,
+  }).from(simCandidates).where(eq(simCandidates.inductionId, run.inductionId));
+  const [c] = await db.select({ n: sql<number>`count(*)::int` }).from(candidateCorrections)
+    .where(and(eq(candidateCorrections.inductionId, run.inductionId), isNull(candidateCorrections.revokedAt)));
+  return {
+    unofficialList: roles.some((r) => r === "candidates" || r === "marks" || r === "preferences"),
+    gazette: roles.includes("gazette"),
+    verified: v?.verified ?? 0,
+    amended: v?.amended ?? 0,
+    corrections: c?.n ?? 0,
+    fromRound: run.kind === "next_round" ? run.fromRound : null,
+    consent: run.kind === "next_round" ? (summary.consentSource ?? "official") : null,
+  };
+}
 type Placement = typeof simulationPlacements.$inferInsert;
 const toAllocation = (p: Placement): Allocation => ({ applicantId: p.applicantId, program: p.program, quota: p.quota, speciality: p.speciality, hospital: p.hospital, mark: p.mark });
 
@@ -816,7 +841,8 @@ export async function publishedEstimates(db: Database, session: Session | null, 
   return rows.map((r) => {
     const roundNo = runRoundNo(r);
     const placed = (r.summary as RunSummary | null)?.placed ?? null;
-    return { id: r.id, induction: r.inductionId, roundNo, publishedAt: r.publishedAt!, placed, official: official.some((o) => o.inductionId === r.inductionId && o.roundNo === roundNo) };
+    const basis = (r.summary as RunSummary | null)?.basis ?? null;
+    return { id: r.id, induction: r.inductionId, roundNo, publishedAt: r.publishedAt!, placed, basis, official: official.some((o) => o.inductionId === r.inductionId && o.roundNo === roundNo) };
   });
 }
 

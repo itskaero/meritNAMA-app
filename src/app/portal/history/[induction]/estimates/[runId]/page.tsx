@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
+import { BuiltOn } from "@/components/built-on";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -78,6 +79,8 @@ export default async function EstimatePage({ params, searchParams }: {
           This estimate is kept for comparison. <Link href={`/portal/history/${induction}/rounds/${est.roundNo}`} className="font-semibold text-signal hover:underline">Open the official round {est.roundNo} →</Link>
         </Notice>
       ) : null}
+
+      <BuiltOn basis={est.run.summary?.basis} />
 
       <div className="flex flex-wrap gap-2">
         <ButtonLink href={`/portal/simulation?i=${induction}&base=${encodeURIComponent(`run:${est.run.id}`)}`} size="sm">What if… change consent on this list</ButtonLink>
