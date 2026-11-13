@@ -70,7 +70,7 @@ export default async function AdminJobsPage() {
 
       <Card>
         <CardHeader title="Adverts" description="Newest first. Hide one the doctors-only filter let through; pin one to keep it at the top (pinned adverts are never removed)." />
-        {list.length === 0 ? <EmptyState title="No adverts yet">Run Sync now, or wait for the worker's next check.</EmptyState> : (
+        {list.length === 0 ? <EmptyState title="No adverts yet">Run Sync now, or wait for the worker&rsquo;s next check.</EmptyState> : (
           <ul className="divide-y divide-line">
             {list.map((j) => (
               <li key={j.id} className="flex flex-wrap items-center gap-3 py-2.5">
