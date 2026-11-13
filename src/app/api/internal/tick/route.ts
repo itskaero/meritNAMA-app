@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { checkDatabase, getDb } from "@/lib/db/client";
 import { autoImportDataFolder } from "@/lib/data/datastore";
+import { jobsSyncIfDue } from "@/lib/data/jobs";
 import { failInterruptedRuns, processQueuedRuns } from "@/lib/data/simulation";
 import { syncIfDue } from "@/lib/data/sync";
 import { retentionIfDue } from "@/lib/data/settings";
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
  *   - start simulation runs that were queued but never started (e.g. after a restart),
  *   - mark runs that died mid-way as failed, so they can be run again,
  *   - apply data retention once a day, without waiting for a staff visit,
+ *   - refresh doctor job adverts every 6 hours (src/lib/data/jobs.ts),
  *   - sync the data repository (at most hourly, when one is set), then rescan the data folder
  *     and publish new files when auto-publish is on. Replacements are never applied here.
  * Off unless INTERNAL_TOKEN is set. Requests that came through a proxy or tunnel are
@@ -37,6 +39,7 @@ export async function POST(req: Request) {
   await failInterruptedRuns(db).catch((e) => console.error("worker: interrupted runs", e));
   const synced = await syncIfDue(db).catch((e) => { console.error("worker: data sync", e); return false; });
   const data = await autoImportDataFolder(db).catch((e) => { console.error("worker: data folder", e); return null; });
+  const jobsRan = await jobsSyncIfDue(db).catch((e) => { console.error("worker: jobs", e); return false; });
   const retention = await retentionIfDue(db).catch((e) => { console.error("worker: retention", e); return false; });
-  return Response.json({ ok: true, startedRuns: started, retentionRan: retention, dataSynced: synced, dataApplied: data?.applied ?? 0 }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ ok: true, startedRuns: started, retentionRan: retention, dataSynced: synced, jobsSynced: jobsRan, dataApplied: data?.applied ?? 0 }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html ng-app="pshd">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <title> Health and Population Department</title>
+    <link rel="icon" type="image/png" href="/Content/PshdNC/images/logoBrow.png?v=2" />
+    <link href="/Content/PshdNC/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/Content/PshdNC/css/jquery-ui.min.css" rel="stylesheet" type="text/css">
+    <link href="/Content/PshdNC/css/animate.css" rel="stylesheet" type="text/css">
+    <link href="/Content/PshdNC/css/css-plugin-collections.css?v=3" rel="stylesheet" />
+    <link href="/Content/PshdNC/css/menuzord-skins/menuzord-boxed.css?v=2" rel="stylesheet" />
+    <link href="/Content/PshdNC/css/style-main.css?v=5" rel="stylesheet" type="text/css">
+    <link href="/Content/PshdNC/css/colors/theme-skin-green.css?v=1.1" rel="stylesheet" type="text/css">
+    <link href="/Content/PshdNC/css/preloader.css?v=1.2" rel="stylesheet" type="text/css">
+    <link href="/Content/PshdNC/css/custom-bootstrap-margin-padding.css" rel="stylesheet" type="text/css">
+    <link href="/Content/PshdNC/css/responsive.css" rel="stylesheet" type="text/css">
+    <link href="/Content/PshdNC/js/revolution-slider/css/settings.css" rel="stylesheet" type="text/css" />
+    <link href="/Content/PshdNC/js/revolution-slider/css/layers.css" rel="stylesheet" type="text/css" />
+    <link href="/Content/PshdNC/js/revolution-slider/css/navigation.css" rel="stylesheet" type="text/css" />
+    
+    <style>
+        body {
+            height: auto !important;
+        }
+
+        .boxshadow {
+            box-shadow: 0 0 0 0 !important;
+        }
+        .pagination > .active > a {
+            background-color: #72a230 !important;
+            border-color: #72a230 !important;
+            color: white !important;
+        }
+
+        .pagination-lg > li > a {
+            color: black !important;
+        }
+        #myTab2 a {
+            color: #000;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+       .active>a {
+            color: #fff !important;
+        }
+
+        @media only screen and (max-width: 760px), (min-device-width: 68px) and (max-device-width: 624px) {
+            /* Force table to not be like tables anymore */
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+                /* Hide table headers (but not display: none;, for accessibility) */
+                thead tr {
+                    position: absolute;
+                    top: -9999px;
+                    left: -9999px;
+                }
+
+            td {
+                padding-top: 35px !important;
+                position: relative;
+                padding-left: 50%;
+            }
+
+                td:before {
+                    position: absolute;
+                    top: 6px;
+                    left: 6px;
+                    width: 45%;
+                    padding-right: 10px;
+                    white-space: nowrap;
+                }
+
+                td:nth-of-type(1):before {
+                    content: "SR #";
+                }
+
+                td:nth-of-type(2):before {
+                    content: "Title";
+                }
+
+                td:nth-of-type(3):before {
+                    content: "Date/Type";
+                }
+
+                td:nth-of-type(3):before {
+                    content: "File";
+                }
+        }
+    </style>
+    <link href="/Content/CSS/table.css?v=1.1" rel="stylesheet" />
+
+
+    <script src="/Content/js/angular.js"></script>
+    <link href="/Content/js/angular-material.min.css" rel="stylesheet" />
+    <script src="/Content/js/angular-sanitize.js"></script>
+    <script>
+        var app = angular.module("pshd", []);
+    </script>
+
+    <style>
+        /* Desktop only – do NOT affect mobile */
+        @media (min-width: 992px) {
+
+            .menuzord {
+                display: flex;
+                align-items: center;
+            }
+            /* Center Home → Media Room */
+            .menu-center {
+                display: flex;
+                justify-content: center;
+                flex: 1;
+            }
+            /* Keep right items on right */
+            .menu-right {
+                margin-left: auto;
+                display: flex;
+                align-items: center;
+            }
+
+                .menu-right li {
+                    margin-left: 15px;
+                }
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <div id="wrapper">
+        <!-- preloader -->
+        <div id="preloader">
+            <div id="spinner">
+                <img src="/Content/PshdNC/images/loadernew.gif" alt="">
+            </div>
+        </div>
+        <header id="header" class="header">
+
+            <!--<div class="header-top sm-text-center bg-theme-colored">
+
+                <div class="container">
+
+                    <div class="row">-->
+            
+            <!--<div class="col-md-5">
+
+                <nav style="margin-left:16px;">
+
+                    <ul class="list-inline sm-text-center text-left flip mt-5 IMPFONT">
+                        <li class="text-white">
+                            1-Birdwood Road, Lahore
+                        </li>
+                        <li class="text-white">|</li>
+                        <li class="text-white">
+
+                            <a class="text-white" href="/Home/HL1033"> Dial 1033 Health Helpline</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+
+
+
+            <div class="col-md-7 text-right flip sm-text-center" style="margin-top:3px;">
+                <div class="widget m-0">
+
+                    <ul class="list-inline text-right sm-text-center IMPFONT">-->
+            
+
+            <!--<li class="pl-10 pr-10 mb-0 pb-0">
+                                        <a class="text-white" href="/Home/FmSehatZindagi">FMSehatZindagi</a>
+
+                                    </li>
+
+                                    <li class="text-white">|</li>
+                                    <li class="pl-10 pr-10 mb-0 pb-0">
+                                        <a class="text-white" href="/Home/RTI">RTI</a>
+
+                                    </li>
+                                    <li class="text-white">|</li>
+                                    <li class="pl-10 pr-10 mb-0 pb-0">
+                                        <a class="text-white" href="/Home/InfoNotifications">INFO</a>
+
+                                    </li>
+                                    <li class="text-white">|</li>
+                                    <li class="mb-0 pb-0"><a href="https://www.facebook.com/PSHDepartment/" target="_blank" class="text-white"><img src="~/Content/PshdNC/css/lightbox/fb-256x256.png" height="30" /></a></li>
+                                    <li class="text-white">|</li>
+                                    <li class="mb-0 pb-0"><a href="https://twitter.com/PSHDept/" target="_blank" class="text-white"><img src="~/Content/PshdNC/css/lightbox/x-256x256.png" height="30" /></a></li>
+                                    <li class="text-white">|</li>
+                                    <li class="mb-0 pb-0"><a href="https://www.instagram.com/primaryandsecondaryh/" target="_blank" class="text-white"><img src="~/Content/PshdNC/css/lightbox/insta--256x256.png" height="30" /></a></li>
+
+                                </ul>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>-->
+
+
+            <div class="header-nav">
+                <div class="header-nav-wrapper navbar-scrolltofixed bg-green-new">
+                    <div class="header-nav-wrapper">
+                        <div class="container-fluid">
+                            <nav id="menuzord-right" class="menuzord orange no-bg">
+                                <a style="" class="menuzord-brand pull-left flip" href="/">
+                                    <img src="/Content/images/HealthandPopulation.svg" height="40" alt="">
+                                </a>
+
+                                <ul class="menuzord-menu menu-center">
+
+                                    <li class="">
+                                        <a href="/"><span>Home</span></a>
+                                    </li>
+                                    
+                                    <li class="">
+                                        <a href="/Home/about"><span>About</span></a>
+                                    </li>
+                                    <li>
+                                        <a href="#">Administrative</a>
+                                        <ul class="dropdown">
+                                            <li class="">
+
+                                                <a href="/Home/Contact"><span><i class="fa fa-phone-square"></i>&nbsp;&nbsp;&nbsp;Contact&nbsp;Us</span></a>
+
+                                            </li>
+
+                                            <li class="active">
+                                                <a href="/Home/Jobs"><span><i class="fa fa-file-pdf-o"></i>&nbsp;&nbsp;&nbsp;JOBS</span></a>
+                                            </li>
+                                            <li class="">
+                                                <a href="/Home/Notifications"><span><i class="fa fa-bell"></i>&nbsp;&nbsp;&nbsp;Notifications</span></a>
+                                            </li>
+
+                                            <li class="">
+                                                <a href="/Home/SouthPunjabOrder"><span><i class="fa fa-file-text-o"></i>&nbsp;&nbsp;&nbsp;SouthPunjab&nbsp;Order</span></a>
+                                            </li>
+                                            
+                                            <li class="">
+                                                <a href="/Home/Tenders"><span class="text-middle"><i class="fa fa-file-o"></i>&nbsp;&nbsp;&nbsp;Tenders</span></a>
+                                            </li>
+
+
+                                        </ul>
+                                    </li>
+
+                                    <li>
+                                        <a href="#">Orders</a>
+                                        <ul class="dropdown">
+
+                                            <li class="">
+                                                <a href="/Home/SystemOrders"><span><i class="fa fa-file-text-o"></i>&nbsp;&nbsp;&nbsp;System Orders</span></a>
+                                            </li>
+                                            <li class="">
+                                                <a href="/Home/Orders"><span><i class="fa fa-file-text-o"></i>&nbsp;&nbsp;&nbsp;Orders (OldData)</span></a>
+                                            </li>
+
+                                        </ul>
+                                    </li>
+
+
+                                    
+                                    <li>
+                                        <a href="#">Wings</a>
+                                        <ul class="dropdown">
+                                            <li><a href="#"><i class="fa fa-building"></i>&nbsp;&nbsp;&nbsp;Administrative</a></li>
+                                            <li><a href="/Wings/Development"><i class="fa fa-building-o"></i>&nbsp;&nbsp;&nbsp;Development</a></li>
+
+                                            <li><a href="#"><i class="fa fa-building"></i>&nbsp;&nbsp;&nbsp;General</a></li>
+                                            <li>
+                                                <a href="/Home/DrugControl"><i class="fa fa-building"></i>&nbsp;&nbsp;&nbsp;DrugControl</a>
+
+                                                
+                                            </li>
+
+
+
+
+
+
+                                        </ul>
+                                    </li>
+
+
+
+
+
+
+
+                                    <li>
+                                        <a href="javascript:void(0)">References</a>
+                                        <div class="megamenu">
+                                            <div class="megamenu-row">
+
+                                                <div class="col4">
+                                                    <ul class="list-unstyled list-dashed">
+                                                        <li><h4>Info Desk</h4></li>
+                                                        <li><a href="/Home/Downloads"><i class="fa fa-download"></i>&nbsp;&nbsp;&nbsp;Downloads </a></li>
+                                                        <li><a href="/Home/Functions"><i class="fa fa-hand-pointer-o"></i>&nbsp;&nbsp;&nbsp;Functions </a></li>
+                                                        <li><a href="/Home/News"><i class="fa fa-newspaper-o"></i>&nbsp;&nbsp;&nbsp;News </a></li>
+
+                                                        <li><a href="/Home/ProgressReports"><i class="fa fa-line-chart"></i>&nbsp;&nbsp;&nbsp;Progress Reports</a></li>
+                                                        <li><a href="/Home/Policies"><i class="fa fa-file"></i>&nbsp;&nbsp;&nbsp;Policies</a></li>
+                                                        <li><a href="/Home/RulesRegulations"><i class="fa fa-file"></i>&nbsp;&nbsp;&nbsp;Rules &amp;Regulations</a> </li>
+                                                        <li><a href="/Home/Services"><i class="fa fa-cog"></i>&nbsp;&nbsp;&nbsp;Services </a></li>
+                                                        <li><a href="/Home/Sops_guidelines"><i class="fa fa-hand-o-right"></i>&nbsp;&nbsp;&nbsp;SOPs / Guidelines</a></li>
+                                                        <li><a href="/Home/Senioritylists"><i class="fa fa-file-text-o"></i>&nbsp;&nbsp;&nbsp;Seniority lists</a></li>
+                                                        
+
+
+                                                    </ul>
+                                                </div>
+                                                <div class="col4">
+
+
+                                                    <ul class="list-unstyled list-dashed">
+                                                        <li><a href="/Home/HealthFacilities"><h4> Health  Facilities</h4></a></li>
+
+                                                        <li><a href="/Home/DHQ"><i class="fa fa-building-o"></i>&nbsp;&nbsp;&nbsp;District Headquarter Hospital </a></li>
+                                                        <li><a href="/Home/THQ"><i class="fa fa-building-o"></i>&nbsp;&nbsp;&nbsp;Tehsil Headquarter Hospital </a></li>
+
+                                                        <li><a href="/Home/MNH" style="color:#0b9553;font-weight:600"><i class="fa fa-building-o"></i>&nbsp;&nbsp;&nbsp;Maryam Nawaz Hospital</a></li>
+
+                                                        <li><a href="/Home/MNHC" style="color:#0b9553;font-weight:600"><i class="fa fa-building-o"></i>&nbsp;&nbsp;&nbsp;Maryam Nawaz Health Clinic</a></li>
+
+                                                        <li><a href="/Home/RHC"><i class="fa fa-building-o"></i>&nbsp;&nbsp;&nbsp;Rural Health Center</a></li>
+                                                        <li><a href="/Home/BHU"><i class="fa fa-building-o"></i>&nbsp;&nbsp;&nbsp;Basic Health Unit</a></li>
+                                                        <li><a href="/Home/Dispensaries"><i class="fa fa-building-o"></i>&nbsp;&nbsp;&nbsp;Dispensaries</a></li>
+
+
+
+
+                                                    </ul>
+                                                </div>
+                                                
+                                                <div class="col4">
+
+                                                    <ul class="list-unstyled list-dashed">
+
+                                                        <li><h4>Media&nbsp;Room</h4></li>
+
+                                                        <li><a href="/Home/FmSehatZindagi"><i class="fa fa-microphone"></i>&nbsp;&nbsp;&nbsp;FMSehatZindagi</a></li>
+
+                                                        
+
+                                                        <li><a href="/Home/SocialCorner"><i class="fa fa-user"></i>&nbsp;&nbsp;&nbsp;Social Corner</a></li>
+
+                                                    </ul>
+
+
+
+                                                    <ul class="list-unstyled list-dashed">
+                                                        <li><h4>Quick Links</h4></li>
+
+                                                        <li>
+                                                            <a href="/Home/HL1033"><i class="fa fa-bell"></i>&nbsp;&nbsp;&nbsp;1033</a>
+
+                                                        </li>
+                                                        <li>
+                                                            <a href="/Home/InfoNotifications"><i class="fa fa-info"></i>&nbsp;&nbsp;&nbsp;INFO</a>
+
+                                                        </li>
+
+                                                        <li>
+                                                            <a href="/Home/RTI"><i class="fa fa-file-text"></i>&nbsp;&nbsp;&nbsp;RTI</a>
+
+                                                        </li>
+
+
+
+                                                        
+
+                                                        <li><a href="http://116.58.20.67:5544/resources/" target="_blank"><i class="fa fa-file"></i>&nbsp;&nbsp;&nbsp;Resource Center</a></li>
+
+
+
+
+                                                    </ul>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+
+
+                                </ul>
+
+
+                                <ul class="menuzord-menu menu-right">
+
+                                    <li>
+                                        <a href="/Home/RTI">
+                                            <img src="/Content/images/rti.svg" height="25">
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a href="/Home/FmSehatZindagi">
+                                            <img src="/Content/images/fm.svg" height="25">
+                                        </a>
+                                    </li>
+
+                                    <li>
+                                        <a href="/Home/HL1033"
+                                           class="btn btn-border-white bg-green-new btn-flat btn-xl">
+                                            1033 HEALTH HELPLINE
+                                        </a>
+                                    </li>
+                                </ul>
+
+
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Start main-content -->
+        <div class="main-content">
+
+            
+
+
+<section class="inner-header divider parallax layer-overlay overlay-white-1" data-bg-img="/Content/PshdNC/images/bg/Notify.jpg">
+    <div class="container pt-60 pb-60">
+        <div class="section-content">
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <h2 class="title">career opportunities</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<br />
+<div class="row">
+    <div class="col-md-9">
+
+    </div>
+
+    <div class="col-md-3">
+
+        <a href="https://jobs.pshealthpunjab.gov.pk/" class="button" target="_blank" style="color:white">Apply Online</a>
+
+    </div>
+</div>
+<div ng-controller="Jobs">
+    <section>
+        <div class="container pt-20 pb-20">
+            <div class="section-content">
+
+                <div class="row">
+                    <div class="col-md-12 pt-20">
+                        <ul id="myTab2" class="nav nav-pills boot-tabs">
+                            <li class="active"><a href="#Active" data-toggle="tab">Active</a></li>
+                            <li><a href="#InActive" data-toggle="tab">InActive</a></li>
+                            <li><a href="#Information" data-toggle="tab">Information</a></li>
+                        </ul>
+                        <div id="myTabContent2" class="tab-content">
+                            <div class="tab-pane fade in active" id="Active">
+
+
+
+
+                                    <h3 style="text-align:center">Active</h3>
+                                    <table class="table table-bordered">
+
+
+                                        <tr>
+                                            <th>SR#</th>
+                                            <th>Title</th>
+                                            <th>Date/Type</th>
+                                            <th> File </th>
+
+
+
+                                        </tr>
+
+
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">1</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;"
+                                                       href="/Upload/Jobs/stkcxr2d.24u20261107.pdf" download>CM Punjab initiative-Career opportunities in Hospitals of Punjab(on special package) -Medical officer/Women Medical Officer ( General Surgery, General Medicines, Paeds, Gunae &amp; Obs, Radiology, Orthopedic, Anesthesia, Neuro Surgery) DHQ Hospital Sheikhupura, Registered Nurse 4 Tehsil Headquarter hospitals-Close date-26-11-2026 11:59 PM </a>
+
+                                                </td>
+
+                                                    <td><p class="HnewsDetail">26/11/2026</p></td>
+                                            <td>
+                                                <a title="Click to Download!" class="button" href="/Upload/Jobs/stkcxr2d.24u20261107.pdf" download>Download</a>
+
+                                            
+
+                                            </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">2</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;"
+                                                       href="/Upload/Jobs/lavsfxs2.4tp20250116.pdf" download>Consultant on Call for Selected RHC (IRMNCH)</a>
+
+                                                </td>
+
+                                                    <td><p class="HnewsDetail">Continuous Process</p></td>
+                                            <td>
+                                                <a title="Click to Download!" class="button" href="/Upload/Jobs/lavsfxs2.4tp20250116.pdf" download>Download</a>
+
+                                            
+
+                                            </td>
+                                            </tr>
+                                    </table>
+
+
+                            </div>
+                            <div class="tab-pane fade" id="InActive" ng-init="GetDetails()">
+                                <h3 style="text-align:center">InActive</h3>
+                                <input type="text" ng-model="Pagination.Search" ng-change="PageChangeItem()" class="form-control" placeholder="Search . . ." />
+                                <br />
+                                <div class="table-responsive" ng-if="Company.length >0">
+                                    <table class="table table-bordered">
+
+
+                                        <tr>
+
+                                            <th>SR#</th>
+                                            <th>Title</th>
+                                            <th>Closing Date</th>
+
+                                            <th>File</th>
+
+                                        </tr>
+
+
+
+                                        <tr ng-repeat="c in Company | filter : Search">
+                                            <td scope="row">
+                                                {{((Pagination.Page - 1) * Pagination.PageSize) + ($index+1)}}
+                                            </td>
+
+                                            <td>
+                                                <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;"
+                                                   ng-href="/Upload/Jobs/{{c.data}}" download>{{c.title}}</a>
+
+
+                                            </td>
+
+
+                                            <td>
+                                                <p class="HnewsDetail" ng-if="c.DateInfo=='Continuous Process'" style="color:#ff0000">Continuous Process closed</p>
+                                                <p class="HnewsDetail" ng-if="c.Date!='01/01/0001'">{{c.Date}}</p>
+                                                <p class="HnewsDetail" ng-if="c.Date=='01/01/0001' && c.DateInfo!='Continuous Process'" style="color:#ff0000">In Active</p>
+                                            </td>
+
+                                            <td>
+                                                <a title="Click to Download!" class="button" ng-href="/Upload/Jobs/{{c.data}}" download>Download</a>
+
+                                            </td>
+
+
+
+                                        </tr>
+
+                                    </table>
+                                    <ul uib-pagination max-size="10" boundary-link-numbers="true" rotate="false" total-items="Pagination.TotalRecords" ng-model="Pagination.Page" items-per-page="Pagination.PageSize" ng-change="PageChangeItem()" class="pagination-lg"></ul>
+                                </div>
+                                <div class="alert alert-warning" ng-if="Company.length==0">
+                                    <h4>Data Not Found</h4>
+                                </div>
+                            </div>
+                                <div class="tab-pane fade" id="Information">
+
+                                    <h3 style="text-align:center">Information</h3>
+
+                                    <table class="table table-bordered">
+
+
+                                        <tr>
+                                            <th>SR#</th>
+                                            <th>Title</th>
+                                            <th>Date/Type</th>
+                                            <th>File</th>
+
+                                        </tr>
+
+
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">1</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/gcmjwrft.mhl20260409.jpeg" download>Punjab Health Department Hiring: Medical Officer Positions Under Provincial Quota</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">15/04/2026</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/gcmjwrft.mhl20260409.jpeg" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">2</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/dsacyorc.x3020260211.pdf" download>MOs/WMOs Hiring in DHQs/THQs on Special Pay Pacage Health &amp; Population Department</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">10/02/2026</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/dsacyorc.x3020260211.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">3</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/vj3ouevx.fa420250826.pdf" download>Merit List of Maryam Nawaz Hospital (MNH) Phase-II</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">19/08/2025</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/vj3ouevx.fa420250826.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">4</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/3qvhozyr.ru320250607.pdf" download>List of Allocation (Maryam Nawaz Health Clinic) phase -I</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">06/06/2025</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/3qvhozyr.ru320250607.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">5</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/dydrqqir.5fw20250516.pdf" download>List of Allocation (Maryam Nawaz Health Clinic) phase -II</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">16/05/2025</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/dydrqqir.5fw20250516.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">6</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/rh4gdrhj.tzg20230504.xlsx" download> Interview for the post of FCT under PHCIP is scheduled on 08.05.2023 (Monday) at 10:30 am at the office of the District Coordinator IRMNCH &amp; NP office at District Health Authority.</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">08/05/2023</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/rh4gdrhj.tzg20230504.xlsx" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">7</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/txwdlchc.kcy20230504.xlsx" download> Interview for the post of LHV under PHCIP is scheduled on 08.05.2023 (Monday) at 10:30 am at the office of the Program Manager PHCIP Health Component, 05-Montgomery Road, Lahore</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">08/05/2023</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/txwdlchc.kcy20230504.xlsx" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">8</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/5jwpamwi.53020230306.pdf" download> Interview Notice Female Caretaker (FCT) Post under PHCIP Health Component</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">08/03/2023</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/5jwpamwi.53020230306.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">9</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/jvpmjep1.j2l20230302.pdf" download> Interviews Schedule for the Post of Female Care Takers at 07 Districts (Bahawalnagar, Bahawalpur, Muzaffargarh, Layyah, Bhakkar, Khushab &amp; Rahim Yar Khan) Under Punjab Human Capital Investment Project (Health Component)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">08/03/2023</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/jvpmjep1.j2l20230302.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">10</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/fmth2skd.m3x20230213.pdf" download> Interviews Schedule for the Post of the Female Caretaker under PHCIP February 2023</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">28/02/2023</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/fmth2skd.m3x20230213.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">11</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/ml50agsq.nhd20230130.pdf" download>Postponement of Interviews for the Service Delivery Staff (Paediatricians, MOs / WMOs, Charge Nurses, Female Caretakers and Walk-in Interviews of LHVS) Under Punjab Human Capital Investment Project</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">28/02/2023</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/ml50agsq.nhd20230130.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">12</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/brk3wwdg.cia20220815.pdf" download>Corrigendum dated 07.08.2022 vide IPL number 8054- Vacant Post of Lady Health Visitors (LHVs) Under Punjab Human Capital Investment Project (PHCIP) Directorate of IRMNCH &amp; NP, 5-Montgomery Road Lahore</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">15/08/2022</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/brk3wwdg.cia20220815.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">13</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/hmkcmm41.qqe20220614.xlsx" download> walk in interviews scheduled on 15 and 16 Jun 2022 under IRMNCH &amp;NP and CMSRP  </a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">16/06/2022</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/hmkcmm41.qqe20220614.xlsx" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">14</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/4q1urd2r.tnf20220407.xlsx" download>Selected Candidates List of Charge Nurses under CMSRP</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Continuous Process</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/4q1urd2r.tnf20220407.xlsx" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">15</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/owimybtr.mww20220407.xlsx" download>Selected Candidates List of LHVs under IRMNCH &amp; NP</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Continuous Process</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/owimybtr.mww20220407.xlsx" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">16</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/mktm3mg1.uqp20220318.pdf" download> Selected Candidates List of MO-WMO under PMHI</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Continuous Process</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/mktm3mg1.uqp20220318.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">17</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/xt5pi0d1.vgl20220318.pdf" download>Selected Candidates List of LHVs under PMHI</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Continuous Process</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/xt5pi0d1.vgl20220318.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">18</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/gu2ja2ni.iu220220318.pdf" download>Selected Candidates List of Dispensers under PMHI</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Continuous Process</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/gu2ja2ni.iu220220318.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">19</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/uotgzkfi.pzr20220318.pdf" download>Selected Candidates List of Child Specialist under PMHI</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Continuous Process</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/uotgzkfi.pzr20220318.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">20</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/f2jqmlfw.5u220220318.pdf" download>Selected Candidates List of Charge Nurse under PMHI</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Continuous Process</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/f2jqmlfw.5u220220318.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">21</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/gy0nwxf3.mix20220121.pdf" download> Candidate List for the Interviews of Sanitary Workers Under IRMNCH/PMHI – ( Interview date 24th  Jan 2022)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">24/01/2022</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/gy0nwxf3.mix20220121.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">22</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Walkin interviews MOs WMOs udate 20-1-2017.jpg" download>Career Opportunities for Medical Officers &amp; Woman Medical Officers in 25 Districts &amp; 100+ Tehsil Headquarter Hospitals of Punjab</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Walk-In Interviews</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Walkin interviews MOs WMOs udate 20-1-2017.jpg" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">23</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Specialists Needed udate 20-1-17.jpg" download>Career Opportunities for Specialist (specialist cadre doctor) (BS-18) on Ad-hoc basis</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Register for Walk-In Interviews</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Specialists Needed udate 20-1-17.jpg" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">24</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Walk in interviews for (Architecture, Electrical engineers) udate 1-1-2017.jpg" download>Walk in interviews for (Architecture, Electrical engineers)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Walk-In Interviews</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Walk in interviews for (Architecture, Electrical engineers) udate 1-1-2017.jpg" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">25</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/charges nurses (Bs-16).compressed  udate 14-12-2016.pdf" download>Order Of Charge Nurses (BS-16)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">14/12/2016</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/charges nurses (Bs-16).compressed  udate 14-12-2016.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">26</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Request For Further Posting udate 15-11-2016.pdf" download>Request For Further Posting </a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">15/11/2016</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Request For Further Posting udate 15-11-2016.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">27</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Master file of Consultant postings and incentives (September).pdf" download>Master file of Consultant postings and incentives (September)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Information</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Master file of Consultant postings and incentives (September).pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">28</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Vacancies (MO +WMO) - 10-6-2016.jpg" download>Career Opportunities for Medical Officers &amp; Woman Medical Officers in 25 Districts &amp; 100+ Tehsil Headquarter Hospitals of Punjab</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Walk-In Interviews</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Vacancies (MO +WMO) - 10-6-2016.jpg" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">29</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Vacancies (DHQS + THQs) - 10-6-2016.jpg" download>Career Opportunities for Specialists in 25 Districts &amp; 100+ Tehsil Headquarter Hospitals  of Punjab   </a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Walk-In Interviews</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Vacancies (DHQS + THQs) - 10-6-2016.jpg" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">30</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Vacancies ad - 10-6-2016.jpg" download>Career Opportunities for Specialist (specialist cadre doctor) (BS-18) on Ad-hoc basis </a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Walk-In Interviews</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Vacancies ad - 10-6-2016.jpg" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">31</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Scholoarship PHD 10-3-2016.jpg" download>M.Phil/PHD  Scholarships by Punjab AIDS Control Program </a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Information</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Scholoarship PHD 10-3-2016.jpg" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">32</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Rejected Candidates.pdf" download>Rejected Candidates for the Post of Support Coordinator (Primary &amp; Secondary Healthcare Department)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Information</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Rejected Candidates.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">33</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Selected Candidates.pdf" download>Selected Candidates for the Post of Support Coordinator (Primary &amp; Secondary Healthcare Department)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Information</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Selected Candidates.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">34</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Job Opportunities - Walk in Interviews.pdf" download>Job Opportunities - Walk in Interviews for Civil Engineer, Architecht, Surveyor and Draftsman</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Walk-In Interviews</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Job Opportunities - Walk in Interviews.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">35</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/APPLICATION FORMAT FOR JOB_0.pdf" download>Job Application Form for Health Information &amp; Service Delivery Unit (HISDU)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Information</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/APPLICATION FORMAT FOR JOB_0.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">36</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Final Result DTL.pdf" download>List of Final Selected Candidates of Drug Testing Laboratory (DTL) Lahore</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Information</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Final Result DTL.pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                            <tr>
+
+                                                <td>
+                                                    <b style="color:black">37</b>
+                                                </td>
+                                                <td>
+                                                    <a title="Click to Download!" style="text-align:left !important;font-weight:bold;color:black;font-size:13px;" href="/Upload/Jobs/Final List of Candidates (Pharmacist  Scrutiny Officer).pdf" download>Final List of Selected Candidates (Pharmacist  Scrutiny Officer)</a>
+                                                </td>
+                                                    <td><p class="HnewsDetail">Information</p></td>
+                                                <td>
+                                                    <a title="Click to Download!" class="button" href="/Upload/Jobs/Final List of Candidates (Pharmacist  Scrutiny Officer).pdf" download>Download</a>
+                                                </td>
+                                            </tr>
+                                    </table>
+
+
+                                </div>
+
+                            </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+
+
+        </div>
+
+
+
+        <footer id="footer" class="footer bg-black-222" style="margin-bottom:0px !important">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="widget dark">
+
+
+                            <ul class="list-inline mt-5">
+                                
+                                <li class="m-0 pl-10 pr-10">
+                                    <img src="/Content/PshdNC/css/lightbox/footerlocation.png"> &nbsp;<a class="text-white" href="#">1-Birdwood Road, Lahore</a>
+                                </li>
+                            </ul>
+
+                        </div>
+
+                    </div>
+                    <div class="col-md-8">
+
+                        <div style="text-align:center">
+                            <ul class="list-inline">
+                                <li><a class="text-white" href="/Home/Orders">Orders</a></li>
+                                <li class="text-white">|</li>
+                                <li><a class="text-white" href="/Home/Notifications">Notifications</a></li>
+                                <li class="text-white">|</li>
+                                <li><a class="text-white" href="/Home/Downloads">Downloads</a></li>
+                                <li class="text-white">|</li>
+                                <li><a class="text-white" href="/Home/InfoNotifications">Info</a></li>
+                                <li class="text-white">|</li>
+                                <li><a class="text-white" href="/Home/Services">Services</a></li>
+
+                                <li class="text-white">|</li>
+                                <li><a class="text-white" href="/Home/Contact">Contact us</a></li>
+
+
+                            </ul>
+                        </div>
+
+
+                        <p class="text-black-777 font-weight-500; text-center" style="color:white; margin-top:10px;">Copyright © 2016-2026 Health Information Service Delivery Unit (HISDU) Health and Population Department</p>
+
+
+                    </div>
+
+                    <div class="col-md-2">
+                        <ul class="list-inline text-right">
+
+
+                            <li>
+                                <a href="https://www.facebook.com/PSHDepartment/" target="_blank" class="text-white">
+
+
+                                    <img src="/Content/PshdNC/css/lightbox/fb-256x256.png" height="40" />
+
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://twitter.com/PSHDept/" target="_blank" class="text-white">
+
+                                    <img src="/Content/PshdNC/css/lightbox/x-256x256.png" height="40" />
+
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.instagram.com/primaryandsecondaryh/" target="_blank" class="text-white">
+                                    <img src="/Content/PshdNC/css/lightbox/insta--256x256.png" height="40" />
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+            
+        </footer>
+
+
+        <a class="scrollToTop" href="#"><i class="fa fa-angle-up"></i></a>
+    </div>
+
+
+    <script src="/Content/PshdNC/js/jquery-2.2.4.min.js"></script>
+    <script src="/Content/PshdNC/js/jquery-ui.min.js"></script>
+    <script src="/Content/PshdNC/js/bootstrap.min.js"></script>
+    <script src="/Content/PshdNC/js/jquery-plugin-collection.js"></script>
+    <script src="/Content/PshdNC/js/revolution-slider/js/jquery.themepunch.tools.min.js"></script>
+    <script src="/Content/PshdNC/js/revolution-slider/js/jquery.themepunch.revolution.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.actions.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.carousel.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.kenburn.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.layeranimation.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.migration.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.navigation.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.parallax.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.slideanims.min.js"></script>
+    <script type="text/javascript" src="/Content/PshdNC/js/revolution-slider/js/extensions/revolution.extension.video.min.js"></script>
+    <script src="/Content/PshdNC/js/custom.js"></script>
+
+
+
+    
+    <script src="/Content/js/angular/ui-bootstrap-tpls-2.5.0.js"></script>
+    <script src="/Content/Scripts/Plugins/Angular/ui-select/select.js"></script>
+    <script src="/Content/Scripts/Jobs.js?v=2"></script>
+
+</body>
+</html>

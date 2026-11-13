@@ -674,7 +674,7 @@ export const candidateLinks = pgTable(
 // ── Follows and the in-app inbox ───────────────────────────────────────────────
 
 export const followKind = pgEnum("follow_kind", ["induction", "round", "speciality", "hospital", "thread"]);
-export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round", "new_review", "shortlist"]);
+export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round", "new_review", "shortlist", "new_job"]);
 
 /** What a member follows: a topic (same keys as discussion topics) or a thread (its id). */
 export const follows = pgTable(
@@ -1086,4 +1086,66 @@ export const searchCounts = pgTable(
     n: integer("n").notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.key, t.hour] }), index("search_counts_hour_idx").on(t.hour)],
+);
+
+// ── Jobs for doctors (automated, src/lib/jobs) ─────────────────────────────────
+
+/**
+ * Doctor job adverts found by the jobs sync (jobz.pk and the official SHC&ME, P&SHD and
+ * PPSC pages) or added by the team. A summary and the link to the original advert only;
+ * PDFs are never stored. One row per (source, source_id); a later sync updates it.
+ */
+export const jobs = pgTable(
+  "jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** jobzpk, shcme, pshd, ppsc or manual. */
+    source: text("source").notNull(),
+    sourceId: text("source_id").notNull(),
+    title: text("title").notNull(),
+    employer: text("employer"),
+    city: text("city"),
+    postedOn: date("posted_on", { mode: "string" }),
+    lastDate: date("last_date", { mode: "string" }),
+    link: text("link").notNull(),
+    official: boolean("official").notNull().default(false),
+    education: json("education").notNull().default([]),
+    vacancies: json("vacancies").notNull().default([]),
+    applyOnline: boolean("apply_online"),
+    adNo: text("ad_no"),
+    /** ppsc, teaching, district, federal or private (src/lib/jobs/rules.ts). */
+    folder: text("folder").notNull(),
+    postType: text("post_type").notNull(),
+    hospitalId: integer("hospital_id").references(() => hospitals.id, { onDelete: "set null" }),
+    hidden: boolean("hidden").notNull().default(false),
+    pinned: boolean("pinned").notNull().default(false),
+    firstSeen: timestamp("first_seen", { withTimezone: true }).notNull().defaultNow(),
+    lastSeen: timestamp("last_seen", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("jobs_source_uq").on(t.source, t.sourceId),
+    index("jobs_last_date_idx").on(t.lastDate),
+    index("jobs_folder_idx").on(t.folder),
+  ],
+);
+
+/** How each job source did on its last run (shown on Admin → Data → Jobs). */
+export const jobSources = pgTable("job_sources", {
+  source: text("source").primaryKey(),
+  lastRun: timestamp("last_run", { withTimezone: true }),
+  lastOk: timestamp("last_ok", { withTimezone: true }),
+  lastError: text("last_error"),
+  found: integer("found").notNull().default(0),
+  kept: integer("kept").notNull().default(0),
+});
+
+/** A member's saved jobs. Private. */
+export const jobSaves = pgTable(
+  "job_saves",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    jobId: uuid("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.jobId] })],
 );

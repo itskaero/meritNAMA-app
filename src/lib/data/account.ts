@@ -1,4 +1,5 @@
 import "server-only";
+import { mySavedJobs } from "./jobs";
 import { eq, or } from "drizzle-orm";
 import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
@@ -58,6 +59,7 @@ export async function exportMyData(db: Database, session: Session | null) {
     db.select({ amountPkr: accessRequests.amountPkr, reference: accessRequests.reference, status: accessRequests.status, createdAt: accessRequests.createdAt }).from(accessRequests).where(eq(accessRequests.email, email)),
     myMerit(db, session).catch(() => null),
   ]);
+  const savedJobs = await mySavedJobs(db, me.id);
   return {
     exportedAt: new Date().toISOString(),
     note: "Everything meritNAMA stores about this account. Merit rows are your own rows from the published lists.",
@@ -73,6 +75,7 @@ export async function exportMyData(db: Database, session: Session | null) {
     communityReplies: posts,
     chatMessages: messages,
     accessRequests: requests,
+    savedJobs,
   };
 }
 
