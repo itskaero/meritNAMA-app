@@ -196,9 +196,9 @@ export const referenceDocuments = pgTable(
 
 /*
  * Merit rounds (inductions/<n>/merit/round_<r>.json). One row per published round,
- * and its allocations. Only what browsing needs is stored: no names, relations,
- * PMDC numbers, emails or employment fields. `applicant_id` is kept (never shown)
- * so movement between rounds can be counted.
+ * and its allocations. What PHF's public list shows is kept (applicant id, name, PMDC
+ * number, marks, seat, preference, consent); relations, emails, phones, CNICs and
+ * employment fields are never stored.
  */
 export const meritRounds = pgTable(
   "merit_rounds",
@@ -245,9 +245,14 @@ export const meritAllocations = pgTable(
     preferenceNo: integer("preference_no").notNull(),
     /** As published: "Accepted", "Rejected" or "Not Avail". */
     consent: text("consent").notNull(),
+    /** Candidate's name and PMDC number as PHF publishes them (public merit lists). Email, phone and CNIC are never stored. */
+    name: text("name"),
+    pmdcNo: text("pmdc_no"),
   },
   (t) => [
     primaryKey({ columns: [t.roundId, t.rowNo] }),
+    index("merit_allocations_applicant_idx").on(t.applicantId),
+    index("merit_allocations_pmdc_idx").on(t.pmdcNo),
     index("merit_allocations_speciality_idx").on(t.specialityId),
     index("merit_allocations_hospital_idx").on(t.hospitalId),
     index("merit_allocations_round_group_idx").on(t.roundId, t.program, t.quota, t.speciality),

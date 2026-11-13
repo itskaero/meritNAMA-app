@@ -1,7 +1,7 @@
 # meritNAMA v4: redesign build — handoff and progress
 
 Read this first if you are picking the work up in a new session or another account.
-Last updated: 2026-11-13. Branch: `feat/v3-data-folder` (v4 work continues on it unless a new branch is cut).
+Last updated: 2026-11-13. Branch: **`meritnamav4`** (cut from `feat/v3-data-folder` at `3e0e068`).
 
 ## 1. Where things are
 
@@ -72,7 +72,7 @@ Last updated: 2026-11-13. Branch: `feat/v3-data-folder` (v4 work continues on it
 
 Tick as you go; commit after each step; push only when the user asks.
 
-- [ ] **1a Names/PMDC:** migration adding `name`, `pmdc_no` to `merit_allocations`; keep them in `importMeritRound` (`src/lib/data/merit.ts`, source fields `Table5.name`, `Table5.pmdcNo`); extend `roundCandidates` search to name/PMDC; update `/privacy`, `exportMyData`/`deleteMyAccount` wording. Re-import the 60 rounds on the NAS from `var/storage/inbox/processed/*merit*` after a backup.
+- [x] **1a Names/PMDC** (code done on branch `meritnamav4`; NAS backfill pending: after deploy run `node scripts/backfill-merit-names.mjs /app/storage` in the migrate container, it updates rows by (round,rowNo) with no notifications; do NOT re-import rounds, that notifies followers): migration adding `name`, `pmdc_no` to `merit_allocations`; keep them in `importMeritRound` (`src/lib/data/merit.ts`, source fields `Table5.name`, `Table5.pmdcNo`); extend `roundCandidates` search to name/PMDC; update `/privacy`, `exportMyData`/`deleteMyAccount` wording. Re-import the 60 rounds on the NAS from `var/storage/inbox/processed/*merit*` after a backup.
 - [ ] **1b Verification steps:** import `ProfileStatus.json` v2 (statusTypes 131 "Verification : Round 01", 132 "Amendment Process"; statusIds 1 Accepted, 2 Rejected, 11 Pending; remarks) per candidate and step. Today only `sim_candidates.profile_status` (single int) exists.
 - [ ] **1c Correction reasons:** add a type (grievance / amendment / admin) to `candidate_corrections`; ingest revision overlays (`ingest/linkage/revisions.py`) map to it.
 - [ ] **1d Gazette names:** gazette rows carry names; store name/PMDC for candidates too.

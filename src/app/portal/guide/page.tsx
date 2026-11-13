@@ -26,7 +26,7 @@ const WANTS: { q: string; a: string; href: string; link: string; icon: IconName 
 ];
 
 const TERMS: [string, string][] = [
-  ["Applicant ID", "Your number on the PHF portal. Merit lists show it next to each name; meritNAMA shows only the number, never names."],
+  ["Applicant ID", "Your number on the PHF portal. Merit lists show it next to each name and PMDC number; meritNAMA shows all three, so you can search by any of them."],
   ["Merit (marks)", "Your total score under the scoring policy: degree, house job, experience, FCPS Part-I and so on, out of 30 or 35 depending on the year."],
   ["Programme", "FCPS, MS, MD, MDS or FCPS Dentistry. Each has its own seats and its own lists."],
   ["Quota", "Punjab, Armed Forces, Foreign and so on. Seats are reserved per quota, so closing merit differs between quotas."],

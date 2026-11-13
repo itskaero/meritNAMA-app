@@ -2,10 +2,10 @@ import { z } from "zod";
 
 /**
  * Data contract for a PHF merit-round export (inductions/<n>/merit/round_<r>.json).
- * `Table[0]` describes the cycle; `Table5` holds one row per allocation. Rows carry
- * personal fields (name, relation, PMDC number, email, employment) that this app
- * does not import; the schema only requires what browsing needs and lets the rest
- * pass unread. CNIC and phone are already stripped at the public repo's HEAD.
+ * `Table[0]` describes the cycle; `Table5` holds one row per allocation. Of the personal
+ * fields PHF publishes, only the name and PMDC number are kept (they are on the public
+ * merit list and let people find each other). Relation, email, phone, CNIC and
+ * employment are never imported; the schema lets them pass unread.
  */
 
 const cycleSchema = z.looseObject({
@@ -29,7 +29,31 @@ export const meritRowSchema = z.looseObject({
   applicantId: z.union([z.string().min(1), z.number()]).transform(String),
   preferenceNo: z.number().int().min(0),
   consent: z.string(),
+  name: z.string().nullish(),
+  pmdcNo: z.union([z.string(), z.number()]).nullish().transform((v) => (v == null ? v : String(v))),
 });
+
+/** Name as published, tidied: trimmed, inner spaces collapsed; empty becomes null. */
+export function cleanName(v: string | null | undefined): string | null {
+  const s = (v ?? "").replace(/\s+/g, " ").trim();
+  return s ? s.slice(0, 120) : null;
+}
+
+/** PMDC number as published, upper case without spaces ("97937-P"); empty becomes null. */
+export function cleanPmdc(v: string | null | undefined): string | null {
+  const s = (v ?? "").replace(/\s+/g, "").toUpperCase();
+  return s ? s.slice(0, 20) : null;
+}
+
+/** What a search box holds: an applicant id (digits), a PMDC number (digits and a letter, e.g. 97937-P) or a name. */
+export function classifyQuery(q: string): { kind: "id" | "pmdc" | "name"; value: string } | null {
+  const s = q.trim();
+  if (!s) return null;
+  if (/^\d{1,8}$/.test(s)) return { kind: "id", value: s };
+  if (/^\d{3,7}\s*-?\s*[A-Za-z]{1,2}$/.test(s)) return { kind: "pmdc", value: cleanPmdc(s.replace(/^(\d+)\s*-?\s*/, "$1-"))! };
+  if (s.length >= 2) return { kind: "name", value: s.replace(/\s+/g, " ").slice(0, 60) };
+  return null;
+}
 export type MeritRow = z.infer<typeof meritRowSchema>;
 
 export const meritRoundFileSchema = z

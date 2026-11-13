@@ -75,7 +75,7 @@ export default async function RoundPage({ params, searchParams }: {
   for (const g of groups) bySpec.set(g.speciality, (bySpec.get(g.speciality) ?? 0) + g.allocations);
   const topSpecs = [...bySpec].sort((a, b) => b[1] - a[1]).slice(0, 8);
   const base = `/portal/history/${induction}/rounds/${roundNo}`;
-  const q = typeof sp.q === "string" ? sp.q.replace(/D/g, "") : "";
+  const q = typeof sp.q === "string" ? sp.q.replace(/\s+/g, " ").trim().slice(0, 60) : "";
   const cpage = Math.max(intParam(typeof sp.cp === "string" ? sp.cp : undefined) ?? 1, 1);
   const cands = await roundCandidates(db, session, { roundId: round.id, filters, q, offset: (cpage - 1) * PAGE, limit: PAGE });
   const cpages = Math.max(1, Math.ceil(cands.total / PAGE));
@@ -208,11 +208,11 @@ export default async function RoundPage({ params, searchParams }: {
         </>
       )}
       <Card id="candidates">
-        <CardHeader title="Candidates" description={`${cands.total.toLocaleString("en-US")} allocation${cands.total === 1 ? "" : "s"}${filtered || q ? " match" : ""}, best marks first. Applicant ids as PHF publishes them.`} />
+        <CardHeader title="Candidates" description={`${cands.total.toLocaleString("en-US")} allocation${cands.total === 1 ? "" : "s"}${filtered || q ? " match" : ""}, best marks first. Names, PMDC numbers and applicant ids as PHF publishes them.`} />
         <form method="get" action={`${base}#candidates`} className="mb-4 flex flex-wrap items-end gap-3">
           {FILTERS.map(([k]) => (filters[k] ? <input key={k} type="hidden" name={k} value={filters[k]} /> : null))}
-          <label className="grid gap-1.5 text-sm font-medium">Applicant id
-            <input name="q" inputMode="numeric" defaultValue={q} placeholder="e.g. 27267" className={`${selectClass} w-44 font-mono`} />
+          <label className="grid gap-1.5 text-sm font-medium">Name, PMDC or applicant id
+            <input name="q" defaultValue={q} placeholder="e.g. Ayesha, 97937-P or 27267" className={`${selectClass} w-64`} />
           </label>
           <Button type="submit" variant="secondary">Search</Button>
           {q ? <ButtonLink href={keep({ q: "" })} variant="ghost">Clear</ButtonLink> : null}
@@ -222,7 +222,15 @@ export default async function RoundPage({ params, searchParams }: {
           rows={cands.rows}
           rowKey={(r) => `${r.applicantId}|${r.program}|${r.quota}|${r.speciality}|${r.hospital}`}
           columns={[
-            { key: "id", header: "Applicant", tone: "mono", sort: (r) => Number(r.applicantId), cell: (r) => <Link href={`/portal/history/find?id=${r.applicantId}`} className="text-signal hover:underline">{r.applicantId}</Link> },
+            {
+              key: "id", header: "Candidate", sort: (r) => r.name ?? r.applicantId,
+              cell: (r) => (
+                <Link href={`/portal/history/find?id=${r.applicantId}`} className="hover:underline">
+                  <span className="block font-medium text-ink">{r.name ?? "Name not published"}</span>
+                  <span className="block font-mono text-xs text-muted">{r.applicantId}{r.pmdcNo ? ` · ${r.pmdcNo}` : ""}</span>
+                </Link>
+              ),
+            },
             { key: "m", header: "Marks", align: "right", tone: "mono", sort: (r) => r.marks, cell: (r) => formatMarks(r.marks) },
             { key: "s", header: "Speciality", sort: (r) => r.speciality, cell: (r) => r.speciality },
             { key: "h", header: "Hospital", tone: "muted", sort: (r) => r.hospital, cell: (r) => r.hospital },

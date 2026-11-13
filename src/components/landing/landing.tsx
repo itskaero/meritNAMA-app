@@ -402,7 +402,7 @@ export function Landing({ f, features, tracks, check, query }: { f: LandingFigur
                 ))}
               </div>
               <p className="mt-10 max-w-2xl text-sm text-muted">
-                CPSP accreditation comes from CPSP&apos;s published list and is matched to hospitals by name, so a missing match is not proof that a unit is unaccredited. Personal details on merit lists (names, phone numbers, CNICs) are never stored.
+                CPSP accreditation comes from CPSP&apos;s published list and is matched to hospitals by name, so a missing match is not proof that a unit is unaccredited. From merit lists we keep only what PHF publishes publicly (name, PMDC number, applicant ID, marks and seat); phone numbers, emails and CNICs are never stored.
               </p>
             </div>
           </div>

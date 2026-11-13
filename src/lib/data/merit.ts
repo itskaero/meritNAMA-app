@@ -13,7 +13,7 @@ import {
   scoringPolicyFileMeta,
   specialities,
 } from "@/lib/db/schema";
-import { isoDay, meritRoundFileSchema, nameKey } from "@/lib/domain/merit-round";
+import { classifyQuery, cleanName, cleanPmdc, isoDay, meritRoundFileSchema, nameKey } from "@/lib/domain/merit-round";
 import { UserFacingError } from "@/lib/errors";
 import { notifyFollowers, notifyShortlists } from "./notifications";
 import { postRoundDay } from "./rooms";
@@ -24,7 +24,7 @@ import { requireReason, writeAudit, type Db } from "./shared";
  *
  * Browsing functions return aggregates only (counts, closing and opening marks per
  * group). The one exception is roundCandidates: a round’s list of applicant ids with marks
- * and seats, as PHF prints it (never names).
+ * and seats, as PHF prints it, with name and PMDC number.
  */
 
 const reasonFor = (reason: string) => requireReason(reason, "merit data changes");
@@ -142,6 +142,8 @@ export async function importMeritRound(
       marks: r.marks,
       preferenceNo: r.preferenceNo,
       consent: r.consent.trim(),
+      name: cleanName(r.name),
+      pmdcNo: cleanPmdc(r.pmdcNo),
     }));
     // Chunked: one statement per 1,000 rows keeps well under the bind-parameter limit.
     for (let i = 0; i < rows.length; i += 1000) await tx.insert(meritAllocations).values(rows.slice(i, i + 1000));
@@ -301,9 +303,19 @@ export async function getRound(db: Database, session: Session | null, induction:
 
 /**
  * The candidates of one round, as PHF prints the list: applicant id, marks, seat, preference
- * and consent (never names). Best marks first; filters are the round page's, plus an
+ * and consent, with name and PMDC number. Best marks first; filters are the round page's, plus an
  * applicant-id search. Used for the "Candidates" list on the round page only.
  */
+/** SQL filter for a search box: applicant id (contains), PMDC number (exact) or name (contains, any case). */
+function candidateSearch(raw: string | undefined) {
+  const q = classifyQuery(raw ?? "");
+  if (!q) return undefined;
+  if (q.kind === "id") return sql`${meritAllocations.applicantId}::text like ${`%${q.value}%`}`;
+  if (q.kind === "pmdc") return eq(meritAllocations.pmdcNo, q.value);
+  const like = `%${q.value.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  return sql`${meritAllocations.name} ilike ${like}`;
+}
+
 export async function roundCandidates(
   db: Database,
   session: Session | null,
@@ -311,14 +323,13 @@ export async function roundCandidates(
 ) {
   assertCan(session, "portal");
   const f = input.filters ?? {};
-  const q = (input.q ?? "").replace(/\D/g, "").slice(0, 10);
   const where = and(
     eq(meritAllocations.roundId, input.roundId),
     f.program ? eq(meritAllocations.program, f.program) : undefined,
     f.quota ? eq(meritAllocations.quota, f.quota) : undefined,
     f.speciality ? eq(meritAllocations.speciality, f.speciality) : undefined,
     f.hospital ? eq(meritAllocations.hospital, f.hospital) : undefined,
-    q ? sql`${meritAllocations.applicantId}::text like ${`%${q}%`}` : undefined,
+    candidateSearch(input.q),
   );
   const [rows, counted] = await Promise.all([
     db
@@ -331,6 +342,8 @@ export async function roundCandidates(
         hospital: meritAllocations.hospital,
         preferenceNo: meritAllocations.preferenceNo,
         consent: meritAllocations.consent,
+        name: meritAllocations.name,
+        pmdcNo: meritAllocations.pmdcNo,
       })
       .from(meritAllocations)
       .where(where)

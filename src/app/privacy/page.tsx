@@ -21,7 +21,7 @@ export default function PrivacyPage() {
 
       <h2>What we do not keep</h2>
       <ul>
-        <li>Names, phone numbers, PMDC numbers and CNICs from the raw data files are dropped as each file is read. Only applicant IDs, marks, preferences, consent and seats are stored.</li>
+        <li>From PHF&apos;s published merit lists we keep what the lists themselves show publicly: each candidate&apos;s name, PMDC number, applicant ID, marks, seat, preference and consent, so people can find themselves and each other. Email addresses, phone numbers, CNICs, relations and employment details in the raw files are dropped as each file is read and never stored. If you want your name hidden on meritNAMA, write to us from the contact page.</li>
         <li>No advertising, no tracking pixels, and nothing is sold or shared for marketing.</li>
       </ul>
 
