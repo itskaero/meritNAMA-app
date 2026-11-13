@@ -118,6 +118,7 @@
  "jobs#listJobs": "candidate data_editor policy_editor verifier moderator owner",
  "jobs#setJobSaved": "candidate data_editor policy_editor verifier moderator owner",
  "jobs#jobSourceHealth": "data_editor policy_editor verifier moderator owner",
+ "jobs#adminJobs": "data_editor owner",
  "jobs#setJobFlags": "data_editor owner",
  "jobs#addManualJob": "data_editor owner",
  "merit#importMeritRound": "data_editor owner",

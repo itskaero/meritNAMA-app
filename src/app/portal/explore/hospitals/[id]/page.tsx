@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { hospitalAccreditation } from "@/lib/data/accreditation";
 import { hospitalProfile } from "@/lib/data/merit";
+import { listJobs } from "@/lib/data/jobs";
 import { Badge } from "@/components/ui/badge";
 import { ProgramTag, programColor } from "@/components/program-tag";
 import { listHospitalReviews, reviewChoices } from "@/lib/data/reviews";
@@ -38,6 +39,7 @@ export default async function HospitalPage({ params, searchParams }: { params: P
   const p = await hospitalProfile(db, session, id);
   if (!p) notFound();
   const choices = await reviewChoices(db, session, id);
+  const jobsHere = (await listJobs(db, session, { hospitalId: id }).catch(() => null))?.jobs.slice(0, 4) ?? [];
   const wanted = intParam((await searchParams).spec ?? undefined, 6);
   const specFilter = choices.specialities.find((x) => x.id === wanted) ?? null;
   const rv = await listHospitalReviews(db, session, { hospitalId: id, specialityId: specFilter?.id ?? null });
@@ -186,6 +188,21 @@ export default async function HospitalPage({ params, searchParams }: { params: P
           )}
         </div>
       </Card>
+      {jobsHere.length ? (
+        <Card>
+          <CardHeader title="Jobs here" description="Open adverts that name this hospital. Follow the hospital to hear about new ones." action={<Link href="/portal/jobs" className="text-sm font-semibold text-signal hover:underline">All jobs →</Link>} />
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {jobsHere.map((j) => (
+              <li key={j.id}>
+                <Link href={`/portal/jobs?job=${j.id}`} className="mn-lift block rounded-xl border border-line bg-canvas/50 p-3">
+                  <span className="line-clamp-2 text-sm font-semibold text-heading">{j.title}</span>
+                  <span className={j.state === "closing" ? "mt-1 block text-xs text-amber" : "mt-1 block text-xs text-muted"}>{j.lastDate ? `Apply by ${j.lastDate}` : "Last date in the advert"}{j.official ? " · official" : ""}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
       <DiscussionPanel topic={{ kind: "hospital", key: String(p.hospital.id) }} label={p.hospital.name} />
     </AreaPage>
   );

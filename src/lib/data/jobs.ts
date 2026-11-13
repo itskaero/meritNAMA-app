@@ -294,6 +294,13 @@ export async function jobSourceHealth(db: Database, session: Session | null) {
   return { sources, counts };
 }
 
+/** Admin list: newest adverts first, hidden ones included. */
+export async function adminJobs(db: Database, session: Session | null, limit = 200) {
+  assertCan(session, "data.edit");
+  return db.select({ id: jobs.id, source: jobs.source, title: jobs.title, employer: jobs.employer, lastDate: jobs.lastDate, link: jobs.link, folder: jobs.folder, hidden: jobs.hidden, pinned: jobs.pinned, firstSeen: jobs.firstSeen })
+    .from(jobs).orderBy(desc(jobs.firstSeen)).limit(Math.min(limit, 500));
+}
+
 /** Hide (wrongly kept) or pin (important) an advert. */
 export async function setJobFlags(db: Database, session: Session | null, jobId: unknown, flags: { hidden?: boolean; pinned?: boolean }) {
   assertCan(session, "data.edit");

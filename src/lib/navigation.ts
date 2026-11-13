@@ -76,6 +76,14 @@ export const adminSections: Section[] = [
     match: ["/admin/inductions", "/admin/reference-data"],
   },
   {
+    href: "/admin/jobs",
+    capability: "data.edit",
+    group: "Data",
+    icon: "briefcase",
+    label: "Jobs",
+    description: "Doctor job adverts: how each source did on its last check, Sync now, hide or pin an advert, add one by hand.",
+  },
+  {
     href: "/admin/candidates",
     capability: "candidates.verify",
     group: "People",
