@@ -52,6 +52,8 @@ Last updated: 2026-11-13. Branch: `feat/v3-data-folder` (v4 work continues on it
 | Me | Aurora profile, journey timeline with now line, Today, shortlist with fill bars, following, saved views, activity |
 | Sign in | Photo panel (`night-study.jpg`) + glass form; Sign in / Request access tabs |
 | Phone | Aurora top, floating tab bar with glowing active tab |
+| Jobs (members) | Aurora header (open count, last/next sync, sources); **folder row** in the glass-folder reference style (PPSC · Teaching hospitals (SHC&ME) · DHQ/THQ (P&SHD) · Federal & forces · Private & NGOs · Closing this week · Saved; "+" follows a folder); status tabs Open / Closing this week / New / Closed; filters post type, city, source (official only), apply online; **job cards** in the dark-card reference style (photo band, big headline, glowing "Apply by" pill, amber when ≤ 7 days, footer "City ✦ grade ✦ posts", Official or "via jobz.pk" badge, save star); detail drawer (posts, grade, advert no., last date, who can apply, specialities, hospitals you follow, Open advert ↗, source and checked time, "not affiliated") |
+| Public landing `/` | masterpay structure with site assets: framed hero (Gemini video, headline "Know where you stand…", glowing merit card), 01–04 features with photo, "Much more than a merit list" (estimate card over spinning rings), stats band (63K+ allocations, 60 rounds, 13 inductions, open jobs), 3 latest jobs (teaser), FAQ accordion, violet "Let's talk" contact block + community/email cards, footer |
 
 ## 5. Decisions made by the user
 
@@ -61,7 +63,8 @@ Last updated: 2026-11-13. Branch: `feat/v3-data-folder` (v4 work continues on it
 - The gazette is fixed for the cycle; merit lists and consent change each round.
 - Cross-scheme comparison: chance dial and percent primary, raw marks secondary, plus the warning. Same scheme: raw marks primary.
 - Payments stay manual (paywall approval by hand).
-- Jobs and Donate pages are left out.
+- Donate is left out. **Jobs is in** (decided 2026-11-13): automated; sources jobz.pk + official SHC&ME / P&SHD / PPSC pages (official badged); members only with a teaser on the public landing; doctors-only posts.
+- Public landing is rebuilt in the masterpay structure with the site's own assets (video, photos, aurora, merit card).
 - Counts like "viewing now" / "searching" / "shortlisted by" show counts only, never who (proposed; confirm if challenged).
 
 ## 6. Build steps and progress
@@ -74,6 +77,7 @@ Tick as you go; commit after each step; push only when the user asks.
 - [ ] **1d Gazette names:** gazette rows carry names; store name/PMDC for candidates too.
 - [ ] **1e Activity counters:** lightweight counts for viewing/searching/shortlisted (no per-person data).
 - [ ] **1f Estimate result rows:** expose per-candidate preference history from a sim run (seat, cutoff, margin, status) for the Estimates panel.
+- [ ] **1g Jobs (automated):** migration `jobs`, `job_sources`, `job_saves`; `src/lib/jobs/` adapters: jobz.pk medical category (`https://www.jobz.pk/medical-employment{n}/`, listing `div.row_container`, detail `div.row_job_detail`; old code: `meritnama-rewrite/meritnama/js/app-jobs.js`, `data/jobAggregator_enhanced/`), SHC&ME (`health.punjab.gov.pk` jobs), P&SHD (`pshealthpunjab.gov.pk` jobs), PPSC (`ppsc.gop.pk`, health departments). Doctors-only relevance filter, cross-source dedupe (official link wins), open/closed by last date, folder rules, hospital match via `nameKey` + `notifyFollowers`. Runs in the app worker tick every 6 h (`jobsSyncIfDue`), ≤ 1 req/s, 3 pages, generic User-Agent, robots respected, link out only. Parser: `node-html-parser`. Admin → Data → Jobs: per-source health, Sync now, hide/pin, add official advert by hand. Saved jobs in export/delete.
 - [ ] **2 Look:** tokens (`src/styles/tokens.css`, `src/app/globals.css`), fonts (Inter, Plex Mono) in root layout, `.pg` aurora, header aurora component, button/segmented/pill/badge components (`src/components/ui/*`), GitHub split button, sidebar (`src/components/side-nav.tsx`, `src/lib/navigation.ts` + Candidates, Estimates), bottom tabs. Update `tests/tokens.test.ts`.
 - [ ] **3 Pages:** Overview (both stages; video in `public/`), Candidates, Estimates, Merit lists, Round, Hospital/Speciality, My chances, Calendar, Chats, Community (fold Feed in), Me (fold Profile in), Sign in, phone layouts. Drop funnel/gauge/beam/heat charts once unused.
 - [ ] **4 Checks:** `npx tsc --noEmit`, `npx eslint src`, `npx vitest run` (regenerate authz matrix with `UPDATE_AUTHZ_MATRIX=1 npx vitest run tests/authz-matrix.test.ts` after new data functions; session-less helpers go in `NO_SESSION`), `npx next build`.

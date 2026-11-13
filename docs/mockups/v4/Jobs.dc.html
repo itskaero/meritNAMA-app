@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Jobs for doctors</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes slide{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes glowp{0%,100%{box-shadow:0 0 10px rgba(229,160,75,.35)}50%{box-shadow:0 0 22px rgba(229,160,75,.7)}}
+@keyframes d1{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(8%,6%,0) scale(1.08)}}
+@keyframes d2{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+.aur{position:relative;overflow:hidden;background:#10243A;color:#F3EEE5;border-radius:16px;padding:22px 24px}
+.aur .mesh{position:absolute;inset:0;pointer-events:none;filter:blur(90px);opacity:.85}
+.aur .b{position:absolute;border-radius:50%}
+.aur .bt{width:560px;height:560px;background:radial-gradient(circle,rgba(23,107,103,.45),rgba(23,107,103,0) 70%);top:-60%;left:-10%;animation:d1 28s ease-in-out infinite alternate}
+.aur .bs{width:520px;height:520px;background:radial-gradient(circle,rgba(38,60,77,.7),rgba(38,60,77,0) 70%);bottom:-80%;right:10%;animation:d2 34s ease-in-out infinite alternate}
+.aur .ba{width:380px;height:380px;background:radial-gradient(circle,rgba(229,160,75,.16),rgba(229,160,75,0) 70%);top:-20%;right:-5%;animation:d2 24s ease-in-out infinite alternate}
+.aur .bv{width:340px;height:340px;background:radial-gradient(circle,rgba(110,86,255,.22),rgba(110,86,255,0) 70%);bottom:-70%;left:35%;animation:d1 30s ease-in-out infinite alternate-reverse}
+.aur>.in{position:relative;z-index:1}
+.iv{color:rgba(243,238,229,.7)}.m{color:#8B8B93}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border-radius:12px;color:#fff;font-weight:600;font-size:13px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);transition:box-shadow .2s,border-color .2s}
+.btn:hover{color:#fff;border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.55)}
+.sel{height:34px;padding:0 10px;border-radius:10px;background:#141418;color:#EDEDEF;border:1px solid rgba(255,255,255,.1);font:inherit;font-size:12px}
+.seg{display:flex;gap:2px;padding:4px;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+.seg>*{height:28px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:#8B8B93;font:inherit;font-size:12px;display:grid;place-items:center;white-space:nowrap}
+.seg>.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.5));box-shadow:inset -3px 0 0 #7B61FF,0 0 18px rgba(110,86,255,.35)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.g{background:rgba(61,220,151,.14);color:#3DDC97}.a{background:rgba(229,160,75,.16);color:#E5A04B}.r{background:rgba(255,122,122,.15);color:#FF7A7A}.c{background:rgba(92,225,230,.13);color:#5CE1E6}.v{background:rgba(155,135,255,.18);color:#C4B8FF}.n{background:rgba(255,255,255,.06);color:#A3A3AD}
+/* Folder (reference: glass front over an art cover) */
+.folder{position:relative;height:138px;border-radius:18px;cursor:pointer;transition:transform .25s}
+.folder:hover{transform:translateY(-4px)}
+.folder .back{position:absolute;inset:0 0 18% 0;border-radius:16px;clip-path:polygon(0 18%,34% 18%,42% 0,100% 0,100% 100%,0 100%);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.folder .front{position:absolute;left:0;right:0;bottom:0;height:68%;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.05));backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.25);padding:12px 14px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between}
+.folder.on .front{border-color:rgba(155,135,255,.8);box-shadow:0 18px 30px rgba(0,0,0,.45),0 0 26px rgba(110,86,255,.45),inset 0 1px 0 rgba(255,255,255,.3)}
+.fplus{position:absolute;right:12px;bottom:12px;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(12,12,14,.85);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:16px;box-shadow:0 6px 14px rgba(0,0,0,.4)}
+/* Job card (reference: dark card, image band, big headline, small pill, footer) */
+.job{position:relative;border-radius:18px;overflow:hidden;background:#17171C;border:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;transition:transform .25s,box-shadow .25s,border-color .25s;animation:rise .6s ease both;cursor:pointer}
+.job:hover{transform:translateY(-4px);border-color:rgba(155,135,255,.4);box-shadow:0 20px 44px rgba(0,0,0,.5),0 0 30px rgba(110,86,255,.18)}
+.job.sel{border-color:rgba(155,135,255,.75);box-shadow:0 0 0 1px rgba(155,135,255,.4),0 0 34px rgba(110,86,255,.3)}
+.job .cover{position:relative;height:120px;overflow:hidden}
+.job .cover img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
+.job:hover .cover img{transform:scale(1.06)}
+.job .cover::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,23,28,0) 30%,#17171C 100%)}
+.job .body{padding:4px 16px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.job h3{margin:0;font-size:19px;font-weight:500;letter-spacing:-.02em;line-height:1.2}
+.apply{display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid}
+.apply.soon{color:#FFD08A;border-color:rgba(229,160,75,.6);background:rgba(229,160,75,.14);animation:glowp 2.4s ease-in-out infinite}
+.apply.ok{color:#D6CCFF;border-color:rgba(155,135,255,.5);background:rgba(110,86,255,.12)}
+.apply.shut{color:#8B8B93;border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+.foot{display:flex;justify-content:space-between;align-items:center;padding-top:10px;margin-top:auto;border-top:1px solid rgba(255,255,255,.06);font-size:12px;color:#B9B9C2}
+.foot .sp{color:#9B87FF;margin:0 6px}
+.live{animation:blink 1.6s ease-in-out infinite}
+.dot{display:inline-block;width:8px;height:8px;border-radius:99px;background:#3DDC97;box-shadow:0 0 10px #3DDC97}
+@media (prefers-reduced-motion: reduce){.pg::before,.pg::after,.aur .b,.job,.live,.apply.soon,aside{animation:none!important}.folder,.job,.job .cover img{transition:none}}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1260px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="jobs" hint-size="252px,1260px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+
+    <section class="aur" aria-label="Jobs for doctors">
+      <div class="mesh" aria-hidden="true"><div class="b bt"></div><div class="b bs"></div><div class="b ba"></div><div class="b bv"></div></div>
+      <div class="in" style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+        <div>
+          <p class="iv" style="margin: 0; font-size: 13px"><span class="dot live"></span> Updated 2 h ago · next check in 4 h · from 4 sources</p>
+          <h1 style="margin: 8px 0 0; font-size: 34px; font-weight: 600; letter-spacing: -0.03em">128 open jobs for doctors</h1>
+          <p class="iv" style="margin: 6px 0 0; max-width: 640px">Medical officer, demonstrator, registrar and specialist posts from PPSC, the Punjab health departments and newspaper adverts. We link to the original advert; always apply there.</p>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center">
+          <label style="display: flex; align-items: center; gap: 8px; height: 42px; width: 280px; padding: 0 14px; border-radius: 12px; background: rgba(16,36,58,0.55); border: 1px solid rgba(243,238,229,0.18); color: rgba(243,238,229,0.6)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input aria-label="Search jobs" placeholder="Post, hospital or city" style="flex: 1; min-width: 0; background: transparent; border: 0; color: #F3EEE5; font: inherit; outline: none"></label>
+          <a class="btn" href="#">Alert me</a>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Folders" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px">
+      <sc-for list="{{folders}}" as="f" hint-placeholder-count="7">
+        <a href="#" class="{{f.cls}}" aria-label="{{f.name}}, {{f.count}} jobs" style="color: #EDEDEF">
+          <span class="back" style="background: {{f.cover}}"></span>
+          <span class="front">
+            <span style="font-size: 13px; font-weight: 600; line-height: 1.25">{{f.name}}</span>
+            <span style="font-size: 11px; color: rgba(237,237,239,0.7)"><span style="font-family: 'IBM Plex Mono', monospace">{{f.count}}</span> {{f.sub}}</span>
+          </span>
+          <span class="fplus" aria-hidden="true">{{f.icon}}</span>
+        </a>
+      </sc-for>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px">
+      <div class="seg" role="tablist" aria-label="Status"><button type="button" role="tab" aria-selected="true" class="on">Open 128</button><button type="button" role="tab" aria-selected="false">Closing this week 17</button><button type="button" role="tab" aria-selected="false">New 23</button><button type="button" role="tab" aria-selected="false">Closed</button></div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <select class="sel" aria-label="Post"><option>All posts</option><option>Medical officer / WMO</option><option>Demonstrator</option><option>Senior registrar</option><option>Specialist / consultant</option><option>Faculty</option><option>House job / trainee</option></select>
+        <select class="sel" aria-label="City"><option>All cities</option><option>Lahore</option><option>Faisalabad</option><option>Multan</option></select>
+        <select class="sel" aria-label="Source"><option>All sources</option><option>Official only</option></select>
+        <label class="sel" style="display: flex; align-items: center; gap: 6px"><input type="checkbox" style="accent-color: #7B61FF">Apply online</label>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 18px; align-items: flex-start">
+      <section aria-label="Jobs" style="flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+        <sc-for list="{{jobs}}" as="j" hint-placeholder-count="6">
+          <article class="{{j.cls}}" style="animation-delay: {{j.delay}}">
+            <div class="cover"><img src="{{j.img}}" alt=""><span style="position: absolute; left: 12px; top: 12px; z-index: 1; display: flex; gap: 6px"><span class="{{j.badgeCls}}">{{j.badge}}</span></span></div>
+            <div class="body">
+              <p class="m" style="margin: 0; font-size: 12px">{{j.employer}}</p>
+              <h3>{{j.title}}</h3>
+              <p class="m" style="margin: 0; font-size: 12px; line-height: 1.5">{{j.line}}</p>
+              <span><span class="{{j.applyCls}}">{{j.apply}}</span></span>
+              <div class="foot"><span>{{j.city}}<span class="sp">✦</span>{{j.grade}}<span class="sp">✦</span>{{j.posts}}</span><span style="font-size: 16px; color: {{j.starC}}">{{j.star}}</span></div>
+            </div>
+          </article>
+        </sc-for>
+      </section>
+
+      <aside aria-label="Job detail" style="flex: 0 0 340px; border-radius: 20px; overflow: hidden; background: rgba(23,23,28,0.9); border: 1px solid rgba(155,135,255,0.45); box-shadow: 0 0 40px rgba(110,86,255,0.18); animation: slide 0.45s ease both">
+        <div style="position: relative; height: 150px"><img src="/_blob/2f85f86f657c31dfe357dcdd370fcbd0" alt="" style="width: 100%; height: 100%; object-fit: cover; object-position: right"><div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(23,23,28,0) 20%, rgba(23,23,28,0.95) 100%)"></div><span class="pill c" style="position: absolute; left: 14px; top: 14px">● Official · PPSC</span><button type="button" aria-label="Close" style="position: absolute; right: 12px; top: 12px; width: 30px; height: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(12,12,14,0.6); color: #EDEDEF; font: inherit">✕</button></div>
+        <div style="padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 12px">
+          <div><p class="m" style="margin: 0; font-size: 12px">Specialized Healthcare &amp; Medical Education Dept</p><h2 style="margin: 4px 0 0; font-size: 22px; font-weight: 500; letter-spacing: -0.02em">Senior Registrar, teaching hospitals</h2></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px">
+            <div style="padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03)"><span class="m" style="display: block; font-size: 10px">Posts</span><b>107</b></div>
+            <div style="padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03)"><span class="m" style="display: block; font-size: 10px">Grade</span><b>BS-18</b></div>
+            <div style="padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03)"><span class="m" style="display: block; font-size: 10px">Advertisement</span><b class="mono" style="font-family: 'IBM Plex Mono', monospace">11/2026</b></div>
+            <div style="padding: 10px; border-radius: 12px; background: rgba(229,160,75,0.10); border: 1px solid rgba(229,160,75,0.35)"><span class="m" style="display: block; font-size: 10px">Last date</span><b style="color: #FFD08A">Mon 17 Nov · 4 days</b></div>
+          </div>
+          <div><p style="margin: 0 0 6px; font-size: 13px; font-weight: 600">Who can apply</p><p style="margin: 0; display: flex; flex-wrap: wrap; gap: 6px"><span class="pill v">FCPS</span><span class="pill v">MD / MS</span><span class="pill v">FRCS</span><span class="pill n">Punjab domicile</span></p></div>
+          <div><p style="margin: 0 0 6px; font-size: 13px; font-weight: 600">Specialities</p><p class="m" style="margin: 0; font-size: 12px; line-height: 1.6">Anaesthesia, Medicine, Surgery, Paediatrics, Gynae, Radiology and 14 more</p></div>
+          <div style="padding: 10px 12px; border-radius: 12px; background: rgba(110,86,255,0.08); font-size: 12px; line-height: 1.5">Hospitals you follow in this advert: <b>Jinnah Hospital</b>, <b>Mayo Hospital</b></div>
+          <div style="display: flex; gap: 8px"><a class="btn" href="#" style="flex: 1">Open advert ↗</a><a href="#" style="display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(229,160,75,0.6); color: #FFD08A; box-shadow: 0 0 14px rgba(229,160,75,0.25)">★ Saved</a></div>
+          <p class="m" style="margin: 0; font-size: 11px">Found on ppsc.gop.pk on 9 Oct · checked 2 h ago. meritNAMA isn't affiliated with PPSC; apply on the official site.</p>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const cov = (a, b, c) => `radial-gradient(120% 90% at 18% 25%, ${a}, transparent 60%), radial-gradient(90% 80% at 85% 70%, ${b}, transparent 60%), linear-gradient(135deg, ${c}, #0C0C0E)`;
+    const folders = [
+      { name: 'PPSC', count: 14, sub: 'adverts', cover: cov('#7B61FF', '#1E6BFF', '#2A1B6B'), icon: '+', on: true },
+      { name: 'Teaching hospitals', count: 41, sub: 'SHC&ME', cover: cov('#2DD4BF', '#176B67', '#0E3B44'), icon: '+' },
+      { name: 'DHQ / THQ', count: 38, sub: 'P&SHD, ad hoc', cover: cov('#FF8A63', '#E5A04B', '#5A2414'), icon: '+' },
+      { name: 'Federal & forces', count: 12, sub: 'jobs', cover: cov('#3DDC97', '#263C4D', '#14322A'), icon: '+' },
+      { name: 'Private & NGOs', count: 23, sub: 'jobs', cover: cov('#F472B6', '#7B61FF', '#3A1640'), icon: '+' },
+      { name: 'Closing this week', count: 17, sub: 'hurry', cover: cov('#FF7A7A', '#E5A04B', '#4A1515'), icon: '◷' },
+      { name: 'Saved', count: 4, sub: 'yours', cover: cov('#E5A04B', '#FFD08A', '#3A2A0E'), icon: '★' }
+    ].map((f) => ({ ...f, cls: f.on ? 'folder on' : 'folder' }));
+    const IMG = { ward: '/_blob/930c0b38e060024652e255e314f51dc9', campus: '/_blob/530d619d2af5d613d570109e03fd7df4', lib: '/_blob/1c93f4c3af5f026449917179783fccce', study: '/_blob/c000b6a4393080b5fa8607521574fea3', hero: '/_blob/2f85f86f657c31dfe357dcdd370fcbd0' };
+    const jobs = [
+      { img: IMG.hero, official: true, badge: '● Official · PPSC', employer: 'SHC&ME Department', title: 'Senior Registrar, teaching hospitals', line: '20 specialities across Lahore, Faisalabad, Multan and Rawalpindi.', due: 'soon', apply: 'Apply by Mon 17 Nov', city: 'Punjab', grade: 'BS-18', posts: '107 posts', saved: true, sel: true },
+      { img: IMG.ward, official: true, badge: '● Official · P&SHD', employer: 'Primary & Secondary Healthcare', title: 'Medical Officer / WMO, DHQ & THQ hospitals', line: 'Ad hoc, one year. Interviews at district level.', due: 'soon', apply: 'Apply by Fri 14 Nov', city: 'All districts', grade: 'BS-17', posts: '640 posts' },
+      { img: IMG.campus, official: false, badge: 'via jobz.pk', employer: 'King Edward Medical University', title: 'Demonstrator, Anatomy and Physiology', line: 'MBBS with house job. Contract, renewable.', due: 'ok', apply: 'Apply by 2 Dec', city: 'Lahore', grade: 'BS-17', posts: '12 posts' },
+      { img: IMG.lib, official: false, badge: 'via jobz.pk', employer: 'Shaukat Khanum Memorial Hospital', title: 'Resident Medical Officer, Emergency', line: 'MBBS, PMDC permanent licence, ACLS preferred.', due: 'ok', apply: 'Apply by 28 Nov', city: 'Lahore', grade: 'Private', posts: '6 posts' },
+      { img: IMG.study, official: false, badge: 'via jobz.pk', employer: 'Combined Military Hospital', title: 'Specialist Anaesthetist (civilian)', line: 'FCPS / MCPS Anaesthesia. Walk-in interview.', due: 'ok', apply: 'Walk in 24 Nov', city: 'Rawalpindi', grade: 'Contract', posts: '2 posts' },
+      { img: IMG.ward, official: true, badge: '● Official · SHC&ME', employer: 'Nishtar Medical University', title: 'Assistant Professor, Paediatrics', line: 'FCPS Paediatrics with 3 years as senior registrar.', due: 'shut', apply: 'Closed 26 Oct', city: 'Multan', grade: 'BS-19', posts: '3 posts' }
+    ].map((j, i) => ({
+      ...j,
+      cls: j.sel ? 'job sel' : 'job',
+      delay: `${i * 0.06}s`,
+      badgeCls: j.official ? 'pill c' : 'pill n',
+      applyCls: j.due === 'soon' ? 'apply soon' : j.due === 'shut' ? 'apply shut' : 'apply ok',
+      star: j.saved ? '★' : '☆',
+      starC: j.saved ? '#E5A04B' : '#6B6B73'
+    }));
+    return { folders, jobs };
+  }
+}
+</script>
+</body>
+</html>

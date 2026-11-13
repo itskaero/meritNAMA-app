@@ -53,7 +53,7 @@
   </div>
 </nav>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["home","lists","candidates","estimates","chances","hospitals","calendar","whatif","community","chats","me","inbox"],"default":"home"},"$preview":{"width":252,"height":1100}}'>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["home","lists","candidates","estimates","jobs","chances","hospitals","calendar","whatif","community","chats","me","inbox"],"default":"home"},"$preview":{"width":252,"height":1100}}'>
 class Component extends DCLogic {
   renderVals() {
     const active = this.props.active ?? 'home';
@@ -74,6 +74,7 @@ class Component extends DCLogic {
         mk('chances', 'My chances', 'Chances.dc.html', 'M12 3a9 9 0 1 0 9 9M12 8a4 4 0 1 0 4 4M12 12l8-8'),
         mk('hospitals', 'Hospitals', 'Hospital.dc.html', 'M4 21V8l8-5 8 5v13M9 21v-5h6v5M12 8v4M10 10h4'),
         mk('calendar', 'Calendar', 'Calendar.dc.html', 'M4 5h16v16H4zM4 10h16M8 3v4M16 3v4'),
+        mk('jobs', 'Jobs', 'Jobs.dc.html', 'M4 8h16v11H4zM9 8V5h6v3M4 13h16', '128'),
         mk('community', 'Community', 'Community.dc.html', 'M16 19v-1a4 4 0 0 0-8 0v1M12 11a3 3 0 1 0 0-6a3 3 0 1 0 0 6M20 19v-1a3 3 0 0 0-2-3M4 19v-1a3 3 0 0 1 2-3'),
         mk('chats', 'Chats', 'Chats.dc.html', 'M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z', '3')
       ],
