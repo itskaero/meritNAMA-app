@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Estimated round 6</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes march{to{background-position:24px 0}}
+@keyframes d1{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(8%,6%,0) scale(1.08)}}
+@keyframes d2{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+.aur{position:relative;overflow:hidden;background:#10243A;color:#F3EEE5;border-radius:16px;padding:22px 24px;border:1px dashed rgba(229,160,75,.45)}
+.aur .mesh{position:absolute;inset:0;pointer-events:none;filter:blur(90px);opacity:.85}
+.aur .b{position:absolute;border-radius:50%}
+.aur .bt{width:560px;height:560px;background:radial-gradient(circle,rgba(23,107,103,.4),rgba(23,107,103,0) 70%);top:-60%;left:-10%;animation:d1 28s ease-in-out infinite alternate}
+.aur .bs{width:520px;height:520px;background:radial-gradient(circle,rgba(38,60,77,.7),rgba(38,60,77,0) 70%);bottom:-80%;right:10%;animation:d2 34s ease-in-out infinite alternate}
+.aur .ba{width:460px;height:460px;background:radial-gradient(circle,rgba(229,160,75,.24),rgba(229,160,75,0) 70%);top:-30%;right:-5%;animation:d2 24s ease-in-out infinite alternate}
+.aur .bv{width:340px;height:340px;background:radial-gradient(circle,rgba(110,86,255,.22),rgba(110,86,255,0) 70%);bottom:-70%;left:35%;animation:d1 30s ease-in-out infinite alternate-reverse}
+.aur>.in{position:relative;z-index:1}
+.iv{color:rgba(243,238,229,.68)}.m{color:#8B8B93}
+.card{background:rgba(23,23,28,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:18px;box-sizing:border-box;position:relative;transition:transform .25s,box-shadow .25s,border-color .25s;animation:rise .6s ease both}
+.card:hover{border-color:rgba(155,135,255,.3);box-shadow:0 0 32px rgba(110,86,255,.14)}
+.glass{background:rgba(16,36,58,.45);border:1px solid rgba(243,238,229,.12);border-radius:14px;padding:12px 14px;box-sizing:border-box}
+.h{margin:0;font-size:15px;font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border-radius:12px;color:#fff;font-weight:600;font-size:13px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);transition:box-shadow .2s,border-color .2s}
+.btn:hover{color:#fff;border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.55)}
+.seg{display:flex;gap:2px;padding:4px;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+.seg>*{height:30px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:#8B8B93;font:inherit;font-size:12px;display:grid;place-items:center}
+.seg>.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.5));box-shadow:inset -3px 0 0 #7B61FF,0 0 18px rgba(110,86,255,.35)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.g{background:rgba(61,220,151,.14);color:#3DDC97}.a{background:rgba(229,160,75,.16);color:#E5A04B}.r{background:rgba(255,122,122,.15);color:#FF7A7A}.v{background:rgba(155,135,255,.18);color:#C4B8FF}.n{background:rgba(255,255,255,.06);color:#A3A3AD}
+.mono{font-family:'IBM Plex Mono',monospace}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:9px 12px;font-weight:500;font-size:12px;color:#8B8B93;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+.tbl td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.tbl tbody tr{transition:background .2s}.tbl tbody tr:hover{background:rgba(110,86,255,.08)}
+.rng{position:relative;height:12px;border-radius:99px;background:rgba(255,255,255,.05)}
+.rng .band{position:absolute;top:0;bottom:0;border-radius:99px;background:repeating-linear-gradient(90deg,rgba(229,160,75,.55) 0 6px,rgba(229,160,75,.3) 6px 12px);background-size:24px 100%;animation:march 1.2s linear infinite;box-shadow:0 0 12px rgba(229,160,75,.45)}
+.rng .now{position:absolute;top:-4px;width:3px;height:20px;border-radius:2px;background:#EDEDEF;box-shadow:0 0 8px rgba(255,255,255,.7)}
+.prob{height:8px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+.prob>span{display:block;height:100%;border-radius:99px;transform-origin:left;animation:grow 1.2s ease both}
+.live{animation:blink 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.pg::before,.pg::after,.aur .b,.card,.live,.rng .band,.prob>span{animation:none!important}}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1120px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="estimates" hint-size="252px,1120px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+
+    <section class="aur" aria-label="Estimated round 6">
+      <div class="mesh" aria-hidden="true"><div class="b bt"></div><div class="b bs"></div><div class="b ba"></div><div class="b bv"></div></div>
+      <div class="in" style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+          <div>
+            <p class="iv" style="margin: 0; font-size: 13px"><a href="Lists.dc.html" style="color: rgba(243,238,229,0.7)">Merit lists</a> / Induction 21 · <span class="pill a" style="border: 1px dashed rgba(229,160,75,0.7)">Estimate · not official</span></p>
+            <h1 style="margin: 8px 0 0; font-size: 32px; font-weight: 700; letter-spacing: -0.03em">Estimated round 6</h1>
+            <p class="iv" style="margin: 6px 0 0; max-width: 700px">Built from the fixed gazette, the round 5 list and the consent replies so far. It refreshes as more replies come in; PHF's real list can differ.</p>
+          </div>
+          <div style="display: flex; gap: 8px"><a class="btn" href="#">What if someone rejects?</a></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr)); gap: 12px">
+          <div class="glass">
+            <div style="display: flex; justify-content: space-between"><p class="iv" style="margin: 0; font-size: 12px"><span class="live" style="color: #E5A04B">●</span> Consent replies in</p><b style="color: #E5A04B">62%</b></div>
+            <div style="display: flex; gap: 2px; margin-top: 10px; height: 20px"><sc-for list="{{ticks}}" as="t" hint-placeholder-count="40"><span style="flex: 1; border-radius: 2px; background: {{t.c}}; box-shadow: {{t.g}}"></span></sc-for></div>
+            <p class="iv" style="margin: 6px 0 0; font-size: 11px">Updated 14 min ago · next refresh in 46 min · final after Fri 14 Nov</p>
+          </div>
+          <div class="glass"><p class="iv" style="margin: 0; font-size: 12px">Seats re-offered</p><p style="margin: 4px 0 0; font-size: 24px; font-weight: 700">1,217</p></div>
+          <div class="glass"><p class="iv" style="margin: 0; font-size: 12px">Likely to move</p><p style="margin: 4px 0 0; font-size: 24px; font-weight: 700; color: #3DDC97">~612</p></div>
+          <div class="glass" style="border-color: rgba(155,135,255,0.55); box-shadow: 0 0 22px rgba(110,86,255,0.25)"><p class="iv" style="margin: 0; font-size: 12px">You in this estimate</p><p style="margin: 4px 0 0; font-size: 16px; font-weight: 700; color: #D6CCFF">Placed · #1 Anaes · Mayo</p><p class="iv" style="margin: 2px 0 0; font-size: 11px">up from #2 · clears by 0.15</p></div>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 430px; gap: 16px; align-items: start">
+      <section class="card" aria-label="Estimated closing" style="padding: 0">
+        <header style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px">
+          <div class="seg" role="tablist" aria-label="View"><button type="button" role="tab" aria-selected="true" class="on">Closing ranges</button><button type="button" role="tab" aria-selected="false">Estimated list</button><button type="button" role="tab" aria-selected="false">Who moves</button></div>
+          <span class="m" style="font-size: 12px">FCPS · Punjab · <span style="color: #EDEDEF">▮</span> round 5 · <span style="color: #E5A04B">▬</span> likely round 6</span>
+        </header>
+        <table class="tbl">
+          <thead><tr><th scope="col">Seat</th><th scope="col" style="text-align: right">R5 closing</th><th scope="col" style="width: 260px">Likely R6 range</th><th scope="col">Change</th><th scope="col">Confidence</th></tr></thead>
+          <tbody>
+            <tr><td><b>Anaesthesia · Mayo</b><span class="m" style="display: block; font-size: 11px">3 seats re-offered</span></td><td class="mono" style="text-align: right">24.31</td><td><div class="rng"><span class="band" style="left: 30%; width: 22%"></span><span class="now" style="left: 62%"></span></div><span class="mono" style="font-size: 11px; color: #E5A04B">23.95 – 24.15</span></td><td><span class="pill g">▼ ~0.25</span></td><td><span class="pill g">High</span></td></tr>
+            <tr><td><b>Medicine · Mayo</b><span class="m" style="display: block; font-size: 11px">5 seats re-offered</span></td><td class="mono" style="text-align: right">23.88</td><td><div class="rng"><span class="band" style="left: 18%; width: 26%"></span><span class="now" style="left: 55%"></span></div><span class="mono" style="font-size: 11px; color: #E5A04B">23.40 – 23.80</span></td><td><span class="pill g">▼ ~0.30</span></td><td><span class="pill a">Medium</span></td></tr>
+            <tr><td><b>Paediatrics · Children's</b><span class="m" style="display: block; font-size: 11px">1 seat re-offered</span></td><td class="mono" style="text-align: right">24.31</td><td><div class="rng"><span class="band" style="left: 48%; width: 16%"></span><span class="now" style="left: 60%"></span></div><span class="mono" style="font-size: 11px; color: #E5A04B">24.10 – 24.30</span></td><td><span class="pill n">≈ same</span></td><td><span class="pill g">High</span></td></tr>
+            <tr><td><b>Radiology · Services</b><span class="m" style="display: block; font-size: 11px">0 re-offered</span></td><td class="mono" style="text-align: right">27.91</td><td><div class="rng"><span class="band" style="left: 60%; width: 12%"></span><span class="now" style="left: 62%"></span></div><span class="mono" style="font-size: 11px; color: #E5A04B">27.85 – 27.95</span></td><td><span class="pill n">≈ same</span></td><td><span class="pill g">High</span></td></tr>
+            <tr><td style="border-bottom: 0"><b>Psychiatry · Mayo</b><span class="m" style="display: block; font-size: 11px">2 seats re-offered</span></td><td class="mono" style="text-align: right; border-bottom: 0">21.37</td><td style="border-bottom: 0"><div class="rng"><span class="band" style="left: 8%; width: 34%"></span><span class="now" style="left: 50%"></span></div><span class="mono" style="font-size: 11px; color: #E5A04B">20.60 – 21.20</span></td><td style="border-bottom: 0"><span class="pill g">▼ ~0.50</span></td><td style="border-bottom: 0"><span class="pill r">Low</span></td></tr>
+          </tbody>
+        </table>
+        <p class="m" style="margin: 0; padding: 12px 14px 14px; font-size: 12px; border-top: 1px solid rgba(255,255,255,0.05)">Ranges, not single numbers. Wider bands mean fewer replies so far for that seat. <a href="#">How estimates are made</a></p>
+      </section>
+
+      <aside class="card" aria-label="Applicant result: Ali Raza" style="padding: 18px; display: flex; flex-direction: column; gap: 12px; border-color: rgba(155,135,255,0.45); box-shadow: 0 0 40px rgba(110,86,255,0.18)">
+        <div style="display: flex; gap: 10px; align-items: center">
+          <span style="width: 40px; height: 40px; border-radius: 99px; display: grid; place-items: center; font-weight: 700; background: linear-gradient(135deg, #8B73FF, #5B3FF5); box-shadow: 0 0 14px rgba(110,86,255,0.6)">AR</span>
+          <div style="flex: 1"><h2 class="h" style="font-size: 16px">Ali Raza <span class="pill v">you</span></h2><p class="mono m" style="margin: 2px 0 0; font-size: 11px">27267 · 93410-P · 24.10</p></div>
+          <button type="button" aria-label="Pick another candidate" style="height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #B9B9C2; font: inherit; font-size: 12px">Change</button>
+        </div>
+        <div style="padding: 12px; border-radius: 12px; background: rgba(61,220,151,0.10); border: 1px solid rgba(61,220,151,0.4); box-shadow: 0 0 18px rgba(61,220,151,0.15)">
+          <div style="display: flex; justify-content: space-between; align-items: center"><b style="font-size: 13px">FCPS · Punjab placement</b><span class="pill g">Placed</span></div>
+          <p style="margin: 4px 0 0; font-size: 12px">Placed at preference #1: <b>Anaesthesia @ Mayo</b> <span class="m">(up from #2 in round 5)</span></p>
+        </div>
+        <div style="display: grid; grid-template-columns: 26px 1fr 50px 76px 68px; gap: 6px; padding: 0 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em" class="m"><span>Pref</span><span>Seat</span><span style="text-align: right">Cutoff</span><span style="text-align: right">Margin</span><span style="text-align: right">Status</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px; max-height: 470px; overflow: auto; padding-right: 2px">
+          <sc-for list="{{prefs}}" as="p" hint-placeholder-count="18">
+            <div style="display: grid; grid-template-columns: 26px 1fr 50px 76px 68px; gap: 6px; align-items: center; padding: 7px 8px; border-radius: 9px; font-size: 12px; background: {{p.bg}}; box-shadow: {{p.sh}}">
+              <span class="mono" style="color: {{p.nc}}">#{{p.n}}</span>
+              <span style="min-width: 0"><span style="display: block; color: {{p.tc}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.spec}}</span><span class="m" style="display: block; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.hosp}} · {{p.fill}}</span></span>
+              <span class="mono m" style="text-align: right">{{p.cut}}</span>
+              <span class="mono" style="text-align: right; font-size: 11px; color: {{p.dc}}">{{p.margin}}</span>
+              <span style="text-align: right"><span class="pill" style="font-size: 10px; padding: 2px 7px; background: {{p.sb}}; color: {{p.sc}}">{{p.status}}</span></span>
+            </div>
+          </sc-for>
+        </div>
+        <p class="m" style="margin: 0; font-size: 11px; line-height: 1.5">One final seat per quota track. Lower preferences can still show "would clear", but they are skipped once an earlier one is placed.</p>
+        <a class="btn" href="#">What if someone above me rejects?</a>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ticks = [];
+    for (let i = 0; i < 40; i++) { const on = i < 25, t = i / 39; ticks.push({ c: on ? `hsl(${38 - t * 6}, 78%, ${50 + t * 10}%)` : 'rgba(243,238,229,0.12)', g: on ? '0 0 6px rgba(229,160,75,0.55)' : 'none' }); }
+    const S = {
+      placed: { s: 'Placed', sb: 'rgba(61,220,151,0.18)', sc: '#3DDC97', bg: 'rgba(61,220,151,0.10)', sh: 'inset 0 0 0 1px rgba(61,220,151,0.45), 0 0 14px rgba(61,220,151,0.15)', nc: '#3DDC97', tc: '#EDEDEF', dc: '#3DDC97' },
+      short: { s: 'Fell short', sb: 'rgba(255,122,122,0.16)', sc: '#FF7A7A', bg: 'rgba(255,122,122,0.06)', sh: 'none', nc: '#FF7A7A', tc: '#EDEDEF', dc: '#FF7A7A' },
+      skip: { s: 'Skipped', sb: 'rgba(255,255,255,0.06)', sc: '#8B8B93', bg: 'rgba(255,255,255,0.025)', sh: 'none', nc: '#6B6B73', tc: '#A3A3AD', dc: '#8B8B93' },
+      full: { s: 'No seats', sb: 'rgba(229,160,75,0.14)', sc: '#E5A04B', bg: 'rgba(255,255,255,0.025)', sh: 'none', nc: '#6B6B73', tc: '#A3A3AD', dc: '#8B8B93' }
+    };
+    const rows = [
+      ['placed', 'Anaesthesia', 'Mayo, Lahore', '6/6', '23.95', 'Clears +0.15'],
+      ['skip', 'Anaesthesia', 'Jinnah, Lahore', '12/12', '22.96', 'Would clear +1.14'],
+      ['skip', 'Anaesthesia', 'Services, Lahore', '8/8', '24.18', 'Would be short 0.08'],
+      ['skip', 'Medicine', 'Mayo, Lahore', '18/18', '23.60', 'Would clear +0.50'],
+      ['skip', 'Anaesthesia', 'Allied, Faisalabad', '10/10', '24.08', 'Would clear +0.02'],
+      ['skip', 'Paediatrics', 'Children\'s, Lahore', '22/22', '24.20', 'Would be short 0.10'],
+      ['skip', 'Anaesthesia', 'Nishtar, Multan', '9/9', '24.02', 'Would clear +0.08'],
+      ['skip', 'Medicine', 'Services, Lahore', '14/14', '24.40', 'Would be short 0.30'],
+      ['skip', 'Anaesthesia', 'LGH, Lahore', '7/7', '23.97', 'Would clear +0.13'],
+      ['full', 'Radiology', 'Services, Lahore', '0/0', '—', '—'],
+      ['skip', 'Medicine', 'Jinnah, Lahore', '16/16', '24.55', 'Would be short 0.45'],
+      ['skip', 'Dermatology', 'Services, Lahore', '6/6', '24.20', 'Would be short 0.10'],
+      ['skip', 'Anaesthesia', 'DHQ, Gujranwala', '5/5', '22.10', 'Would clear +2.00'],
+      ['skip', 'Medicine', 'Allied, Faisalabad', '12/12', '23.10', 'Would clear +1.00'],
+      ['skip', 'Psychiatry', 'Mayo, Lahore', '6/6', '20.90', 'Would clear +3.20'],
+      ['skip', 'Anaesthesia', 'BVH, Bahawalpur', '8/8', '21.40', 'Would clear +2.70'],
+      ['skip', 'Family Medicine', 'Mayo, Lahore', '4/4', '19.80', 'Would clear +4.30'],
+      ['skip', 'Anaesthesia', 'ABS, Gujrat', '4/4', '20.30', 'Would clear +3.80']
+    ];
+    const prefs = rows.map(([k, spec, hosp, fill, cut, margin], i) => {
+      const t = S[k];
+      return { n: i + 1, spec, hosp, fill: `${fill} seats`, cut, margin, status: t.s, sb: t.sb, sc: t.sc, bg: t.bg, sh: t.sh, nc: t.nc, tc: t.tc, dc: margin.includes('short') ? '#FF7A7A' : t.dc };
+    });
+    return { ticks, prefs };
+  }
+}
+</script>
+</body>
+</html>

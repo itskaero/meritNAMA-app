@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My chances</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes sheen{0%{background-position:160% 0}100%{background-position:-60% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes dash{to{stroke-dashoffset:0}}
+@keyframes d1{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(8%,6%,0) scale(1.08)}}
+@keyframes d2{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+.aur{position:relative;overflow:hidden;background:#10243A;color:#F3EEE5;border-radius:16px;padding:22px 24px}
+.aur .mesh{position:absolute;inset:0;pointer-events:none;filter:blur(90px);opacity:.85}
+.aur .b{position:absolute;border-radius:50%}
+.aur .bt{width:560px;height:560px;background:radial-gradient(circle,rgba(23,107,103,.45),rgba(23,107,103,0) 70%);top:-60%;left:-10%;animation:d1 28s ease-in-out infinite alternate}
+.aur .bs{width:520px;height:520px;background:radial-gradient(circle,rgba(38,60,77,.7),rgba(38,60,77,0) 70%);bottom:-80%;right:10%;animation:d2 34s ease-in-out infinite alternate}
+.aur .ba{width:380px;height:380px;background:radial-gradient(circle,rgba(229,160,75,.14),rgba(229,160,75,0) 70%);top:-20%;right:-5%;animation:d2 24s ease-in-out infinite alternate}
+.aur .bv{width:340px;height:340px;background:radial-gradient(circle,rgba(110,86,255,.22),rgba(110,86,255,0) 70%);bottom:-70%;left:35%;animation:d1 30s ease-in-out infinite alternate-reverse}
+.aur>.in{position:relative;z-index:1}
+.iv{color:rgba(243,238,229,.68)}.m{color:#8B8B93}
+.card{background:rgba(23,23,28,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:18px;box-sizing:border-box;position:relative;transition:transform .25s,box-shadow .25s,border-color .25s;animation:rise .6s ease both}
+.card:hover{border-color:rgba(155,135,255,.3);box-shadow:0 0 32px rgba(110,86,255,.14)}
+.h{margin:0;font-size:15px;font-weight:600}
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:12px;color:#fff;font-weight:600;font-size:14px;background:linear-gradient(180deg,#8B73FF,#5B3FF5);box-shadow:0 8px 26px rgba(110,86,255,.5),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:250% 100%;animation:sheen 3.4s ease-in-out infinite}
+.seg{display:flex;gap:2px;padding:4px;border-radius:12px;border:1px solid rgba(243,238,229,.18)}
+.seg>*{height:34px;padding:0 16px;border:0;border-radius:9px;background:transparent;color:rgba(243,238,229,.65);font:inherit;font-size:13px;display:grid;place-items:center}
+.seg>.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.5));box-shadow:inset 0 -2px 0 #7B61FF,0 0 18px rgba(110,86,255,.35)}
+.fld{display:flex;flex-direction:column;gap:6px;font-size:12px;color:rgba(243,238,229,.7)}
+.fld input,.fld select{height:44px;padding:0 12px;border-radius:12px;background:rgba(16,36,58,.55);border:1px solid rgba(243,238,229,.2);color:#F3EEE5;font:inherit;font-size:14px}
+.band{flex:1;padding:12px 14px;border-radius:14px;border:1px solid rgba(243,238,229,.14);background:rgba(16,36,58,.45);text-align:left;font:inherit;color:#F3EEE5;transition:transform .2s,box-shadow .2s}
+.band:hover{transform:translateY(-2px)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.g{background:rgba(61,220,151,.14);color:#3DDC97}.a{background:rgba(229,160,75,.16);color:#E5A04B}.r{background:rgba(255,122,122,.15);color:#FF7A7A}.v{background:rgba(155,135,255,.18);color:#C4B8FF}
+.mono{font-family:'IBM Plex Mono',monospace}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:10px 12px;font-weight:500;font-size:12px;color:#8B8B93;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+.tbl td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.tbl tbody tr{transition:background .2s}.tbl tbody tr:hover{background:rgba(110,86,255,.08)}
+.draw{stroke-dasharray:1200;stroke-dashoffset:1200;animation:dash 2.2s ease forwards}
+.live{animation:blink 1.6s ease-in-out infinite}
+.av{width:26px;height:26px;border-radius:99px;display:grid;place-items:center;font-size:10px;font-weight:700;border:2px solid #17171C}
+@media (prefers-reduced-motion: reduce){.aur .b,.btn::after,.card,.draw,.live{animation:none!important}.draw{stroke-dashoffset:0}}
+.btn{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);color:#fff;transition:box-shadow .2s,border-color .2s,transform .15s}
+.btn:hover{color:#fff;border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.55);transform:translateY(-1px)}
+.btn::after{opacity:.35}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1100px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="chances" hint-size="252px,1100px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <section class="aur" aria-label="My chances">
+      <div class="mesh" aria-hidden="true"><div class="b bt"></div><div class="b bs"></div><div class="b ba"></div><div class="b bv"></div></div>
+      <div class="in" style="display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px">
+          <div><h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.03em">My chances</h1><p class="iv" style="margin: 4px 0 0">Where your marks can get a seat, from past closing merit under the same scoring.</p></div>
+          <div class="seg" role="tablist" aria-label="Mode"><button type="button" role="tab" aria-selected="true" class="on">I know my score</button><button type="button" role="tab" aria-selected="false">I have a target</button><a href="#">Calculator</a></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 0.7fr 1.2fr 1.2fr auto; gap: 12px; align-items: end">
+          <label class="fld">Your marks<input class="mono" value="24.10"></label>
+          <label class="fld">Out of<input class="mono" value="30"></label>
+          <label class="fld">Programme · quota<select><option>FCPS · Punjab</option></select></label>
+          <label class="fld">Compare with<select><option>Induction 21 (same scoring)</option></select></label>
+          <a class="btn" href="#">Analyze →</a>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: stretch">
+          <div style="flex: 0 0 230px; padding: 14px 16px; border-radius: 14px; background: rgba(110,86,255,0.18); border: 1px solid rgba(155,135,255,0.45); box-shadow: 0 0 30px rgba(110,86,255,0.25)">
+            <p class="iv" style="margin: 0; font-size: 12px">Your percentile</p>
+            <p style="margin: 2px 0 0; font-size: 46px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05">86<span class="iv" style="font-size: 18px">th</span></p>
+            <p style="margin: 2px 0 0; font-size: 13px; color: #D6CCFF">High · better than 86 of 100</p>
+          </div>
+          <button type="button" class="band" aria-pressed="false"><span style="font-size: 12px; color: #3DDC97">● Safe</span><span style="display: block; font-size: 30px; font-weight: 700; color: #3DDC97">14</span><svg aria-hidden="true" width="100%" height="22" viewBox="0 0 100 22" preserveAspectRatio="none"><path class="draw" d="M0 18 C20 16, 40 14, 60 10 S 90 4, 100 3" fill="none" stroke="#3DDC97" stroke-width="2"></path></svg></button>
+          <button type="button" class="band" aria-pressed="true" style="border-color: rgba(229,160,75,0.7); box-shadow: 0 0 26px rgba(229,160,75,0.3); background: rgba(229,160,75,0.12)"><span style="font-size: 12px; color: #E5A04B">● Target · showing</span><span style="display: block; font-size: 30px; font-weight: 700; color: #E5A04B">9</span><svg aria-hidden="true" width="100%" height="22" viewBox="0 0 100 22" preserveAspectRatio="none"><path class="draw" d="M0 12 C20 8, 40 16, 60 10 S 90 12, 100 9" fill="none" stroke="#E5A04B" stroke-width="2"></path></svg></button>
+          <button type="button" class="band" aria-pressed="false"><span style="font-size: 12px; color: #FF7A7A">● Reach</span><span style="display: block; font-size: 30px; font-weight: 700; color: #FF7A7A">15</span><svg aria-hidden="true" width="100%" height="22" viewBox="0 0 100 22" preserveAspectRatio="none"><path class="draw" d="M0 4 C20 6, 40 8, 60 12 S 90 18, 100 20" fill="none" stroke="#FF7A7A" stroke-width="2"></path></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start">
+      <section class="card" aria-label="Target seats" style="padding: 0">
+        <header style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 8px"><h2 class="h">9 target seats</h2><span class="m" style="font-size: 12px">Tick up to 3 to compare</span></header>
+        <table class="tbl">
+          <thead><tr><th scope="col"><span style="position: absolute; left: -9999px">Compare</span></th><th scope="col">Speciality · hospital</th><th scope="col" style="text-align: right">Final</th><th scope="col">You vs final</th><th scope="col">Next round likely</th><th scope="col"><span style="position: absolute; left: -9999px">Shortlist</span></th></tr></thead>
+          <tbody>
+            <tr style="background: rgba(110,86,255,0.08)"><td><input type="checkbox" checked aria-label="Compare Medicine at Mayo" style="accent-color: #7B61FF"></td><td><b>Medicine</b><span class="m" style="display: block; font-size: 12px">Mayo Hospital, Lahore · 288 searching</span></td><td class="mono" style="text-align: right">23.88</td><td style="width: 150px"><div style="position: relative; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.08)"><span style="position: absolute; left: 0; width: 55%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #E5A04B, #3DDC97)"></span><span style="position: absolute; left: 55%; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: #fff; box-shadow: 0 0 8px #fff"></span></div><span style="font-size: 11px; color: #3DDC97">+0.22 above</span></td><td class="mono" style="color: #E5A04B">23.4 – 23.8</td><td><button type="button" aria-label="Shortlist" style="background: none; border: 0; color: #E5A04B; font-size: 17px; text-shadow: 0 0 10px rgba(229,160,75,0.8)">★</button></td></tr>
+            <tr style="background: rgba(110,86,255,0.08)"><td><input type="checkbox" checked aria-label="Compare Paediatrics at Children's" style="accent-color: #7B61FF"></td><td><b>Paediatrics</b><span class="m" style="display: block; font-size: 12px">Children's Hospital, Lahore · 241 searching</span></td><td class="mono" style="text-align: right">24.31</td><td><div style="position: relative; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.08)"><span style="position: absolute; left: 0; width: 44%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #FF7A7A, #E5A04B)"></span><span style="position: absolute; left: 44%; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: #fff; box-shadow: 0 0 8px #fff"></span></div><span style="font-size: 11px; color: #FF7A7A">−0.21 below</span></td><td class="mono" style="color: #E5A04B">23.9 – 24.3</td><td><button type="button" aria-label="Shortlist" style="background: none; border: 0; color: #6B6B73; font-size: 17px">☆</button></td></tr>
+            <tr><td><input type="checkbox" aria-label="Compare Dermatology at Services" style="accent-color: #7B61FF"></td><td><b>Dermatology</b><span class="m" style="display: block; font-size: 12px">Services Hospital, Lahore · 96 searching</span></td><td class="mono" style="text-align: right">24.20</td><td><div style="position: relative; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.08)"><span style="position: absolute; left: 0; width: 47%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #FF7A7A, #E5A04B)"></span><span style="position: absolute; left: 47%; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: #fff"></span></div><span style="font-size: 11px; color: #FF7A7A">−0.10 below</span></td><td class="mono" style="color: #E5A04B">23.8 – 24.2</td><td><button type="button" aria-label="Shortlist" style="background: none; border: 0; color: #6B6B73; font-size: 17px">☆</button></td></tr>
+            <tr><td style="border-bottom: 0"><input type="checkbox" aria-label="Compare ENT at Allied" style="accent-color: #7B61FF"></td><td style="border-bottom: 0"><b>ENT</b><span class="m" style="display: block; font-size: 12px">Allied Hospital, Faisalabad · 54 searching</span></td><td class="mono" style="text-align: right; border-bottom: 0">23.95</td><td style="border-bottom: 0"><div style="position: relative; height: 8px; border-radius: 99px; background: rgba(255,255,255,0.08)"><span style="position: absolute; left: 0; width: 53%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #E5A04B, #3DDC97)"></span><span style="position: absolute; left: 53%; top: -4px; width: 4px; height: 16px; border-radius: 2px; background: #fff"></span></div><span style="font-size: 11px; color: #3DDC97">+0.15 above</span></td><td class="mono" style="color: #E5A04B; border-bottom: 0">23.5 – 23.9</td><td style="border-bottom: 0"><button type="button" aria-label="Shortlist" style="background: none; border: 0; color: #6B6B73; font-size: 17px">☆</button></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <aside style="display: flex; flex-direction: column; gap: 14px">
+        <section class="card" aria-label="Compare" style="border-color: rgba(155,135,255,0.35); box-shadow: 0 0 30px rgba(110,86,255,0.15); animation-delay: 0.1s">
+          <div style="display: flex; justify-content: space-between"><h2 class="h">Comparing 2 of 3</h2><a href="#" style="font-size: 12px">Clear</a></div>
+          <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px">
+            <div style="padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.03)"><div style="display: flex; justify-content: space-between"><b style="font-size: 13px">Medicine · Mayo</b><span class="pill g">easier</span></div><svg aria-hidden="true" width="100%" height="28" viewBox="0 0 200 28" preserveAspectRatio="none"><path class="draw" d="M2 6 C40 8, 80 12, 120 16 S 170 22, 198 24" fill="none" stroke="#3DDC97" stroke-width="2.5" style="filter: drop-shadow(0 0 5px rgba(61,220,151,0.7))"></path></svg><p class="m" style="margin: 0; font-size: 11px">18 seats · 6.2 per seat</p></div>
+            <div style="padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.03)"><div style="display: flex; justify-content: space-between"><b style="font-size: 13px">Paediatrics · Children's</b><span class="pill r">harder</span></div><svg aria-hidden="true" width="100%" height="28" viewBox="0 0 200 28" preserveAspectRatio="none"><path class="draw" d="M2 22 C40 20, 80 16, 120 12 S 170 8, 198 6" fill="none" stroke="#FF7A7A" stroke-width="2.5" style="filter: drop-shadow(0 0 5px rgba(255,122,122,0.7))"></path></svg><p class="m" style="margin: 0; font-size: 11px">22 seats · 8.9 per seat</p></div>
+            <div style="padding: 14px; border-radius: 12px; border: 1px dashed rgba(155,135,255,0.4); text-align: center; font-size: 12px" class="m">Tick a third seat</div>
+          </div>
+        </section>
+        <section class="card" aria-label="People like you" style="animation-delay: 0.2s">
+          <h2 class="h">People with 24.0–24.2 shortlisted</h2>
+          <ul style="list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13px">
+            <li style="display: flex; justify-content: space-between; align-items: center"><span>Anaesthesia · Jinnah</span><span style="display: flex; align-items: center"><span class="av" style="background: #5B3FF5">HS</span><span class="av" style="background: #176B67; margin-left: -7px">UT</span><span class="m" style="margin-left: 6px; font-size: 12px">61</span></span></li>
+            <li style="display: flex; justify-content: space-between; align-items: center"><span>Medicine · Mayo</span><span style="display: flex; align-items: center"><span class="av" style="background: #8C5426">SI</span><span class="av" style="background: #263C4D; margin-left: -7px">BA</span><span class="m" style="margin-left: 6px; font-size: 12px">48</span></span></li>
+            <li style="display: flex; justify-content: space-between; align-items: center"><span>ENT · Allied</span><span style="display: flex; align-items: center"><span class="av" style="background: #3A3A42">MN</span><span class="m" style="margin-left: 6px; font-size: 12px">22</span></span></li>
+          </ul>
+          <p class="m" style="margin: 12px 0 0; font-size: 11px">Counts only, from members who share their shortlist.</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

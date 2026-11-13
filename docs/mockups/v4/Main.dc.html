@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>meritNAMA overview</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#A797FF;text-decoration:none}a:hover{color:#C4B8FF}
+/* Aurora container (as supplied) */
+.meritnama-aurora-container{position:relative;overflow:hidden;background-color:#10243A;color:#F3EEE5;border-radius:16px}
+.aurora-mesh{position:absolute;inset:0;pointer-events:none;z-index:0;filter:blur(110px);opacity:.85}
+.aurora-blob{position:absolute;border-radius:50%;will-change:transform}
+.blob-teal{width:55vw;height:55vw;max-width:680px;max-height:680px;background:radial-gradient(circle,rgba(23,107,103,.42) 0%,rgba(23,107,103,0) 70%);top:-20%;left:-10%;animation:auroraDriftOne 28s ease-in-out infinite alternate}
+.blob-slate{width:50vw;height:50vw;max-width:620px;max-height:620px;background:radial-gradient(circle,rgba(38,60,77,.65) 0%,rgba(38,60,77,0) 70%);bottom:-25%;right:10%;animation:auroraDriftTwo 34s ease-in-out infinite alternate}
+.blob-amber{width:35vw;height:35vw;max-width:440px;max-height:440px;background:radial-gradient(circle,rgba(229,160,75,.12) 0%,rgba(229,160,75,0) 70%);top:15%;right:-5%;animation:auroraDriftThree 24s ease-in-out infinite alternate}
+.blob-violet{width:30vw;height:30vw;max-width:380px;max-height:380px;background:radial-gradient(circle,rgba(110,86,255,.22) 0%,rgba(110,86,255,0) 70%);bottom:-20%;left:30%;animation:auroraDriftOne 30s ease-in-out infinite alternate-reverse}
+.dashboard-content{position:relative;z-index:1}
+@keyframes auroraDriftOne{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(8%,6%,0) scale(1.08)}}
+@keyframes auroraDriftTwo{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+@keyframes auroraDriftThree{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-5%,8%,0) scale(.95)}}
+/* Glow and motion */
+@keyframes sheen{0%{background-position:160% 0}100%{background-position:-60% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes breathe{0%,100%{box-shadow:0 0 18px rgba(110,86,255,.25)}50%{box-shadow:0 0 34px rgba(110,86,255,.55)}}
+@keyframes dash{to{stroke-dashoffset:0}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.btn-glow{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:12px;color:#fff;font-weight:600;background:linear-gradient(180deg,#8B73FF,#5B3FF5);box-shadow:0 8px 28px rgba(110,86,255,.45),inset 0 1px 0 rgba(255,255,255,.25);transition:transform .2s,box-shadow .2s}
+.btn-glow::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:250% 100%;animation:sheen 3.4s ease-in-out infinite}
+.btn-glow:hover{transform:translateY(-1px);box-shadow:0 12px 36px rgba(110,86,255,.65),inset 0 1px 0 rgba(255,255,255,.3)}
+.ob{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.14);color:#EDEDEF;font-size:12px;font-weight:500;background:rgba(255,255,255,.02);transition:border-color .2s,box-shadow .2s,color .2s}
+.ob:hover{border-color:rgba(155,135,255,.7);box-shadow:0 0 16px rgba(110,86,255,.35);color:#fff}
+.card{background:rgba(23,23,28,.78);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:20px;box-sizing:border-box;position:relative;transition:transform .25s,box-shadow .25s,border-color .25s;animation:rise .6s ease both}
+.card:hover{transform:translateY(-3px);border-color:rgba(155,135,255,.35);box-shadow:0 18px 40px rgba(0,0,0,.45),0 0 32px rgba(110,86,255,.18)}
+.glass{background:rgba(16,36,58,.45);border:1px solid rgba(243,238,229,.12);border-radius:18px;padding:18px;box-sizing:border-box;backdrop-filter:blur(10px);transition:transform .25s,border-color .25s,box-shadow .25s}
+.glass:hover{transform:translateY(-3px);border-color:rgba(229,160,75,.45);box-shadow:0 0 30px rgba(23,107,103,.35)}
+.h{margin:0;font-size:15px;font-weight:600}
+.m{color:#8B8B93}.iv{color:rgba(243,238,229,.65)}
+.ft{margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);font-size:12px}
+.seg{display:flex;padding:4px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02)}
+.seg button{height:30px;padding:0 16px;border:0;border-radius:9px;background:transparent;color:#8B8B93;font:inherit;font-size:12px;transition:color .2s}
+.seg button:hover{color:#EDEDEF}
+.seg button.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.45));box-shadow:inset 0 -2px 0 #7B61FF,0 0 18px rgba(110,86,255,.3)}
+.chip{position:absolute;box-sizing:border-box;width:112px;padding:6px 8px;border-radius:10px;background:rgba(30,30,36,.9);border:1px solid rgba(255,255,255,.09);font-size:11px;line-height:1.3;transition:border-color .2s,box-shadow .2s}
+.chip:hover{border-color:rgba(155,135,255,.6);box-shadow:0 0 18px rgba(110,86,255,.35)}
+.bar{position:absolute;height:34px;border-radius:9px;box-sizing:border-box;padding:0 10px;display:flex;align-items:center;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden}
+.live{animation:blink 1.6s ease-in-out infinite}
+.draw{stroke-dasharray:1200;stroke-dashoffset:1200;animation:dash 2.2s ease forwards}
+@media (prefers-reduced-motion: reduce){.aurora-blob,.btn-glow::after,.card,.draw,.live,.you{animation:none!important}.draw{stroke-dashoffset:0}.card,.glass,.btn-glow,.ob{transition:none}}
+.btn-glow{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);color:#fff}
+.btn-glow:hover{border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.55)}
+.btn-glow::after{opacity:.35}
+.meritnama-aurora-container .aurora-mesh{opacity:.55}
+@media (prefers-reduced-motion: reduce){.hero-vid{display:none}}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1160px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="home" hint-size="252px,1160px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+
+    <section class="meritnama-aurora-container" aria-label="Overview" style="padding: 28px">
+      <img src="/_blob/2f85f86f657c31dfe357dcdd370fcbd0" alt="" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center; opacity: 0.7">
+      <video class="hero-vid" src="/_blob/d4c6f528d557c7ba93648af90d6aceaf" poster="/_blob/2f85f86f657c31dfe357dcdd370fcbd0" autoplay="" muted="" loop="" playsinline="" preload="auto" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center; opacity: 0.7"></video>
+      <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(16,36,58,0.92) 0%, rgba(16,36,58,0.6) 45%, rgba(16,36,58,0.15) 75%), linear-gradient(0deg, rgba(16,36,58,0.85) 0%, rgba(16,36,58,0) 55%)"></div>
+      <div class="aurora-mesh" aria-hidden="true">
+        <div class="aurora-blob blob-teal"></div>
+        <div class="aurora-blob blob-slate"></div>
+        <div class="aurora-blob blob-amber"></div>
+        <div class="aurora-blob blob-violet"></div>
+      </div>
+      <div class="dashboard-content" style="display: flex; flex-direction: column; gap: 22px">
+        <header style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px">
+          <div>
+            <p class="iv" style="margin: 0; font-size: 13px; display: flex; align-items: center; gap: 8px"><span class="live" style="width: 8px; height: 8px; border-radius: 99px; background: #3DDC97; box-shadow: 0 0 10px #3DDC97"></span>Round 5 is live · updated 2 days ago</p>
+            <h1 style="margin: 8px 0 0; font-size: 42px; font-weight: 700; letter-spacing: -0.03em">Good evening, Ali!</h1>
+            <p class="iv" style="margin: 6px 0 0">Merit fell for most seats this round. Here's where you stand.</p>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 28px">
+            <div><p class="iv" style="margin: 0; font-size: 12px">Your marks</p><p style="margin: 2px 0 0; font-size: 32px; font-weight: 600; letter-spacing: -0.02em">24.10 <span class="iv" style="font-size: 14px">/ 30</span></p></div>
+            <div><p class="iv" style="margin: 0; font-size: 12px">Percentile</p><p style="margin: 2px 0 0; font-size: 32px; font-weight: 600; letter-spacing: -0.02em">86<span class="iv" style="font-size: 14px">th</span> <span style="font-size: 15px; color: #E5A04B">↗</span></p></div>
+            <a class="btn-glow" href="Chances.dc.html">Analyze my score →</a>
+          </div>
+        </header>
+
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+          <section class="glass" aria-label="Your standing">
+            <div style="display: flex; justify-content: space-between; align-items: center"><h2 class="h">Your standing</h2><span class="iv" style="font-size: 12px">FCPS · Punjab</span></div>
+            <div style="display: flex; justify-content: space-between; margin-top: 16px"><span style="font-size: 18px; font-weight: 600">High</span><span style="font-size: 18px; font-weight: 600">24.10 <span class="iv" style="font-size: 13px">/ 30</span></span></div>
+            <div style="display: flex; gap: 3px; margin-top: 10px; height: 34px"><sc-for list="{{ticks}}" as="t" hint-placeholder-count="36"><span style="flex: 1; border-radius: 2px; background: {{t.c}}; box-shadow: {{t.g}}"></span></sc-for></div>
+            <p class="iv" style="margin: 12px 0 0; font-size: 12px">Better than 86 of 100 candidates.</p>
+          </section>
+          <section class="glass" aria-label="Your chances">
+            <div style="display: flex; justify-content: space-between; align-items: center"><h2 class="h">Your chances</h2><a href="Chances.dc.html" style="font-size: 12px; color: #E5A04B">See all 38 →</a></div>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px">
+              <div><p style="margin: 0; font-size: 12px" class="iv">Safe</p><svg aria-hidden="true" width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none"><path class="draw" d="M0 26 C15 24, 25 28, 40 20 S 70 16, 100 5" fill="none" stroke="#3DDC97" stroke-width="2" style="filter: drop-shadow(0 0 4px rgba(61,220,151,0.7))"></path></svg><p style="margin: 0; font-size: 26px; font-weight: 700; color: #3DDC97">14</p></div>
+              <div><p style="margin: 0; font-size: 12px" class="iv">Target</p><svg aria-hidden="true" width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none"><path class="draw" d="M0 18 C15 12, 25 22, 45 16 S 75 20, 100 14" fill="none" stroke="#E5A04B" stroke-width="2" style="filter: drop-shadow(0 0 4px rgba(229,160,75,0.7))"></path></svg><p style="margin: 0; font-size: 26px; font-weight: 700; color: #E5A04B">9</p></div>
+              <div><p style="margin: 0; font-size: 12px" class="iv">Reach</p><svg aria-hidden="true" width="100%" height="32" viewBox="0 0 100 32" preserveAspectRatio="none"><path class="draw" d="M0 6 C20 8, 30 12, 50 16 S 80 24, 100 28" fill="none" stroke="#FF7A7A" stroke-width="2" style="filter: drop-shadow(0 0 4px rgba(255,122,122,0.7))"></path></svg><p style="margin: 0; font-size: 26px; font-weight: 700; color: #FF7A7A">15</p></div>
+            </div>
+          </section>
+          <section class="glass" aria-label="Your seat">
+            <div style="display: flex; justify-content: space-between; align-items: center"><h2 class="h">Your seat</h2><span style="font-size: 12px; color: #FF7A7A; font-weight: 600">1 day 21 h to consent</span></div>
+            <p style="margin: 14px 0 0; font-size: 17px; font-weight: 600">Anaesthesia · Jinnah, Lahore</p>
+            <p class="iv" style="margin: 3px 0 0; font-size: 13px">Preference #2 <span style="color: #3DDC97">▲ from #4</span></p>
+            <div style="display: flex; gap: 6px; margin-top: 12px"><span style="flex: 1; height: 24px; border-radius: 7px; background: #FF7A7A"></span><span style="flex: 1; height: 24px; border-radius: 7px; background: #E5A04B"></span><span style="flex: 1; height: 24px; border-radius: 7px; background: #E5A04B"></span><span style="flex: 1; height: 24px; border-radius: 7px; background: #E5A04B"></span><span class="you" style="flex: 1; height: 24px; border-radius: 7px; background: #3DDC97; box-shadow: 0 0 14px rgba(61,220,151,0.7)"></span><span style="flex: 1; height: 24px; border-radius: 7px; border: 1px dashed rgba(243,238,229,0.4)"></span></div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 4px" class="iv"><span>R1</span><span>R2</span><span>R3</span><span>R4</span><span>R5</span><span>R6</span></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px">
+      <section class="card" aria-label="Median closing merit" style="grid-column: span 2; background: radial-gradient(520px 260px at 100% 100%, rgba(110,86,255,0.16), transparent 70%), rgba(23,23,28,0.78)">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <div><h2 class="h">Median closing merit</h2><p class="m" style="margin: 2px 0 0; font-size: 12px">FCPS · Punjab · lower is easier</p></div>
+          <div class="seg" role="group" aria-label="Range"><button type="button" class="on" aria-pressed="true">Rounds</button><button type="button" aria-pressed="false">Inductions</button><button type="button" aria-pressed="false">Max</button></div>
+        </div>
+        <svg role="img" aria-label="Median closing merit fell from 24.10 in round 1 to 22.85 in round 5" width="100%" height="160" viewBox="0 0 700 160" preserveAspectRatio="none" style="margin-top: 10px">
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B73FF" stop-opacity="0.4"></stop><stop offset="1" stop-color="#8B73FF" stop-opacity="0"></stop></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5CE1E6"></stop><stop offset="1" stop-color="#9B87FF"></stop></linearGradient></defs>
+          <path d="M0 140 H700 M0 100 H700 M0 60 H700 M0 20 H700" stroke="rgba(255,255,255,0.05)"></path>
+          <path d="M0 24 C80 28, 120 40, 175 46 S 290 64, 350 70 S 470 92, 525 100 S 640 118, 700 124 L700 160 L0 160 Z" fill="url(#g1)"></path>
+          <path class="draw" d="M0 24 C80 28, 120 40, 175 46 S 290 64, 350 70 S 470 92, 525 100 S 640 118, 700 124" fill="none" stroke="url(#g2)" stroke-width="3" style="filter: drop-shadow(0 0 8px rgba(155,135,255,0.8))"></path>
+          <circle class="you" cx="694" cy="123" r="6" fill="#0C0C0E" stroke="#9B87FF" stroke-width="3" style="filter: drop-shadow(0 0 8px #9B87FF)"></circle>
+        </svg>
+        <div style="display: flex; justify-content: space-between; font-size: 11px" class="m"><span>R1</span><span>R2</span><span>R3</span><span>R4</span><span>R5</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px">
+          <p style="margin: 0"><span class="m" style="font-size: 12px; display: block">Round 5</span><span style="font-size: 36px; font-weight: 600; letter-spacing: -0.02em">22.85</span><sup style="color: #3DDC97; font-size: 14px; margin-left: 4px">−0.41</sup></p>
+          <p style="margin: 0; text-align: right"><span class="m" style="font-size: 12px; display: block">Round 6 likely</span><span style="font-size: 18px; font-weight: 600; color: #E5A04B">22.4 – 22.8</span></p>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Round 6 readiness" style="animation-delay: 0.1s">
+        <div style="display: flex; justify-content: space-between; align-items: center"><h2 class="h">Round 6 readiness</h2><a class="ob" href="Calendar.dc.html">Calendar</a></div>
+        <svg role="img" aria-label="62 percent of consent replies are in" width="100%" height="170" viewBox="0 0 240 150" style="margin-top: 6px">
+          <sc-for list="{{arc}}" as="s" hint-placeholder-count="12"><path d="{{s.d}}" fill="{{s.c}}" style="filter: {{s.f}}"></path></sc-for>
+          <text x="120" y="118" text-anchor="middle" fill="#EDEDEF" font-size="36" font-weight="700" font-family="Inter">62%</text>
+          <text x="120" y="139" text-anchor="middle" fill="#8B8B93" font-size="11" font-family="Inter">of consent replies are in</text>
+        </svg>
+        <p class="m" style="margin: 8px 0 0; font-size: 12px; display: flex; gap: 12px; flex-wrap: wrap"><span><span style="color: #FF7A7A">●</span> 1,140 Punjab</span><span><span style="color: #FF7A7A">●</span> 312 MS</span><span><span style="color: #FF7A7A">●</span> 96 dental</span></p>
+        <p class="ft m">The estimate is published when replies pass 90%.</p>
+      </section>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px">
+      <section class="card" aria-label="Your preferences" style="height: 360px; background: radial-gradient(220px 200px at 50% 58%, rgba(110,86,255,0.24), transparent 70%), rgba(23,23,28,0.78); overflow: hidden; animation-delay: 0.15s">
+        <div style="display: flex; justify-content: space-between; align-items: center"><h2 class="h">Your preferences</h2><span class="m" style="font-size: 12px">top 6 of 18</span></div>
+        <svg aria-hidden="true" width="100%" height="290" viewBox="0 0 330 290" style="position: absolute; left: 0; bottom: 0">
+          <circle cx="165" cy="150" r="118" fill="none" stroke="rgba(255,255,255,0.10)" stroke-dasharray="2 4"></circle>
+          <circle cx="165" cy="150" r="76" fill="none" stroke="rgba(155,135,255,0.45)" style="filter: drop-shadow(0 0 6px rgba(155,135,255,0.6))"></circle>
+        </svg>
+        <div class="you" style="position: absolute; left: 50%; top: 210px; transform: translate(-50%, -50%); width: 86px; height: 86px; border-radius: 99px; display: grid; place-items: center; align-content: center; background: #1E1E24; border: 1px solid rgba(155,135,255,0.55); animation: breathe 3.5s ease-in-out infinite"><span class="m" style="font-size: 10px">You</span><span style="font-size: 18px; font-weight: 700">24.10</span></div>
+        <div class="chip" style="left: 50%; top: 58px; transform: translateX(-50%)"><span style="color: #FF7A7A">●</span> #1 Anaes · Mayo<span class="m" style="display: block">needs 24.31</span></div>
+        <div class="chip" style="right: 14px; top: 120px; border-color: rgba(61,220,151,0.6); box-shadow: 0 0 16px rgba(61,220,151,0.3)"><span style="color: #3DDC97">●</span> #2 Anaes · Jinnah<span style="display: block; color: #3DDC97">your seat</span></div>
+        <div class="chip" style="right: 14px; top: 250px"><span style="color: #3DDC97">●</span> #3 Anaes · Services<span class="m" style="display: block">safe</span></div>
+        <div class="chip" style="left: 50%; top: 300px; transform: translateX(-50%)"><span style="color: #E5A04B">●</span> #4 Medicine · Mayo<span class="m" style="display: block">target</span></div>
+        <div class="chip" style="left: 14px; top: 250px"><span style="color: #3DDC97">●</span> #5 Anaes · Allied<span class="m" style="display: block">safe</span></div>
+        <div class="chip" style="left: 14px; top: 120px"><span style="color: #FF7A7A">●</span> #6 Radiology · SH<span class="m" style="display: block">reach</span></div>
+      </section>
+
+      <section class="card" aria-label="This cycle" style="grid-column: span 2; height: 360px; animation-delay: 0.2s">
+        <div style="display: flex; justify-content: space-between; align-items: center"><div><h2 class="h">This cycle</h2><p class="m" style="margin: 2px 0 0; font-size: 12px">What's waiting for you</p></div><a class="ob" href="Calendar.dc.html">Open calendar</a></div>
+        <div style="position: relative; margin-top: 16px; height: 270px; border-radius: 14px; background: rgba(12,12,14,0.6); border: 1px solid rgba(255,255,255,0.05); overflow: hidden">
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 10px 0 0; font-size: 11px; text-align: center" class="m"><span>Nov 4</span><span>Nov 7</span><span>Nov 10</span><span style="color: #EDEDEF; font-weight: 600">Nov 13</span><span>Nov 16</span><span>Nov 19</span><span>Nov 22</span></div>
+          <div aria-hidden="true" style="position: absolute; top: 26px; bottom: 0; left: 50%; width: 2px; background: #9B87FF; box-shadow: 0 0 12px #9B87FF"></div>
+          <div class="bar" style="left: 2%; width: 20%; top: 50px; background: rgba(61,220,151,0.16); color: #3DDC97; box-shadow: inset 3px 0 0 #3DDC97">Round 4 consent · done</div>
+          <div class="bar" style="left: 35%; width: 7%; top: 96px; background: #3DDC97; color: #0C0C0E; box-shadow: 0 0 16px rgba(61,220,151,0.5)">Round 5</div>
+          <div class="bar" style="left: 36%; width: 22%; top: 142px; background: rgba(229,160,75,0.22); color: #E5A04B; box-shadow: inset 3px 0 0 #E5A04B, 0 0 18px rgba(229,160,75,0.25)">Your consent · due Fri 14</div>
+          <div class="bar" style="left: 61%; width: 14%; top: 188px; border: 1px dashed rgba(155,135,255,0.8); color: #B9AAFF">Round 6 estimate</div>
+          <div class="bar" style="left: 76%; width: 18%; top: 222px; height: 30px; background: rgba(92,225,230,0.16); color: #5CE1E6; box-shadow: inset 3px 0 0 #5CE1E6">Round 6 list (expected)</div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1160}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ticks = [];
+    for (let i = 0; i < 36; i++) {
+      const t = i / 35;
+      const on = i < 29;
+      const h = 176 - t * 140;
+      ticks.push({ c: on ? `hsl(${h}, 62%, ${46 + t * 12}%)` : 'rgba(243,238,229,0.12)', g: on ? `0 0 8px hsla(${h}, 70%, 55%, 0.55)` : 'none' });
+    }
+    const arc = [];
+    const n = 12, on = 7, cx = 120, cy = 112, r1 = 66, r2 = 98;
+    const p = (r, a) => `${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+    for (let i = 0; i < n; i++) {
+      const a0 = Math.PI + (i / n) * Math.PI + 0.045, a1 = Math.PI + ((i + 1) / n) * Math.PI - 0.045;
+      const lit = i < on;
+      arc.push({ d: `M${p(r1, a0)} L${p(r2, a0)} A${r2} ${r2} 0 0 1 ${p(r2, a1)} L${p(r1, a1)} A${r1} ${r1} 0 0 0 ${p(r1, a0)} Z`, c: lit ? '#9B87FF' : '#26262B', f: lit ? 'drop-shadow(0 0 6px rgba(155,135,255,0.7))' : 'none' });
+    }
+    return { ticks, arc };
+  }
+}
+</script>
+</body>
+</html>

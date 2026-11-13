@@ -1,0 +1,41 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-11-12T16:20:00Z" },
+  "title": "meritNAMA redesign mockups",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Design.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 900, "title": "Design language" },
+    "SignIn.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 900, "title": "Sign in / request access" },
+    "Main.dc.html": { "x": 0, "y": 1020, "w": 1440, "h": 1160, "title": "Overview" },
+    "Community.dc.html": { "x": 1520, "y": 1020, "w": 1440, "h": 1100, "title": "Community" },
+    "Lists.dc.html": { "x": 0, "y": 2300, "w": 1440, "h": 1100, "title": "Merit lists" },
+    "Round.dc.html": { "x": 1520, "y": 2300, "w": 1440, "h": 1100, "title": "Round · candidates and preferences" },
+    "Chances.dc.html": { "x": 0, "y": 3520, "w": 1440, "h": 1100, "title": "My chances" },
+    "Hospital.dc.html": { "x": 1520, "y": 3520, "w": 1440, "h": 1240, "title": "Hospital" },
+    "Calendar.dc.html": { "x": 0, "y": 4880, "w": 1440, "h": 1060, "title": "Induction calendar" },
+    "Chats.dc.html": { "x": 1520, "y": 4880, "w": 1440, "h": 940, "title": "Chats" },
+    "Me.dc.html": { "x": 0, "y": 6060, "w": 1440, "h": 1100, "title": "Me" },
+    "PhoneHome.dc.html": { "x": 1520, "y": 6060, "w": 390, "h": 844, "title": "Phone · Home" },
+    "Phone.dc.html": { "x": 1990, "y": 6060, "w": 390, "h": 844, "title": "Phone · Round" },
+    "Side.dc.html": { "x": -400, "y": 2300, "w": 260, "h": 1100, "title": "Sidebar (shared)" },
+    "Gazette.dc.html": { "x": 0, "y": 7280, "w": 1440, "h": 1200, "title": "Candidates (gazette) · running induction" },
+    "Estimate.dc.html": { "x": 1520, "y": 7280, "w": 1440, "h": 1120, "title": "Estimated round 6" },
+    "Overview22.dc.html": { "x": 0, "y": 8600, "w": 1440, "h": 1260, "title": "Overview · new induction announced (induction 22)" }
+  },
+  "order": ["Side.dc.html", "Overview22.dc.html","Gazette.dc.html", "Estimate.dc.html","Design.dc.html", "SignIn.dc.html", "Main.dc.html", "Community.dc.html", "Lists.dc.html", "Round.dc.html", "Chances.dc.html", "Hospital.dc.html", "Calendar.dc.html", "Chats.dc.html", "Me.dc.html", "PhoneHome.dc.html", "Phone.dc.html"],
+  "notes": {
+    "heading": { "x": 0, "y": -300, "text": "meritNAMA: charcoal + aurora, violet glow, colour only in the data", "kind": "title1", "maxW": 2960 },
+    "colours": {
+      "x": -480, "y": 0, "w": 400,
+      "text": "Language:\n\nCharcoal pages, an aurora header on every main page (navy, teal, slate, amber), one violet accent that glows on active items and main buttons.\nColour in the data only:\nGreen = safe, fell, accepted\nAmber = target, estimate, waiting\nCoral = reach, rose, rejected\nCyan = information\n\nMotion: drifting aurora, button sheen, live dots, lines that draw in, cards that lift on hover. All off under reduced motion.",
+      "fill": "purple"
+    },
+    "pagemap": {
+      "x": -480, "y": 1020, "w": 400,
+      "text": "Feels busy, not crowded:\nlive counts (viewing now, online), a ticker of what changed, avatars on reviews and follows, 'also shortlisted by', seat fill meters.\n\nPhotos: ward-at-night on Hospital, library group on Community, night study on Sign in, campus for the landing page.",
+      "fill": "orange"
+    }
+  },
+  "designSystems": []
+}

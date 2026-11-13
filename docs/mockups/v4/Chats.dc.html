@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chats</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes sheen{0%{background-position:160% 0}100%{background-position:-60% 0}}
+.m{color:#8B8B93}
+.gl{margin:16px 12px 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8B8B93}
+.room{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;color:#B9B9C2;transition:background .2s}
+.room:hover{background:rgba(255,255,255,.04)}
+.room.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.05) 40%,rgba(110,86,255,.38));box-shadow:inset -3px 0 0 #7B61FF,0 0 24px rgba(110,86,255,.18)}
+.av{width:34px;height:34px;border-radius:99px;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;position:relative}
+.on-dot::after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:99px;background:#3DDC97;border:2px solid #111113;box-shadow:0 0 8px #3DDC97}
+.badge{min-width:20px;height:20px;display:grid;place-items:center;border-radius:99px;background:#6E56FF;color:#fff;font-size:11px;font-weight:700;box-shadow:0 0 12px rgba(110,86,255,.7)}
+.bub{max-width:440px;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;animation:pop .4s ease both}
+.react{font-size:12px;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+.react.mine{border-color:rgba(155,135,255,.6);background:rgba(110,86,255,.18)}
+.typing span{display:inline-block;width:6px;height:6px;border-radius:99px;background:#B9AAFF;margin-right:3px;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+.btn{position:relative;overflow:hidden;height:46px;padding:0 22px;border:0;border-radius:12px;color:#fff;font:inherit;font-weight:600;background:linear-gradient(180deg,#8B73FF,#5B3FF5);box-shadow:0 8px 26px rgba(110,86,255,.5),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:250% 100%;animation:sheen 3.4s ease-in-out infinite}
+.ob{display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);color:#EDEDEF;font-size:13px;transition:border-color .2s,box-shadow .2s}
+.ob:hover{border-color:rgba(155,135,255,.7);box-shadow:0 0 16px rgba(110,86,255,.35)}
+.live{animation:blink 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.typing span,.bub,.btn::after,.live{animation:none!important}}
+.btn{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);color:#fff;transition:box-shadow .2s,border-color .2s,transform .15s}
+.btn:hover{border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.55);transform:translateY(-1px)}
+.btn::after{opacity:.35}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 940px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="chats" hint-size="252px,940px"></dc-import></div>
+
+  <section aria-label="Your chats" style="flex: 0 0 270px; box-sizing: border-box; padding: 20px 12px; background: #131316; border-right: 1px solid rgba(255,255,255,0.06)">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 8px 12px"><h1 style="margin: 0; font-size: 20px; font-weight: 700">Chats</h1><a class="ob" href="#" aria-label="New chat" style="width: 34px; padding: 0">+</a></div>
+    <label style="display: flex; align-items: center; gap: 8px; height: 38px; margin: 0 4px; padding: 0 10px; border-radius: 11px; border: 1px solid rgba(255,255,255,0.1); color: #8B8B93"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input aria-label="Search chats" placeholder="Search chats" style="flex: 1; min-width: 0; background: transparent; border: 0; color: #EDEDEF; font: inherit; outline: none"></label>
+    <p class="gl">Rooms</p>
+    <a class="room on" href="#"><span class="av" style="background: rgba(61,220,151,0.18); color: #3DDC97">#</span><span style="flex: 1; min-width: 0"><b style="display: block">Round 5 · induction 21</b><span class="m" style="font-size: 12px">Hira: That's hopeful!</span></span><span class="badge">3</span></a>
+    <a class="room" href="#"><span class="av" style="background: rgba(155,135,255,0.18); color: #C4B8FF">#</span><span style="flex: 1; min-width: 0"><b style="display: block; font-weight: 500">Anaesthesia aspirants</b><span class="m" style="font-size: 12px">18 online</span></span><span class="badge">12</span></a>
+    <a class="room" href="#"><span class="av" style="background: rgba(92,225,230,0.14); color: #5CE1E6">#</span><span style="flex: 1; min-width: 0"><b style="display: block; font-weight: 500">Lahore hospitals</b><span class="m" style="font-size: 12px">Bilal shared a review</span></span></a>
+    <p class="gl">Direct</p>
+    <a class="room" href="#"><span class="av on-dot" style="background: #5B3FF5">HS</span><span style="flex: 1; min-width: 0"><b style="display: block; font-weight: 500">Hira Saleem</b><span class="m" style="font-size: 12px">typing…</span></span></a>
+    <a class="room" href="#"><span class="av on-dot" style="background: #176B67">UT</span><span style="flex: 1; min-width: 0"><b style="display: block; font-weight: 500">Usman Tariq</b><span class="m" style="font-size: 12px">See you on joining day</span></span></a>
+    <a class="room" href="#"><span class="av" style="background: #8C5426">SI</span><span style="flex: 1; min-width: 0"><b style="display: block; font-weight: 500">Sana Iqbal</b><span class="m" style="font-size: 12px">2 d</span></span></a>
+  </section>
+
+  <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: radial-gradient(600px 300px at 70% 0%, rgba(110,86,255,0.08), transparent 70%)">
+    <header style="display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid rgba(255,255,255,0.06)">
+      <div><h2 style="margin: 0; font-size: 17px">Round 5 · induction 21</h2><p class="m" style="margin: 2px 0 0; font-size: 12px"><span class="live" style="color: #3DDC97">●</span> 214 members · 18 online</p></div>
+      <div style="display: flex; align-items: center; gap: 10px"><span style="display: flex"><span class="av" style="width: 28px; height: 28px; font-size: 10px; background: #5B3FF5; border: 2px solid #0C0C0E">HS</span><span class="av" style="width: 28px; height: 28px; font-size: 10px; background: #176B67; border: 2px solid #0C0C0E; margin-left: -8px">UT</span><span class="av" style="width: 28px; height: 28px; font-size: 10px; background: #263C4D; border: 2px solid #0C0C0E; margin-left: -8px">BA</span><span class="av" style="width: 28px; height: 28px; font-size: 10px; background: #26262B; border: 2px solid #0C0C0E; margin-left: -8px">+15</span></span><a class="ob" href="Round.dc.html">Open round</a></div>
+    </header>
+    <div style="margin: 14px 22px 0; padding: 10px 14px; border-radius: 12px; background: rgba(229,160,75,0.10); border: 1px solid rgba(229,160,75,0.35); font-size: 13px; display: flex; gap: 10px; align-items: center"><span style="color: #E5A04B">📌</span><span style="flex: 1"><b>Pinned:</b> consent closes Fri 14 Nov. Estimate for round 6 lands Monday.</span><a href="Calendar.dc.html" style="font-size: 12px">Calendar</a></div>
+    <div style="flex: 1; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px">
+      <p class="m" style="margin: 0; text-align: center; font-size: 11px">Today</p>
+      <div style="display: flex; gap: 10px; align-items: flex-end"><span class="av" style="background: #5B3FF5">HS</span><div><div class="bub" style="background: #1C1C21; border: 1px solid rgba(255,255,255,0.06)">Mayo anaesthesia closed at 24.31 this time, down from 24.58 😮</div><p class="m" style="margin: 4px 0 0; font-size: 11px">Hira Saleem · 3:34 pm</p></div></div>
+      <div style="display: flex; gap: 10px; align-items: flex-end"><span class="av" style="background: #263C4D">BA</span><div><div class="bub" style="background: #1C1C21; border: 1px solid rgba(255,255,255,0.06); animation-delay: 0.1s">Anyone know if Services medicine had rejections?</div><p class="m" style="margin: 4px 0 0; font-size: 11px">Bilal Ahmed · 3:36 pm</p></div></div>
+      <div style="display: flex; justify-content: flex-end"><div><div class="bub" style="background: linear-gradient(135deg, #8B73FF, #5B3FF5); color: #fff; box-shadow: 0 8px 26px rgba(110,86,255,0.4); animation-delay: 0.2s">Yes, 3 of 18 rejected. The estimate for round 6 is 23.4 – 23.8.</div><p class="m" style="margin: 4px 0 0; font-size: 11px; text-align: right">You · 3:38 pm <span style="color: #B9AAFF">✓✓</span></p></div></div>
+      <div style="display: flex; gap: 10px; align-items: flex-end"><span class="av" style="background: #5B3FF5">HS</span><div><div class="bub" style="background: #1C1C21; border: 1px solid rgba(255,255,255,0.06); animation-delay: 0.3s">That's hopeful, thanks!</div><div style="display: flex; gap: 6px; margin-top: 6px"><span class="react mine">👍 4</span><span class="react">🙏 2</span><span class="react">❤️ 1</span></div></div></div>
+      <p class="m" style="margin: auto 0 0; font-size: 12px; display: flex; align-items: center; gap: 8px"><span class="typing" aria-hidden="true"><span></span><span></span><span></span></span>Usman is typing…</p>
+    </div>
+    <form style="display: flex; gap: 10px; padding: 14px 22px; border-top: 1px solid rgba(255,255,255,0.06)">
+      <label style="flex: 1; display: flex"><span style="position: absolute; left: -9999px">Message</span><input placeholder="Write a message" style="flex: 1; height: 46px; padding: 0 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: #17171A; color: #EDEDEF; font: inherit"></label>
+      <button type="button" class="btn">Send</button>
+    </form>
+  </main>
+
+  <aside aria-label="Member" style="flex: 0 0 280px; box-sizing: border-box; padding: 26px 20px; background: #131316; border-left: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+    <span class="av" style="width: 78px; height: 78px; font-size: 24px; background: #5B3FF5; box-shadow: 0 0 0 4px rgba(110,86,255,0.25), 0 0 30px rgba(110,86,255,0.5)">HS</span>
+    <h2 style="margin: 6px 0 0; font-size: 18px">Hira Saleem</h2>
+    <p style="margin: 0; font-size: 12px; color: #3DDC97">● Online · Anaesthesia · Mayo</p>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-self: stretch; margin-top: 8px">
+      <div style="padding: 8px; border-radius: 10px; background: rgba(255,255,255,0.03)"><b>24.31</b><span class="m" style="display: block; font-size: 10px">marks</span></div>
+      <div style="padding: 8px; border-radius: 10px; background: rgba(255,255,255,0.03)"><b>41</b><span class="m" style="display: block; font-size: 10px">answers</span></div>
+      <div style="padding: 8px; border-radius: 10px; background: rgba(255,255,255,0.03)"><b>R5</b><span class="m" style="display: block; font-size: 10px">seat</span></div>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 6px"><a class="ob" href="#">Message</a><a class="ob" href="Round.dc.html">Preferences</a></div>
+    <div style="align-self: stretch; margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; text-align: left; display: flex; flex-direction: column; gap: 12px; font-size: 13px">
+      <label style="display: flex; justify-content: space-between; align-items: center">Mute this room <input type="checkbox" style="accent-color: #7B61FF"></label>
+      <a href="#" style="color: #B9B9C2">Report a message</a>
+      <a href="#" style="color: #FF7A7A">Block Hira</a>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":940}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

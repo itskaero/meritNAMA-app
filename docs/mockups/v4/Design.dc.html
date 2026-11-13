@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Design language v2</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+a{color:#A797FF;text-decoration:none}
+.card{background:#17171A;border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:20px;box-sizing:border-box}
+.h{margin:0;font-size:15px;font-weight:600;color:#EDEDEF}
+.m{color:#8B8B93}
+.ob{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.14);color:#EDEDEF;font-size:12px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 44px 52px; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: auto 1fr 1fr; gap: 18px">
+
+  <header style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: flex-end">
+    <div>
+      <h1 style="margin: 0; font-size: 40px; font-weight: 700; letter-spacing: -0.03em">Calm ground, loud data</h1>
+      <p class="m" style="margin: 6px 0 0">Charcoal surfaces, one violet accent, and colour only where a number means something.</p>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center">
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: #0C0C0E; border: 1px solid rgba(255,255,255,0.1)"></span>
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: #17171A; border: 1px solid rgba(255,255,255,0.1)"></span>
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: #222226"></span>
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #8B73FF, #5B3FF5); box-shadow: 0 0 24px rgba(110,86,255,0.6)"></span>
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: #3DDC97"></span>
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: #F5B53D"></span>
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: #FF6B6B"></span>
+      <span style="width: 40px; height: 40px; border-radius: 12px; background: #5CE1E6"></span>
+    </div>
+  </header>
+
+  <section class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center"><p class="h">Tick meter</p><a class="ob" href="#">Your standing</a></div>
+    <div style="display: flex; justify-content: space-between; margin-top: 18px"><span style="font-weight: 600">High</span><span class="m">24.10 / 30</span></div>
+    <div style="display: flex; gap: 3px; margin-top: 10px; height: 34px">
+      <sc-for list="{{ticks}}" as="t" hint-placeholder-count="40"><span style="flex: 1; border-radius: 2px; background: {{t}}"></span></sc-for>
+    </div>
+    <p class="m" style="margin: 14px 0 0; font-size: 12px">Fills to your marks. Used for standing, consent replies and seats filled.</p>
+  </section>
+
+  <section class="card">
+    <p class="h">Ring</p>
+    <div style="display: flex; align-items: center; gap: 18px; margin-top: 14px">
+      <svg role="img" aria-label="85 percent accepted" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="none" stroke="#26262B" stroke-width="12"></circle><circle cx="60" cy="60" r="48" fill="none" stroke="#3DDC97" stroke-width="12" stroke-linecap="round" stroke-dasharray="256 302" transform="rotate(-90 60 60)"></circle><text x="60" y="64" text-anchor="middle" fill="#EDEDEF" font-size="24" font-weight="700" font-family="Inter">85%</text><text x="60" y="82" text-anchor="middle" fill="#8B8B93" font-size="10" font-family="Inter">accepted</text></svg>
+      <div style="font-size: 12px; display: flex; flex-direction: column; gap: 8px"><span><span style="color: #3DDC97">●</span> Accepted 6,904</span><span><span style="color: #FF6B6B">●</span> Rejected 788</span><span><span style="color: #8B8B93">●</span> Not available 429</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="h">Segmented arc</p>
+    <svg role="img" aria-label="62 percent of consent replies in" width="100%" height="150" viewBox="0 0 240 150">
+      <sc-for list="{{arc}}" as="s" hint-placeholder-count="12"><path d="{{s.d}}" fill="{{s.c}}"></path></sc-for>
+      <text x="120" y="118" text-anchor="middle" fill="#EDEDEF" font-size="34" font-weight="700" font-family="Inter">62%</text>
+      <text x="120" y="138" text-anchor="middle" fill="#8B8B93" font-size="11" font-family="Inter">consent replies in</text>
+    </svg>
+  </section>
+
+  <section class="card">
+    <p class="h">Stacked bar + blocks</p>
+    <div style="display: flex; gap: 4px; margin-top: 16px; height: 12px"><span style="flex: 14; border-radius: 99px; background: #3DDC97"></span><span style="flex: 9; border-radius: 99px; background: #F5B53D"></span><span style="flex: 15; border-radius: 99px; background: #FF6B6B"></span></div>
+    <div style="display: flex; gap: 14px; margin-top: 10px; font-size: 12px" class="m"><span><span style="color: #3DDC97">●</span> Safe 14</span><span><span style="color: #F5B53D">●</span> Target 9</span><span><span style="color: #FF6B6B">●</span> Reach 15</span></div>
+    <div style="display: flex; gap: 6px; margin-top: 20px"><span style="flex: 1; height: 30px; border-radius: 8px; background: #3DDC97"></span><span style="flex: 1; height: 30px; border-radius: 8px; background: #3DDC97; opacity: 0.7"></span><span style="flex: 1; height: 30px; border-radius: 8px; background: #F5B53D"></span><span style="flex: 1; height: 30px; border-radius: 8px; background: #F5B53D; opacity: 0.7"></span><span style="flex: 1; height: 30px; border-radius: 8px; background: #2A2A2F"></span><span style="flex: 1; height: 30px; border-radius: 8px; background: #2A2A2F"></span></div>
+    <p class="m" style="margin: 10px 0 0; font-size: 12px">Blocks: rounds 1–6, coloured by how your seat went.</p>
+  </section>
+
+  <section class="card" style="grid-column: span 2; background: linear-gradient(160deg, #17171A 40%, rgba(61,220,151,0.10))">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <p class="h">Area chart with glow</p>
+      <div style="display: flex; padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1)"><span style="padding: 6px 14px; font-size: 12px" class="m">Rounds</span><span style="padding: 6px 14px; font-size: 12px" class="m">Inductions</span><span style="padding: 6px 14px; font-size: 12px; border-radius: 9px; background: #26262B">Max</span></div>
+    </div>
+    <svg role="img" aria-label="Closing merit falling across rounds" width="100%" height="150" viewBox="0 0 600 150" preserveAspectRatio="none">
+      <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3DDC97" stop-opacity="0.35"></stop><stop offset="1" stop-color="#3DDC97" stop-opacity="0"></stop></linearGradient></defs>
+      <path d="M0 30 C60 34, 90 44, 140 50 S 230 58, 280 70 S 380 80, 430 96 S 540 112, 600 118 L600 150 L0 150 Z" fill="url(#ga)"></path>
+      <path d="M0 30 C60 34, 90 44, 140 50 S 230 58, 280 70 S 380 80, 430 96 S 540 112, 600 118" fill="none" stroke="#3DDC97" stroke-width="2.5"></path>
+      <circle cx="596" cy="118" r="5" fill="#0C0C0E" stroke="#3DDC97" stroke-width="2.5"></circle>
+    </svg>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end"><p style="margin: 0"><span class="m" style="font-size: 12px; display: block">Median closing merit</span><span style="font-size: 34px; font-weight: 600">22.85</span><sup style="color: #3DDC97; font-size: 14px">−0.41</sup></p><span style="color: #3DDC97; font-size: 20px">↘ 1.8%</span></div>
+  </section>
+
+  <section class="card">
+    <p class="h">Buttons and nav</p>
+    <a href="#" style="display: flex; justify-content: center; align-items: center; height: 44px; margin-top: 16px; border-radius: 12px; background: linear-gradient(180deg, #8B73FF, #5B3FF5); color: #fff; font-weight: 600; box-shadow: 0 8px 28px rgba(110,86,255,0.45), inset 0 1px 0 rgba(255,255,255,0.25)">Analyze my score</a>
+    <div style="display: flex; gap: 8px; margin-top: 12px"><a class="ob" href="#">View report</a><a class="ob" href="#">Filters</a></div>
+    <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 12px; border-radius: 12px; background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(110,86,255,0.35)); box-shadow: inset -3px 0 0 #7B61FF">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EDEDEF" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="4"></rect><path d="m8.5 12 2.5 2.5 4.5-5"></path></svg>
+      <span style="font-weight: 500">Active item</span>
+    </div>
+  </section>
+
+  <section class="card" style="display: flex; flex-direction: column; justify-content: space-between">
+    <p class="h">Type</p>
+    <p style="margin: 0; font-size: 44px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">86<span style="font-size: 18px" class="m">th</span></p>
+    <p style="margin: 0; font-size: 15px">Inter for words and numbers</p>
+    <p style="margin: 0; font-family: 'IBM Plex Mono', monospace; color: #B9B9C2">27267 · 93410-P · 24.10</p>
+    <p class="m" style="margin: 0; font-size: 12px">Plex Mono only for IDs, PMDC and marks in tables</p>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ticks = [];
+    for (let i = 0; i < 40; i++) {
+      const filled = i < 32;
+      const t = i / 39;
+      const c = filled ? `hsl(${170 - t * 30}, 70%, ${55 + t * 5}%)` : '#2A2A2F';
+      ticks.push(c);
+    }
+    const arc = [];
+    const n = 12, on = 7, cx = 120, cy = 112, r1 = 66, r2 = 96;
+    for (let i = 0; i < n; i++) {
+      const a0 = Math.PI + (i / n) * Math.PI + 0.04, a1 = Math.PI + ((i + 1) / n) * Math.PI - 0.04;
+      const p = (r, a) => `${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`;
+      const d = `M${p(r1, a0)} L${p(r2, a0)} A${r2} ${r2} 0 0 1 ${p(r2, a1)} L${p(r1, a1)} A${r1} ${r1} 0 0 0 ${p(r1, a0)} Z`;
+      arc.push({ d, c: i < on ? '#9B87FF' : '#2A2A2F' });
+    }
+    return { ticks, arc };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Induction calendar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes sheen{0%{background-position:160% 0}100%{background-position:-60% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes breathe{0%,100%{box-shadow:0 0 12px rgba(110,86,255,.35)}50%{box-shadow:0 0 28px rgba(110,86,255,.75)}}
+@keyframes d1{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(8%,6%,0) scale(1.08)}}
+@keyframes d2{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+.aur{position:relative;overflow:hidden;background:#10243A;color:#F3EEE5;border-radius:16px;padding:22px 24px}
+.aur .mesh{position:absolute;inset:0;pointer-events:none;filter:blur(90px);opacity:.85}
+.aur .b{position:absolute;border-radius:50%}
+.aur .bt{width:560px;height:560px;background:radial-gradient(circle,rgba(23,107,103,.45),rgba(23,107,103,0) 70%);top:-60%;left:-10%;animation:d1 28s ease-in-out infinite alternate}
+.aur .bs{width:520px;height:520px;background:radial-gradient(circle,rgba(38,60,77,.7),rgba(38,60,77,0) 70%);bottom:-80%;right:10%;animation:d2 34s ease-in-out infinite alternate}
+.aur .ba{width:380px;height:380px;background:radial-gradient(circle,rgba(229,160,75,.18),rgba(229,160,75,0) 70%);top:-20%;right:-5%;animation:d2 24s ease-in-out infinite alternate}
+.aur .bv{width:340px;height:340px;background:radial-gradient(circle,rgba(110,86,255,.22),rgba(110,86,255,0) 70%);bottom:-70%;left:35%;animation:d1 30s ease-in-out infinite alternate-reverse}
+.aur>.in{position:relative;z-index:1}
+.iv{color:rgba(243,238,229,.68)}.m{color:#8B8B93}
+.card{background:rgba(23,23,28,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:18px;box-sizing:border-box;position:relative;animation:rise .6s ease both}
+.h{margin:0;font-size:15px;font-weight:600}
+.seg{display:flex;gap:2px;padding:4px;border-radius:12px;border:1px solid rgba(243,238,229,.18)}
+.seg>*{height:32px;padding:0 14px;border:0;border-radius:9px;background:transparent;color:rgba(243,238,229,.65);font:inherit;font-size:13px;display:grid;place-items:center}
+.seg>.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.5));box-shadow:inset 0 -2px 0 #7B61FF,0 0 18px rgba(110,86,255,.35)}
+.cd{min-width:74px;padding:10px 12px;border-radius:14px;background:rgba(16,36,58,.55);border:1px solid rgba(229,160,75,.45);text-align:center;box-shadow:0 0 24px rgba(229,160,75,.2)}
+.cell{min-height:92px;box-sizing:border-box;padding:8px;border-radius:12px;display:flex;flex-direction:column;gap:4px;transition:background .2s,box-shadow .2s}
+.cell:hover{background:rgba(110,86,255,.10)!important}
+.ev{padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);transition:transform .2s,border-color .2s,box-shadow .2s}
+.ev:hover{transform:translateX(3px);border-color:rgba(155,135,255,.5);box-shadow:0 0 18px rgba(110,86,255,.2)}
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border-radius:12px;color:#fff;font-weight:600;font-size:13px;background:linear-gradient(180deg,#8B73FF,#5B3FF5);box-shadow:0 8px 26px rgba(110,86,255,.5),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:250% 100%;animation:sheen 3.4s ease-in-out infinite}
+.live{animation:blink 1.6s ease-in-out infinite}
+.today{animation:breathe 2.8s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.aur .b,.btn::after,.card,.live,.today{animation:none!important}}
+.btn{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);color:#fff;transition:box-shadow .2s,border-color .2s,transform .15s}
+.btn:hover{color:#fff;border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.55);transform:translateY(-1px)}
+.btn::after{opacity:.35}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1060px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="calendar" hint-size="252px,1060px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <section class="aur" aria-label="Induction 21">
+      <div class="mesh" aria-hidden="true"><div class="b bt"></div><div class="b bs"></div><div class="b ba"></div><div class="b bv"></div></div>
+      <div class="in" style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap">
+        <div>
+          <p class="iv" style="margin: 0; font-size: 13px"><a href="Lists.dc.html" style="color: rgba(243,238,229,0.7)">Merit lists</a> / Induction 21</p>
+          <h1 style="margin: 6px 0 12px; font-size: 32px; font-weight: 700; letter-spacing: -0.03em">Induction 21 · Jun 2026</h1>
+          <nav class="seg" aria-label="Induction pages"><a href="#">Overview</a><a href="#">Movement</a><a href="#">Predictions</a><a href="#" class="on" aria-current="page">Calendar</a><a href="#">Questions</a></nav>
+        </div>
+        <div>
+          <p style="margin: 0 0 8px; font-size: 13px; color: #E5A04B; font-weight: 600"><span class="live">●</span> Round 5 consent closes in</p>
+          <div style="display: flex; gap: 8px">
+            <div class="cd"><span style="display: block; font-size: 28px; font-weight: 700">01</span><span class="iv" style="font-size: 11px">day</span></div>
+            <div class="cd"><span style="display: block; font-size: 28px; font-weight: 700">21</span><span class="iv" style="font-size: 11px">hours</span></div>
+            <div class="cd"><span style="display: block; font-size: 28px; font-weight: 700">36</span><span class="iv" style="font-size: 11px">min</span></div>
+            <a class="btn" href="#" style="height: auto; align-self: stretch">Remind me</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start">
+      <section class="card" aria-label="November 2026">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px">
+          <h2 style="margin: 0; font-size: 22px; font-weight: 700">November <span class="m" style="font-weight: 600">2026</span></h2>
+          <div style="display: flex; gap: 12px; align-items: center">
+            <span class="m" style="font-size: 12px; display: flex; gap: 10px"><span><span style="color: #3DDC97">●</span> list out</span><span><span style="color: #E5A04B">●</span> consent</span><span><span style="color: #B9AAFF">●</span> estimate</span><span><span style="color: #FF7A7A">●</span> joining</span></span>
+            <button type="button" aria-label="Previous month" style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #EDEDEF; font: inherit">‹</button><button type="button" aria-label="Next month" style="width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #EDEDEF; font: inherit">›</button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px">
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="7"><span class="m" style="text-align: center; font-size: 12px; font-weight: 600; padding-bottom: 4px">{{d}}</span></sc-for>
+          <sc-for list="{{cells}}" as="c" hint-placeholder-count="42">
+            <div class="{{c.cls}}" style="background: {{c.bg}}; border: {{c.border}}">
+              <span style="font-weight: 700; font-size: 14px; color: {{c.fg}}">{{c.day}}</span>
+              <sc-for list="{{c.events}}" as="e" hint-placeholder-count="0"><span style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 6px; background: {{e.bg}}; color: {{e.fg}}; box-shadow: {{e.g}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{e.label}}</span></sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <aside aria-label="What's coming" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 class="h" style="margin: 4px 0 4px">What's coming</h2>
+        <article class="ev" style="background: rgba(229,160,75,0.10); border-color: rgba(229,160,75,0.45); box-shadow: 0 0 24px rgba(229,160,75,0.15)">
+          <p style="margin: 0; font-size: 11px; font-weight: 700; color: #E5A04B">FRI 14 NOV · YOU</p>
+          <p style="margin: 4px 0 0; font-weight: 700">Round 5 consent closes</p>
+          <p class="m" style="margin: 4px 0 8px; font-size: 12px">62% of candidates have replied.</p>
+          <div style="height: 6px; border-radius: 99px; background: rgba(255,255,255,0.08)"><div style="width: 62%; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #E5A04B, #FFD08A); box-shadow: 0 0 10px rgba(229,160,75,0.7)"></div></div>
+        </article>
+        <article class="ev"><p style="margin: 0; font-size: 11px; font-weight: 700; color: #B9AAFF">MON 17 NOV · ESTIMATE</p><p style="margin: 4px 0 0; font-weight: 700">Estimated round 6</p><p class="m" style="margin: 4px 0 0; font-size: 12px">1,204 people asked to be told.</p></article>
+        <article class="ev"><p style="margin: 0; font-size: 11px; font-weight: 700; color: #5CE1E6">THU 20 NOV · EXPECTED</p><p style="margin: 4px 0 0; font-weight: 700">Round 6 merit list</p><p class="m" style="margin: 4px 0 0; font-size: 12px">Usually 6 days after consent closes.</p></article>
+        <article class="ev"><p style="margin: 0; font-size: 11px; font-weight: 700; color: #FF7A7A">TUE 25 NOV</p><p style="margin: 4px 0 0; font-weight: 700">Joining deadline, rounds 1–5</p><p class="m" style="margin: 4px 0 0; font-size: 12px">Seats not joined are offered again.</p></article>
+        <article class="ev"><p style="margin: 0; font-size: 11px; font-weight: 700; color: #3DDC97">MON 10 NOV · DONE</p><p style="margin: 4px 0 0; font-weight: 700">Round 5 published</p><p class="m" style="margin: 4px 0 0; font-size: 12px">8,121 seats · <a href="Round.dc.html">open</a></p></article>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ev = {
+      r4: { label: 'Round 4 out', bg: 'rgba(61,220,151,0.16)', fg: '#3DDC97', g: 'none' },
+      r5: { label: 'Round 5 out', bg: '#3DDC97', fg: '#0C0C0E', g: '0 0 12px rgba(61,220,151,0.6)' },
+      con: { label: 'Consent', bg: 'rgba(229,160,75,0.18)', fg: '#E5A04B', g: 'none' },
+      due: { label: 'Consent closes', bg: '#E5A04B', fg: '#0C0C0E', g: '0 0 12px rgba(229,160,75,0.6)' },
+      est: { label: 'Estimate R6', bg: 'rgba(155,135,255,0.18)', fg: '#C4B8FF', g: '0 0 10px rgba(110,86,255,0.4)' },
+      r6: { label: 'Round 6', bg: 'rgba(92,225,230,0.16)', fg: '#5CE1E6', g: 'none' },
+      join: { label: 'Joining', bg: 'rgba(255,122,122,0.18)', fg: '#FF7A7A', g: 'none' }
+    };
+    const byDay = { 3: [ev.r4], 4: [ev.con], 5: [ev.con], 6: [ev.con], 10: [ev.r5], 11: [ev.con], 12: [ev.con], 13: [ev.con], 14: [ev.due], 17: [ev.est], 20: [ev.r6], 25: [ev.join] };
+    const cells = [];
+    const off = (d) => ({ day: d, events: [], cls: 'cell', bg: 'transparent', border: '1px solid rgba(255,255,255,0.03)', fg: '#45454D' });
+    for (const d of [26, 27, 28, 29, 30, 31]) cells.push(off(d));
+    for (let d = 1; d <= 30; d++) {
+      const today = d === 13;
+      cells.push({ day: d, events: byDay[d] || [], cls: today ? 'cell today' : 'cell', bg: today ? 'rgba(110,86,255,0.16)' : 'rgba(255,255,255,0.025)', border: today ? '1px solid #7B61FF' : '1px solid rgba(255,255,255,0.05)', fg: today ? '#D6CCFF' : (d < 13 ? '#8B8B93' : '#EDEDEF') });
+    }
+    for (const d of [1, 2, 3, 4, 5, 6]) cells.push(off(d));
+    return { days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], cells };
+  }
+}
+</script>
+</body>
+</html>

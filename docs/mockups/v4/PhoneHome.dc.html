@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home on a phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(70px)}.pg::before{width:360px;height:360px;top:240px;right:-160px;background:radial-gradient(circle,rgba(123,97,255,.32),rgba(123,97,255,0) 70%);animation:pga 26s ease-in-out infinite alternate}.pg::after{width:320px;height:320px;bottom:-60px;left:-120px;background:radial-gradient(circle,rgba(91,63,245,.24),rgba(91,63,245,0) 70%);animation:pgb 32s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-18%,14%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(20%,-12%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#B9AAFF;text-decoration:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes d1{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(10%,8%,0) scale(1.1)}}
+@keyframes d2{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-8%,-6%,0) scale(1.05)}}
+@keyframes sheen{0%{background-position:160% 0}100%{background-position:-60% 0}}
+.b{position:absolute;border-radius:50%}
+.m{color:#8B8B93}.iv{color:rgba(243,238,229,.7)}
+.glass{background:rgba(16,36,58,.5);border:1px solid rgba(243,238,229,.14);border-radius:16px;backdrop-filter:blur(10px)}
+.card{background:rgba(23,23,28,.85);border:1px solid rgba(255,255,255,.07);border-radius:18px}
+.live{animation:blink 1.6s ease-in-out infinite}
+.btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;height:44px;border-radius:12px;color:#fff;font-weight:600;background:linear-gradient(180deg,#8B73FF,#5B3FF5);box-shadow:0 8px 26px rgba(110,86,255,.5),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:250% 100%;animation:sheen 3.4s ease-in-out infinite}
+.tab{display:grid;place-items:center;align-content:center;gap:4px;color:#8B8B93;font-size:11px}
+@media (prefers-reduced-motion: reduce){.b,.live,.btn::after{animation:none!important}}
+.btn{background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);color:#fff}
+.btn::after{opacity:.35}
+</style>
+</helmet>
+<div class="pg" style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px; overflow: hidden">
+  <section aria-label="You" style="position: relative; overflow: hidden; padding: 20px 16px 18px; background: #10243A; color: #F3EEE5; border-radius: 0 0 26px 26px">
+    <div aria-hidden="true" style="position: absolute; inset: 0; filter: blur(60px); opacity: 0.9; pointer-events: none">
+      <div class="b" style="width: 320px; height: 320px; background: radial-gradient(circle, rgba(23,107,103,0.55), transparent 70%); top: -40%; left: -20%; animation: d1 26s ease-in-out infinite alternate"></div>
+      <div class="b" style="width: 260px; height: 260px; background: radial-gradient(circle, rgba(229,160,75,0.18), transparent 70%); top: 0; right: -20%; animation: d2 22s ease-in-out infinite alternate"></div>
+      <div class="b" style="width: 260px; height: 260px; background: radial-gradient(circle, rgba(110,86,255,0.3), transparent 70%); bottom: -50%; left: 20%; animation: d1 30s ease-in-out infinite alternate-reverse"></div>
+    </div>
+    <div style="position: relative; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <div><p class="iv" style="margin: 0; font-size: 12px"><span class="live" style="color: #3DDC97">●</span> Round 5 is live</p><h1 style="margin: 2px 0 0; font-size: 24px; font-weight: 700">Hi, Ali!</h1></div>
+        <span style="width: 42px; height: 42px; border-radius: 99px; background: linear-gradient(135deg, #8B73FF, #5B3FF5); display: grid; place-items: center; font-weight: 700; box-shadow: 0 0 20px rgba(110,86,255,0.6)">AR</span>
+      </div>
+      <div class="glass" style="padding: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end"><div><p class="iv" style="margin: 0; font-size: 12px">Your marks</p><p style="margin: 2px 0 0; font-size: 36px; font-weight: 700; line-height: 1">24.10<span class="iv" style="font-size: 14px"> / 30</span></p></div><span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: rgba(110,86,255,0.3); color: #E4DEFF; box-shadow: 0 0 14px rgba(110,86,255,0.45)">86th · High</span></div>
+        <div style="display: flex; gap: 2px; margin-top: 12px; height: 18px"><sc-for list="{{ticks}}" as="t" hint-placeholder-count="30"><span style="flex: 1; border-radius: 2px; background: {{t.c}}; box-shadow: {{t.g}}"></span></sc-for></div>
+      </div>
+    </div>
+  </section>
+
+  <main style="flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; overflow: hidden">
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+      <a href="#" class="card" style="padding: 10px; color: #EDEDEF; border-color: rgba(61,220,151,0.35)"><span style="font-size: 11px; color: #3DDC97">Safe</span><span style="display: block; font-size: 22px; font-weight: 700; color: #3DDC97; text-shadow: 0 0 12px rgba(61,220,151,0.6)">14</span></a>
+      <a href="#" class="card" style="padding: 10px; color: #EDEDEF; border-color: rgba(229,160,75,0.35)"><span style="font-size: 11px; color: #E5A04B">Target</span><span style="display: block; font-size: 22px; font-weight: 700; color: #E5A04B; text-shadow: 0 0 12px rgba(229,160,75,0.6)">9</span></a>
+      <a href="#" class="card" style="padding: 10px; color: #EDEDEF; border-color: rgba(255,122,122,0.35)"><span style="font-size: 11px; color: #FF7A7A">Reach</span><span style="display: block; font-size: 22px; font-weight: 700; color: #FF7A7A; text-shadow: 0 0 12px rgba(255,122,122,0.6)">15</span></a>
+    </div>
+    <section class="card" aria-label="Your seat" style="padding: 14px">
+      <div style="display: flex; justify-content: space-between"><span class="m" style="font-size: 12px">Your seat · R5</span><span style="font-size: 12px; font-weight: 700; color: #FF7A7A">1 d 21 h left</span></div>
+      <p style="margin: 6px 0 0; font-size: 16px; font-weight: 700">Anaesthesia · Jinnah</p>
+      <div style="display: flex; gap: 4px; margin-top: 10px"><span style="flex: 1; height: 14px; border-radius: 4px; background: #FF7A7A"></span><span style="flex: 1; height: 14px; border-radius: 4px; background: #E5A04B"></span><span style="flex: 1; height: 14px; border-radius: 4px; background: #E5A04B"></span><span style="flex: 1; height: 14px; border-radius: 4px; background: #E5A04B"></span><span style="flex: 1; height: 14px; border-radius: 4px; background: #3DDC97; box-shadow: 0 0 10px rgba(61,220,151,0.7)"></span><span style="flex: 1; height: 14px; border-radius: 4px; border: 1px dashed rgba(155,135,255,0.6)"></span></div>
+    </section>
+    <section class="card" aria-label="Latest" style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
+      <a href="Phone.dc.html" style="display: flex; gap: 10px; align-items: center; color: #EDEDEF"><span style="width: 32px; height: 32px; border-radius: 10px; background: rgba(61,220,151,0.16); color: #3DDC97; display: grid; place-items: center; flex: none">✓</span><span><b>Round 5 · 8,121 seats</b><span class="m" style="display: block; font-size: 12px">Median 22.85, down 0.41</span></span></a>
+      <a href="#" style="display: flex; gap: 10px; align-items: center; color: #EDEDEF"><span style="width: 32px; height: 32px; border-radius: 10px; background: rgba(155,135,255,0.18); color: #C4B8FF; display: grid; place-items: center; flex: none">◷</span><span><b>Estimated round 6</b><span class="m" style="display: block; font-size: 12px">Monday · 1,204 waiting</span></span></a>
+    </section>
+    <a class="btn" href="#">Analyze my score →</a>
+  </main>
+
+  <nav aria-label="Tabs" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: 68px; margin: 0 10px 10px; border-radius: 20px; background: rgba(23,23,28,0.92); border: 1px solid rgba(255,255,255,0.08)">
+    <a class="tab" href="#" aria-current="page" style="color: #fff; font-weight: 600"><span style="width: 36px; height: 26px; border-radius: 9px; background: linear-gradient(90deg, rgba(255,255,255,0.05) 20%, rgba(110,86,255,0.5)); border: 1px solid rgba(155,135,255,0.7); box-shadow: inset -2px 0 0 #7B61FF, 0 0 14px rgba(110,86,255,0.45); display: grid; place-items: center"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 11l9-7 9 7v9H3z"></path></svg></span>Home</a>
+    <a class="tab" href="Phone.dc.html"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20V10M12 20V4M19 20v-7"></path></svg>Lists</a>
+    <a class="tab" href="#"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg>Chances</a>
+    <a class="tab" href="#" style="position: relative"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z"></path></svg>Chats<span style="position: absolute; top: 12px; right: 18px; width: 8px; height: 8px; border-radius: 99px; background: #6E56FF; box-shadow: 0 0 8px #6E56FF"></span></a>
+    <a class="tab" href="#"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>Me</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ticks = [];
+    for (let i = 0; i < 30; i++) { const t = i / 29, on = i < 24, h = 176 - t * 140; ticks.push({ c: on ? `hsl(${h}, 62%, ${46 + t * 12}%)` : 'rgba(243,238,229,0.12)', g: on ? `0 0 6px hsla(${h}, 70%, 55%, 0.55)` : 'none' }); }
+    return { ticks };
+  }
+}
+</script>
+</body>
+</html>

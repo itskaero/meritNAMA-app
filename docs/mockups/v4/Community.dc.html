@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Community</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#A797FF;text-decoration:none}a:hover{color:#C4B8FF}
+.m{color:#8B8B93}
+.row{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+.ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;font-size:12px;font-weight:700}
+.tab{height:32px;padding:0 14px;border-radius:99px;border:1px solid transparent;background:transparent;color:#8B8B93;font:inherit;font-size:13px}
+.tab{transition:color .2s,box-shadow .2s}
+.tab:hover{color:#EDEDEF}
+.tab.on{border-color:rgba(155,135,255,.7);color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.04),rgba(110,86,255,.35));box-shadow:0 0 18px rgba(110,86,255,.35)}
+.row{transition:background .2s;border-radius:12px;padding-left:10px;padding-right:10px}
+.row:hover{background:rgba(110,86,255,.08)}
+.q{transition:background .2s;border-radius:12px;padding-left:10px;padding-right:10px}
+.q:hover{background:rgba(255,255,255,.03)}
+.vote{transition:box-shadow .2s}
+.q:hover .vote{box-shadow:0 0 16px rgba(110,86,255,.4)}
+@keyframes sheen{0%{background-position:160% 0}100%{background-position:-60% 0}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.btn-glow{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 18px;border-radius:12px;color:#fff;font-weight:600;background:linear-gradient(180deg,#8B73FF,#5B3FF5);box-shadow:0 8px 28px rgba(110,86,255,.5),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-glow::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:250% 100%;animation:sheen 3.4s ease-in-out infinite}
+.live{animation:blink 1.6s ease-in-out infinite}
+.row,.q{animation:rise .5s ease both}
+@media (prefers-reduced-motion: reduce){.btn-glow::after,.live,.row,.q{animation:none!important}}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 9px;border-radius:7px}
+.kv{display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:13px}
+.ob{display:inline-flex;justify-content:center;align-items:center;height:36px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.16);color:#EDEDEF;font-size:13px;font-weight:500;transition:border-color .2s,box-shadow .2s}
+.ob:hover{border-color:rgba(155,135,255,.7);box-shadow:0 0 16px rgba(110,86,255,.35)}
+.q{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.vote{flex:none;width:48px;text-align:center;border-radius:10px;padding:6px 0;background:#1C1C20}
+.btn-glow{background:linear-gradient(90deg,rgba(12,12,14,.55) 25%,rgba(110,86,255,.5));backdrop-filter:blur(8px);border:1px solid rgba(155,135,255,.65);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.35);color:#fff;transition:box-shadow .2s,border-color .2s,transform .15s}
+.btn-glow:hover{border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.6);transform:translateY(-1px)}
+.btn-glow::after{opacity:.35}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1100px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="community" hint-size="252px,1100px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 30px 40px; display: flex; flex-direction: column; gap: 18px">
+    <header style="display: flex; justify-content: space-between; align-items: center">
+      <p style="margin: 0; font-size: 18px"><a href="#" style="color: #8B8B93">Community</a> <span class="m">/</span> <span style="font-weight: 600">Anaesthesia aspirants</span></p>
+      <label style="display: flex; align-items: center; gap: 8px; height: 36px; width: 240px; padding: 0 12px; border-radius: 10px; background: #17171A; color: #8B8B93"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input aria-label="Search this community" placeholder="search" style="flex: 1; min-width: 0; background: transparent; border: 0; color: #EDEDEF; font: inherit; outline: none"></label>
+    </header>
+
+    <div class="banner" style="position: relative; height: 230px; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)">
+      <img src="/_blob/1c93f4c3af5f026449917179783fccce" alt="Doctors studying together in a library" style="width: 100%; height: 100%; object-fit: cover; object-position: center 40%">
+      <div style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(12,12,14,0.85) 0%, rgba(12,12,14,0.25) 55%, rgba(110,86,255,0.15) 100%)"></div>
+      <div style="position: absolute; left: 28px; bottom: 24px">
+        <p style="margin: 0; font-size: 12px; color: rgba(243,238,229,0.8); display: flex; align-items: center; gap: 8px"><span class="live" style="width: 8px; height: 8px; border-radius: 99px; background: #3DDC97; box-shadow: 0 0 10px #3DDC97"></span>18 online now</p>
+        <h1 style="margin: 6px 0 0; font-size: 30px; font-weight: 700; letter-spacing: -0.02em">Anaesthesia aspirants</h1>
+      </div>
+      <a class="btn-glow" href="#" style="position: absolute; right: 24px; bottom: 24px">Ask a question</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 32px; align-items: start">
+      <section aria-label="Activity">
+        <div role="tablist" aria-label="Community" style="display: flex; gap: 6px"><button type="button" role="tab" aria-selected="true" class="tab on">Feed</button><button type="button" role="tab" aria-selected="false" class="tab">Questions</button><button type="button" role="tab" aria-selected="false" class="tab">Members</button><button type="button" role="tab" aria-selected="false" class="tab">Round room</button></div>
+        <div style="margin-top: 12px">
+          <div class="row"><span class="ico" style="background: rgba(61,220,151,0.18); color: #3DDC97">✓</span><span style="flex: 1"><b>Round 5 is out</b> · Anaesthesia closing fell 0.27 at Mayo</span><span class="m" style="font-size: 12px">List · 2 days ago</span></div>
+          <div class="row"><span class="ico" style="background: rgba(155,135,255,0.18); color: #B9AAFF">?</span><span style="flex: 1"><b>Hira Saleem</b> asked: Will Mayo anaesthesia drop again in round 6?</span><span class="m" style="font-size: 12px">12 answers · 5 h ago</span></div>
+          <div class="row"><span class="ico" style="background: rgba(245,181,61,0.18); color: #F5B53D">◷</span><span style="flex: 1"><b>Consent closes Friday</b> · 62% of replies are in</span><span class="m" style="font-size: 12px">Reminder · today</span></div>
+          <div class="row"><span class="ico" style="background: rgba(92,225,230,0.16); color: #5CE1E6">▤</span><span style="flex: 1"><b>Poll:</b> Which matters more, hospital or city? <span class="m">· 148 votes</span></span><span class="m" style="font-size: 12px">Poll · 1 day ago</span></div>
+          <div class="row"><span class="ico" style="background: rgba(255,255,255,0.08); color: #B9B9C2">+</span><span style="flex: 1">You joined the community</span><span class="m" style="font-size: 12px">3 weeks ago</span></div>
+        </div>
+
+        <h2 style="margin: 26px 0 4px; font-size: 16px">Top questions this week</h2>
+        <div class="q"><div class="vote"><b>41</b><span class="m" style="display: block; font-size: 10px">votes</span></div><div style="flex: 1"><p style="margin: 0; font-weight: 600">Does rejecting in round 5 remove me from round 6?</p><p class="m" style="margin: 4px 0 0; font-size: 12px"><span style="color: #3DDC97">✓ Answered</span> · 18 answers · consent, rules</p></div></div>
+        <div class="q"><div class="vote"><b>27</b><span class="m" style="display: block; font-size: 10px">votes</span></div><div style="flex: 1"><p style="margin: 0; font-weight: 600">Services vs Jinnah for anaesthesia training: honest reviews?</p><p class="m" style="margin: 4px 0 0; font-size: 12px">9 answers · hospitals, reviews</p></div></div>
+        <div class="q" style="border-bottom: 0"><div class="vote"><b>15</b><span class="m" style="display: block; font-size: 10px">votes</span></div><div style="flex: 1"><p style="margin: 0; font-weight: 600">How is the round 6 estimate made?</p><p class="m" style="margin: 4px 0 0; font-size: 12px"><span style="color: #3DDC97">✓ Answered by the team</span> · 4 answers · estimates</p></div></div>
+      </section>
+
+      <aside aria-label="About this community" style="display: flex; flex-direction: column; gap: 14px">
+        <div>
+          <h2 style="margin: 0; font-size: 17px">Anaesthesia aspirants</h2>
+          <p class="m" style="margin: 8px 0 0; font-size: 13px; line-height: 1.6">For anyone aiming at anaesthesia in Punjab: closing merit, hospital reviews, consent questions and round-day nerves.</p>
+          <p style="margin: 12px 0 0; display: flex; gap: 6px"><span class="pill" style="background: rgba(255,255,255,0.08); color: #D5D5DB">◉ Public</span><span class="pill" style="background: rgba(61,220,151,0.14); color: #3DDC97">✓ Since Jun 2026</span></p>
+        </div>
+        <div style="padding: 14px; border-radius: 12px; background: #17171A; display: flex; justify-content: space-between; align-items: center"><span style="font-size: 20px; font-weight: 700">214 <span class="m" style="font-size: 12px; font-weight: 500">members</span></span><span style="font-size: 12px; color: #3DDC97">● 18 online</span></div>
+        <div style="padding: 12px 14px; border-radius: 12px; background: #17171A; display: flex; align-items: center; gap: 10px"><span style="width: 30px; height: 30px; border-radius: 99px; background: linear-gradient(135deg, #8B73FF, #5B3FF5); display: grid; place-items: center; font-size: 12px; font-weight: 700">MT</span><span style="flex: 1; font-weight: 600">meritNAMA team</span><span class="m" style="font-size: 12px">Moderator</span></div>
+        <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px">
+          <div class="kv"><span class="m">Questions this week</span><span>37</span></div>
+          <div class="kv"><span class="m">Answered</span><span style="color: #3DDC97">81%</span></div>
+          <div class="kv"><span class="m">Round room</span><span style="color: #FF6B6B">● Live</span></div>
+          <div class="kv"><span class="m">Seats it covers</span><span>412</span></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"><a class="ob" href="Chats.dc.html">Open chat</a><a class="ob" href="#">Mute</a></div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

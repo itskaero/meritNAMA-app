@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Merit list round on a phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(70px)}.pg::before{width:360px;height:360px;top:260px;right:-160px;background:radial-gradient(circle,rgba(123,97,255,.32),rgba(123,97,255,0) 70%);animation:pga 26s ease-in-out infinite alternate}.pg::after{width:320px;height:320px;bottom:-60px;left:-120px;background:radial-gradient(circle,rgba(91,63,245,.24),rgba(91,63,245,0) 70%);animation:pgb 32s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-18%,14%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(20%,-12%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#B9AAFF;text-decoration:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes d1{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(10%,8%,0) scale(1.1)}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.b{position:absolute;border-radius:50%}
+.m{color:#8B8B93}.iv{color:rgba(243,238,229,.7)}.mono{font-family:'IBM Plex Mono',monospace}
+.rc{flex:none;display:grid;place-items:center;width:50px;height:40px;border-radius:12px;background:rgba(16,36,58,.5);border:1px solid rgba(243,238,229,.14);color:rgba(243,238,229,.75);font-size:13px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.cand{padding:12px;border-radius:16px;background:rgba(23,23,28,.85);border:1px solid rgba(255,255,255,.07);display:flex;gap:10px;animation:rise .45s ease both}
+.av{width:34px;height:34px;border-radius:99px;display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+.tab{display:grid;place-items:center;align-content:center;gap:4px;color:#8B8B93;font-size:11px}
+.live{animation:blink 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.b,.live,.cand{animation:none!important}}
+</style>
+</helmet>
+<div class="pg" style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px; overflow: hidden">
+  <header style="position: relative; overflow: hidden; padding: 18px 16px 16px; background: #10243A; color: #F3EEE5; border-radius: 0 0 26px 26px; display: flex; flex-direction: column; gap: 12px">
+    <div aria-hidden="true" style="position: absolute; inset: 0; filter: blur(60px); opacity: 0.9; pointer-events: none">
+      <div class="b" style="width: 300px; height: 300px; background: radial-gradient(circle, rgba(23,107,103,0.55), transparent 70%); top: -40%; right: -20%; animation: d1 26s ease-in-out infinite alternate"></div>
+      <div class="b" style="width: 240px; height: 240px; background: radial-gradient(circle, rgba(110,86,255,0.3), transparent 70%); bottom: -50%; left: -10%; animation: d1 30s ease-in-out infinite alternate-reverse"></div>
+    </div>
+    <div style="position: relative; display: flex; justify-content: space-between; align-items: center">
+      <div><p class="iv" style="margin: 0; font-size: 12px">Induction 21 · <span class="live" style="color: #3DDC97">●</span> 412 viewing</p><h1 style="margin: 2px 0 0; font-size: 24px; font-weight: 700">Round 5</h1></div>
+      <a href="#" style="display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 10px; background: rgba(16,36,58,0.55); border: 1px solid rgba(243,238,229,0.2); color: #F3EEE5; font-size: 13px">I21 ▾</a>
+    </div>
+    <nav aria-label="Rounds" style="position: relative; display: flex; gap: 6px; overflow-x: auto">
+      <a class="rc" href="#">R1</a><a class="rc" href="#">R2</a><a class="rc" href="#">R3</a><a class="rc" href="#">R4</a>
+      <a class="rc" href="#" aria-current="page" style="background: linear-gradient(90deg, rgba(255,255,255,0.05) 20%, rgba(110,86,255,0.5)); color: #fff; font-weight: 700; border-color: rgba(155,135,255,0.7); box-shadow: inset -3px 0 0 #7B61FF, 0 0 16px rgba(110,86,255,0.45)">R5</a>
+      <a class="rc" href="#" style="background: transparent; border: 1px dashed rgba(229,160,75,0.7); color: #E5A04B">R6</a>
+    </nav>
+    <div style="position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+      <div style="padding: 10px; border-radius: 12px; background: rgba(16,36,58,0.5); border: 1px solid rgba(243,238,229,0.12)"><p class="iv" style="margin: 0; font-size: 11px">Seats</p><p style="margin: 2px 0 0; font-size: 17px; font-weight: 700">8,121</p></div>
+      <div style="padding: 10px; border-radius: 12px; background: rgba(16,36,58,0.5); border: 1px solid rgba(243,238,229,0.12)"><p class="iv" style="margin: 0; font-size: 11px">Accepted</p><p style="margin: 2px 0 0; font-size: 17px; font-weight: 700; color: #3DDC97">85%</p></div>
+      <div style="padding: 10px; border-radius: 12px; background: rgba(16,36,58,0.5); border: 1px solid rgba(243,238,229,0.12)"><p class="iv" style="margin: 0; font-size: 11px">Median</p><p style="margin: 2px 0 0; font-size: 17px; font-weight: 700">22.85 <span style="font-size: 11px; color: #3DDC97">▼</span></p></div>
+    </div>
+  </header>
+
+  <div style="display: flex; gap: 8px; padding: 12px 16px 8px">
+    <label style="flex: 1; display: flex; align-items: center; gap: 6px; height: 42px; padding: 0 12px; border-radius: 12px; background: #17171A; border: 1px solid rgba(255,255,255,0.08); color: #8B8B93"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input aria-label="Name, PMDC or ID" placeholder="Name, PMDC or ID" style="flex: 1; min-width: 0; background: transparent; border: 0; color: #EDEDEF; font: inherit; outline: none"></label>
+    <a href="#" style="display: inline-flex; align-items: center; height: 42px; padding: 0 12px; border-radius: 12px; border: 1px solid rgba(155,135,255,0.6); color: #E4DEFF; font-size: 13px; box-shadow: 0 0 14px rgba(110,86,255,0.3)">Filters · 2</a>
+  </div>
+
+  <ul aria-label="Candidates" style="list-style: none; margin: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; overflow: hidden">
+    <li class="cand" style="background: rgba(110,86,255,0.14); border-color: rgba(155,135,255,0.5); box-shadow: 0 0 22px rgba(110,86,255,0.2)">
+      <span class="av" style="background: linear-gradient(135deg, #8B73FF, #5B3FF5)">AR</span>
+      <div style="flex: 1; min-width: 0">
+        <div style="display: flex; justify-content: space-between"><b>Ali Raza <span class="pill" style="background: rgba(155,135,255,0.25); color: #E4DEFF">you</span></b><span class="mono">24.10</span></div>
+        <p class="mono m" style="margin: 2px 0 0; font-size: 11px">27267 · 93410-P</p>
+        <p style="margin: 4px 0 0; font-size: 13px">Anaesthesia · Jinnah · <span class="m">#2</span></p>
+        <div style="display: flex; gap: 6px; margin-top: 6px"><span class="pill" style="background: rgba(229,160,75,0.16); color: #E5A04B">Waiting</span><span class="pill" style="background: rgba(61,220,151,0.14); color: #3DDC97">▲ from #4</span></div>
+      </div>
+    </li>
+    <li class="cand" style="animation-delay: 0.08s">
+      <span class="av" style="background: #8C5426">SI</span>
+      <div style="flex: 1; min-width: 0">
+        <div style="display: flex; justify-content: space-between"><b>Sana Iqbal</b><span class="mono">24.08</span></div>
+        <p class="mono m" style="margin: 2px 0 0; font-size: 11px">20981 · 86602-P</p>
+        <p style="margin: 4px 0 0; font-size: 13px">Anaesthesia · Allied · <span class="m">#3</span></p>
+        <div style="display: flex; gap: 6px; margin-top: 6px"><span class="pill" style="background: rgba(255,122,122,0.15); color: #FF7A7A">Rejected</span><span class="pill" style="background: rgba(92,225,230,0.13); color: #5CE1E6">New</span></div>
+      </div>
+    </li>
+    <li class="cand" style="animation-delay: 0.16s">
+      <span class="av" style="background: #263C4D">BA</span>
+      <div style="flex: 1; min-width: 0">
+        <div style="display: flex; justify-content: space-between"><b>Bilal Ahmed</b><span class="mono">24.02</span></div>
+        <p class="mono m" style="margin: 2px 0 0; font-size: 11px">29903 · 91877-P</p>
+        <p style="margin: 4px 0 0; font-size: 13px">Anaesthesia · Nishtar · <span class="m">#1</span></p>
+        <div style="display: flex; gap: 6px; margin-top: 6px"><span class="pill" style="background: rgba(255,255,255,0.06); color: #A3A3AD">Not available</span></div>
+      </div>
+    </li>
+  </ul>
+
+  <nav aria-label="Tabs" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); height: 68px; margin: 8px 10px 10px; border-radius: 20px; background: rgba(23,23,28,0.92); border: 1px solid rgba(255,255,255,0.08)">
+    <a class="tab" href="PhoneHome.dc.html"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7v9H3z"></path></svg>Home</a>
+    <a class="tab" href="#" aria-current="page" style="color: #fff; font-weight: 600"><span style="width: 36px; height: 26px; border-radius: 9px; background: linear-gradient(90deg, rgba(255,255,255,0.05) 20%, rgba(110,86,255,0.5)); border: 1px solid rgba(155,135,255,0.7); box-shadow: inset -2px 0 0 #7B61FF, 0 0 14px rgba(110,86,255,0.45); display: grid; place-items: center"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 20V10M12 20V4M19 20v-7"></path></svg></span>Lists</a>
+    <a class="tab" href="#"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="3"></circle></svg>Chances</a>
+    <a class="tab" href="#"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z"></path></svg>Chats</a>
+    <a class="tab" href="#"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>Me</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

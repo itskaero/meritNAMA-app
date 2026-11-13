@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hospital</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes sheen{0%{background-position:160% 0}100%{background-position:-60% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes dash{to{stroke-dashoffset:0}}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.m{color:#8B8B93}.iv{color:rgba(243,238,229,.75)}
+.card{background:rgba(23,23,28,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:18px;box-sizing:border-box;position:relative;transition:transform .25s,box-shadow .25s,border-color .25s;animation:rise .6s ease both}
+.card:hover{transform:translateY(-3px);border-color:rgba(155,135,255,.35);box-shadow:0 18px 40px rgba(0,0,0,.45),0 0 32px rgba(110,86,255,.18)}
+.h{margin:0;font-size:15px;font-weight:600}
+.btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 18px;border-radius:12px;color:#fff;font-weight:600;font-size:13px;background:linear-gradient(180deg,#8B73FF,#5B3FF5);box-shadow:0 8px 26px rgba(110,86,255,.5),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:250% 100%;animation:sheen 3.4s ease-in-out infinite}
+.ob{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 14px;border-radius:12px;border:1px solid rgba(243,238,229,.25);color:#F3EEE5;font-size:13px;font-weight:500;background:rgba(12,12,14,.35);backdrop-filter:blur(8px);transition:border-color .2s,box-shadow .2s}
+.ob:hover{border-color:rgba(155,135,255,.8);box-shadow:0 0 16px rgba(110,86,255,.4)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.g{background:rgba(61,220,151,.14);color:#3DDC97}.a{background:rgba(229,160,75,.16);color:#E5A04B}.r{background:rgba(255,122,122,.15);color:#FF7A7A}.v{background:rgba(155,135,255,.18);color:#C4B8FF}.n{background:rgba(255,255,255,.06);color:#A3A3AD}
+.glassp{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:99px;background:rgba(12,12,14,.45);border:1px solid rgba(243,238,229,.18);backdrop-filter:blur(8px);font-size:12px;color:#F3EEE5}
+.mono{font-family:'IBM Plex Mono',monospace}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:10px 12px;font-weight:500;font-size:12px;color:#8B8B93;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+.tbl td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.tbl tbody tr{transition:background .2s}.tbl tbody tr:hover{background:rgba(110,86,255,.08)}
+.live{animation:blink 1.6s ease-in-out infinite}
+.dot{display:inline-block;width:8px;height:8px;border-radius:99px;background:#3DDC97;box-shadow:0 0 10px #3DDC97}
+.draw{stroke-dasharray:1200;stroke-dashoffset:1200;animation:dash 2.2s ease forwards}
+.tick{display:flex;gap:40px;width:max-content;animation:ticker 46s linear infinite}
+.fill{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.fill>span{display:block;height:100%;border-radius:99px;transform-origin:left;animation:grow 1.2s ease both}
+@keyframes neon{0%,100%{box-shadow:0 0 0 1px rgba(155,135,255,.55),0 0 12px rgba(123,97,255,.45),0 0 28px rgba(123,97,255,.18)}50%{box-shadow:0 0 0 1px rgba(185,170,255,.9),0 0 18px rgba(123,97,255,.75),0 0 40px rgba(123,97,255,.35)}}
+.gh{display:inline-flex;align-items:stretch;height:34px;border-radius:8px;overflow:hidden;font-size:13px;font-weight:600;color:#E6EDF3;background:rgba(13,17,23,.78);backdrop-filter:blur(8px);border:1px solid rgba(240,246,252,.14);transition:box-shadow .2s,border-color .2s,transform .15s}
+.gh:hover{transform:translateY(-1px)}
+.gh .l{display:flex;align-items:center;gap:7px;padding:0 12px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,0))}
+.gh .n{display:flex;align-items:center;padding:0 10px;border-left:1px solid rgba(240,246,252,.14);font-family:'IBM Plex Mono',monospace;font-size:12px;color:#C9D1D9;background:rgba(255,255,255,.03)}
+.gh svg{flex:none}
+.gh.neon{border-color:transparent;animation:neon 2.6s ease-in-out infinite}
+.gh.neon .l{color:#fff;text-shadow:0 0 8px rgba(185,170,255,.9);background:linear-gradient(180deg,rgba(123,97,255,.35),rgba(91,63,245,.18))}
+.gh.neon .n{border-left-color:rgba(155,135,255,.5);color:#D6CCFF}
+.gh.neon svg{filter:drop-shadow(0 0 4px rgba(185,170,255,.9))}
+.gh.star:hover{border-color:rgba(229,160,75,.7);box-shadow:0 0 14px rgba(229,160,75,.4)}
+.gh.star:hover svg{color:#E5A04B;filter:drop-shadow(0 0 4px rgba(229,160,75,.9))}
+@media (prefers-reduced-motion: reduce){.gh.neon{animation:none;box-shadow:0 0 0 1px rgba(155,135,255,.7),0 0 14px rgba(123,97,255,.5)}}
+.av{width:28px;height:28px;border-radius:99px;display:grid;place-items:center;font-size:11px;font-weight:700;border:2px solid #17171C;flex:none}
+@media (prefers-reduced-motion: reduce){.btn::after,.card,.live,.draw,.tick,.fill>span{animation:none!important}.draw{stroke-dashoffset:0}}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1240px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="hospitals" hint-size="252px,1240px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+
+    <section aria-label="Jinnah Hospital, Lahore" style="position: relative; height: 250px; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)">
+      <img src="/_blob/930c0b38e060024652e255e314f51dc9" alt="A doctor studying at night in a hospital lounge" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 45%">
+      <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,14,22,0.92) 0%, rgba(16,36,58,0.55) 50%, rgba(16,36,58,0.15) 100%), radial-gradient(400px 260px at 30% 120%, rgba(23,107,103,0.45), transparent 70%)"></div>
+      <div style="position: absolute; inset: 24px 28px; display: flex; flex-direction: column; justify-content: space-between; color: #F3EEE5">
+        <div style="display: flex; justify-content: space-between">
+          <p class="iv" style="margin: 0; font-size: 13px"><a href="#" style="color: rgba(243,238,229,0.75)">Hospitals</a> / Lahore</p>
+          <div style="display: flex; gap: 8px"><span class="glassp"><span class="dot live"></span>32 viewing now</span><span class="glassp"><span style="color: #FF7A7A" class="live">●</span> Round room live</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px">
+          <div>
+            <h1 style="margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -0.03em">Jinnah Hospital, Lahore</h1>
+            <p class="iv" style="margin: 6px 0 0">Allama Iqbal Medical College · CPSP accredited in 24 specialities · 27 specialities offered</p>
+            <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px">
+              <span class="glassp"><span style="color: #E5A04B">★★★★</span><span style="opacity: 0.5">★</span> 4.1 · 18 reviews</span>
+              <span style="display: flex; align-items: center"><span class="av" style="background: #5B3FF5">HS</span><span class="av" style="background: #176B67; margin-left: -8px">UT</span><span class="av" style="background: #8C5426; margin-left: -8px">SI</span><span class="av" style="background: #263C4D; margin-left: -8px">BA</span><span style="margin-left: 8px; font-size: 12px" class="iv">412 following</span></span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px">
+            <a class="gh star" href="#" aria-label="Shortlist Jinnah Hospital, 128 people shortlisted it"><span class="l"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Zm0 2.445L6.615 5.5a.75.75 0 0 1-.564.41l-3.097.45 2.24 2.184a.75.75 0 0 1 .216.664l-.528 3.084 2.769-1.456a.75.75 0 0 1 .698 0l2.77 1.456-.53-3.084a.75.75 0 0 1 .216-.664l2.24-2.183-3.096-.45a.75.75 0 0 1-.564-.41L8 2.694Z"></path></svg>Shortlist</span><span class="n">128</span></a>
+            <a class="gh neon" href="#" aria-label="Follow Jinnah Hospital, 412 followers"><span class="l"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M7.9 8.548h-.001a5.528 5.528 0 0 1 3.1 4.659.75.75 0 1 1-1.498.086A4.01 4.01 0 0 0 5.5 9.5a4.01 4.01 0 0 0-4.001 3.793.75.75 0 1 1-1.498-.085 5.527 5.527 0 0 1 3.1-4.66 3.5 3.5 0 1 1 4.799 0ZM13.25 0a.75.75 0 0 1 .75.75V2h1.25a.75.75 0 0 1 0 1.5H14v1.25a.75.75 0 0 1-1.5 0V3.5h-1.25a.75.75 0 0 1 0-1.5h1.25V.75a.75.75 0 0 1 .75-.75ZM5.5 4a2 2 0 1 0-.001 3.999A2 2 0 0 0 5.5 4Z"></path></svg>Follow</span><span class="n">412</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div aria-label="Latest at this hospital" style="overflow: hidden; border-radius: 12px; border: 1px solid rgba(255,255,255,0.07); background: rgba(23,23,28,0.82); padding: 10px 0; font-size: 13px; white-space: nowrap">
+      <div class="tick">
+        <span><span style="color: #3DDC97">●</span> Usman T. took Anaesthesia · pref #2 <span class="m">· 2 h</span></span><span><span style="color: #E5A04B">●</span> 3 seats freed in Medicine <span class="m">· 5 h</span></span><span><span style="color: #B9AAFF">●</span> New review for General Surgery <span class="m">· 6 h</span></span><span><span style="color: #5CE1E6">●</span> Hira asked: will Medicine open in R6? <span class="m">· 8 h</span></span><span><span style="color: #FF7A7A">●</span> Radiology closing rose 0.36 <span class="m">· 2 d</span></span><span><span style="color: #3DDC97">●</span> 14 new followers this week</span>
+        <span><span style="color: #3DDC97">●</span> Usman T. took Anaesthesia · pref #2 <span class="m">· 2 h</span></span><span><span style="color: #E5A04B">●</span> 3 seats freed in Medicine <span class="m">· 5 h</span></span><span><span style="color: #B9AAFF">●</span> New review for General Surgery <span class="m">· 6 h</span></span><span><span style="color: #5CE1E6">●</span> Hira asked: will Medicine open in R6? <span class="m">· 8 h</span></span><span><span style="color: #FF7A7A">●</span> Radiology closing rose 0.36 <span class="m">· 2 d</span></span><span><span style="color: #3DDC97">●</span> 14 new followers this week</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px">
+      <section class="card" aria-label="Seats">
+        <div style="display: flex; justify-content: space-between"><p class="m" style="margin: 0; font-size: 12px">Seats filled · round 5</p><span class="pill g">93%</span></div>
+        <p style="margin: 8px 0 0; font-size: 26px; font-weight: 700">198 <span class="m" style="font-size: 13px; font-weight: 500">of 212</span></p>
+        <div style="display: flex; gap: 2px; margin-top: 10px; height: 22px"><sc-for list="{{seatTicks}}" as="t" hint-placeholder-count="30"><span style="flex: 1; border-radius: 2px; background: {{t.c}}; box-shadow: {{t.g}}"></span></sc-for></div>
+      </section>
+      <section class="card" aria-label="Applicants per seat" style="animation-delay: 0.05s; display: flex; gap: 14px; align-items: center">
+        <svg role="img" aria-label="7.4 applicants per seat" width="92" height="92" viewBox="0 0 92 92"><circle cx="46" cy="46" r="36" fill="none" stroke="#26262B" stroke-width="10"></circle><circle class="draw" cx="46" cy="46" r="36" fill="none" stroke="#FF7A7A" stroke-width="10" stroke-linecap="round" stroke-dasharray="170 226" stroke-dashoffset="0" transform="rotate(-90 46 46)" style="filter: drop-shadow(0 0 6px rgba(255,122,122,0.7)); animation: none"></circle><text x="46" y="51" text-anchor="middle" fill="#EDEDEF" font-size="18" font-weight="700" font-family="Inter">7.4</text></svg>
+        <div><p class="m" style="margin: 0; font-size: 12px">Applicants per seat</p><p style="margin: 4px 0 0; font-weight: 600">Busier than 78% of hospitals</p><span class="pill r" style="margin-top: 6px">High demand</span></div>
+      </section>
+      <section class="card" aria-label="Median closing" style="animation-delay: 0.1s; background: radial-gradient(240px 140px at 100% 100%, rgba(61,220,151,0.16), transparent 70%), rgba(23,23,28,0.82)">
+        <div style="display: flex; justify-content: space-between"><p class="m" style="margin: 0; font-size: 12px">Median closing · 5 inductions</p><span class="pill g">▼ 0.38</span></div>
+        <p style="margin: 8px 0 0; font-size: 26px; font-weight: 700">23.62</p>
+        <svg aria-hidden="true" width="100%" height="34" viewBox="0 0 200 34" preserveAspectRatio="none"><path class="draw" d="M2 6 C40 8, 70 14, 110 18 S 170 26, 198 30" fill="none" stroke="#3DDC97" stroke-width="2.5" style="filter: drop-shadow(0 0 5px rgba(61,220,151,0.7))"></path></svg>
+      </section>
+      <section class="card" aria-label="For your marks" style="animation-delay: 0.15s">
+        <div style="display: flex; justify-content: space-between"><p class="m" style="margin: 0; font-size: 12px">For your 24.10</p><a href="Chances.dc.html" style="font-size: 12px">details</a></div>
+        <p style="margin: 8px 0 0; font-size: 26px; font-weight: 700; color: #3DDC97">Safe in 9</p>
+        <div style="display: flex; gap: 3px; margin-top: 10px; height: 10px"><span style="flex: 9; border-radius: 99px; background: #3DDC97; box-shadow: 0 0 10px rgba(61,220,151,0.5)"></span><span style="flex: 6; border-radius: 99px; background: #E5A04B"></span><span style="flex: 12; border-radius: 99px; background: #FF7A7A"></span></div>
+        <p class="m" style="margin: 6px 0 0; font-size: 11px">9 safe · 6 target · 12 reach</p>
+      </section>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start">
+      <section class="card" aria-labelledby="sp" style="padding: 0; animation-delay: 0.2s">
+        <header style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 8px"><div><h2 id="sp" class="h">Specialities here</h2><p class="m" style="margin: 2px 0 0; font-size: 12px">FCPS · Punjab · final round of induction 21</p></div><a href="#" style="font-size: 12px">All 27 →</a></header>
+        <table class="tbl">
+          <thead><tr><th scope="col">Speciality</th><th scope="col">Seats filled</th><th scope="col" style="text-align: right">Per seat</th><th scope="col" style="text-align: right">Closing</th><th scope="col">5-yr trend</th><th scope="col">You</th></tr></thead>
+          <tbody>
+            <tr><td><b>Anaesthesia</b><span class="m" style="display: block; font-size: 11px">2 views a minute</span></td><td style="width: 130px"><div class="fill"><span style="width: 100%; background: #3DDC97"></span></div><span class="m" style="font-size: 11px">12 / 12</span></td><td style="text-align: right">4.1</td><td class="mono" style="text-align: right">22.96</td><td><svg aria-hidden="true" width="84" height="22" viewBox="0 0 84 22"><path class="draw" d="M2 5 C20 6, 36 9, 54 13 S 76 17, 82 18" fill="none" stroke="#3DDC97" stroke-width="2" style="filter: drop-shadow(0 0 4px rgba(61,220,151,0.7))"></path></svg></td><td><span class="pill g">Safe</span></td></tr>
+            <tr><td><b>Medicine</b><span class="m" style="display: block; font-size: 11px">3 seats just freed</span></td><td><div class="fill"><span style="width: 83%; background: #E5A04B"></span></div><span class="m" style="font-size: 11px">15 / 18</span></td><td style="text-align: right">6.2</td><td class="mono" style="text-align: right">24.02</td><td><svg aria-hidden="true" width="84" height="22" viewBox="0 0 84 22"><path class="draw" d="M2 11 C20 9, 36 13, 54 10 S 76 11, 82 11" fill="none" stroke="#E5A04B" stroke-width="2" style="filter: drop-shadow(0 0 4px rgba(229,160,75,0.7))"></path></svg></td><td><span class="pill a">Target</span></td></tr>
+            <tr><td><b>General Surgery</b><span class="m" style="display: block; font-size: 11px">most applied here</span></td><td><div class="fill"><span style="width: 100%; background: #3DDC97"></span></div><span class="m" style="font-size: 11px">16 / 16</span></td><td style="text-align: right">9.8</td><td class="mono" style="text-align: right">25.48</td><td><svg aria-hidden="true" width="84" height="22" viewBox="0 0 84 22"><path class="draw" d="M2 18 C20 16, 36 12, 54 8 S 76 5, 82 4" fill="none" stroke="#FF7A7A" stroke-width="2" style="filter: drop-shadow(0 0 4px rgba(255,122,122,0.7))"></path></svg></td><td><span class="pill r">Reach</span></td></tr>
+            <tr><td><b>Paediatrics</b><span class="m" style="display: block; font-size: 11px">new unit 2026</span></td><td><div class="fill"><span style="width: 90%; background: #3DDC97"></span></div><span class="m" style="font-size: 11px">9 / 10</span></td><td style="text-align: right">5.5</td><td class="mono" style="text-align: right">24.31</td><td><svg aria-hidden="true" width="84" height="22" viewBox="0 0 84 22"><path class="draw" d="M2 14 C20 12, 36 13, 54 9 S 76 8, 82 7" fill="none" stroke="#FF7A7A" stroke-width="2" style="filter: drop-shadow(0 0 4px rgba(255,122,122,0.7))"></path></svg></td><td><span class="pill a">Target</span></td></tr>
+            <tr><td style="border-bottom: 0"><b>Psychiatry</b><span class="m" style="display: block; font-size: 11px">fell the most</span></td><td style="border-bottom: 0"><div class="fill"><span style="width: 67%; background: #E5A04B"></span></div><span class="m" style="font-size: 11px">4 / 6</span></td><td style="text-align: right; border-bottom: 0">2.7</td><td class="mono" style="text-align: right; border-bottom: 0">21.37</td><td style="border-bottom: 0"><svg aria-hidden="true" width="84" height="22" viewBox="0 0 84 22"><path class="draw" d="M2 4 C20 8, 36 7, 54 13 S 76 16, 82 18" fill="none" stroke="#3DDC97" stroke-width="2" style="filter: drop-shadow(0 0 4px rgba(61,220,151,0.7))"></path></svg></td><td style="border-bottom: 0"><span class="pill g">Safe</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <aside style="display: flex; flex-direction: column; gap: 14px">
+        <section class="card" aria-label="Got in this round" style="animation-delay: 0.25s">
+          <div style="display: flex; justify-content: space-between; align-items: center"><h2 class="h">Got in this round</h2><span class="pill g">198</span></div>
+          <ul style="list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13px">
+            <li style="display: flex; gap: 10px; align-items: center"><span class="av" style="background: #176B67">UT</span><span style="flex: 1">Usman Tariq<span class="m" style="display: block; font-size: 11px">Anaesthesia · pref #2</span></span><span class="mono">24.18</span></li>
+            <li style="display: flex; gap: 10px; align-items: center"><span class="av" style="background: #5B3FF5">HS</span><span style="flex: 1">Hira Saleem<span class="m" style="display: block; font-size: 11px">Medicine · pref #1</span></span><span class="mono">24.31</span></li>
+            <li style="display: flex; gap: 10px; align-items: center"><span class="av" style="background: #8C5426">AK</span><span style="flex: 1">Ayesha Khan<span class="m" style="display: block; font-size: 11px">Surgery · pref #3</span></span><span class="mono">25.60</span></li>
+          </ul>
+          <a href="Round.dc.html" style="display: inline-block; margin-top: 10px; font-size: 12px">See all 198 →</a>
+        </section>
+        <section class="card" aria-label="Reviews" style="animation-delay: 0.3s">
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 class="h">What trainees say</h2><span style="font-weight: 700">4.1 <span style="color: #E5A04B">★</span></span></div>
+          <div style="display: grid; grid-template-columns: 52px 1fr; gap: 4px 8px; align-items: center; margin-top: 10px; font-size: 11px" class="m">
+            <span>Teaching</span><div class="fill"><span style="width: 84%; background: #3DDC97"></span></div>
+            <span>Workload</span><div class="fill"><span style="width: 55%; background: #E5A04B"></span></div>
+            <span>Hostel</span><div class="fill"><span style="width: 38%; background: #FF7A7A"></span></div>
+          </div>
+          <p style="margin: 12px 0 0; font-size: 13px; color: #D5D5DB; line-height: 1.5">"Busy emergency, great supervision in anaesthesia. Hostel is limited."</p>
+          <p class="m" style="margin: 6px 0 0; font-size: 11px">FCPS trainee, 2nd year · <a href="#">Read 18 reviews</a></p>
+        </section>
+        <section class="card" aria-label="Also shortlisted" style="animation-delay: 0.35s">
+          <h2 class="h">People who follow this also follow</h2>
+          <p style="margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 6px"><span class="pill v">Services Hospital</span><span class="pill v">Mayo Hospital</span><span class="pill v">Lahore General</span><span class="pill v">Allied, Faisalabad</span></p>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const seatTicks = [];
+    for (let i = 0; i < 30; i++) {
+      const on = i < 28, t = i / 29, h = 170 - t * 30;
+      seatTicks.push({ c: on ? `hsl(${h}, 65%, 52%)` : '#2A2A2F', g: on ? `0 0 6px hsla(${h}, 70%, 55%, 0.5)` : 'none' });
+    }
+    return { seatTicks };
+  }
+}
+</script>
+</body>
+</html>

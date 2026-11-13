@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Candidates · gazette</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes slide{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes d1{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(8%,6%,0) scale(1.08)}}
+@keyframes d2{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+.aur{position:relative;overflow:hidden;background:#10243A;color:#F3EEE5;border-radius:16px;padding:22px 24px}
+.aur .mesh{position:absolute;inset:0;pointer-events:none;filter:blur(90px);opacity:.85}
+.aur .b{position:absolute;border-radius:50%}
+.aur .bt{width:560px;height:560px;background:radial-gradient(circle,rgba(23,107,103,.45),rgba(23,107,103,0) 70%);top:-60%;left:-10%;animation:d1 28s ease-in-out infinite alternate}
+.aur .bs{width:520px;height:520px;background:radial-gradient(circle,rgba(38,60,77,.7),rgba(38,60,77,0) 70%);bottom:-80%;right:10%;animation:d2 34s ease-in-out infinite alternate}
+.aur .ba{width:380px;height:380px;background:radial-gradient(circle,rgba(229,160,75,.14),rgba(229,160,75,0) 70%);top:-20%;right:-5%;animation:d2 24s ease-in-out infinite alternate}
+.aur .bv{width:340px;height:340px;background:radial-gradient(circle,rgba(110,86,255,.22),rgba(110,86,255,0) 70%);bottom:-70%;left:35%;animation:d1 30s ease-in-out infinite alternate-reverse}
+.aur>.in{position:relative;z-index:1}
+.iv{color:rgba(243,238,229,.68)}.m{color:#8B8B93}
+.card{background:rgba(23,23,28,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;box-sizing:border-box;position:relative;animation:rise .6s ease both}
+.glass{background:rgba(16,36,58,.45);border:1px solid rgba(243,238,229,.12);border-radius:14px;padding:12px 14px;box-sizing:border-box}
+.h{margin:0;font-size:15px;font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 18px;border-radius:12px;color:#fff;font-weight:600;font-size:13px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);transition:box-shadow .2s,border-color .2s}
+.btn:hover{color:#fff;border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.55)}
+.seg{display:flex;gap:2px;padding:4px;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+.seg>*{height:30px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:#8B8B93;font:inherit;font-size:12px;display:grid;place-items:center;white-space:nowrap}
+.seg>.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.5));box-shadow:inset -3px 0 0 #7B61FF,0 0 18px rgba(110,86,255,.35)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.g{background:rgba(61,220,151,.14);color:#3DDC97}.a{background:rgba(229,160,75,.16);color:#E5A04B}.r{background:rgba(255,122,122,.15);color:#FF7A7A}.c{background:rgba(92,225,230,.13);color:#5CE1E6}.v{background:rgba(155,135,255,.18);color:#C4B8FF}.n{background:rgba(255,255,255,.06);color:#A3A3AD}
+.tag{display:inline-flex;align-items:center;font-size:10px;font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.14);color:#B9B9C2;margin-right:3px}
+.step{display:inline-flex;align-items:center;gap:0;border-radius:7px;overflow:hidden;font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,.1)}
+.step span{padding:2px 6px}
+.chipf{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:99px;border:1px solid rgba(255,255,255,.12);color:#B9B9C2;font-size:12px;transition:border-color .2s,box-shadow .2s,color .2s}
+.chipf:hover{border-color:rgba(155,135,255,.6);color:#fff}
+.chipf.on{color:#fff;border-color:rgba(155,135,255,.7);background:rgba(110,86,255,.18);box-shadow:0 0 14px rgba(110,86,255,.3)}
+.chipf b{font-weight:600;color:#8B8B93}.chipf.on b{color:#D6CCFF}
+.mono{font-family:'IBM Plex Mono',monospace}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:8px 10px;font-weight:500;font-size:12px;color:#8B8B93;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+.tbl td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
+.tbl tbody tr{transition:background .2s;cursor:pointer}.tbl tbody tr:hover{background:rgba(110,86,255,.08)}
+.grp{font-size:11px!important;letter-spacing:.06em;text-transform:uppercase;padding-top:12px!important}
+.live-col{background:rgba(110,86,255,.05)}
+.av{width:28px;height:28px;border-radius:99px;display:grid;place-items:center;font-size:10px;font-weight:700;flex:none}
+.sel{height:32px;padding:0 8px;border-radius:9px;background:#141418;color:#EDEDEF;border:1px solid rgba(255,255,255,.1);font:inherit;font-size:12px}
+.lbl{display:flex;flex-direction:column;gap:3px;font-size:10px;color:#8B8B93;text-transform:uppercase;letter-spacing:.05em}
+.pref{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:7px 9px;border-radius:9px;font-size:12px}
+.src{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:12px;background:rgba(16,36,58,.45);border:1px solid rgba(243,238,229,.12);font-size:12px;min-width:0}
+.sbar{display:flex;height:8px;border-radius:99px;overflow:hidden;gap:2px}
+.sbar span{transform-origin:left;animation:grow 1s ease both}
+.live{animation:blink 1.6s ease-in-out infinite}
+.dot{display:inline-block;width:8px;height:8px;border-radius:99px;background:#3DDC97;box-shadow:0 0 10px #3DDC97}
+@media (prefers-reduced-motion: reduce){.pg::before,.pg::after,.aur .b,.card,.live,aside,.sbar span{animation:none!important}}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1200px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="candidates" hint-size="252px,1200px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+
+    <section class="aur" aria-label="Candidates of induction 21">
+      <div class="mesh" aria-hidden="true"><div class="b bt"></div><div class="b bs"></div><div class="b ba"></div><div class="b bv"></div></div>
+      <div class="in" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap">
+          <div>
+            <p class="iv" style="margin: 0; font-size: 13px"><a href="Lists.dc.html" style="color: rgba(243,238,229,0.7)">Merit lists</a> / Induction 21 · <span class="dot live"></span> 2,031 searching</p>
+            <h1 style="margin: 6px 0 0; font-size: 32px; font-weight: 700; letter-spacing: -0.03em">Candidates <span class="iv" style="font-size: 16px; font-weight: 500">· induction 21</span></h1>
+            <p class="iv" style="margin: 6px 0 0; max-width: 700px">PHF's gazette as published, each candidate's verification steps, and any correction shown on top, never in place of the original. Seats and consent come from the latest round.</p>
+          </div>
+          <form role="search" style="display: flex; gap: 8px; width: 400px">
+            <label style="flex: 1; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border-radius: 12px; background: rgba(16,36,58,0.55); border: 1px solid rgba(243,238,229,0.18); color: rgba(243,238,229,0.6)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input aria-label="Name, PMDC or applicant ID" placeholder="Name, PMDC or applicant ID" style="flex: 1; min-width: 0; background: transparent; border: 0; color: #F3EEE5; font: inherit; outline: none"></label>
+            <a class="btn" href="#">Find</a>
+          </form>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.1fr 1.3fr 1fr 0.8fr; gap: 12px">
+          <div class="src">
+            <span class="iv" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em">Gazette</span>
+            <b style="font-size: 20px">8,904 <span class="iv" style="font-size: 12px; font-weight: 500">candidates</span></b>
+            <span class="iv" style="font-size: 11px">PHF report 901 · live since 2 Jun <span class="pill" style="background: rgba(243,238,229,0.1); color: #F3EEE5; margin-left: 4px">🔒 same all cycle</span></span>
+          </div>
+          <div class="src">
+            <span class="iv" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em">Verification steps</span>
+            <div style="display: grid; grid-template-columns: 96px 1fr; gap: 6px 10px; align-items: center; font-size: 11px">
+              <span class="iv">Round 01</span><div class="sbar"><span style="flex: 7810; background: #3DDC97; box-shadow: 0 0 8px rgba(61,220,151,0.5)"></span><span style="flex: 782; background: #FF7A7A"></span><span style="flex: 312; background: #E5A04B"></span></div>
+              <span class="iv">Amendment</span><div class="sbar"><span style="flex: 491; background: #5CE1E6; box-shadow: 0 0 8px rgba(92,225,230,0.5); animation-delay: .2s"></span><span style="flex: 390; background: #FF7A7A; animation-delay: .2s"></span><span style="flex: 213; background: #E5A04B; animation-delay: .2s"></span></div>
+            </div>
+            <span class="iv" style="font-size: 10px"><span style="color: #3DDC97">■</span> accepted · <span style="color: #5CE1E6">■</span> accepted on amendment · <span style="color: #FF7A7A">■</span> rejected · <span style="color: #E5A04B">■</span> pending</span>
+          </div>
+          <div class="src">
+            <span class="iv" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em">Corrections on top</span>
+            <b style="font-size: 20px; color: #5CE1E6">314 <span class="iv" style="font-size: 12px; font-weight: 500">records</span></b>
+            <span class="iv" style="font-size: 11px">201 grievance · 113 amendment · original kept</span>
+          </div>
+          <div class="src" style="border-color: rgba(155,135,255,0.55); box-shadow: 0 0 22px rgba(110,86,255,0.25)">
+            <span class="iv" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em">You</span>
+            <b style="font-size: 20px; color: #D6CCFF">#1,214</b>
+            <span class="iv" style="font-size: 11px">24.10 · accepted in round 01</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: flex; gap: 16px; align-items: flex-start">
+      <section class="card" aria-label="Candidates" style="flex: 1; min-width: 0">
+        <header style="display: flex; flex-direction: column; gap: 12px; padding: 14px">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center">
+            <div class="seg" role="tablist" aria-label="Show"><button type="button" role="tab" aria-selected="true" class="on">All 8,904</button><button type="button" role="tab" aria-selected="false">In the running</button><button type="button" role="tab" aria-selected="false">Out of the running</button><button type="button" role="tab" aria-selected="false">Corrected 314</button></div>
+            <label class="lbl" style="flex-direction: row; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 12px">Marks shown<select class="sel"><option>With corrections</option><option>As published by PHF</option></select></label>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end">
+            <label class="lbl">Programme<select class="sel"><option>All programmes</option><option>FCPS</option><option>MS</option><option>MD</option></select></label>
+            <label class="lbl">Quota<select class="sel"><option>All quotas</option></select></label>
+            <label class="lbl">Round 01<select class="sel"><option>Any</option><option>Accepted</option><option>Rejected</option><option>Pending</option></select></label>
+            <label class="lbl">Amendment<select class="sel"><option>Any</option><option>Accepted</option><option>Rejected</option><option>Pending</option><option>Not needed</option></select></label>
+            <label class="lbl">Seat and consent from<select class="sel"><option>Round 5 (latest)</option><option>Round 4</option></select></label>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <a class="chipf on" href="#">Rescued by amendment <b>491</b></a>
+            <a class="chipf" href="#">Rejected at both steps <b>390</b></a>
+            <a class="chipf" href="#">Still pending <b>213</b></a>
+            <a class="chipf" href="#">Marks corrected <b>314</b></a>
+            <a class="chipf" href="#">Applied in 2+ programmes <b>1,108</b></a>
+            <a class="chipf" href="#">No preferences filed <b>146</b></a>
+          </div>
+        </header>
+        <table class="tbl">
+          <thead>
+            <tr><th class="grp" colspan="4" scope="colgroup">🔒 Gazette and verification · same all cycle</th><th class="grp live-col" colspan="2" scope="colgroup" style="color: #C4B8FF"><span class="live">●</span> Round 5 · changes each round</th></tr>
+            <tr><th scope="col">Rank</th><th scope="col">Candidate</th><th scope="col" style="text-align: right">Marks</th><th scope="col">Round 01 → Amendment</th><th scope="col" class="live-col">Seat now</th><th scope="col" class="live-col">Consent</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono m">1,211</td><td><span style="display: flex; gap: 9px; align-items: center"><span class="av" style="background: #5B3FF5">HS</span><span><b>Hira Saleem</b><span class="mono m" style="display: block; font-size: 11px">25118 · 88214-P</span><span style="display: block; margin-top: 3px"><span class="tag">FCPS</span><span class="tag">MS</span></span></span></span></td><td class="mono" style="text-align: right">24.31</td><td><span class="step"><span style="background: rgba(61,220,151,0.18); color: #3DDC97">R01 ✓</span></span></td><td class="live-col">Anaes · Mayo <span class="m">#1</span></td><td class="live-col"><span class="pill g">Accepted</span></td></tr>
+            <tr style="background: rgba(110,86,255,0.12); box-shadow: inset 3px 0 0 #7B61FF"><td class="mono m">1,212</td><td><span style="display: flex; gap: 9px; align-items: center"><span class="av" style="background: #176B67">UT</span><span><b>Usman Tariq</b><span class="mono m" style="display: block; font-size: 11px">31640 · 90122-P</span><span style="display: block; margin-top: 3px"><span class="tag">FCPS</span></span></span></span></td><td style="text-align: right"><span class="mono">24.18</span> <span class="pill c" style="font-size: 10px; padding: 1px 6px">corrected</span><span class="mono m" style="display: block; font-size: 10px">PHF: 23.78</span></td><td><span class="step"><span style="background: rgba(255,122,122,0.16); color: #FF7A7A">R01 ✕</span><span style="background: rgba(92,225,230,0.16); color: #5CE1E6">Amend ✓</span></span></td><td class="live-col">Anaes · Services <span class="m">#2</span></td><td class="live-col"><span class="pill a">Waiting</span></td></tr>
+            <tr><td class="mono m">1,213</td><td><span style="display: flex; gap: 9px; align-items: center"><span class="av" style="background: #3A3A42">FK</span><span><b>Fatima Khalid</b><span class="mono m" style="display: block; font-size: 11px">28410 · 92001-P</span><span style="display: block; margin-top: 3px"><span class="tag">FCPS</span><span class="tag">MD</span></span></span></span></td><td class="mono" style="text-align: right">24.12</td><td><span class="step"><span style="background: rgba(255,122,122,0.16); color: #FF7A7A">R01 ✕</span><span style="background: rgba(255,122,122,0.16); color: #FF7A7A">Amend ✕</span></span><span class="m" style="display: block; font-size: 10px; margin-top: 3px">"House job certificate not attested"</span></td><td class="live-col m">Out of the running</td><td class="live-col m">—</td></tr>
+            <tr style="background: rgba(155,135,255,0.06)"><td class="mono" style="color: #D6CCFF">1,214</td><td><span style="display: flex; gap: 9px; align-items: center"><span class="av" style="background: linear-gradient(135deg, #8B73FF, #5B3FF5); box-shadow: 0 0 10px rgba(110,86,255,0.6)">AR</span><span><b>Ali Raza</b> <span class="pill v">you</span><span class="mono m" style="display: block; font-size: 11px">27267 · 93410-P</span><span style="display: block; margin-top: 3px"><span class="tag">FCPS</span></span></span></span></td><td class="mono" style="text-align: right">24.10</td><td><span class="step"><span style="background: rgba(61,220,151,0.18); color: #3DDC97">R01 ✓</span></span></td><td class="live-col">Anaes · Jinnah <span class="m">#2</span></td><td class="live-col"><span class="pill a">Waiting</span></td></tr>
+            <tr><td class="mono m">1,215</td><td><span style="display: flex; gap: 9px; align-items: center"><span class="av" style="background: #8C5426">SI</span><span><b>Sana Iqbal</b><span class="mono m" style="display: block; font-size: 11px">20981 · 86602-P</span><span style="display: block; margin-top: 3px"><span class="tag">FCPS</span><span class="tag">MS</span><span class="tag">MD</span></span></span></span></td><td style="text-align: right"><span class="mono">24.08</span> <span class="pill c" style="font-size: 10px; padding: 1px 6px">corrected</span><span class="mono m" style="display: block; font-size: 10px">PHF: 24.33</span></td><td><span class="step"><span style="background: rgba(61,220,151,0.18); color: #3DDC97">R01 ✓</span></span></td><td class="live-col">Anaes · Allied <span class="m">#3</span></td><td class="live-col"><span class="pill r">Rejected</span></td></tr>
+            <tr><td class="mono m">1,216</td><td><span style="display: flex; gap: 9px; align-items: center"><span class="av" style="background: #263C4D">BA</span><span><b>Bilal Ahmed</b><span class="mono m" style="display: block; font-size: 11px">29903 · 91877-P</span><span style="display: block; margin-top: 3px"><span class="tag">FCPS</span></span></span></span></td><td class="mono" style="text-align: right">24.02</td><td><span class="step"><span style="background: rgba(229,160,75,0.16); color: #E5A04B">R01 ◷</span><span style="background: rgba(229,160,75,0.16); color: #E5A04B">Amend ◷</span></span></td><td class="live-col m">No seat yet</td><td class="live-col"><span class="pill n">—</span></td></tr>
+            <tr><td class="mono m" style="border-bottom: 0">1,217</td><td style="border-bottom: 0"><span style="display: flex; gap: 9px; align-items: center"><span class="av" style="background: #4A2F6B">MN</span><span><b>Maryam Nawaz</b><span class="mono m" style="display: block; font-size: 11px">33012 · 94420-P</span><span style="display: block; margin-top: 3px"><span class="tag">MS</span><span class="tag" style="border-color: rgba(229,160,75,0.5); color: #E5A04B">no preferences</span></span></span></span></td><td class="mono" style="text-align: right; border-bottom: 0">23.97</td><td style="border-bottom: 0"><span class="step"><span style="background: rgba(61,220,151,0.18); color: #3DDC97">R01 ✓</span></span></td><td class="live-col m" style="border-bottom: 0">Not in any list</td><td class="live-col m" style="border-bottom: 0">—</td></tr>
+          </tbody>
+        </table>
+        <footer style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; font-size: 12px" class="m"><span>Ranked by marks with corrections · 491 matching</span><nav aria-label="Pages" style="display: flex; gap: 4px"><a href="#" aria-label="Previous" style="display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1)">‹</a><a href="#" aria-current="page" style="display: grid; place-items: center; min-width: 30px; height: 30px; padding: 0 6px; border-radius: 8px; color: #fff; background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(110,86,255,0.42)); border: 1px solid rgba(155,135,255,0.6); box-shadow: inset -3px 0 0 #7B61FF, 0 0 14px rgba(110,86,255,0.35)">10</a><a href="#" aria-label="Next" style="display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1)">›</a></nav></footer>
+      </section>
+
+      <aside class="card" aria-label="Usman Tariq" style="flex: 0 0 350px; padding: 18px; display: flex; flex-direction: column; gap: 14px; border-color: rgba(155,135,255,0.4); box-shadow: 0 0 40px rgba(110,86,255,0.15); animation: slide 0.45s ease both">
+        <div style="display: flex; gap: 12px; align-items: center">
+          <span class="av" style="width: 44px; height: 44px; font-size: 15px; background: #176B67; box-shadow: 0 0 0 3px rgba(23,107,103,0.4)">UT</span>
+          <div style="flex: 1"><h2 style="margin: 0; font-size: 17px">Usman Tariq</h2><p class="mono m" style="margin: 2px 0 0; font-size: 11px">31640 · PMDC 90122-P · rank 1,212</p></div>
+          <button type="button" aria-label="Close" style="width: 30px; height: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #A3A3AD; font: inherit">✕</button>
+        </div>
+
+        <div>
+          <p class="h" style="font-size: 13px">Record</p>
+          <ol style="list-style: none; margin: 10px 0 0; padding: 0 0 0 14px; border-left: 2px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 12px; font-size: 12px">
+            <li style="position: relative"><span style="position: absolute; left: -21px; top: 3px; width: 10px; height: 10px; border-radius: 99px; background: #8B8B93"></span><b>In the gazette</b> <span class="m">· 23.78 · PHF report 901</span></li>
+            <li style="position: relative"><span style="position: absolute; left: -21px; top: 3px; width: 10px; height: 10px; border-radius: 99px; background: #FF7A7A; box-shadow: 0 0 8px #FF7A7A"></span><b>Verification : Round 01</b> <span class="pill r" style="font-size: 10px">Rejected</span><span class="m" style="display: block; margin-top: 2px">"Degree marks sheet mismatch"</span></li>
+            <li style="position: relative"><span style="position: absolute; left: -21px; top: 3px; width: 10px; height: 10px; border-radius: 99px; background: #5CE1E6; box-shadow: 0 0 8px #5CE1E6"></span><b>Amendment Process</b> <span class="pill c" style="font-size: 10px">Accepted</span><span class="m" style="display: block; margin-top: 2px">"Corrected transcript submitted"</span></li>
+            <li style="position: relative"><span style="position: absolute; left: -21px; top: 3px; width: 10px; height: 10px; border-radius: 99px; background: #9B87FF; box-shadow: 0 0 8px #9B87FF"></span><b>Correction</b> <span class="m">· amendment</span>
+              <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 2px 10px; margin-top: 6px"><span class="m">Marks</span><span class="mono m">23.78</span><span class="mono" style="color: #5CE1E6">→ 24.18</span><span class="m">Degree</span><span class="mono m">11.20</span><span class="mono" style="color: #5CE1E6">→ 11.60</span></div>
+              <span class="m" style="display: block; margin-top: 4px; font-size: 11px">Shown on top of PHF's figure, which is kept · added 31 May</span>
+            </li>
+          </ol>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><p class="h" style="font-size: 13px">All 18 preferences · FCPS</p><span class="m" style="font-size: 10px">round 5</span></div>
+          <div style="display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow: auto; padding-right: 4px; margin-top: 8px">
+            <sc-for list="{{prefs}}" as="p" hint-placeholder-count="18">
+              <div class="pref" style="background: {{p.bg}}; box-shadow: {{p.sh}}"><span class="mono" style="color: {{p.nc}}">#{{p.n}}</span><span style="color: {{p.tc}}">{{p.label}}</span><span style="font-size: 10px; color: {{p.nc}}">{{p.note}}</span></div>
+            </sc-for>
+          </div>
+        </div>
+        <a href="Estimate.dc.html" style="display: inline-flex; justify-content: center; align-items: center; height: 38px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.14); color: #EDEDEF; font-size: 13px">Where he lands in estimated round 6 →</a>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const list = [
+      ['Anaesthesia · Mayo, Lahore', 'miss', 'Fell short 0.13'],
+      ['Anaesthesia · Services, Lahore', 'seat', 'Placed'],
+      ['Anaesthesia · Jinnah, Lahore', 'below', 'Skipped'],
+      ['Medicine · Mayo, Lahore', 'below', 'Skipped'],
+      ['Anaesthesia · Allied, Faisalabad', 'below', 'Skipped'],
+      ['Anaesthesia · Nishtar, Multan', 'below', 'Skipped'],
+      ['Medicine · Services, Lahore', 'below', 'Skipped'],
+      ['Anaesthesia · LGH, Lahore', 'below', 'Skipped'],
+      ['Medicine · Jinnah, Lahore', 'below', 'Skipped'],
+      ['Paediatrics · Children\'s, Lahore', 'below', 'Skipped'],
+      ['Anaesthesia · DHQ, Gujranwala', 'below', 'Skipped'],
+      ['Medicine · Allied, Faisalabad', 'below', 'Skipped'],
+      ['Dermatology · Services, Lahore', 'below', 'Skipped'],
+      ['Anaesthesia · BVH, Bahawalpur', 'below', 'Skipped'],
+      ['Psychiatry · Mayo, Lahore', 'below', 'Skipped'],
+      ['Medicine · Nishtar, Multan', 'below', 'Skipped'],
+      ['Family Medicine · Mayo, Lahore', 'below', 'Skipped'],
+      ['Anaesthesia · ABS, Gujrat', 'below', 'Skipped']
+    ];
+    const prefs = list.map(([label, k, note], i) => ({
+      n: i + 1, label, note,
+      bg: k === 'seat' ? 'rgba(61,220,151,0.12)' : k === 'miss' ? 'rgba(255,122,122,0.08)' : 'rgba(255,255,255,0.025)',
+      sh: k === 'seat' ? 'inset 0 0 0 1px rgba(61,220,151,0.45), 0 0 14px rgba(61,220,151,0.15)' : 'none',
+      nc: k === 'seat' ? '#3DDC97' : k === 'miss' ? '#FF7A7A' : '#6B6B73',
+      tc: k === 'below' ? '#A3A3AD' : '#EDEDEF'
+    }));
+    return { prefs };
+  }
+}
+</script>
+</body>
+</html>

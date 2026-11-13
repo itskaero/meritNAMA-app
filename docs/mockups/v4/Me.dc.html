@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Me</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}@media (prefers-reduced-motion: reduce){.pg::before,.pg::after{animation:none}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 4px rgba(110,86,255,.25),0 0 22px rgba(110,86,255,.4)}50%{box-shadow:0 0 0 4px rgba(110,86,255,.35),0 0 40px rgba(110,86,255,.75)}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes d1{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(8%,6%,0) scale(1.08)}}
+@keyframes d2{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+.aur{position:relative;overflow:hidden;background:#10243A;color:#F3EEE5;border-radius:16px;padding:22px 24px}
+.aur .mesh{position:absolute;inset:0;pointer-events:none;filter:blur(90px);opacity:.85}
+.aur .b{position:absolute;border-radius:50%}
+.aur .bt{width:560px;height:560px;background:radial-gradient(circle,rgba(23,107,103,.45),rgba(23,107,103,0) 70%);top:-60%;left:-10%;animation:d1 28s ease-in-out infinite alternate}
+.aur .bs{width:520px;height:520px;background:radial-gradient(circle,rgba(38,60,77,.7),rgba(38,60,77,0) 70%);bottom:-80%;right:10%;animation:d2 34s ease-in-out infinite alternate}
+.aur .ba{width:380px;height:380px;background:radial-gradient(circle,rgba(229,160,75,.14),rgba(229,160,75,0) 70%);top:-20%;right:-5%;animation:d2 24s ease-in-out infinite alternate}
+.aur .bv{width:400px;height:400px;background:radial-gradient(circle,rgba(110,86,255,.28),rgba(110,86,255,0) 70%);top:-40%;left:5%;animation:d1 30s ease-in-out infinite alternate-reverse}
+.aur>.in{position:relative;z-index:1}
+.iv{color:rgba(243,238,229,.68)}.m{color:#8B8B93}
+.card{background:rgba(23,23,28,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:18px;box-sizing:border-box;position:relative;transition:transform .25s,box-shadow .25s,border-color .25s;animation:rise .6s ease both}
+.card:hover{transform:translateY(-3px);border-color:rgba(155,135,255,.35);box-shadow:0 18px 40px rgba(0,0,0,.45),0 0 32px rgba(110,86,255,.18)}
+.glass{background:rgba(16,36,58,.45);border:1px solid rgba(243,238,229,.12);border-radius:14px;padding:12px 14px;text-align:center}
+.h{margin:0;font-size:15px;font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.g{background:rgba(61,220,151,.14);color:#3DDC97}.a{background:rgba(229,160,75,.16);color:#E5A04B}.r{background:rgba(255,122,122,.15);color:#FF7A7A}.v{background:rgba(155,135,255,.18);color:#C4B8FF;transition:box-shadow .2s}.v:hover{box-shadow:0 0 14px rgba(110,86,255,.5)}
+.ob{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 14px;border-radius:10px;border:1px solid rgba(243,238,229,.25);color:#F3EEE5;font-size:13px;transition:border-color .2s,box-shadow .2s}
+.ob:hover{border-color:rgba(155,135,255,.8);box-shadow:0 0 16px rgba(110,86,255,.4)}
+.ev{position:absolute;box-sizing:border-box;padding:10px 12px;border-radius:12px;background:#1E1E24;font-size:12px;transition:transform .2s,box-shadow .2s}
+.ev:hover{transform:translateY(-2px);box-shadow:0 0 18px rgba(110,86,255,.3)}
+.fill{height:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px}
+.fill>span{display:block;height:100%;border-radius:99px;transform-origin:left;animation:grow 1.2s ease both}
+.live{animation:blink 1.6s ease-in-out infinite}
+.me{animation:breathe 3.2s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.aur .b,.card,.live,.me,.fill>span{animation:none!important}}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1100px; display: flex; background: #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="me" hint-size="252px,1100px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 16px">
+    <section class="aur" aria-label="Ali Raza">
+      <div class="mesh" aria-hidden="true"><div class="b bt"></div><div class="b bs"></div><div class="b ba"></div><div class="b bv"></div></div>
+      <div class="in" style="display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap">
+        <div style="display: flex; gap: 18px; align-items: center">
+          <span class="me" style="width: 76px; height: 76px; border-radius: 99px; background: linear-gradient(135deg, #8B73FF, #5B3FF5); display: grid; place-items: center; font-size: 26px; font-weight: 700">AR</span>
+          <div>
+            <h1 style="margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.03em">Ali Raza</h1>
+            <p class="iv" style="margin: 4px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px">27267 · PMDC 93410-P · FCPS · Punjab</p>
+            <p style="margin: 8px 0 0; display: flex; gap: 6px"><span class="pill v">High · 86th</span><span class="pill g">Seat in round 5</span><span class="pill a"><span class="live">●</span> consent due Fri</span></p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center">
+          <div class="glass"><p style="margin: 0; font-size: 22px; font-weight: 700">24.10</p><p class="iv" style="margin: 0; font-size: 11px">marks</p></div>
+          <div class="glass"><p style="margin: 0; font-size: 22px; font-weight: 700">8</p><p class="iv" style="margin: 0; font-size: 11px">shortlist</p></div>
+          <div class="glass"><p style="margin: 0; font-size: 22px; font-weight: 700">6</p><p class="iv" style="margin: 0; font-size: 11px">following</p></div>
+          <div class="glass"><p style="margin: 0; font-size: 22px; font-weight: 700">12</p><p class="iv" style="margin: 0; font-size: 11px">answers</p></div>
+          <a class="ob" href="#">Your data</a>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start">
+      <section aria-labelledby="journey" class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center"><h2 id="journey" class="h">My journey · induction 21</h2><span class="m" style="font-size: 12px">Seat in each round</span></div>
+        <div style="position: relative; height: 300px; margin-top: 14px">
+          <div class="m" style="position: absolute; inset: 0 0 auto 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); font-size: 12px"><span>R1</span><span>R2</span><span>R3</span><span>R4</span><span style="color: #D6CCFF; font-weight: 700">R5 · now</span><span style="color: #E5A04B">R6</span></div>
+          <div aria-hidden="true" style="position: absolute; top: 24px; bottom: 0; left: 0; right: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr))"><span style="border-left: 1px dashed rgba(255,255,255,0.06)"></span><span style="border-left: 1px dashed rgba(255,255,255,0.06)"></span><span style="border-left: 1px dashed rgba(255,255,255,0.06)"></span><span style="border-left: 1px dashed rgba(255,255,255,0.06)"></span><span style="border-left: 2px solid #9B87FF; box-shadow: -2px 0 14px rgba(155,135,255,0.6)"></span><span style="border-left: 1px dashed rgba(229,160,75,0.4)"></span></div>
+          <div class="ev" style="left: 1%; width: 15%; top: 40px; box-shadow: inset 3px 0 0 #FF7A7A"><b>No seat</b><span class="m" style="display: block">below all 18</span></div>
+          <div class="ev" style="left: 17.6%; width: 15%; top: 100px; box-shadow: inset 3px 0 0 #E5A04B"><b>Medicine · Mayo</b><span class="m" style="display: block">pref #6 · rejected</span></div>
+          <div class="ev" style="left: 34.3%; width: 31.5%; top: 160px; box-shadow: inset 3px 0 0 #E5A04B"><b>Anaesthesia · Jinnah</b><span class="m" style="display: block">pref #4 · R3 and R4 · accepted</span></div>
+          <div class="ev" style="left: 67.6%; width: 15.5%; top: 220px; background: rgba(61,220,151,0.14); box-shadow: inset 3px 0 0 #3DDC97, 0 0 22px rgba(61,220,151,0.25)"><b>Anaesthesia · Jinnah</b><span style="display: block; color: #3DDC97">pref #2 ▲ · waiting</span></div>
+          <div class="ev" style="left: 84.3%; width: 15%; top: 150px; background: transparent; border: 1px dashed rgba(155,135,255,0.7)"><b style="color: #C4B8FF">Estimate</b><span class="m" style="display: block">Mon 17 Nov</span></div>
+        </div>
+      </section>
+
+      <aside class="card" aria-label="Today" style="animation-delay: 0.1s">
+        <h2 class="h">Today</h2>
+        <p class="m" style="margin: 2px 0 12px; font-size: 12px">Thu 13 Nov</p>
+        <div style="padding: 14px; border-radius: 14px; background: rgba(229,160,75,0.10); border: 1px solid rgba(229,160,75,0.4); box-shadow: 0 0 22px rgba(229,160,75,0.15)"><p style="margin: 0; font-size: 26px; font-weight: 700; color: #E5A04B">1 day 21 h</p><p style="margin: 2px 0 0; font-size: 13px">to accept or reject round 5</p></div>
+        <ul style="list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; font-size: 13px">
+          <li style="display: flex; justify-content: space-between"><span>Medicine · Mayo fell</span><span class="pill g">▼ 0.30</span></li>
+          <li style="display: flex; justify-content: space-between"><span>Paediatrics rose</span><span class="pill r">▲ 0.12</span></li>
+          <li style="display: flex; justify-content: space-between"><span>New answer for you</span><span class="pill v">1</span></li>
+          <li style="display: flex; justify-content: space-between"><span>Hira followed you</span><span class="pill v">new</span></li>
+        </ul>
+      </aside>
+    </div>
+
+    <section aria-labelledby="short" class="card" style="animation-delay: 0.15s">
+      <div style="display: flex; justify-content: space-between; align-items: center"><h2 id="short" class="h">Shortlist · 8</h2><a href="Chances.dc.html" style="font-size: 13px">Add from My chances →</a></div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 12px">
+        <article style="padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(61,220,151,0.3)"><div style="display: flex; justify-content: space-between"><b>Anaesthesia</b><span class="pill g">Safe</span></div><p class="m" style="margin: 4px 0 0; font-size: 12px">Jinnah · closing 22.96</p><div class="fill"><span style="width: 92%; background: #3DDC97; box-shadow: 0 0 8px #3DDC97"></span></div></article>
+        <article style="padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(229,160,75,0.3)"><div style="display: flex; justify-content: space-between"><b>Medicine</b><span class="pill a">Target</span></div><p class="m" style="margin: 4px 0 0; font-size: 12px">Mayo · closing 23.88</p><div class="fill"><span style="width: 58%; background: #E5A04B"></span></div></article>
+        <article style="padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(229,160,75,0.3)"><div style="display: flex; justify-content: space-between"><b>Paediatrics</b><span class="pill a">Target</span></div><p class="m" style="margin: 4px 0 0; font-size: 12px">Children's · 24.31</p><div class="fill"><span style="width: 44%; background: #E5A04B"></span></div></article>
+        <article style="padding: 14px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,122,122,0.3)"><div style="display: flex; justify-content: space-between"><b>Radiology</b><span class="pill r">Reach</span></div><p class="m" style="margin: 4px 0 0; font-size: 12px">Services · 26.40</p><div class="fill"><span style="width: 18%; background: #FF7A7A"></span></div></article>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+      <section class="card" style="animation-delay: 0.2s"><h2 class="h">Following</h2><p style="margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 6px"><span class="pill v">Jinnah Hospital</span><span class="pill v">Anaesthesia</span><span class="pill v">Induction 21</span><span class="pill v">Mayo Hospital</span><span class="pill v">Hira Saleem</span></p></section>
+      <section class="card" style="animation-delay: 0.25s"><h2 class="h">Saved views</h2><p style="margin: 12px 0 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px"><a href="#">Finder: 24.10, FCPS · Punjab</a><a href="#">Round 5 · Anaesthesia only</a><a href="#">Hospitals in Lahore</a></p></section>
+      <section class="card" style="animation-delay: 0.3s"><h2 class="h">Your activity</h2><ul style="list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px" class="m"><li>Answered "Does rejecting remove me?" · <span style="color: #3DDC97">▲ 18</span></li><li>Shortlisted ENT · Allied</li><li>Reviewed Jinnah Hospital ★★★★</li></ul></section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sign in to meritNAMA</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Space+Grotesk:wght@500;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#070A10}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes breathe{0%,100%{box-shadow:0 8px 24px rgba(110,86,255,.45)}50%{box-shadow:0 8px 40px rgba(110,86,255,.85)}}
+.go{animation:breathe 2.8s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.go{animation:none}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 64px; display: grid; place-items: center; background: radial-gradient(800px 500px at 20% 20%, rgba(77,184,217,0.10), transparent 60%), #070A10; font-family: Inter, system-ui, sans-serif; color: #E5E8EE">
+  <div style="width: 1180px; height: 680px; display: flex; border-radius: 20px; overflow: hidden; box-shadow: 0 40px 120px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.06)">
+
+    <section aria-label="This round" style="flex: 1.35; position: relative; overflow: hidden; padding: 48px; display: flex; flex-direction: column; justify-content: space-between; background: #10243A">
+      <img src="/_blob/c000b6a4393080b5fa8607521574fea3" alt="A doctor studying late at night by a desk lamp" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 40% center">
+      <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(16,36,58,0.55) 0%, rgba(16,36,58,0.15) 40%, rgba(10,14,22,0.92) 100%), radial-gradient(500px 360px at 85% 20%, rgba(229,160,75,0.18), transparent 70%)"></div>
+      <p style="position: relative; margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 0.02em">merit<span style="color: #B9AAFF">NAMA</span></p>
+      <div style="position: relative">
+        <div style="display: flex; align-items: flex-end; gap: 22px">
+          <p style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 132px; font-weight: 500; line-height: 0.85; letter-spacing: -0.04em">8,121</p>
+          <div style="padding-bottom: 8px">
+            <p style="margin: 0; font-size: 30px; font-weight: 600">seats</p>
+            <p style="margin: 4px 0 0; font-size: 13px; color: #A3ABBD">Induction 21 · round 5 · 12 Nov 2026</p>
+          </div>
+        </div>
+        <p style="margin: 22px 0 0; max-width: 460px; font-size: 16px; line-height: 1.6; color: #C7CEDB">Know where you stand. Every merit list since 2020, who holds which seat, and where your marks can land next round.</p>
+      </div>
+    </section>
+
+    <section aria-label="Sign in" style="flex: 1; padding: 44px 48px; display: flex; flex-direction: column; gap: 22px; background: rgba(20,27,40,0.86); backdrop-filter: blur(18px)">
+      <div role="tablist" aria-label="Choose" style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(255,255,255,0.05); align-self: flex-start">
+        <button type="button" role="tab" aria-selected="true" style="height: 34px; padding: 0 16px; border: 0; border-radius: 9px; background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(110,86,255,0.45)); box-shadow: inset 0 -2px 0 #7B61FF, 0 0 18px rgba(110,86,255,0.3); color: #fff; font: inherit; font-size: 13px; font-weight: 600">Sign in</button>
+        <button type="button" role="tab" aria-selected="false" style="height: 34px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; color: #A3ABBD; font: inherit; font-size: 13px">Request access</button>
+      </div>
+      <div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700">Welcome back</h1>
+        <p style="margin: 6px 0 0; color: #A3ABBD">We email you a one-time link. No password to remember.</p>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 0">
+        <label style="flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #A3ABBD">Email
+          <input type="email" placeholder="you@example.com" style="height: 48px; padding: 0 2px; border: 0; border-bottom: 1px solid rgba(255,255,255,0.25); background: transparent; color: #E5E8EE; font: inherit; font-size: 16px; outline: none">
+        </label>
+        <a class="go" href="Main.dc.html" aria-label="Email me a link" style="display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(90deg, rgba(255,255,255,0.05) 20%, rgba(110,86,255,0.45)); border: 1px solid rgba(155,135,255,0.65); color: #fff; box-shadow: inset -3px 0 0 #7B61FF, 0 0 20px rgba(110,86,255,0.35)"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+      </div>
+      <a href="#" style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 46px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); color: #E5E8EE; font-weight: 600">Continue with Google</a>
+
+      <div style="margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px">
+        <p style="margin: 0 0 12px; font-weight: 600">This cycle</p>
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #A3ABBD"><span>Rounds published</span><span style="color: #E5E8EE; font-family: 'IBM Plex Mono', monospace">60</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #A3ABBD"><span>Median closing merit</span><span style="color: #3ECF8E; font-family: 'IBM Plex Mono', monospace">22.85 ▼</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #A3ABBD"><span>Consent closes</span><span style="color: #E8A627; font-family: 'IBM Plex Mono', monospace">Fri 14 Nov</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #A3ABBD"><span>Next list</span><span style="color: #E5E8EE; font-family: 'IBM Plex Mono', monospace">Round 6</span></div>
+      </div>
+      <p style="margin: auto 0 0; font-size: 12px; color: #737C90"><a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Contact</a></p>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

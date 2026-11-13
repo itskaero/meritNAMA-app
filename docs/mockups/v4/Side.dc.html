@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<nav aria-label="Main" style="width: 252px; min-height: 1100px; height: 100%; box-sizing: border-box; padding: 20px 16px; display: flex; flex-direction: column; gap: 4px; background: radial-gradient(320px 260px at 100% 0%, rgba(123,97,255,0.14), transparent 70%), radial-gradient(300px 300px at 0% 100%, rgba(91,63,245,0.12), transparent 70%), rgba(17,17,19,0.86); backdrop-filter: blur(18px); border-right: 1px solid rgba(155,135,255,0.12); font-family: Inter, system-ui, sans-serif; font-size: 14px; color: #EDEDEF">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 14px">
+    <span style="display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; letter-spacing: -0.02em">
+      <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#EDEDEF" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M8 15V9l4 4 4-4v6"></path></svg>
+      meritNAMA
+    </span>
+    <button type="button" aria-label="Collapse menu" style="width: 30px; height: 30px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.14); background: transparent; color: #B9B9C2; display: grid; place-items: center"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="3"></rect><path d="M9 4v16M15 9l-3 3 3 3"></path></svg></button>
+  </div>
+  <label style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px; margin-bottom: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); color: #8B8B93">
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+    <input aria-label="Search name, PMDC or applicant ID" placeholder="Search…" style="flex: 1; min-width: 0; background: transparent; border: 0; color: #EDEDEF; font: inherit; outline: none">
+    <span style="display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.14); font-size: 11px">⌘</span><span style="display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.14); font-size: 11px">K</span>
+  </label>
+  <sc-for list="{{main}}" as="item" hint-placeholder-count="7">
+    <a href="{{item.href}}" aria-current="{{item.cur}}" style="display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; text-decoration: none; color: {{item.fg}}; background: {{item.bg}}; box-shadow: {{item.sh}}">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{item.d}}"></path></svg>
+      <span style="flex: 1">{{item.label}}</span>
+      <sc-if value="{{item.badge}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; display: grid; place-items: center; border-radius: 99px; background: #6E56FF; color: #fff">{{item.badge}}</span></sc-if>
+    </a>
+  </sc-for>
+  <div style="height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0"></div>
+  <p style="margin: 2px 12px 6px; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: #8B8B93">Mine</p>
+  <sc-for list="{{mine}}" as="item" hint-placeholder-count="4">
+    <a href="{{item.href}}" aria-current="{{item.cur}}" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; text-decoration: none; color: {{item.fg}}; background: {{item.bg}}; box-shadow: {{item.sh}}">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{item.d}}"></path></svg>
+      <span style="flex: 1">{{item.label}}</span>
+      <sc-if value="{{item.badge}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: #8B8B93">{{item.badge}}</span></sc-if>
+    </a>
+  </sc-for>
+
+  <div style="margin-top: auto; padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: radial-gradient(240px 140px at 50% 120%, rgba(110,86,255,0.25), transparent 70%), #151517">
+    <p style="margin: 0; display: flex; align-items: center; gap: 8px; font-weight: 600"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EDEDEF" stroke-width="1.8"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"></path></svg>Round 6 <span style="color: #8B8B93; font-weight: 500">estimate</span></p>
+    <p style="margin: 6px 0 12px; font-size: 13px; line-height: 1.5; color: #8B8B93">Lands once consent closes on Friday. We'll tell you where you move.</p>
+    <a href="#" style="display: flex; justify-content: center; align-items: center; height: 40px; border-radius: 11px; background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(110,86,255,0.42)); border: 1px solid rgba(155,135,255,0.6); color: #fff; font-weight: 600; text-decoration: none; box-shadow: inset -3px 0 0 #7B61FF, 0 0 20px rgba(110,86,255,0.30)">Remind me</a>
+  </div>
+  <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08)">
+    <span style="width: 38px; height: 38px; border-radius: 99px; background: linear-gradient(135deg, #2A2A2F, #3A3A42); display: grid; place-items: center; font-weight: 700">AR</span>
+    <span style="flex: 1; min-width: 0"><span style="display: block; font-weight: 600">Ali Raza</span><span style="display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #8B8B93">27267 · 93410-P</span></span>
+    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B8B93" stroke-width="2"><path d="m7 10 5-5 5 5M7 14l5 5 5-5"></path></svg>
+  </div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["home","lists","candidates","estimates","chances","hospitals","calendar","whatif","community","chats","me","inbox"],"default":"home"},"$preview":{"width":252,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'home';
+    const mk = (key, label, href, d, badge) => {
+      const on = key === active;
+      return { label, href, d, badge: badge || null,
+        fg: on ? '#FFFFFF' : '#B9B9C2',
+        bg: on ? 'linear-gradient(90deg, rgba(255,255,255,0.05) 40%, rgba(110,86,255,0.38))' : 'transparent',
+        sh: on ? 'inset -3px 0 0 #7B61FF, 0 0 24px rgba(110,86,255,0.18)' : 'none',
+        cur: on ? 'page' : undefined };
+    };
+    return {
+      main: [
+        mk('home', 'Overview', 'Main.dc.html', 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'),
+        mk('lists', 'Merit lists', 'Lists.dc.html', 'M5 20V10M12 20V4M19 20v-7'),
+        mk('candidates', 'Candidates', 'Gazette.dc.html', 'M9 11a3.5 3.5 0 1 0 0-7a3.5 3.5 0 1 0 0 7M2.5 20a6.5 6.5 0 0 1 13 0M16 5h6M16 9h6M18 13h4', '8.9k'),
+        mk('estimates', 'Estimates', 'Estimate.dc.html', 'M3 17l5-5 4 4 8-8M15 8h5v5', 'R6'),
+        mk('chances', 'My chances', 'Chances.dc.html', 'M12 3a9 9 0 1 0 9 9M12 8a4 4 0 1 0 4 4M12 12l8-8'),
+        mk('hospitals', 'Hospitals', 'Hospital.dc.html', 'M4 21V8l8-5 8 5v13M9 21v-5h6v5M12 8v4M10 10h4'),
+        mk('calendar', 'Calendar', 'Calendar.dc.html', 'M4 5h16v16H4zM4 10h16M8 3v4M16 3v4'),
+        mk('community', 'Community', 'Community.dc.html', 'M16 19v-1a4 4 0 0 0-8 0v1M12 11a3 3 0 1 0 0-6a3 3 0 1 0 0 6M20 19v-1a3 3 0 0 0-2-3M4 19v-1a3 3 0 0 1 2-3'),
+        mk('chats', 'Chats', 'Chats.dc.html', 'M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z', '3')
+      ],
+      mine: [
+        mk('me', 'Me', 'Me.dc.html', 'M12 12a4 4 0 1 0 0-8a4 4 0 1 0 0 8M4 21a8 8 0 0 1 16 0'),
+        mk('short', 'Shortlist', 'Me.dc.html', 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z', '8'),
+        mk('inbox', 'Inbox', 'Main.dc.html', 'M4 13h4l2 3h4l2-3h4M4 13l2-8h12l2 8v6H4z', '2'),
+        mk('help', 'Help', 'Main.dc.html', 'M12 21a9 9 0 1 0 0-18a9 9 0 1 0 0 18M9.5 9a2.5 2.5 0 1 1 3 2.5V14M12 17h.01')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
