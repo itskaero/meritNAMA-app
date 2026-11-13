@@ -86,7 +86,7 @@ Tick as you go; commit after each step; push only when the user asks.
 - **Admin + data pipeline (agreed 2026-11-13; mockups AdminToday, AdminData, Joining, Estimate "Built on"):**
   - [x] A1 File kinds as modules: `src/lib/ingest/kind.ts` (FileKind: fromPath/fromContents/missing/check/apply/stage/official), `kinds/*.ts`, `registry.ts`; datastore calls the registry; backups (`_bk`, `_old`, `_copy`) skipped.
   - [x] A2 Workflow: `src/lib/ingest/workflow.ts` (stages unofficial → verification → amendment → gazette → estimate → rounds → joining; official replaces unofficial; estimate records its "Built on" basis).
-  - [ ] A3 New kinds: unofficial list as its own stage, schedule (PHF steps → Calendar/Overview/notification bar), revisions (→ Amendment corrections), joining status (email/phone/CNIC/job dropped). Source folders: `meritnama-rewrite/meritnama/data`, `meritnama-rewrite/inductions/<n>/{gazette,merit}`.
+  - [x] A3 New kinds: unofficial list as its own stage, schedule (PHF steps → Calendar/Overview/notification bar), revisions (→ Amendment corrections), joining status (email/phone/CNIC/job dropped). Source folders: `meritnama-rewrite/meritnama/data`, `meritnama-rewrite/inductions/<n>/{gazette,merit}`.
   - [ ] A4 Triggers in the worker: new layer → rebuild dataset → next estimate, unpublished, into Needs you; official round supersedes its estimate.
   - [ ] A5 Notification bar (`announcements`: automatic from schedule/rounds/estimates + team-posted, dismissible).
   - [ ] A6 Admin Today (cycle strip, Needs you from a queue registry per area, health row) and Data (tabs Inductions/Files/Reference/Estimates, induction card with workflow lane and one next-step button); sidebar cut to 8.

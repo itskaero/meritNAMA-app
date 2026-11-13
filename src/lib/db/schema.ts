@@ -1149,3 +1149,43 @@ export const jobSaves = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.jobId] })],
 );
+
+// ── PHF schedule and joining status (data folder kinds "schedule" and "joining") ──
+
+/** PHF's dated steps for an induction (induction<n>_schedule.json). Replaced whole by a newer file. */
+export const inductionSchedule = pgTable(
+  "induction_schedule",
+  {
+    inductionId: integer("induction_id").notNull(),
+    stepId: integer("step_id").notNull(),
+    sortOrder: integer("sort_order").notNull(),
+    title: text("title").notNull(),
+    detail: text("detail"),
+    statusId: integer("status_id"),
+    startsAt: timestamp("starts_at", { withTimezone: true }),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.inductionId, t.stepId] })],
+);
+
+/**
+ * Who joined their seat (induction<n>_joining_status.json): seat and status only. The file's
+ * names, emails, phone numbers, CNICs and job details are never stored. Replaced whole.
+ */
+export const joiningStatus = pgTable(
+  "joining_status",
+  {
+    inductionId: integer("induction_id").notNull(),
+    applicantId: text("applicant_id").notNull(),
+    program: text("program").notNull(),
+    quota: text("quota"),
+    speciality: text("speciality"),
+    hospital: text("hospital"),
+    /** joined, pending or not_joined. */
+    status: text("status").notNull(),
+    joinedOn: date("joined_on", { mode: "string" }),
+    importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.inductionId, t.applicantId, t.program] })],
+);

@@ -44,9 +44,10 @@ describe("classifyByPath: the old repository layout", () => {
     (name) => expect(classifyByPath(name)).toMatchObject({ kind: "derived" }),
   );
 
-  it("knows schedule and joining status but does not import them yet", () => {
-    expect(classifyByPath("induction21_schedule.json")).toMatchObject({ kind: "later" });
-    expect(classifyByPath("induction21_joining_status.json")).toMatchObject({ kind: "later" });
+  it("recognises the PHF schedule, joining status and amendment revisions", () => {
+    expect(classifyByPath("induction21_schedule.json")).toMatchObject({ kind: "schedule", induction: 21 });
+    expect(classifyByPath("induction21_joining_status.json")).toMatchObject({ kind: "joining", induction: 21 });
+    expect(classifyByPath("inductions/21/revisions.json")).toMatchObject({ kind: "revisions", induction: 21 });
   });
 
   it.each(["induction21_consent_round5_bk.json", "induction21_merit_round8_bk.json", "inductions/21/merit/round_7_bk2.json", "seats_old.json", "scoring_policy_copy.json"])(
@@ -123,8 +124,8 @@ describe("sync selection", () => {
       [e("inductions/21/merit/round_8.json"), e("package.json"), e("closing_merit.json"), e("induction21_schedule.json"), e("README.md"), e("inductions", 0, "tree"), e("scoring_policy.json"), e("inductions/21/merit/round_9.json", 99_999_999)],
       1_000_000, 100,
     );
-    expect(r.take.map((t) => t.rel)).toEqual(["inductions/21/merit/round_8.json", "scoring_policy.json"]);
-    expect(r.skipped).toBe(4); // package.json, closing_merit, schedule, the oversized round
+    expect(r.take.map((t) => t.rel)).toEqual(["inductions/21/merit/round_8.json", "induction21_schedule.json", "scoring_policy.json"]);
+    expect(r.skipped).toBe(3); // package.json, closing_merit, the oversized round
     expect(r.tooMany).toBe(false);
   });
 

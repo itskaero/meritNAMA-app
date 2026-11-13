@@ -17,7 +17,7 @@ import type { SimRole } from "./sim-roles";
  * calls into them, so a new kind is a new module plus one line in the registry.
  */
 
-export type DataKind = "merit" | "consent" | "seats" | "policy" | "reference" | "sim_input" | "later" | "derived" | "backup";
+export type DataKind = "merit" | "consent" | "seats" | "policy" | "reference" | "sim_input" | "schedule" | "joining" | "revisions" | "derived" | "backup";
 export type DataStatus = "new" | "replaces" | "live" | "held" | "problem" | "ignored" | "missing";
 
 /** The induction workflow: unofficial list → verification → amendment → gazette → estimate → rounds → joining. */

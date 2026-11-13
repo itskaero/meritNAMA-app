@@ -5,7 +5,10 @@ import { policyKind } from "./kinds/policy";
 import { referenceKind } from "./kinds/reference";
 import { seatsKind } from "./kinds/seats";
 import { simInputKind } from "./kinds/sim-input";
-import { backupKind, derivedKind, laterKind } from "./kinds/skipped";
+import { joiningKind } from "./kinds/joining";
+import { revisionsKind } from "./kinds/revisions";
+import { scheduleKind } from "./kinds/schedule";
+import { backupKind, derivedKind } from "./kinds/skipped";
 import { pathInfo } from "./paths";
 
 /**
@@ -15,7 +18,9 @@ import { pathInfo } from "./paths";
 export const FILE_KINDS: readonly FileKind[] = [
   backupKind,
   derivedKind,
-  laterKind,
+  scheduleKind,
+  joiningKind,
+  revisionsKind,
   policyKind,
   referenceKind,
   consentKind,

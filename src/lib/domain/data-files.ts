@@ -15,6 +15,7 @@ import { cleanRelPath } from "@/lib/ingest/paths";
  *   scoring_policy.json                        scoring policy
  *   disciplineFullData.json, cpsp_accreditation.json, induction<n>_specialty_groups.json   reference documents
  *   marks, preferences, candidates, components, certificates, profile status   estimate inputs
+ *   induction<n>_schedule.json, _joining_status.json, _revisions.json   PHF schedule, joining, amendments
  *   *_bk.json, *_old.json, *_copy.json         backups, skipped
  */
 
@@ -39,7 +40,7 @@ export function selectSyncFiles(tree: TreeEntry[], maxBytes: number, maxFiles: n
     if (e.type !== "blob" || !/\.json$/i.test(e.path)) continue;
     const rel = cleanRelPath(e.path);
     const cls = rel ? classifyByPath(rel) : null;
-    if (!rel || !cls || cls.kind === "derived" || cls.kind === "later" || cls.kind === "backup" || (e.size ?? 0) > maxBytes) { skipped++; continue; }
+    if (!rel || !cls || cls.kind === "derived" || cls.kind === "backup" || (e.size ?? 0) > maxBytes) { skipped++; continue; }
     take.push({ ...e, rel });
   }
   return { take: take.slice(0, maxFiles), skipped, tooMany: take.length > maxFiles };
