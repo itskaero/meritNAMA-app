@@ -26,7 +26,8 @@ import {
 import { effectiveCandidates, toCsv, type Correction } from "@/lib/domain/corrections";
 import { SIM_ROLE_PATTERNS, type SimRole } from "@/lib/domain/data-files";
 import { compareRounds, groupKey, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
-import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary } from "@/lib/domain/sim-dataset";
+import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary, type VerificationStep } from "@/lib/domain/sim-dataset";
+import { applicantResults, seatKey as resultSeatKey, type ListSeat } from "@/lib/domain/applicant-result";
 import { consentRows, officialStatuses, type ConsentStatus, type ListAllocation, type OfficialReply } from "@/lib/domain/what-if";
 import { acceptedConsent, programmeBansFromRound, runCascade, seatKeyFromParts, trackBansFromRound, type CascadeCandidate, type CascadeConsentRow, type CascadeStats } from "@/lib/engine/cascade";
 import { effectiveMark, marksContext, parentBonus, programBonus, type EngineCandidate, type MarksContext, type Preference, type SpecialtyGroups } from "@/lib/engine/marks";
@@ -832,6 +833,49 @@ export async function estimateList(db: Database, session: Session | null, runId:
 }
 
 /**
+ * One applicant's result in an estimate, preference by preference (placed, fell short,
+ * clears the cutoff, skipped, no seats), per programme. Visible wherever the estimate is:
+ * published estimates for every member, a what-if run only to its owner (getRun checks).
+ */
+export async function estimateApplicantResult(db: Database, session: Session | null, input: { runId: string; applicantId: string }) {
+  assertCan(session, "portal");
+  const est = await estimateList(db, session, input.runId);
+  if (!est) return null;
+  const applicantId = input.applicantId.replace(/\D/g, "").slice(0, 10);
+  if (!applicantId) return null;
+  const rec = await simRecordFor(db, { induction: est.run.inductionId, applicantId });
+  if (!rec) return null;
+  const [who] = await db.select({ name: simCandidates.name, pmdcNo: simCandidates.pmdcNo, verification: simCandidates.verification })
+    .from(simCandidates).where(and(eq(simCandidates.inductionId, est.run.inductionId), eq(simCandidates.applicantId, applicantId))).limit(1);
+  // Seats in this list: lowest mark placed and how many, per programme and seat.
+  const seats = new Map<string, Map<string, ListSeat>>();
+  const placed = new Map<string, number>();
+  for (const r of est.rows) {
+    const byProgram = seats.get(r.program) ?? seats.set(r.program, new Map()).get(r.program)!;
+    const k = resultSeatKey(r.quota, r.speciality, r.hospital);
+    const s = byProgram.get(k);
+    byProgram.set(k, { cutoff: s ? Math.min(s.cutoff, r.mark) : r.mark, filled: (s?.filled ?? 0) + 1 });
+    if (r.applicantId === applicantId) placed.set(r.program, r.preferenceNo);
+  }
+  return {
+    induction: est.run.inductionId,
+    roundNo: est.roundNo,
+    applicantId,
+    name: who?.name ?? null,
+    pmdcNo: who?.pmdcNo ?? null,
+    verification: (who?.verification ?? []) as VerificationStep[],
+    programmes: rec.programmes
+      .filter((p) => p.preferences.length > 0)
+      .map((p) => ({
+        program: p.program,
+        mark: p.mark,
+        placedPreferenceNo: placed.get(p.program) ?? null,
+        rows: applicantResults(p.preferences.map((x) => ({ preferenceNo: x.preferenceNo, quota: x.quota, speciality: x.speciality, hospital: x.hospital, mark: x.mark })), seats.get(p.program) ?? new Map(), placed.get(p.program) ?? null),
+      })),
+  };
+}
+
+/**
  * Internal (the worker's tick): run queued runs that nobody started, oldest first.
  * A run is normally started right after the request that queued it; if the server
  * restarted in between, it waits here. executeRun's queued → running update means a
@@ -876,7 +920,12 @@ export type CandidateSimRecord = {
  */
 export async function candidateSimRecord(db: Database, session: Session | null, input: { induction: number; applicantId: string }): Promise<CandidateSimRecord | null> {
   assertCan(session, "candidates.verify");
-  const [row] = await db.select().from(simCandidates).where(and(eq(simCandidates.inductionId, input.induction), eq(simCandidates.applicantId, input.applicantId))).limit(1);
+  return simRecordFor(db, input);
+}
+
+/** candidateSimRecord's body without the access check; callers check access first. */
+async function simRecordFor(db: Database, input: { induction: number; applicantId: string }): Promise<CandidateSimRecord | null> {
+  const [row] =await db.select().from(simCandidates).where(and(eq(simCandidates.inductionId, input.induction), eq(simCandidates.applicantId, input.applicantId))).limit(1);
   if (!row) return null;
   const imported = typed(row);
   const { resolved, problem, rules } = await loadInductionRules(db, input.induction);
