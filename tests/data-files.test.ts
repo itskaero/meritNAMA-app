@@ -49,6 +49,11 @@ describe("classifyByPath: the old repository layout", () => {
     expect(classifyByPath("induction21_joining_status.json")).toMatchObject({ kind: "later" });
   });
 
+  it.each(["induction21_consent_round5_bk.json", "induction21_merit_round8_bk.json", "inductions/21/merit/round_7_bk2.json", "seats_old.json", "scoring_policy_copy.json"])(
+    "%s is a backup copy and is skipped",
+    (name) => expect(classifyByPath(name)).toMatchObject({ kind: "backup" }),
+  );
+
   it("returns null for names that say nothing", () => {
     expect(classifyByPath("notes.json")).toBeNull();
     expect(classifyByPath("final_final_v2.json")).toBeNull();
@@ -134,5 +139,28 @@ describe("sync selection", () => {
     // `printf 'hello\n' | git hash-object --stdin`
     expect(gitBlobSha(new TextEncoder().encode("hello\n"))).toBe("ce013625030ba8dba906f756967f9e9ca394464a");
     expect(gitBlobSha(new Uint8Array())).toBe("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391");
+  });
+});
+
+describe("file kind registry", () => {
+  it("lists every kind once, each with a label and an apply order", async () => {
+    const { FILE_KINDS, DATA_KIND_LABELS, fileKind } = await import("@/lib/ingest/registry");
+    const kinds = FILE_KINDS.map((k) => k.kind);
+    expect(new Set(kinds).size).toBe(kinds.length);
+    for (const k of FILE_KINDS) {
+      expect(DATA_KIND_LABELS[k.kind]).toBe(k.label);
+      expect(fileKind(k.kind)).toBe(k);
+      // A kind is either skipped with a message, or can be checked and applied.
+      expect(Boolean(k.ignore) || (Boolean(k.check) && Boolean(k.apply))).toBe(true);
+    }
+  });
+
+  it("puts the workflow stage on estimate inputs", async () => {
+    const { fileKind } = await import("@/lib/ingest/registry");
+    const sim = fileKind("sim_input")!;
+    expect(sim.stage!(classifyByPath("induction21_candidates.json")!)).toBe("unofficial");
+    expect(sim.stage!(classifyByPath("ProfileStatus.json")!)).toBe("verification");
+    expect(sim.stage!(classifyByPath("inductions/21/gazette/gazette_21.json")!)).toBe("gazette");
+    expect(fileKind("merit")!.stage!(classifyByPath("round_2.json")!)).toBe("rounds");
   });
 });

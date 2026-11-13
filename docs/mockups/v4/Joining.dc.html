@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Last round · joining</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes d1{to{transform:translate3d(8%,6%,0) scale(1.08)}}@keyframes d2{to{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+.aur{position:relative;overflow:hidden;background:#10243A;color:#F3EEE5;border-radius:20px;padding:22px 24px}
+.aur .mesh{position:absolute;inset:0;pointer-events:none;filter:blur(90px);opacity:.85}
+.aur .b{position:absolute;border-radius:50%}
+.aur .bt{width:560px;height:560px;background:radial-gradient(circle,rgba(23,107,103,.45),rgba(23,107,103,0) 70%);top:-60%;left:-10%;animation:d1 28s ease-in-out infinite alternate}
+.aur .bs{width:520px;height:520px;background:radial-gradient(circle,rgba(38,60,77,.7),rgba(38,60,77,0) 70%);bottom:-80%;right:10%;animation:d2 34s ease-in-out infinite alternate}
+.aur .ba{width:380px;height:380px;background:radial-gradient(circle,rgba(229,160,75,.14),rgba(229,160,75,0) 70%);top:-20%;right:-5%;animation:d2 24s ease-in-out infinite alternate}
+.aur>.in{position:relative;z-index:1}
+.iv{color:rgba(243,238,229,.72)}.m{color:#9C9CAB}
+.card{background:rgba(23,23,28,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;box-sizing:border-box;padding:20px;animation:rise .6s ease both}
+.h{margin:0;font-size:15px;font-weight:600;color:#F7F7FA}
+.seg{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+.seg>*{height:30px;padding:0 12px;border-radius:9px;color:#9C9CAB;font-size:12px;display:grid;place-items:center;white-space:nowrap}
+.seg>.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.5));box-shadow:inset -3px 0 0 #7B61FF,0 0 18px rgba(110,86,255,.35)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.g{background:rgba(61,220,151,.14);color:#3DDC97}.a{background:rgba(229,160,75,.16);color:#E5A04B}.r{background:rgba(255,122,122,.15);color:#FF7A7A}.c{background:rgba(92,225,230,.13);color:#5CE1E6}.v{background:rgba(155,135,255,.18);color:#C4B8FF}.n{background:rgba(255,255,255,.06);color:#A3A3B2}
+.mono{font-family:'IBM Plex Mono',monospace}
+.stack{display:flex;height:16px;border-radius:99px;overflow:hidden;gap:2px}
+.stack span{transform-origin:left;animation:grow 1.1s ease both}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 140px 44px;gap:10px;align-items:center;font-size:13px}
+.bar{height:8px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+.bar span{display:block;height:100%;border-radius:99px;transform-origin:left;animation:grow 1s ease both}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{padding:8px 10px;font-weight:500;font-size:12px;color:#9C9CAB;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+.tbl td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
+.tbl tbody tr:hover{background:rgba(110,86,255,.08)}
+.grp{font-size:10px!important;letter-spacing:.08em;text-transform:uppercase}
+@media (prefers-reduced-motion: reduce){.pg::before,.pg::after,.aur .b,.card,.stack span,.bar span{animation:none!important}}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1180px; display: flex; background: #0C0C0E; color: #ECECF1; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <div style="flex: 0 0 252px"><dc-import name="Side" active="lists" hint-size="252px,1180px"></dc-import></div>
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 0 28px 24px; display: flex; flex-direction: column; gap: 18px">
+    <div role="status" style="margin: 0 -28px; display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 28px; font-size: 13px; background: linear-gradient(90deg, rgba(110,86,255,0.22), rgba(16,36,58,0.6) 60%, rgba(229,160,75,0.14)); border-bottom: 1px solid rgba(155,135,255,0.28)">
+      <span style="width: 8px; height: 8px; border-radius: 99px; background: #E5A04B; box-shadow: 0 0 10px #E5A04B; animation: blink 1.6s ease-in-out infinite"></span>
+      <b style="color: #F7F7FA">Joining closes Fri 21 Nov.</b>
+      <span class="m">135 placed doctors have not joined yet · their seats reopen next induction.</span>
+      <a href="#" style="font-weight: 600">See seats →</a>
+      <span class="m" style="margin-left: auto; font-size: 12px">1 of 2</span>
+      <button type="button" aria-label="Dismiss" style="width: 28px; height: 28px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #9C9CAB; display: grid; place-items: center"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+    <p class="m" style="margin: 0; font-size: 13px">Merit lists / Induction 21 / <b style="color: #ECECF1">Round 8 · last round</b></p>
+
+    <section class="aur" aria-label="Round 8 joining">
+      <div class="mesh"><span class="b bt"></span><span class="b bs"></span><span class="b ba"></span></div>
+      <div class="in" style="display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap">
+          <div>
+            <p class="iv" style="margin: 0 0 4px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase">Last round · joining status from PHF</p>
+            <h1 style="margin: 0; font-size: 30px; letter-spacing: -0.02em">1 in 4 seats went unused</h1>
+            <p class="iv" style="margin: 6px 0 0; max-width: 620px">Of 1,449 seats, round 8 placed 1,219 doctors. 1,084 joined. 135 placed doctors did not join, and 230 seats were never filled by any round.</p>
+          </div>
+          <div style="display: flex; gap: 26px">
+            <div><p class="iv" style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .1em">Joined</p><p style="margin: 2px 0 0; font-size: 28px; font-weight: 600; color: #3DDC97">1,084</p></div>
+            <div><p class="iv" style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .1em">Not joined</p><p style="margin: 2px 0 0; font-size: 28px; font-weight: 600; color: #FF7A7A">135</p></div>
+            <div><p class="iv" style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .1em">Never filled</p><p style="margin: 2px 0 0; font-size: 28px; font-weight: 600; color: #E5A04B">230</p></div>
+            <div><p class="iv" style="margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .1em">Wasted</p><p style="margin: 2px 0 0; font-size: 28px; font-weight: 600">365 <span class="iv" style="font-size: 15px">· 25%</span></p></div>
+          </div>
+        </div>
+        <div>
+          <div class="stack" role="img" aria-label="1,449 seats: 1,084 joined, 135 placed but not joined, 230 never filled">
+            <span style="flex: 1084; background: #3DDC97"></span><span style="flex: 135; background: #FF7A7A"></span><span style="flex: 230; background: #E5A04B"></span>
+          </div>
+          <p class="iv" style="margin: 8px 0 0; font-size: 12px">PHF joining snapshot, 10 Nov 2026. Joining can still change until the window closes.</p>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px">
+      <section class="card" aria-labelledby="byprog">
+        <h2 id="byprog" class="h" style="margin-bottom: 14px">Not joined, by programme</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <sc-for list="{{prog}}" as="p" hint-placeholder-count="3">
+            <div class="row"><span>{{p.t}}</span><span class="bar"><span style="width: {{p.w}}; background: #FF7A7A"></span></span><span class="mono" style="text-align: right">{{p.n}}</span></div>
+          </sc-for>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="byspec">
+        <h2 id="byspec" class="h" style="margin-bottom: 14px">Specialities left most</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <sc-for list="{{spec}}" as="p" hint-placeholder-count="5">
+            <div class="row"><span>{{p.t}}</span><span class="bar"><span style="width: {{p.w}}; background: #FF7A7A"></span></span><span class="mono" style="text-align: right">{{p.n}}</span></div>
+          </sc-for>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="byhosp">
+        <h2 id="byhosp" class="h" style="margin-bottom: 14px">Hospitals left most</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <sc-for list="{{hosp}}" as="p" hint-placeholder-count="4">
+            <div class="row"><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{p.t}}</span><span class="bar"><span style="width: {{p.w}}; background: #FF7A7A"></span></span><span class="mono" style="text-align: right">{{p.n}}</span></div>
+          </sc-for>
+        </div>
+        <p class="m" style="margin: 14px 0 0; font-size: 12px">Seats left here usually reopen in the next induction's first round.</p>
+      </section>
+    </div>
+
+    <section class="card" aria-labelledby="trend" style="display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 24px; align-items: center">
+      <div>
+        <h2 id="trend" class="h">Wasted seats, induction by induction</h2>
+        <p class="m" style="margin: 4px 0 14px; font-size: 13px">Seats nobody joined or nobody was placed in, at the end of each induction. Shown on Merit lists, each hospital and speciality page, and Overview once joining closes.</p>
+        <div style="display: flex; align-items: flex-end; gap: 14px; height: 120px" role="img" aria-label="Wasted share: induction 19 about 21%, 20 about 23%, 21 25%">
+          <sc-for list="{{trend}}" as="t" hint-placeholder-count="3">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px">
+              <span class="mono" style="font-size: 12px; color: {{t.fg}}">{{t.p}}</span>
+              <span style="width: 100%; max-width: 90px; height: {{t.h}}; border-radius: 10px 10px 4px 4px; background: {{t.bg}}; box-shadow: {{t.sh}}"></span>
+              <span class="m" style="font-size: 12px">Ind. {{t.n}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <div style="padding: 14px; border-radius: 14px; border: 1px solid rgba(255,122,122,0.3); background: rgba(255,122,122,0.06)">
+          <p class="m" style="margin: 0; font-size: 12px">On a hospital page</p>
+          <p style="margin: 4px 0 0; font-weight: 600; color: #F7F7FA">Sir Ganga Ram · 14 seats unused in induction 21</p>
+          <p class="m" style="margin: 2px 0 0; font-size: 12px">Pediatrics 6 · Medicine 4 · Gynae 2 · others 2</p>
+        </div>
+        <div style="padding: 14px; border-radius: 14px; border: 1px solid rgba(229,160,75,0.3); background: rgba(229,160,75,0.06)">
+          <p class="m" style="margin: 0; font-size: 12px">On My chances</p>
+          <p style="margin: 4px 0 0; font-weight: 600; color: #F7F7FA">Seats like these often go unused</p>
+          <p class="m" style="margin: 2px 0 0; font-size: 12px">Forensic Medicine left 7 seats last induction: a realistic option for your marks.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="list">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px">
+        <h2 id="list" class="h" style="font-size: 17px">Round 8 list</h2>
+        <nav class="seg" aria-label="Filter"><a href="#">All 1,219</a><a href="#">Joined 1,084</a><a href="#" class="on" aria-current="page">Not joined 135</a><a href="#">Pending 5</a></nav>
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr><th colspan="3" class="grp">Candidate</th><th colspan="2" class="grp">Seat in round 8</th><th class="grp" style="color: #5CE1E6">Joining · last round only</th></tr>
+          <tr><th>#</th><th>Name</th><th>ID · PMDC</th><th>Speciality · hospital</th><th style="text-align: right">Marks</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+            <tr>
+              <td class="mono m">{{r.no}}</td>
+              <td style="font-weight: 500; color: #F7F7FA">{{r.name}}</td>
+              <td class="mono m" style="font-size: 12px">{{r.id}}</td>
+              <td><span style="color: #ECECF1">{{r.spec}}</span><span class="m" style="display: block; font-size: 12px">{{r.hosp}} · {{r.prog}}</span></td>
+              <td class="mono" style="text-align: right">{{r.marks}}</td>
+              <td><span class="pill {{r.tone}}">{{r.st}}</span></td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <p class="m" style="margin: 12px 0 0; font-size: 12px">Candidates page shows the same status for each person's final seat. Names and PMDC numbers are illustrative here.</p>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const bar = (t, n, max) => ({ t, n, w: Math.round((n / max) * 100) + '%' });
+    const row = (no, name, id, spec, hosp, prog, marks, st) => ({ no, name, id, spec, hosp, prog, marks, st, tone: st === 'Joined' ? 'g' : st === 'Pending' ? 'a' : 'r' });
+    const tr = (n, p, h, cur) => ({ n, p, h, fg: cur ? '#FF7A7A' : '#9C9CAB', bg: cur ? 'linear-gradient(180deg,#FF7A7A,rgba(255,122,122,.35))' : 'rgba(255,255,255,.12)', sh: cur ? '0 0 18px rgba(255,122,122,.35)' : 'none' });
+    return {
+      trend: [tr(19, '~21%', '72px', false), tr(20, '~23%', '80px', false), tr(21, '25%', '88px', true)],
+      prog: [bar('FCPS', 96, 96), bar('MD', 23, 96), bar('MS', 16, 96)],
+      spec: [bar('Pediatrics', 18, 18), bar('Medicine', 14, 18), bar('Forensic Medicine', 7, 18), bar('Anaesthesia', 7, 18), bar('Ophthalmology', 7, 18)],
+      hosp: [bar('Sir Ganga Ram Hospital, Lahore', 14, 14), bar('Mayo Hospital, Lahore', 11, 14), bar('Sheikh Zayed, Rahim Yar Khan', 11, 14), bar('Bahawal Victoria, Bahawalpur', 7, 14)],
+      rows: [
+        row('112', 'Hira Saleem', '31408 · 88213-P', 'Pediatrics', 'Sir Ganga Ram Hospital, Lahore', 'FCPS', '71.42', 'Not joined'),
+        row('187', 'Usman Tariq', '27719 · 90442-P', 'Medicine', 'Mayo Hospital, Lahore', 'FCPS', '69.88', 'Not joined'),
+        row('203', 'Ayesha Noor', '35120 · 93301-P', 'Anaesthesia', 'Sheikh Zayed, Rahim Yar Khan', 'FCPS', '69.10', 'Pending'),
+        row('341', 'Bilal Ahmed', '29954 · 86127-P', 'Forensic Medicine', 'Nishtar Hospital, Multan', 'MD', '66.75', 'Not joined'),
+        row('402', 'Sana Javed', '33871 · 91876-P', 'Ophthalmology', 'Bahawal Victoria, Bahawalpur', 'MS', '65.93', 'Not joined'),
+        row('518', 'Hamza Iqbal', '30266 · 89540-P', 'Pediatrics', 'Allied Hospital, Faisalabad', 'FCPS', '64.31', 'Not joined'),
+        row('640', 'Maryam Khalid', '36502 · 94418-P', 'Medicine', 'Sir Ganga Ram Hospital, Lahore', 'MD', '62.07', 'Not joined')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

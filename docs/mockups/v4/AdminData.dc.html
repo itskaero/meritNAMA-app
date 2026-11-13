@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin · Data</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.pg{position:relative;isolation:isolate;overflow:hidden}.pg::before,.pg::after{content:"";position:absolute;pointer-events:none;z-index:-1;border-radius:50%;filter:blur(100px)}.pg::before{width:760px;height:760px;top:-260px;right:-180px;background:radial-gradient(circle,rgba(123,97,255,.30),rgba(123,97,255,0) 70%);animation:pga 30s ease-in-out infinite alternate}.pg::after{width:640px;height:640px;bottom:-260px;left:180px;background:radial-gradient(circle,rgba(91,63,245,.22),rgba(91,63,245,0) 70%);animation:pgb 36s ease-in-out infinite alternate}@keyframes pga{to{transform:translate3d(-14%,12%,0) scale(1.1)}}@keyframes pgb{to{transform:translate3d(16%,-10%,0) scale(1.08)}}
+a{color:#B9AAFF;text-decoration:none}a:hover{color:#D6CCFF}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes d1{to{transform:translate3d(8%,6%,0) scale(1.08)}}@keyframes d2{to{transform:translate3d(-7%,-5%,0) scale(1.05)}}
+.aur{position:relative;overflow:hidden;background:#10243A;color:#F3EEE5;border-radius:20px;padding:22px 24px}
+.aur .mesh{position:absolute;inset:0;pointer-events:none;filter:blur(90px);opacity:.85}
+.aur .b{position:absolute;border-radius:50%}
+.aur .bt{width:560px;height:560px;background:radial-gradient(circle,rgba(23,107,103,.45),rgba(23,107,103,0) 70%);top:-60%;left:-10%;animation:d1 28s ease-in-out infinite alternate}
+.aur .bs{width:520px;height:520px;background:radial-gradient(circle,rgba(38,60,77,.7),rgba(38,60,77,0) 70%);bottom:-80%;right:10%;animation:d2 34s ease-in-out infinite alternate}
+.aur .bv{width:340px;height:340px;background:radial-gradient(circle,rgba(110,86,255,.22),rgba(110,86,255,0) 70%);bottom:-70%;left:35%;animation:d1 30s ease-in-out infinite alternate-reverse}
+.aur>.in{position:relative;z-index:1}
+.iv{color:rgba(243,238,229,.72)}.m{color:#9C9CAB}
+.card{background:rgba(23,23,28,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;box-sizing:border-box;padding:20px;animation:rise .6s ease both}
+.h{margin:0;font-size:15px;font-weight:600;color:#F7F7FA}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 16px;border-radius:12px;color:#fff;font-weight:600;font-size:13px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(110,86,255,.42));border:1px solid rgba(155,135,255,.6);box-shadow:inset -3px 0 0 #7B61FF,0 0 20px rgba(110,86,255,.30);white-space:nowrap}
+.btn:hover{color:#fff;border-color:rgba(196,184,255,.95);box-shadow:inset -3px 0 0 #9B87FF,0 0 30px rgba(110,86,255,.55)}
+.ghost{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 14px;border-radius:12px;color:#ECECF1;font-size:13px;border:1px solid rgba(255,255,255,.14);white-space:nowrap}
+.ghost:hover{color:#fff;border-color:rgba(155,135,255,.6);box-shadow:0 0 18px rgba(110,86,255,.3)}
+.seg{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:1px solid rgba(255,255,255,.12)}
+.seg>*{height:32px;padding:0 14px;border-radius:9px;color:#9C9CAB;font-size:13px;display:grid;place-items:center;white-space:nowrap}
+.seg>.on{color:#fff;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.5));box-shadow:inset -3px 0 0 #7B61FF,0 0 18px rgba(110,86,255,.35)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.g{background:rgba(61,220,151,.14);color:#3DDC97}.a{background:rgba(229,160,75,.16);color:#E5A04B}.r{background:rgba(255,122,122,.15);color:#FF7A7A}.c{background:rgba(92,225,230,.13);color:#5CE1E6}.v{background:rgba(155,135,255,.18);color:#C4B8FF}.n{background:rgba(255,255,255,.06);color:#A3A3B2}
+.mono{font-family:'IBM Plex Mono',monospace}
+.chk{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:9px;font-size:12px;border:1px solid rgba(255,255,255,.08)}
+.rb{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:7px;font-size:11px;font-weight:700}
+.pipe{display:flex;align-items:center;gap:8px;font-size:12px}
+.pipe span.s{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:99px;border:1px solid rgba(255,255,255,.1)}
+.kind{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)}
+.drop{border:1.5px dashed rgba(155,135,255,.45);border-radius:16px;padding:18px;text-align:center;background:rgba(110,86,255,.05)}
+@media (prefers-reduced-motion: reduce){.pg::before,.pg::after,.aur .b,.card{animation:none!important}}
+</style>
+</helmet>
+<div class="pg" style="width: 100%; min-height: 1240px; display: flex; background: #0C0C0E; color: #ECECF1; font-family: Inter, system-ui, sans-serif; font-size: 14px">
+  <nav aria-label="Admin" style="flex: 0 0 252px; box-sizing: border-box; padding: 20px 16px; display: flex; flex-direction: column; gap: 3px; background: radial-gradient(320px 260px at 100% 0%, rgba(123,97,255,0.14), transparent 70%), rgba(17,17,19,0.86); border-right: 1px solid rgba(155,135,255,0.12)">
+    <span style="display: flex; align-items: center; gap: 10px; font-size: 19px; padding: 0 4px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px">
+      <svg aria-hidden="true" width="28" height="27" viewBox="0 0 110 106"><path d="M14 90 V44 a13 13 0 0 1 26 0 V90 M40 44 a13 13 0 0 1 26 0 a14 14 0 1 1 28 0 a14 14 0 1 1 -28 0 V98" fill="none" stroke="#F3EEE5" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="80" cy="12" r="6.5" fill="#9B87FF"></circle></svg>
+      <span><span style="font-weight: 400">merit</span><b>NAMA</b></span>
+    </span>
+    <a href="AdminToday.dc.html" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; color: #B9B9C2">Today</a>
+    <a href="#" aria-current="page" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; color: #fff; background: linear-gradient(90deg, rgba(255,255,255,.05) 40%, rgba(110,86,255,.38)); box-shadow: inset -3px 0 0 #7B61FF, 0 0 24px rgba(110,86,255,.18)">Data</a>
+    <a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; color: #B9B9C2">Jobs</a>
+    <a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; color: #B9B9C2">Candidates &amp; access</a>
+    <a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; color: #B9B9C2">Community</a>
+    <a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; color: #B9B9C2">Team &amp; settings</a>
+    <a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; color: #B9B9C2">Policies &amp; rules</a>
+    <a href="#" style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 12px; color: #B9B9C2">Changes &amp; audit</a>
+  </nav>
+
+  <main style="flex: 1; min-width: 0; box-sizing: border-box; padding: 24px 28px; display: flex; flex-direction: column; gap: 18px">
+    <p class="m" style="margin: 0; font-size: 13px">Admin / <b style="color: #ECECF1">Data</b></p>
+    <section class="aur" aria-label="Data">
+      <div class="mesh"><span class="b bt"></span><span class="b bs"></span><span class="b bv"></span></div>
+      <div class="in" style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap">
+        <div>
+          <h1 style="margin: 0; font-size: 30px; letter-spacing: -0.02em">Data</h1>
+          <p class="iv" style="margin: 6px 0 0; max-width: 640px">Every file goes into one folder. The app recognises it, strips personal details, and applies it. New data goes live; anything that replaces live data waits for a click.</p>
+        </div>
+        <div class="pipe" aria-label="How a file moves">
+          <span class="s" style="color: #F3EEE5">Folder</span><span class="iv">→</span>
+          <span class="s" style="color: #F3EEE5">Recognised</span><span class="iv">→</span>
+          <span class="s" style="color: #F3EEE5">Personal fields stripped</span><span class="iv">→</span>
+          <span class="s" style="color: #3DDC97; border-color: rgba(61,220,151,.4)">Live</span><span class="iv">→</span>
+          <span class="s" style="color: #E5A04B; border-color: rgba(229,160,75,.45)">Estimate</span>
+        </div>
+      </div>
+    </section>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+      <nav class="seg" aria-label="Data sections"><a href="#" class="on" aria-current="page">Inductions</a><a href="#">Files <span class="pill a" style="margin-left: 6px">2</span></a><a href="#">Reference</a><a href="#">Estimates</a></nav>
+      <div style="display: flex; gap: 8px"><a href="#" class="ghost">Sync from GitHub</a><a href="#" class="btn">Add files</a></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <sc-for list="{{inds}}" as="i" hint-placeholder-count="3">
+          <section class="card" style="border-color: {{i.bc}}">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
+              <div>
+                <h2 class="h" style="font-size: 18px">Induction {{i.n}} <span class="m" style="font-weight: 500">· {{i.cyc}}</span></h2>
+                <p style="margin: 6px 0 0"><span class="pill {{i.tone}}">{{i.stage}}</span></p>
+              </div>
+              <a href="#" class="{{i.cls}}">{{i.cta}}</a>
+            </div>
+            <ol style="list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px" aria-label="Workflow">
+              <sc-for list="{{i.lane}}" as="s" hint-placeholder-count="7">
+                <li style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+                  <span style="height: 6px; border-radius: 99px; background: {{s.bar}}; box-shadow: {{s.glow}}"></span>
+                  <span style="font-size: 11px; font-weight: 600; color: {{s.fg}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.i}} {{s.t}}</span>
+                  <span class="m" style="font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{s.s}}</span>
+                </li>
+              </sc-for>
+            </ol>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px">
+              <sc-for list="{{i.checks}}" as="k" hint-placeholder-count="6">
+                <span class="chk" style="color: {{k.fg}}; border-color: {{k.bc}}">{{k.i}} {{k.t}}</span>
+              </sc-for>
+            </div>
+            <sc-if value="{{i.rounds}}" hint-placeholder-val="{{true}}">
+              <div style="display: grid; grid-template-columns: 80px 1fr; gap: 8px 12px; align-items: center; margin-top: 14px; font-size: 12px">
+                <span class="m">Merit lists</span>
+                <span style="display: flex; gap: 4px; flex-wrap: wrap"><sc-for list="{{i.rounds}}" as="r" hint-placeholder-count="8"><span class="rb" style="background: {{r.bg}}; color: {{r.fg}}">{{r.n}}</span></sc-for></span>
+                <span class="m">Consent</span>
+                <span style="display: flex; gap: 4px; flex-wrap: wrap"><sc-for list="{{i.consent}}" as="r" hint-placeholder-count="8"><span class="rb" style="background: {{r.bg}}; color: {{r.fg}}">{{r.n}}</span></sc-for></span>
+              </div>
+            </sc-if>
+            <p class="m" style="margin: 12px 0 0; font-size: 13px">{{i.note}}</p>
+          </section>
+        </sc-for>
+        <p class="m" style="margin: 0; font-size: 12px">Inductions 8–19 · closed · 12 more cards, collapsed</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 18px">
+        <section class="card" aria-labelledby="drop">
+          <h2 id="drop" class="h" style="margin-bottom: 12px">Add data</h2>
+          <div class="drop"><p style="margin: 0; font-weight: 600">Drop JSON files or a whole folder</p><p class="m" style="margin: 4px 0 0; font-size: 12px">e.g. meritnama/data or inductions/21. Backups (*_bk) are skipped.</p></div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px; font-size: 13px">
+            <div style="display: flex; justify-content: space-between; gap: 8px"><span class="mono" style="font-size: 12px">induction21_merit_round8.json</span><span class="pill a">Replaces live · review</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 8px"><span class="mono" style="font-size: 12px">induction21_joining_status.json</span><span class="pill v">New kind · ready</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 8px"><span class="mono" style="font-size: 12px">induction21_consent_round8_bk.json</span><span class="pill n">Backup · skipped</span></div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="kinds">
+          <h2 id="kinds" class="h">File kinds</h2>
+          <p class="m" style="margin: 4px 0 12px; font-size: 13px">Each kind is one module: how it is recognised, checked, stripped and applied.</p>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <sc-for list="{{kinds}}" as="k" hint-placeholder-count="9">
+              <div class="kind">
+                <span style="font-weight: 600; color: #F7F7FA">{{k.t}}</span><span class="pill {{k.tone}}">{{k.tag}}</span>
+                <span class="m mono" style="font-size: 11px">{{k.f}}</span><span class="m" style="font-size: 11px; text-align: right">{{k.strip}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ok = (t) => ({ i: '✓', t, fg: '#3DDC97', bc: 'rgba(61,220,151,.3)' });
+    const wait = (t) => ({ i: '◷', t, fg: '#E5A04B', bc: 'rgba(229,160,75,.35)' });
+    const miss = (t) => ({ i: '○', t, fg: '#9C9CAB', bc: 'rgba(255,255,255,.1)' });
+    const box = (n, s) => ({ n, bg: s === 'ok' ? 'rgba(61,220,151,.16)' : s === 'new' ? 'rgba(229,160,75,.18)' : 'rgba(255,255,255,.05)', fg: s === 'ok' ? '#3DDC97' : s === 'new' ? '#E5A04B' : '#77778A' });
+    const r = (k, newAt) => Array.from({ length: k }, (_, j) => box(j + 1, j + 1 === newAt ? 'new' : 'ok'));
+    // Workflow lane: official ✓ green, unofficial ◐ amber dashed, estimate ◆ violet, waiting ◷, not yet ○.
+    const L = {
+      off: (t, s) => ({ t, s, i: '✓', fg: '#3DDC97', bar: '#3DDC97', glow: '0 0 8px rgba(61,220,151,.5)' }),
+      un: (t, s) => ({ t, s, i: '◐', fg: '#E5A04B', bar: 'repeating-linear-gradient(90deg,#E5A04B 0 6px,transparent 6px 9px)', glow: 'none' }),
+      est: (t, s) => ({ t, s, i: '◆', fg: '#C4B8FF', bar: '#9B87FF', glow: '0 0 10px rgba(110,86,255,.6)' }),
+      wait: (t, s) => ({ t, s, i: '◷', fg: '#E5A04B', bar: 'rgba(229,160,75,.35)', glow: 'none' }),
+      no: (t, s) => ({ t, s, i: '○', fg: '#77778A', bar: 'rgba(255,255,255,.08)', glow: 'none' })
+    };
+    return {
+      inds: [
+        { n: 22, cyc: 'announced', stage: 'Applications', tone: 'c', bc: 'rgba(92,225,230,.25)', cls: 'btn', cta: 'Add the gazette',
+          lane: [L.un('Unofficial list', '9,412 from portal'), L.no('Verification', 'from 5 Feb'), L.no('Amendment', '—'), L.no('Gazette', 'exp. 7 Feb'), L.est('Estimate R1', 'from unofficial list'), L.no('Official rounds', '—'), L.no('Joining', '—')],
+          checks: [ok('Policy 2027'), ok('Schedule'), wait('Unofficial list'), miss('Gazette'), miss('Seats')], rounds: null, consent: null,
+          note: 'Estimate R1 is built from the unofficial list (verification, amendment and gazette skipped). Each official file replaces its layer and rebuilds the estimate.' },
+        { n: 21, cyc: 'Jun 2026', stage: 'Rounds running · round 8 out', tone: 'g', bc: 'rgba(155,135,255,.35)', cls: 'btn', cta: 'Review estimate R9',
+          lane: [L.off('Unofficial list', 'replaced'), L.off('Verification', 'R01 done'), L.off('Amendment', '214 revisions'), L.off('Gazette', '7 Jun'), L.est('Estimate R9', 'not published'), L.off('Official rounds', '1–8'), L.wait('Joining', 'new file')],
+          checks: [ok('Gazette'), ok('Verification R01 + Amend'), ok('Seats 1,449'), ok('Schedule'), ok('Revisions · 214'), wait('Joining · new file')],
+          rounds: r(8, 8), consent: r(8, 0),
+          note: 'Estimated round 9 was built automatically from consent round 8 and is not published. Round 8 has a newer file waiting.' },
+        { n: 20, cyc: 'Jan 2026', stage: 'Closed', tone: 'n', bc: 'rgba(255,255,255,.07)', cls: 'ghost', cta: 'Open',
+          lane: [L.no('Unofficial list', 'not kept'), L.no('Verification', 'not kept'), L.no('Amendment', 'not kept'), L.off('Gazette', 'official'), L.no('Estimates', 'none'), L.off('Official rounds', '1–7'), L.no('Joining', 'not collected')],
+          checks: [ok('Gazette'), ok('Seats'), ok('Rounds 1–7'), miss('Joining'), miss('Schedule')], rounds: r(7, 0), consent: r(7, 0),
+          note: 'Complete for merit lists. Joining status and schedule were never collected for this induction.' }
+      ],
+      kinds: [
+        { t: 'Merit round', f: 'merit/round_N.json', tag: 'live', tone: 'g', strip: 'drops email, phone, CNIC' },
+        { t: 'Consent replies', f: 'consent_roundN.json', tag: 'estimates', tone: 'a', strip: 'keeps seat + status only' },
+        { t: 'Gazette', f: 'gazette/gazette_N.json', tag: 'estimates', tone: 'a', strip: 'keeps name + PMDC' },
+        { t: 'Candidates, marks, certificates', f: 'induction21_candidates.json …', tag: 'estimates', tone: 'a', strip: 'no contact fields' },
+        { t: 'Profile status', f: 'ProfileStatus.json', tag: 'estimates', tone: 'a', strip: 'remarks ≤ 200 chars' },
+        { t: 'Seats', f: 'induction21_seats.json', tag: 'live', tone: 'g', strip: 'nothing personal' },
+        { t: 'Schedule', f: 'induction21_schedule.json', tag: 'new', tone: 'v', strip: 'nothing personal' },
+        { t: 'Revisions (amendments)', f: 'induction21_revisions.json', tag: 'new', tone: 'v', strip: 'becomes Amendment corrections' },
+        { t: 'Joining status', f: 'induction21_joining_status.json', tag: 'new', tone: 'v', strip: 'drops email, phone, CNIC, job' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

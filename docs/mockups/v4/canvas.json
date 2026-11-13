@@ -20,14 +20,17 @@
     "Phone.dc.html": { "x": 1990, "y": 6060, "w": 390, "h": 844, "title": "Phone · Round" },
     "Side.dc.html": { "x": -400, "y": 2300, "w": 260, "h": 1100, "title": "Sidebar (shared)" },
     "Gazette.dc.html": { "x": 0, "y": 7280, "w": 1440, "h": 1200, "title": "Candidates (gazette) · running induction" },
-    "Estimate.dc.html": { "x": 1520, "y": 7280, "w": 1440, "h": 1120, "title": "Estimated round 6" },
+    "Estimate.dc.html": { "x": 1520, "y": 7280, "w": 1440, "h": 1180, "title": "Estimated round 6 · with 'built on' provenance" },
     "Overview22.dc.html": { "x": 0, "y": 8600, "w": 1440, "h": 1260, "title": "Overview · new induction announced (induction 22)" },
     "Jobs.dc.html": { "x": 1520, "y": 8600, "w": 1440, "h": 1260, "title": "Jobs · folders, cards, detail" },
     "Landing.dc.html": { "x": 0, "y": 9980, "w": 1440, "h": 3000, "title": "Public landing page" },
     "Logo.dc.html": { "x": 1520, "y": 9980, "w": 1440, "h": 1640, "title": "Logo · Direction 1 refinements (A, B, C)" },
-    "LogoAnim.dc.html": { "x": 1520, "y": 11740, "w": 1440, "h": 980, "title": "Logo B · animated (chosen)" }
+    "LogoAnim.dc.html": { "x": 1520, "y": 11740, "w": 1440, "h": 980, "title": "Logo B · animated (chosen)" },
+    "AdminToday.dc.html": { "x": 0, "y": 13400, "w": 1440, "h": 1240, "title": "Admin · Today (with notification bar composer)" },
+    "AdminData.dc.html": { "x": 1520, "y": 13400, "w": 1440, "h": 1420, "title": "Admin · Data (workflow lane per induction, files, file kinds)" },
+    "Joining.dc.html": { "x": 0, "y": 14900, "w": 1440, "h": 1560, "title": "Last round · joined / not joined, wasted seats, notification bar (member-facing)" }
   },
-  "order": ["Side.dc.html", "LogoAnim.dc.html","Logo.dc.html","Jobs.dc.html", "Landing.dc.html","Overview22.dc.html","Gazette.dc.html", "Estimate.dc.html","Design.dc.html", "SignIn.dc.html", "Main.dc.html", "Community.dc.html", "Lists.dc.html", "Round.dc.html", "Chances.dc.html", "Hospital.dc.html", "Calendar.dc.html", "Chats.dc.html", "Me.dc.html", "PhoneHome.dc.html", "Phone.dc.html"],
+  "order": ["Side.dc.html", "LogoAnim.dc.html","Logo.dc.html","Jobs.dc.html", "Landing.dc.html","Overview22.dc.html","Gazette.dc.html", "Estimate.dc.html","Design.dc.html", "SignIn.dc.html", "Main.dc.html", "Community.dc.html", "Lists.dc.html", "Round.dc.html", "Chances.dc.html", "Hospital.dc.html", "Calendar.dc.html", "Chats.dc.html", "Me.dc.html", "PhoneHome.dc.html", "Phone.dc.html", "AdminToday.dc.html", "AdminData.dc.html", "Joining.dc.html"],
   "notes": {
     "heading": { "x": 0, "y": -300, "text": "meritNAMA: charcoal + aurora, violet glow, colour only in the data", "kind": "title1", "maxW": 2960 },
     "colours": {
@@ -38,6 +41,17 @@
     "pagemap": {
       "x": -480, "y": 1020, "w": 400,
       "text": "Feels busy, not crowded:\nlive counts (viewing now, online), a ticker of what changed, avatars on reviews and follows, 'also shortlisted by', seat fill meters.\n\nPhotos: ward-at-night on Hospital, library group on Community, night study on Sign in, campus for the landing page.",
+      "fill": "orange"
+    },
+    "adminTitle": { "x": 0, "y": 13100, "text": "Admin, simplified · and joining status", "kind": "title1", "maxW": 2960 },
+    "adminNote": {
+      "x": -480, "y": 13400, "w": 400,
+      "text": "Admin plan:\n\nToday = cycle strip (PHF schedule), one 'Needs you' list sorted by urgency, a health row.\n\nData = one area, four tabs. Inductions: a checklist card per induction with ONE next-step button. Files: drop zone + list. Reference. Estimates.\n\nEach file kind is one module (recognise, validate, strip personal fields, apply, summary). New kinds: schedule, revisions (amendments), joining status.\n\nEstimates are built automatically when inputs land, never published without a click.",
+      "fill": "teal"
+    },
+    "joinNote": {
+      "x": -480, "y": 14900, "w": 400,
+      "text": "Induction 21 real figures (joining snapshot): 1,449 seats, round 8 allocated 1,219, joined 1,084, not joined 135, never filled 230 = 365 wasted (25%).\n\nJoining status shows on the last round only, and on Candidates. Emails, phones and CNICs in the joining file are never stored.",
       "fill": "orange"
     }
   },

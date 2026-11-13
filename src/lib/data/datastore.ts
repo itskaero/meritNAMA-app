@@ -3,21 +3,17 @@ import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { copyFile, lstat, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { and, asc, count, eq, inArray } from "drizzle-orm";
+import { asc, count, eq, inArray } from "drizzle-orm";
 import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
-import { appSettings, dataFiles, inductionSeats, meritRounds, scoringPolicies, stagedChanges } from "@/lib/db/schema";
-import {
-  classifyByContents, classifyByPath, cleanRelPath, describeClassified, DATA_KIND_LABELS, missingDetail, simulationTarget,
-  type Classified, type SimRole,
-} from "@/lib/domain/data-files";
-import { meritRoundFileSchema } from "@/lib/domain/merit-round";
-import { DOCUMENT_KINDS, seatFileSchema } from "@/lib/domain/reference-data";
-import { scoringPolicyFileSchema } from "@/lib/domain/scoring-policy";
+import { appSettings, dataFiles, stagedChanges } from "@/lib/db/schema";
+import { DATA_FILE_MAX_BYTES, type Classified, type DataStatus, type Inspection } from "@/lib/ingest/kind";
+import { cleanRelPath } from "@/lib/ingest/paths";
+import { classifyByContents, classifyByPath, DATA_KIND_LABELS, fileKind, missingDetail } from "@/lib/ingest/registry";
+import { simulationTarget, type SimRole } from "@/lib/ingest/sim-roles";
 import { env } from "@/lib/env";
 import { UserFacingError } from "@/lib/errors";
-import { proposeMeritRound, proposePolicyFile, proposeSeatFile, type Proposal } from "./changes";
-import { saveReferenceDocument } from "./reference-data";
+import type { Proposal } from "./changes";
 import { importProblem } from "./simulation";
 import { writeAudit } from "./shared";
 
@@ -34,9 +30,8 @@ import { writeAudit } from "./shared";
  * where the existing estimate importer reads them.
  */
 
-export const DATA_FILE_MAX_BYTES = 200 * 1024 * 1024;
-/** Kinds that are parsed and validated at scan time must be small. */
-const PARSED_MAX_BYTES = 25 * 1024 * 1024;
+export { DATA_FILE_MAX_BYTES, type DataStatus };
+export { plainIssues } from "@/lib/ingest/kind";
 const SNIFF_MAX_BYTES = 5 * 1024 * 1024;
 const MAX_FILES = 2000;
 const MAX_DEPTH = 6;
@@ -44,7 +39,6 @@ const MAX_DEPTH = 6;
 /** The identity the worker applies new files under. It exists only inside this process. */
 export const SYSTEM_SESSION: Session = { userId: "00000000-0000-0000-0000-000000000000", email: "worker@meritnama.system", role: "owner", isStub: false };
 
-export type DataStatus = "new" | "replaces" | "live" | "held" | "problem" | "ignored" | "missing";
 
 export const dataRoot = (root?: string) => path.resolve(/* turbopackIgnore: true */ root ?? env().APP_STORAGE_DIR, "data");
 const simulationRoot = (root?: string) => path.resolve(/* turbopackIgnore: true */ root ?? env().APP_STORAGE_DIR, "simulation");
@@ -119,22 +113,6 @@ function sha256File(file: string): Promise<string> {
   });
 }
 
-/** Zod issues in plain words: "row 4, marks: Expected number". */
-export function plainIssues(r: { success: boolean; error?: { issues: { path: PropertyKey[]; message: string }[] } }, limit = 3): string[] {
-  if (r.success) return [];
-  return (r.error?.issues ?? []).slice(0, limit).map((i) => {
-    const parts = i.path.map(String);
-    const where: string[] = [];
-    for (const p of parts) {
-      if (/^\d+$/.test(p)) where.push(`row ${Number(p) + 1}`);
-      else if (where.length && where[where.length - 1]!.startsWith("row ")) where[where.length - 1] += `, ${p}`;
-      else where.push(p);
-    }
-    return `${where.join(" › ") || "the file"}: ${i.message}`;
-  });
-}
-
-type Inspection = { cls: Classified | null; status: DataStatus; summary: string | null; message: string | null };
 
 async function readParsed(abs: string): Promise<unknown> {
   try {
@@ -144,61 +122,32 @@ async function readParsed(abs: string): Promise<unknown> {
   }
 }
 
-/** Work out what a file is and whether it is good to apply. Never throws for a bad file. */
+/**
+ * Work out what a file is and whether it is good to apply. Never throws for a bad file.
+ * The checks themselves belong to each kind (src/lib/ingest/kinds/).
+ */
 async function inspect(db: Database, f: Found): Promise<Inspection> {
   let cls = classifyByPath(f.rel);
+  let parsed: Promise<unknown> | null = null;
+  const json = () => (parsed ??= readParsed(f.abs));
   try {
-    if (cls?.kind === "derived") return { cls, status: "ignored", summary: null, message: "Worked out by meritNAMA from the other files; not imported." };
-    if (cls?.kind === "later") return { cls, status: "ignored", summary: null, message: "Recognised, but this kind of file is not imported yet." };
+    const skip = cls ? fileKind(cls.kind)?.ignore : undefined;
+    if (cls && skip) return { cls, status: "ignored", summary: null, message: skip };
     if (f.size === 0) return { cls, status: "problem", summary: null, message: "The file is empty." };
 
-    let data: unknown;
     if (!cls) {
       if (f.size > SNIFF_MAX_BYTES) return { cls, status: "ignored", summary: null, message: "Not recognised: name it like round_<n>.json, induction<n>_seats.json, scoring_policy.json … (see the data formats guide)." };
-      data = await readParsed(f.abs);
-      cls = classifyByContents(data);
+      cls = classifyByContents(await json());
       if (!cls) return { cls, status: "ignored", summary: null, message: "Not recognised from its name or contents. Name it like round_<n>.json, induction<n>_seats.json, scoring_policy.json … (see the data formats guide)." };
     }
     const missing = missingDetail(cls);
     if (missing) return { cls, status: "problem", summary: null, message: missing };
 
-    if (cls.kind === "sim_input" || cls.kind === "consent") {
-      if (f.size > DATA_FILE_MAX_BYTES) return { cls, status: "problem", summary: null, message: "The file is larger than 200 MB." };
-      if (f.size <= PARSED_MAX_BYTES) await readParsed(f.abs); // catches broken JSON early; the estimate importer validates the shape
-      const note = cls.kind === "consent" ? `Consent replies for round ${cls.round}` : `${describeClassified(cls)}`;
-      return { cls, status: "new", summary: `${note} · used for estimates`, message: null };
-    }
-
-    if (f.size > PARSED_MAX_BYTES) return { cls, status: "problem", summary: null, message: "The file is larger than 25 MB." };
-    data ??= await readParsed(f.abs);
-
-    if (cls.kind === "merit") {
-      const r = meritRoundFileSchema.safeParse(data);
-      if (!r.success) return { cls, status: "problem", summary: null, message: plainIssues(r).join("; ") };
-      const ind = r.data.Table[0]!.inductionId;
-      if (cls.induction != null && cls.induction !== ind) return { cls, status: "problem", summary: null, message: `The name says induction ${cls.induction} but the file is for induction ${ind}.` };
-      cls = { ...cls, induction: ind };
-      const [ex] = await db.select({ id: meritRounds.id }).from(meritRounds).where(and(eq(meritRounds.inductionId, ind), eq(meritRounds.roundNo, cls.round!))).limit(1);
-      return { cls, status: ex ? "replaces" : "new", summary: `Induction ${ind}, round ${cls.round} · ${r.data.Table5.length.toLocaleString("en-US")} allocations`, message: ex ? "Replaces the round that is live now. Applying shows exactly what changes." : null };
-    }
-    if (cls.kind === "seats") {
-      const r = seatFileSchema.safeParse(data);
-      if (!r.success) return { cls, status: "problem", summary: null, message: plainIssues(r).join("; ") };
-      const [n] = await db.select({ n: count() }).from(inductionSeats).where(eq(inductionSeats.inductionId, cls.induction!));
-      const has = (n?.n ?? 0) > 0;
-      return { cls, status: has ? "replaces" : "new", summary: `Induction ${cls.induction} · ${r.data.length} seat lines`, message: has ? "Replaces the seat matrix that is live now." : null };
-    }
-    if (cls.kind === "policy") {
-      const r = scoringPolicyFileSchema.safeParse(data);
-      if (!r.success) return { cls, status: "problem", summary: null, message: plainIssues(r).join("; ") };
-      const [a] = await db.select({ id: scoringPolicies.id }).from(scoringPolicies).where(eq(scoringPolicies.status, "active")).limit(1);
-      return { cls, status: a ? "replaces" : "new", summary: `${Object.keys(r.data.policies).length} policies, active "${r.data.active_policy}"`, message: a ? "A scoring policy is live now; this one waits for your review." : null };
-    }
-    // reference document
-    const def = DOCUMENT_KINDS[cls.refKind!];
-    const r = def.schema.safeParse(data);
-    if (!r.success) return { cls, status: "problem", summary: null, message: plainIssues(r).join("; ") };
-    return { cls, status: "new", summary: `${def.label}${cls.induction ? `, induction ${cls.induction}` : ""} · saved as a new version`, message: null };
+    const kind = fileKind(cls.kind);
+    if (!kind?.check) return { cls, status: "ignored", summary: null, message: "This kind of file is not imported." };
+    if (f.size > kind.maxBytes) return { cls, status: "problem", summary: null, message: `The file is larger than ${Math.round(kind.maxBytes / 1024 / 1024)} MB.` };
+    const r = await kind.check({ db, cls, size: f.size, json });
+    return { cls: r.cls ?? cls, status: r.status, summary: r.summary, message: r.message };
   } catch (e) {
     return { cls, status: "problem", summary: null, message: e instanceof UserFacingError ? e.message : "The file could not be read." };
   }
@@ -276,7 +225,7 @@ async function doScan(db: Database, rootOverride?: string): Promise<ScanResult> 
 
 // ── Applying ───────────────────────────────────────────────────────────────────
 
-const ORDER: Record<string, number> = { policy: 0, reference: 1, merit: 2, seats: 3, consent: 4, sim_input: 5 };
+const order = (kind: string) => fileKind(kind)?.order ?? 9;
 
 async function safeAbs(rel: string, rootOverride?: string) {
   const clean = cleanRelPath(rel);
@@ -306,32 +255,29 @@ async function applyRow(db: Database, session: Session, row: typeof dataFiles.$i
   const { abs, rel } = await safeAbs(row.path, rootOverride);
   const sha = await sha256File(abs);
   if (sha !== row.sha256) throw new UserFacingError("The file changed since the list was made. Rescan and check it again.");
-  const cls = classifyByPath(rel) ?? { kind: row.kind as Classified["kind"], induction: row.induction, round: row.round };
+  const byPath = classifyByPath(rel);
+  const cls: Classified = { ...(byPath ?? { kind: row.kind as Classified["kind"], induction: null, round: null }), induction: row.induction ?? byPath?.induction ?? null, round: row.round ?? byPath?.round ?? null };
   const reason = `Data folder: ${rel}`;
-  let result: Proposal;
-
-  if (cls.kind === "consent" || cls.kind === "sim_input") {
-    const target = simulationTarget({ ...cls, induction: row.induction ?? cls.induction, round: row.round ?? cls.round }, path.basename(rel));
-    if (!target) throw new UserFacingError("The induction is not in the name or folder.");
-    assertCan(session, "data.edit");
-    await copyToSimulation(abs, target, rootOverride);
-    result = { applied: true, message: `Kept for estimates (${target}).` };
-  } else {
-    const file = await readParsed(abs);
-    if (cls.kind === "merit") result = await proposeMeritRound(db, session, { roundNo: row.round ?? cls.round!, file, reason });
-    else if (cls.kind === "seats") result = await proposeSeatFile(db, session, { induction: row.induction ?? cls.induction!, file, reason });
-    else if (cls.kind === "policy") result = await proposePolicyFile(db, session, { file, reason });
-    else if (cls.kind === "reference" && "refKind" in cls && cls.refKind) {
-      const saved = await saveReferenceDocument(db, session, { kind: cls.refKind, induction: row.induction ?? cls.induction, data: file, reason });
-      result = { applied: true, message: `${DOCUMENT_KINDS[cls.refKind].label} saved as version ${saved.version}.` };
-    } else throw new UserFacingError("This kind of file is not imported.");
-  }
+  const kind = fileKind(cls.kind);
+  if (!kind?.apply) throw new UserFacingError("This kind of file is not imported.");
+  assertCan(session, "data.edit");
+  let parsed: Promise<unknown> | null = null;
+  const { result, status } = await kind.apply({
+    db, session, cls, rel, reason,
+    json: () => (parsed ??= readParsed(abs)),
+    keepForEstimates: async () => {
+      const target = simulationTarget(cls, path.basename(rel));
+      if (!target) throw new UserFacingError("The induction is not in the name or folder.");
+      await copyToSimulation(abs, target, rootOverride);
+      return target;
+    },
+  });
 
   await db.update(dataFiles).set({
     appliedSha256: sha,
     appliedAt: new Date(),
     appliedBy: session.email,
-    status: result.applied ? (cls.kind === "consent" || cls.kind === "sim_input" ? "held" : "live") : "replaces",
+    status: result.applied ? status : "replaces",
     message: result.applied ? null : "Staged for review: open the change to see what differs, then publish it.",
     changeId: result.applied ? null : result.changeId,
   }).where(eq(dataFiles.id, row.id));
@@ -358,7 +304,7 @@ export type ApplyAllResult = { applied: string[]; staged: string[]; failed: { pa
 /** Apply every file that is new (not those replacing live data), in a safe order. */
 async function applyNew(db: Database, session: Session, opts: { root?: string } = {}): Promise<ApplyAllResult> {
   const rows = (await db.select().from(dataFiles).where(eq(dataFiles.status, "new")))
-    .sort((a, b) => (ORDER[a.kind] ?? 9) - (ORDER[b.kind] ?? 9) || (a.induction ?? 0) - (b.induction ?? 0) || (a.round ?? 0) - (b.round ?? 0) || a.path.localeCompare(b.path));
+    .sort((a, b) => order(a.kind) - order(b.kind) || (a.induction ?? 0) - (b.induction ?? 0) || (a.round ?? 0) - (b.round ?? 0) || a.path.localeCompare(b.path));
   const out: ApplyAllResult = { applied: [], staged: [], failed: [] };
   for (const row of rows) {
     try {

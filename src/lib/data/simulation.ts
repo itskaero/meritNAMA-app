@@ -24,7 +24,7 @@ import {
   specialities,
 } from "@/lib/db/schema";
 import { effectiveCandidates, toCsv, type Correction } from "@/lib/domain/corrections";
-import { SIM_ROLE_PATTERNS, type SimRole } from "@/lib/domain/data-files";
+import { SIM_ROLE_PATTERNS, type SimRole } from "@/lib/ingest/sim-roles";
 import { compareRounds, groupKey, type Allocation, type RoundComparison } from "@/lib/domain/sim-compare";
 import { consentRoundFromName, sanitizeConsent, sanitizeSimDataset, type SimCertificate, type SimDatasetSummary, type VerificationStep } from "@/lib/domain/sim-dataset";
 import { applicantResults, seatKey as resultSeatKey, type ListSeat } from "@/lib/domain/applicant-result";
