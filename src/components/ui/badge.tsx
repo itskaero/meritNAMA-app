@@ -9,12 +9,13 @@ import { cn } from "./cn";
  *   calculated  worked out by meritNAMA from published data (closing merit, the calculator)
  *   current     the latest / in force
  *   simulated   an estimate or projection (dashed, amber): never official
+ *   info        information, an amendment step (cyan)
  */
-export type BadgeTone = "neutral" | "official" | "historical" | "calculated" | "current" | "simulated" | "warning" | "success" | "danger";
+export type BadgeTone = "neutral" | "official" | "historical" | "calculated" | "current" | "simulated" | "warning" | "success" | "danger" | "info";
 
 const tones: Record<BadgeTone, string> = {
   neutral: "border-line-strong text-muted",
-  official: "border-navy/30 bg-navy/5 text-heading",
+  official: "border-violet-soft/40 bg-violet/10 text-heading",
   historical: "border-line-strong text-muted",
   calculated: "border-teal/40 bg-[var(--mn-cyan-soft)] text-signal-strong",
   current: "border-teal/40 bg-[var(--mn-cyan-soft)] text-signal-strong",
@@ -22,6 +23,7 @@ const tones: Record<BadgeTone, string> = {
   warning: "border-amber/40 bg-[var(--mn-amber-soft)] text-amber",
   success: "border-success/30 bg-success/10 text-success",
   danger: "border-danger/30 bg-danger/10 text-danger",
+  info: "border-info/30 bg-info/10 text-info",
 };
 
 export function Badge({ tone = "neutral", children, className }: { tone?: BadgeTone; children: ReactNode; className?: string }) {

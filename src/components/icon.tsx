@@ -35,6 +35,10 @@ const paths = {
   book: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M8 7h7",
   logout: "M15 4h4v16h-4M10 17l5-5-5-5M15 12H3",
   more: "M5 12h.01M12 12h.01M19 12h.01",
+  briefcase: "M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM9 8V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3M4 13h16",
+  id: "M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM9 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM5.5 16a3.5 3.5 0 0 1 7 0M15 9h3M15 13h3",
+  gauge: "M12 21a9 9 0 1 1 9-9M12 12l4-4M3 12h2M12 3v2M19 12h2",
+  collapse: "M4 4h16v16H4zM9 4v16M15 10l-2 2 2 2",
 } as const;
 
 export type IconName = keyof typeof paths;

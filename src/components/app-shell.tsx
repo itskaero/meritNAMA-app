@@ -33,7 +33,7 @@ function AccountMenu({ session, mode, theme, verified }: { session: Session; mod
         className={cn("flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-hover [&::-webkit-details-marker]:hidden", pro && "lg:justify-center lg:px-0")}
         title={pro ? `${session.email} · ${ROLE_LABELS[session.role]}` : undefined}
       >
-        <span aria-hidden className="grid h-8 w-8 flex-none place-items-center rounded-full bg-navy text-xs font-semibold text-ivory">{initials}</span>
+        <span aria-hidden className="grid h-8 w-8 flex-none place-items-center rounded-full bg-gradient-to-br from-violet to-[#176B67] text-xs font-semibold text-white ring-1 ring-violet-soft/40">{initials}</span>
         <span className={cn("min-w-0 flex-1", pro && "lg:sr-only")}>
           <span className="block truncate text-sm font-medium text-ink">{session.email}</span>
           <span className="flex items-center gap-1.5 text-xs text-muted">
@@ -45,7 +45,7 @@ function AccountMenu({ session, mode, theme, verified }: { session: Session; mod
         <Icon name="more" className={cn("h-4 w-4 text-decor", pro && "lg:hidden")} />
         <span className="sr-only">Account menu</span>
       </summary>
-      <div className={cn("absolute bottom-full z-40 mb-2 grid w-64 gap-3 rounded-xl border border-line bg-surface p-3 shadow-[var(--mn-shadow-2)]", pro ? "left-0 lg:left-full lg:bottom-0 lg:mb-0 lg:ml-2" : "left-0")}>
+      <div className={cn("absolute bottom-full z-40 mb-2 grid w-64 gap-3 rounded-xl border border-line-strong bg-surface p-3 shadow-[var(--mn-shadow-2)]", pro ? "left-0 lg:left-full lg:bottom-0 lg:mb-0 lg:ml-2" : "left-0")}>
         <div className="grid gap-1.5">
           <p className="text-xs font-semibold text-muted">Theme</p>
           <ThemeToggle theme={theme} />
@@ -108,7 +108,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
         pro={pro}
         brand={
           <Link href="/" className="flex items-center gap-2.5 rounded-md text-heading" aria-label="meritNAMA home">
-            <LogoMark className={pro ? "h-7 w-7" : "h-6 w-6"} />
+            <LogoMark animate className="h-7 w-7" />
             <Wordmark className={pro ? "lg:hidden" : undefined} />
           </Link>
         }
@@ -130,7 +130,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
         profile={<AccountMenu session={session} mode={mode} theme={theme} verified={verified} />}
       />
       <div className="min-w-0">
-        <main id="main" className={cn("min-h-screen bg-canvas", Boolean(bottomTabs?.length) && "pb-20 lg:pb-0")}>
+        <main id="main" className={cn("pg min-h-screen", Boolean(bottomTabs?.length) && "pb-28 lg:pb-0")}>
           {news.length ? <WhatsNew items={news} /> : null}
           {children}
         </main>

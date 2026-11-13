@@ -26,30 +26,35 @@ export type Section = {
 };
 
 /*
- * The candidate menu, in plain words and in the order people need it (Nov 2026, after
- * the old site's "I want to…" guide): six things to do, then their own things.
+ * The candidate menu (v4, meritnamav4.md §4): the main list in the order people need it
+ * through a cycle, then their own things under "Mine". Feed is folded into Community,
+ * My record into Me, and the What-if simulator sits behind Estimates.
  */
 export const candidateSections: Section[] = [
-  { href: "/portal", group: "Start", icon: "dashboard", label: "Home", description: "Your merit, the latest list, and what you can do next." },
-  { href: "/portal/history", group: "Start", icon: "trend", label: "Merit lists", description: "Every merit list, official and estimated. Find yourself, or anyone, by applicant ID." },
+  { href: "/portal", group: "Main", icon: "dashboard", label: "Overview", description: "Your merit, where the induction stands, and what to do next." },
+  { href: "/portal/history", group: "Main", icon: "trend", label: "Merit lists", description: "Every merit list, official and estimated. Find anyone by name, PMDC number or applicant ID." },
+  { href: "/portal/candidates", group: "Main", icon: "id", label: "Candidates", description: "The gazette for the running induction: verification, corrections, and each candidate's preferences." },
+  { href: "/portal/estimates", group: "Main", icon: "spark", label: "Estimates", description: "Estimated next lists from consent replies so far. Never official.", match: ["/portal/simulation"] },
   {
-    href: "/portal/finder", group: "Start", icon: "target", label: "My chances",
+    href: "/portal/finder", group: "Main", icon: "target", label: "My chances",
     description: "Where your marks can get a seat, based on past closing merit.",
     match: ["/portal/calculator", "/portal/preferences"],
   },
-  { href: "/portal/explore", group: "Start", icon: "building", label: "Hospitals", description: "Every hospital and speciality: seats, closing merit, accreditation and reviews." },
-  { href: "/portal/simulation", group: "Start", icon: "pulse", label: "What if", description: "What if someone accepts or rejects? Change consent and see the next list." },
-  { href: "/portal/community", group: "Start", icon: "chat", label: "Ask & chat", description: "Questions and answers, and a chat room for every round." },
-  { href: "/portal/feed", group: "Start", icon: "pulse", label: "Feed", description: "What happened lately: new merit lists, and questions and answers from the community." },
-  { href: "/portal/chats", group: "Mine", icon: "chat", label: "Chats", description: "Group chats and one-to-one messages with other candidates.", match: ["/portal/chats/new"] },
-  { href: "/portal/profile", group: "Mine", icon: "user", label: "My record", description: "Your merit record: every round you appeared in, with closing merit." },
-  { href: "/portal/workspace", group: "Mine", icon: "folder", label: "Me", description: "Your seat, your journey so far, your shortlist, and what you follow." },
+  { href: "/portal/explore", group: "Main", icon: "building", label: "Hospitals", description: "Every hospital and speciality: seats, closing merit, accreditation and reviews." },
+  { href: "/portal/calendar", group: "Main", icon: "calendar", label: "Calendar", description: "Dates for the running induction: rounds, consent windows and deadlines." },
+  { href: "/portal/jobs", group: "Main", icon: "briefcase", label: "Jobs", description: "Jobs for doctors from official department pages and jobz.pk, in one place." },
+  { href: "/portal/community", group: "Main", icon: "users", label: "Community", description: "Questions and answers, what happened lately, and a room for every round.", match: ["/portal/feed", "/portal/rooms"] },
+  { href: "/portal/chats", group: "Main", icon: "chat", label: "Chats", description: "Group chats and one-to-one messages with other candidates.", match: ["/portal/chats/new"] },
+  { href: "/portal/workspace", group: "Mine", icon: "user", label: "Me", description: "Your seat, your journey so far, your shortlist, and what you follow.", match: ["/portal/profile"] },
   { href: "/portal/inbox", group: "Mine", icon: "inbox", label: "Inbox", description: "New lists, answers and alerts about what you follow." },
   { href: "/portal/guide", group: "Mine", icon: "book", label: "Help", description: "How the merit lists work, in plain words, and what each term means." },
+  // Reached from other pages, not menu items of their own.
+  { href: "/portal/simulation", group: "Main", icon: "pulse", label: "What if", description: "What if someone accepts or rejects? Change consent and see the next list.", hideInNav: true },
+  { href: "/portal/feed", group: "Main", icon: "pulse", label: "Feed", description: "What happened lately: new merit lists, and questions and answers from the community.", hideInNav: true },
+  { href: "/portal/profile", group: "Mine", icon: "user", label: "My record", description: "Your merit record: every round you appeared in, with closing merit.", hideInNav: true },
   { href: "/portal/account", group: "Mine", icon: "settings", label: "Your data", description: "Download everything meritNAMA stores about you, or delete your account.", hideInNav: true },
-  // Tabs of My chances, not menu items of their own.
-  { href: "/portal/calculator", group: "Start", icon: "calculator", label: "Merit calculator", description: "Work out your merit marks from your own details, under the published scoring policy.", hideInNav: true },
-  { href: "/portal/preferences", group: "Start", icon: "list", label: "Preference list", description: "Put your options in order and see where the list is likely to place you.", hideInNav: true },
+  { href: "/portal/calculator", group: "Main", icon: "calculator", label: "Merit calculator", description: "Work out your merit marks from your own details, under the published scoring policy.", hideInNav: true },
+  { href: "/portal/preferences", group: "Main", icon: "list", label: "Preference list", description: "Put your options in order and see where the list is likely to place you.", hideInNav: true },
 ];
 
 export const adminSections: Section[] = [

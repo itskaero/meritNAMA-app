@@ -18,7 +18,7 @@ export function RoundChips({ items, label }: { items: Chip[]; label: string }) {
               aria-current={c.current ? "page" : undefined}
               className={cn(
                 "grid h-11 min-w-14 content-center rounded-xl border px-3.5 text-center text-sm font-semibold transition-colors",
-                c.current ? "border-action bg-action text-action-ink" : "border-line-strong bg-surface text-ink hover:bg-hover",
+                c.current ? "mn-btn" : "mn-btn-ghost bg-surface",
               )}
             >
               {c.label}

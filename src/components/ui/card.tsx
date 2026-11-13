@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { cn } from "./cn";
 
-/** A section of a page: white surface, hairline border, 10px radius. Do not nest cards. */
+/** A section of a page: glass surface over the page aurora, hairline border, 20px radius. Do not nest cards. */
 export function Card({ children, className, id }: { children: ReactNode; className?: string; id?: string }) {
-  return <section id={id} className={cn("min-w-0 scroll-mt-20 rounded-xl border border-line bg-surface p-5 shadow-[var(--mn-shadow-1)] sm:p-6", className)}>{children}</section>;
+  return <section id={id} className={cn("min-w-0 scroll-mt-20 mn-card-glass rounded-xl border border-line p-5 shadow-[var(--mn-shadow-1)] sm:p-6", className)}>{children}</section>;
 }
 
 export function CardHeader({ title, action, description }: { title: ReactNode; action?: ReactNode; description?: ReactNode }) {

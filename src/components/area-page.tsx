@@ -15,20 +15,22 @@ const AREA_ROOT: Record<Area, Crumb & { href: string }> = {
  * the current page. On the area's own overview pass `isRoot`, so the root crumb
  * is not a link to the page you are on.
  */
-export function AreaPage({ area, trail, isRoot = false, title, description, status, children }: {
+export function AreaPage({ area, trail, isRoot = false, title, description, status, aside, children }: {
   area: Area;
   trail: Crumb[];
   isRoot?: boolean;
   title: string;
   description?: string;
   status?: ReactNode;
+  /** Right side of the aurora header: key figures or a Follow button. */
+  aside?: ReactNode;
   children?: ReactNode;
 }) {
   const root = AREA_ROOT[area];
   const breadcrumb = [isRoot ? { label: root.label } : root, ...trail];
   return (
     <>
-      <PageHeader breadcrumb={breadcrumb} title={title} description={description} status={status} />
+      <PageHeader breadcrumb={breadcrumb} title={title} description={description} status={status} aside={aside} />
       {/* min-w-0 on every child: wide tables and charts scroll inside their card instead of widening the page */}
       <div className="grid gap-5 px-4 pb-10 sm:px-8 [&>*]:min-w-0">{children}</div>
     </>

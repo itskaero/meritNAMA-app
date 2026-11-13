@@ -19,8 +19,8 @@ export default async function PortalLayout({ children }: { children: React.React
   // Chats and the feed belong to the community switch.
   if (hidden.has("/portal/community")) { hidden.add("/portal/chats"); hidden.add("/portal/feed"); }
   const sections = candidateSections.filter((s) => !hidden.has(s.href));
-  // Phones: five tabs, with short names. Me is the person's own record.
-  const short: Record<string, string> = { "/portal": "Home", "/portal/history": "Lists", "/portal/finder": "Chances", "/portal/chats": "Chats", "/portal/workspace": "Me" };
+  // Phones: five tabs, with short names (v4 PhoneHome). Me is the person's own record.
+  const short: Record<string, string> = { "/portal": "Home", "/portal/history": "Lists", "/portal/estimates": "Estimates", "/portal/chats": "Chats", "/portal/workspace": "Me" };
   const dbUp = (await checkDatabase()) === "ok";
   const unread = dbUp && sections.some((s) => s.href === "/portal/chats") ? await unreadChats(getDb(), session).catch(() => 0) : 0;
   const bottomTabs = sections.filter((s) => s.href in short).map((s) => ({ href: s.href, label: short[s.href]!, icon: s.icon, match: s.match, badge: s.href === "/portal/chats" ? unread : undefined }));

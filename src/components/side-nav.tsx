@@ -64,14 +64,14 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
 
   return (
     <>
-      <header data-print-hide className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface/95 px-4 backdrop-blur lg:hidden">
+      <header data-print-hide className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-canvas/80 px-4 backdrop-blur-xl lg:hidden">
         {brand}
         <div className="flex items-center gap-2">
           {bell}
           <button
             ref={toggleRef}
             type="button"
-            className="grid h-11 w-11 place-items-center rounded-lg border border-line text-ink"
+            className="mn-btn-ghost grid h-11 w-11 place-items-center rounded-lg text-ink"
             aria-expanded={open}
             aria-controls="app-nav"
             aria-label={open ? "Close navigation" : "Open navigation"}
@@ -85,7 +85,7 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
       <aside
         id="app-nav"
         className={cn(
-          "border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r",
+          "border-line bg-surface/80 backdrop-blur-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r",
           open ? "fixed inset-x-0 top-14 bottom-0 z-20 flex flex-col overflow-y-auto" : "hidden",
         )}
       >
@@ -94,7 +94,7 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
         <nav ref={navRef} aria-label={area} className={cn("min-h-0 flex-1 overflow-y-auto px-3 pb-3", pro && "lg:px-2")}>
           {groups.map((g) => (
             <div key={g} className={cn("pt-3 first:pt-1", pro && "lg:border-t lg:border-line lg:first:border-0")}>
-              <p className={cn("px-3 pb-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-subtle", pro && "lg:sr-only")}>{g}</p>
+              <p className={cn("px-3 pb-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-subtle", pro && "lg:sr-only", g === "Main" && "sr-only")}>{g}</p>
               <ul className="flex flex-col gap-0.5">
                 {items.filter((i) => i.group === g).map((s) => {
                   const active = isActive(s.href);
@@ -107,12 +107,13 @@ export function SideNav({ area, items, pro = false, brand, bell, profile, tools,
                         className={cn(
                           "relative flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                           pro && "lg:justify-center lg:px-0",
+                          // v4: the active item wears the primary button's glowing outline.
                           active
-                            ? "bg-[color-mix(in_srgb,var(--mn-brand-teal)_20%,transparent)] font-semibold text-heading before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-teal"
-                            : "text-muted hover:bg-hover hover:text-ink",
+                            ? "mn-btn font-semibold"
+                            : "border border-transparent text-muted hover:bg-hover hover:text-ink",
                         )}
                       >
-                        <Icon name={s.icon} className={cn("h-[18px] w-[18px] flex-none", active ? "text-signal" : "text-decor")} />
+                        <Icon name={s.icon} className={cn("h-[18px] w-[18px] flex-none", active ? "text-violet-pale" : "text-decor")} />
                         <span className={cn(pro && "lg:sr-only")}>{s.label}</span>
                       </Link>
                     </li>

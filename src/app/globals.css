@@ -21,6 +21,11 @@
   --color-amber: var(--mn-amber);
   --color-danger: var(--mn-danger);
   --color-success: var(--mn-success);
+  --color-info: var(--mn-info);
+  --color-violet: var(--mn-violet);
+  --color-violet-soft: var(--mn-violet-soft);
+  --color-violet-pale: var(--mn-violet-pale);
+  --color-card: var(--mn-card);
   --color-ember: var(--mn-ember);
   --color-ember-hot: var(--mn-ember-hot);
   --color-ember-deep: var(--mn-ember-deep);
@@ -47,13 +52,13 @@
   --font-serif: var(--mn-font-serif);
   --font-mono: var(--mn-font-mono);
   --font-display: var(--mn-font-display);
-  /* Restrained radii: cards 10px, larger surfaces 12px; nothing rounder except pills. */
+  /* v4 radii: controls 12px (rounded-lg), cards 20px (rounded-xl), large panels 24/28px. */
   --radius-sm: var(--mn-radius-sm);
   --radius-md: var(--mn-radius-md);
   --radius-lg: var(--mn-radius-lg);
   --radius-xl: var(--mn-radius-xl);
-  --radius-2xl: 12px;
-  --radius-3xl: 14px;
+  --radius-2xl: 24px;
+  --radius-3xl: 28px;
   /* Tailwind's transition-* utilities follow the token, so reduced motion turns them off. */
   --default-transition-duration: var(--mn-duration);
   --default-transition-timing-function: var(--mn-ease);
@@ -159,4 +164,81 @@ html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger te
     .mn-reveal { animation: mn-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 45%; }
     .mn-parallax { animation: mn-parallax linear both; animation-timeline: view(); animation-range: cover; }
   }
+}
+
+/*
+ * ── v4 look (meritnamav4.md §3) ─────────────────────────────────────────────────
+ * .pg            soft violet aurora behind every page's content (two slow blobs).
+ * .mn-head       navy aurora page header (teal, slate, amber, one faint violet blob).
+ * .mn-btn        primary action: dark fill, violet gradient to the right, outline, edge bar, glow.
+ *                Also the active sidebar item and the active tab. Never a solid violet fill.
+ * .mn-btn-ghost  secondary action: outline only, glows on hover.
+ * .mn-split      GitHub-style split button (icon · label | count); .is-on pulses neon violet.
+ * .mn-live       blinking live dot.  .mn-card-glass  glass card surface.
+ * All motion stops under prefers-reduced-motion; the static look stays.
+ */
+.pg { position: relative; isolation: isolate; overflow-x: clip; }
+.pg::before, .pg::after { content: ""; position: absolute; z-index: -1; pointer-events: none; border-radius: 50%; }
+.pg::before { top: -160px; right: -120px; width: min(780px, 90vw); height: 620px; background: radial-gradient(closest-side, var(--mn-aurora-a), transparent); animation: mn-aurora-a 32s ease-in-out infinite alternate; }
+.pg::after { top: 420px; left: -200px; width: min(720px, 90vw); height: 640px; background: radial-gradient(closest-side, var(--mn-aurora-b), transparent); animation: mn-aurora-b 36s ease-in-out infinite alternate; }
+@keyframes mn-aurora-a { from { transform: translate(0, 0) scale(1); } to { transform: translate(-90px, 70px) scale(1.12); } }
+@keyframes mn-aurora-b { from { transform: translate(0, 0) scale(1.05); } to { transform: translate(110px, -60px) scale(0.95); } }
+
+.mn-head { position: relative; isolation: isolate; overflow: hidden; background: #10243A; color: #F3EEE5; border: 1px solid rgba(243, 238, 229, 0.08); }
+.mn-head > .mn-head-blob { position: absolute; z-index: -1; border-radius: 50%; filter: blur(70px); pointer-events: none; }
+.mn-head > .b1 { width: 58%; height: 150%; left: -12%; top: -40%; background: #176B67; opacity: .42; animation: mn-head-1 26s ease-in-out infinite alternate; }
+.mn-head > .b2 { width: 52%; height: 140%; right: -10%; top: -30%; background: #263C4D; opacity: .65; animation: mn-head-2 32s ease-in-out infinite alternate; }
+.mn-head > .b3 { width: 30%; height: 90%; left: 46%; bottom: -55%; background: #E5A04B; opacity: .12; animation: mn-head-1 24s ease-in-out infinite alternate-reverse; }
+.mn-head > .b4 { width: 34%; height: 110%; right: 12%; top: -60%; background: #7B61FF; opacity: .16; animation: mn-head-2 34s ease-in-out infinite alternate-reverse; }
+.mn-head h1, .mn-head h2 { color: #F3EEE5; }
+@keyframes mn-head-1 { from { transform: translate(0, 0); } to { transform: translate(12%, 8%); } }
+@keyframes mn-head-2 { from { transform: translate(0, 0); } to { transform: translate(-10%, 10%); } }
+
+.mn-btn {
+  position: relative; overflow: hidden; color: var(--mn-text-heading);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mn-navy-900) 92%, transparent), var(--mn-violet-fill));
+  border: 1px solid var(--mn-violet-line);
+  box-shadow: inset -3px 0 0 var(--mn-violet), 0 0 20px var(--mn-violet-glow);
+  transition: box-shadow .25s var(--mn-ease), border-color .25s var(--mn-ease), filter .25s var(--mn-ease);
+}
+.mn-btn:hover { border-color: var(--mn-violet-pale); box-shadow: inset -3px 0 0 var(--mn-violet-soft), 0 0 30px var(--mn-violet-glow), 0 0 4px var(--mn-violet-soft); filter: brightness(1.12); }
+.mn-btn::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .10) 50%, transparent 70%); transform: translateX(-120%); pointer-events: none; }
+.mn-btn:hover::after { animation: mn-sheen 1s var(--mn-ease); }
+@keyframes mn-sheen { to { transform: translateX(120%); } }
+.mn-btn-ghost { border: 1px solid var(--mn-border-strong); color: var(--mn-text); background: transparent; transition: box-shadow .25s var(--mn-ease), border-color .25s var(--mn-ease), color .25s var(--mn-ease); }
+.mn-btn-ghost:hover { border-color: var(--mn-violet-line); color: var(--mn-text-heading); box-shadow: 0 0 18px var(--mn-violet-glow); }
+
+.mn-split { display: inline-flex; align-items: stretch; border: 1px solid var(--mn-border-strong); border-radius: var(--mn-radius-lg); overflow: hidden; font-size: .875rem; font-weight: 600; background: color-mix(in srgb, var(--mn-navy-800) 80%, transparent); transition: border-color .25s var(--mn-ease), box-shadow .25s var(--mn-ease); }
+.mn-split > :first-child { display: inline-flex; align-items: center; gap: .45rem; padding: 0 .85rem; min-height: 2.25rem; color: var(--mn-text-heading); }
+.mn-split > :last-child:not(:first-child) { display: inline-flex; align-items: center; padding: 0 .7rem; border-left: 1px solid var(--mn-border-strong); color: var(--mn-text-muted); font-variant-numeric: tabular-nums; }
+.mn-split:hover { border-color: var(--mn-violet-line); box-shadow: 0 0 16px var(--mn-violet-glow); }
+.mn-split.is-on { border-color: var(--mn-violet-soft); animation: mn-neon 2.4s ease-in-out infinite; }
+.mn-split.is-on > :first-child { color: var(--mn-violet-pale); }
+.mn-split.tone-amber:hover, .mn-split.tone-amber.is-on { border-color: color-mix(in srgb, var(--mn-amber) 70%, transparent); box-shadow: 0 0 16px var(--mn-glow-warm); animation: none; }
+.mn-split.tone-amber.is-on > :first-child { color: var(--mn-amber); }
+@keyframes mn-neon { 0%, 100% { box-shadow: 0 0 8px var(--mn-violet-glow), inset 0 0 6px var(--mn-violet-glow); } 50% { box-shadow: 0 0 22px var(--mn-violet-glow), 0 0 2px var(--mn-violet-soft), inset 0 0 10px var(--mn-violet-glow); } }
+
+.mn-card-glass { background: var(--mn-card); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.mn-live { display: inline-block; width: .5rem; height: .5rem; border-radius: 99px; background: var(--mn-success); animation: mn-live 1.8s ease-out infinite; }
+@keyframes mn-live { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--mn-success) 60%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+
+/* Logo B: the stroke draws in, the rank point drops above the loop with a bounce and a ping, then breathes. */
+.mn-logo-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: mn-draw 1.7s cubic-bezier(.65, 0, .35, 1) .1s forwards; }
+.mn-logo-dot { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mn-dot-drop .7s cubic-bezier(.3, 1.6, .5, 1) 1.55s forwards, mn-dot-breathe 2.4s ease-in-out 2.4s infinite; }
+.mn-logo-ping { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mn-dot-ping 1s ease-out 1.9s; }
+.mn-logo-loading .mn-logo-draw { stroke-dasharray: .28 .72; stroke-dashoffset: 0; animation: mn-logo-run 1.4s linear infinite; }
+@keyframes mn-dot-drop { from { opacity: 0; transform: translateY(-14px) scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes mn-dot-breathe { 0%, 100% { transform: scale(1); filter: none; } 50% { transform: scale(1.12); filter: drop-shadow(0 0 4px var(--mn-violet-soft)); } }
+@keyframes mn-dot-ping { 0% { opacity: .7; transform: scale(1); } 100% { opacity: 0; transform: scale(2.6); } }
+@keyframes mn-logo-run { to { stroke-dashoffset: -1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pg::before, .pg::after, .mn-head > .mn-head-blob, .mn-split.is-on, .mn-live, .mn-btn:hover::after { animation: none; }
+  .mn-logo-draw, .mn-logo-loading .mn-logo-draw { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; }
+  .mn-logo-dot { animation: none; opacity: 1; }
+  .mn-logo-ping { display: none; }
+}
+@media print {
+  .pg::before, .pg::after, .mn-head > .mn-head-blob { display: none; }
+  .mn-head { background: #fff !important; color: #111 !important; }
 }

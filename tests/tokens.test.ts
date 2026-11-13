@@ -33,7 +33,7 @@ describe.each(Object.entries(themes))("design token contrast (%s)", (_name, src)
   });
 
   it.each(surfaces)("signal, status and ember colours are AA on %s", (bg) => {
-    for (const fg of ["mn-cyan", "mn-amber", "mn-danger", "mn-success", "mn-ember"]) expect(contrast(token(fg), token(bg))).toBeGreaterThanOrEqual(4.5);
+    for (const fg of ["mn-cyan", "mn-amber", "mn-danger", "mn-success", "mn-info", "mn-ember", "mn-violet-pale"]) expect(contrast(token(fg), token(bg))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("text on primary buttons is AA", () => {
@@ -48,6 +48,10 @@ describe.each(Object.entries(themes))("design token contrast (%s)", (_name, src)
 
   it("feature-card text is AA on the feature surface", () => {
     for (const fg of ["mn-feature-ink", "mn-feature-muted", "mn-feature-accent"]) expect(contrast(token(fg), token("mn-feature-bg"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("the violet outline stands out from every surface (3:1)", () => {
+    for (const bg of surfaces) expect(contrast(token("mn-violet-soft"), token(bg))).toBeGreaterThanOrEqual(3);
   });
 
   it("subtle text meets AA on the page background", () => {
