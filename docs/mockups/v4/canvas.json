@@ -23,9 +23,10 @@
     "Estimate.dc.html": { "x": 1520, "y": 7280, "w": 1440, "h": 1120, "title": "Estimated round 6" },
     "Overview22.dc.html": { "x": 0, "y": 8600, "w": 1440, "h": 1260, "title": "Overview · new induction announced (induction 22)" },
     "Jobs.dc.html": { "x": 1520, "y": 8600, "w": 1440, "h": 1260, "title": "Jobs · folders, cards, detail" },
-    "Landing.dc.html": { "x": 0, "y": 9980, "w": 1440, "h": 3000, "title": "Public landing page" }
+    "Landing.dc.html": { "x": 0, "y": 9980, "w": 1440, "h": 3000, "title": "Public landing page" },
+    "Logo.dc.html": { "x": 1520, "y": 9980, "w": 1440, "h": 1640, "title": "Logo · Direction 1 refinements (A, B, C)" }
   },
-  "order": ["Side.dc.html", "Jobs.dc.html", "Landing.dc.html","Overview22.dc.html","Gazette.dc.html", "Estimate.dc.html","Design.dc.html", "SignIn.dc.html", "Main.dc.html", "Community.dc.html", "Lists.dc.html", "Round.dc.html", "Chances.dc.html", "Hospital.dc.html", "Calendar.dc.html", "Chats.dc.html", "Me.dc.html", "PhoneHome.dc.html", "Phone.dc.html"],
+  "order": ["Side.dc.html", "Logo.dc.html","Jobs.dc.html", "Landing.dc.html","Overview22.dc.html","Gazette.dc.html", "Estimate.dc.html","Design.dc.html", "SignIn.dc.html", "Main.dc.html", "Community.dc.html", "Lists.dc.html", "Round.dc.html", "Chances.dc.html", "Hospital.dc.html", "Calendar.dc.html", "Chats.dc.html", "Me.dc.html", "PhoneHome.dc.html", "Phone.dc.html"],
   "notes": {
     "heading": { "x": 0, "y": -300, "text": "meritNAMA: charcoal + aurora, violet glow, colour only in the data", "kind": "title1", "maxW": 2960 },
     "colours": {

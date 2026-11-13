@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>meritNAMA logo · direction 1 refinements</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Noto+Nastaliq+Urdu:wght@500;700&amp;family=Noto+Naskh+Arabic:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.m{color:#8B8B93}
+.cell{border-radius:16px;border:1px solid rgba(255,255,255,.07);background:#141418;display:flex;align-items:center;justify-content:center;position:relative;padding:18px;box-sizing:border-box}
+.cap{position:absolute;left:14px;top:10px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#7B61FF;font-weight:700}
+.en{font-family:Inter,sans-serif;color:#F3EEE5;letter-spacing:-.01em}
+.ur{font-family:'Noto Nastaliq Urdu',serif;color:#F3EEE5;direction:rtl}
+.urs{font-family:'Noto Naskh Arabic',serif;color:#B9B9C2;direction:rtl}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 1640px; box-sizing: border-box; padding: 44px 52px; background: radial-gradient(700px 400px at 90% 0%, rgba(123,97,255,0.16), transparent 70%), #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif">
+  <header style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 26px">
+    <div>
+      <p style="margin: 0; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #9B87FF; font-weight: 700">Direction 1 · The Continuous Meem · refinements</p>
+      <h1 style="margin: 8px 0 0; font-size: 34px; font-weight: 700; letter-spacing: -0.02em">Two arches of <span style="color: #B9AAFF">m</span>, a third leg that is the tail of <span class="ur" style="color: #B9AAFF; font-size: 30px">م</span></h1>
+      <p class="m" style="margin: 6px 0 0">No dot under the loop (it would read as پ). Same silhouette in every colour. Wordmarks set in Inter and Noto Nastaliq Urdu.</p>
+    </div>
+  </header>
+
+  <sc-for list="{{variants}}" as="v" hint-placeholder-count="3">
+    <section style="display: grid; grid-template-columns: 200px 1.25fr 1.25fr 1fr 1.15fr; gap: 14px; margin-bottom: 18px; min-height: 440px">
+      <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 8px">
+        <span style="font-size: 40px; font-weight: 700; color: #9B87FF">{{v.key}}</span>
+        <b style="font-size: 16px">{{v.name}}</b>
+        <p class="m" style="margin: 0; font-size: 13px; line-height: 1.5">{{v.note}}</p>
+      </div>
+
+      <div style="display: grid; grid-template-rows: 1fr 1fr; gap: 14px">
+        <div class="cell"><span class="cap">01 English</span>
+          <div style="display: flex; align-items: center; gap: 16px">
+            <svg viewBox="0 0 110 106" width="78" height="75" fill="none" stroke="#9B87FF" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-label="meritNAMA mark" role="img" style="filter: drop-shadow(0 0 10px rgba(123,97,255,0.55))"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#9B87FF" stroke="none"></circle></svg>
+            <div><div class="en" style="font-size: 38px"><span style="font-weight: 400">merit</span><span style="font-weight: 700">NAMA</span></div><div class="m" style="font-size: 13px; margin-top: 2px">Know where you stand.</div></div>
+          </div>
+        </div>
+        <div class="cell" style="background: #F6F4EF"><span class="cap">01 English · light</span>
+          <div style="display: flex; align-items: center; gap: 16px">
+            <svg viewBox="0 0 110 106" width="64" height="62" fill="none" stroke="#5B3FF5" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#5B3FF5" stroke="none"></circle></svg>
+            <div class="en" style="font-size: 32px; color: #10243A"><span style="font-weight: 400">merit</span><span style="font-weight: 700">NAMA</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-rows: 1fr 1fr; gap: 14px">
+        <div class="cell"><span class="cap">02 Urdu</span>
+          <div dir="rtl" lang="ur" style="display: flex; align-items: center; gap: 16px">
+            <svg viewBox="0 0 110 106" width="78" height="75" fill="none" stroke="#9B87FF" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="filter: drop-shadow(0 0 10px rgba(123,97,255,0.55))"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#9B87FF" stroke="none"></circle></svg>
+            <div><div class="ur" style="font-size: 34px; line-height: 1.6">میرٹ نامہ</div><div class="urs" style="font-size: 14px">جانیں آپ کہاں کھڑے ہیں</div></div>
+          </div>
+        </div>
+        <div class="cell" style="background: #F6F4EF"><span class="cap">02 Urdu · light</span>
+          <div dir="rtl" lang="ur" style="display: flex; align-items: center; gap: 16px">
+            <svg viewBox="0 0 110 106" width="64" height="62" fill="none" stroke="#5B3FF5" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#5B3FF5" stroke="none"></circle></svg>
+            <div class="ur" style="font-size: 30px; line-height: 1.6; color: #10243A">میرٹ نامہ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cell" style="flex-direction: column; gap: 4px"><span class="cap">03 Stacked</span>
+        <svg viewBox="0 0 110 106" width="96" height="92" fill="none" stroke="#9B87FF" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="filter: drop-shadow(0 0 14px rgba(123,97,255,0.6))"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#9B87FF" stroke="none"></circle></svg>
+        <div class="en" style="font-size: 30px; margin-top: 8px"><span style="font-weight: 400">merit</span><span style="font-weight: 700">NAMA</span></div>
+        <div class="ur" lang="ur" style="font-size: 26px; line-height: 1.7">میرٹ نامہ</div>
+        <div style="width: 60%; height: 1px; background: rgba(255,255,255,0.1); margin: 6px 0"></div>
+        <div class="m" style="font-size: 12px">Know where you stand.</div>
+        <div class="urs" lang="ur" style="font-size: 13px">جانیں آپ کہاں کھڑے ہیں</div>
+      </div>
+
+      <div style="display: grid; grid-template-rows: 1.2fr 1fr; gap: 14px">
+        <div class="cell" style="gap: 18px"><span class="cap">04 App icon and sizes</span>
+          <span style="width: 96px; height: 96px; border-radius: 24px; background: linear-gradient(160deg, #18304D, #10243A); display: grid; place-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)"><svg viewBox="0 0 110 106" width="62" height="60" fill="none" stroke="#F3EEE5" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#B9AAFF" stroke="none"></circle></svg></span>
+          <div style="display: flex; align-items: flex-end; gap: 14px">
+            <svg viewBox="0 0 110 106" width="48" height="46" fill="none" stroke="#9B87FF" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#9B87FF" stroke="none"></circle></svg>
+            <svg viewBox="0 0 110 106" width="32" height="31" fill="none" stroke="#9B87FF" stroke-width="{{v.sw2}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#9B87FF" stroke="none"></circle></svg>
+            <svg viewBox="0 0 110 106" width="16" height="16" fill="none" stroke="#9B87FF" stroke-width="{{v.sw3}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d16}}"></path></svg>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px">
+          <div class="cell" style="background: #FFFFFF; padding: 10px"><svg viewBox="0 0 110 106" width="44" height="42" fill="none" stroke="#0C0C0E" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#0C0C0E" stroke="none"></circle></svg></div>
+          <div class="cell" style="background: #000000; padding: 10px"><svg viewBox="0 0 110 106" width="44" height="42" fill="none" stroke="#FFFFFF" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#FFFFFF" stroke="none"></circle></svg></div>
+          <div class="cell" style="background: #6E56FF; padding: 10px"><svg viewBox="0 0 110 106" width="44" height="42" fill="none" stroke="#FFFFFF" stroke-width="{{v.sw}}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><circle cx="80" cy="12" r="{{v.r}}" fill="#FFFFFF" stroke="none"></circle></svg></div>
+        </div>
+      </div>
+    </section>
+  </sc-for>
+
+  <p class="m" style="margin: 10px 0 0; font-size: 12px">Concept vectors for review. Before release: Urdu spelling and joins checked by a fluent reader; final SVGs exported with the stroke outlined; 16 px icon tuned by hand.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1640}}'>
+class Component extends DCLogic {
+  renderVals() {
+    // Two arches of m; the third leg falls from a closed loop = the head and tail of meem (م).
+    const main = 'M14 90 V44 a13 13 0 0 1 26 0 V90 M40 44 a13 13 0 0 1 26 0 a14 14 0 1 1 28 0 a14 14 0 1 1 -28 0 V98';
+    const compact = 'M16 88 V46 a12 12 0 0 1 24 0 V88 M40 46 a12 12 0 0 1 24 0 a15 15 0 1 1 30 0 a15 15 0 1 1 -30 0 V92';
+    const tiny = 'M18 88 V48 a11 11 0 0 1 22 0 V88 M40 48 a11 11 0 0 1 22 0 a16 16 0 1 1 32 0 a16 16 0 1 1 -32 0 V90';
+    return {
+      variants: [
+        { key: 'A', name: 'Clean meem', note: 'No dot at all. The purest reading of m and م together; best for the wordmark lockups.', d: main, d16: tiny, sw: 11, sw2: 13, sw3: 16, r: 0 },
+        { key: 'B', name: 'Rank point', note: 'A small dot above the loop, like a pin: "you are here". Echoes the app\'s live dots; never placed below (that reads as پ).', d: main, d16: tiny, sw: 11, sw2: 13, sw3: 16, r: 6.5 },
+        { key: 'C', name: 'Compact', note: 'Heavier stroke, bigger loop, shorter tail. Holds its counters at 32 and 16 px; best for the app icon and favicon.', d: compact, d16: tiny, sw: 14, sw2: 15, sw3: 17, r: 0 }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
