@@ -1196,3 +1196,91 @@ export async function myDataChecklist(db: Database, session: Session | null) {
     corrected: (corrected?.n ?? 0) > 0,
   };
 }
+
+// ── Candidates page: the gazette of an induction, with verification and corrections ──
+
+export type GazetteBoardRow = {
+  applicantId: string;
+  name: string | null;
+  pmdcNo: string | null;
+  /** Base marks as published, and with the team's corrections applied. */
+  published: number;
+  marks: number;
+  profileStatus: number | null;
+  verification: VerificationStep[];
+  /** Kinds of active corrections (grievance, amendment, admin), empty when none. */
+  corrected: string[];
+  /** Programmes applied in, with how many preferences each. */
+  programmes: { program: string; prefs: number }[];
+  /** Seat in the latest published round of the induction, if any. */
+  seat: { program: string; speciality: string; hospital: string } | null;
+};
+
+/**
+ * Everyone in an induction's gazette (fixed for the cycle) with verification steps,
+ * corrections layered on top (the original kept), preferences per programme, and the
+ * seat each holds in the latest round (which changes round to round).
+ */
+export async function gazetteBoard(db: Database, session: Session | null, induction: number) {
+  assertCan(session, "portal");
+  const [ds] = await db.select({ id: simDatasets.inductionId }).from(simDatasets).where(eq(simDatasets.inductionId, induction)).limit(1);
+  if (!ds) return null;
+  const { resolved, rules } = await loadInductionRules(db, induction);
+  const raw = await db.select().from(simCandidates).where(eq(simCandidates.inductionId, induction));
+  const eff = new Map((await candidateRows(db, induction, resolved ?? rules)).map((r) => [r.applicantId, r]));
+  const kinds = await db.select({ applicantId: candidateCorrections.applicantId, kind: candidateCorrections.kind }).from(candidateCorrections)
+    .where(and(eq(candidateCorrections.inductionId, induction), isNull(candidateCorrections.revokedAt)));
+  const correctedBy = new Map<string, Set<string>>();
+  for (const k of kinds) (correctedBy.get(k.applicantId) ?? correctedBy.set(k.applicantId, new Set()).get(k.applicantId)!).add(k.kind);
+  const prefCounts = await db.select({ applicantId: simPreferences.applicantId, program: simPreferences.program, n: sql<number>`count(*)::int` })
+    .from(simPreferences).where(eq(simPreferences.inductionId, induction)).groupBy(simPreferences.applicantId, simPreferences.program);
+  const prefsBy = new Map<string, { program: string; prefs: number }[]>();
+  for (const p of prefCounts) (prefsBy.get(p.applicantId) ?? prefsBy.set(p.applicantId, []).get(p.applicantId)!).push({ program: nm(p.program), prefs: p.n });
+  const [latest] = await db.select({ roundNo: meritRounds.roundNo }).from(meritRounds).where(eq(meritRounds.inductionId, induction)).orderBy(desc(meritRounds.roundNo)).limit(1);
+  const seats = new Map<string, { program: string; speciality: string; hospital: string }>();
+  if (latest) for (const a of (await publishedRound(db, induction, latest.roundNo)) ?? []) if (!seats.has(a.applicantId)) seats.set(a.applicantId, { program: a.program, speciality: a.speciality, hospital: a.hospital });
+  const rows: GazetteBoardRow[] = raw.map((c) => {
+    const e = eff.get(c.applicantId);
+    return {
+      applicantId: c.applicantId,
+      name: c.name,
+      pmdcNo: c.pmdcNo,
+      published: c.baseMarks,
+      marks: e?.baseMarks ?? c.baseMarks,
+      profileStatus: e?.profileStatus ?? c.profileStatus,
+      verification: (c.verification ?? []) as VerificationStep[],
+      corrected: [...(correctedBy.get(c.applicantId) ?? [])],
+      programmes: (prefsBy.get(c.applicantId) ?? []).sort((a, b) => a.program.localeCompare(b.program)),
+      seat: seats.get(c.applicantId) ?? null,
+    };
+  });
+  rows.sort((a, b) => b.marks - a.marks || a.applicantId.localeCompare(b.applicantId));
+  return { induction, latestRound: latest?.roundNo ?? null, rows };
+}
+
+/** One gazette candidate in full for the side panel: record, preferences, and every round they appear in. */
+export async function gazetteCandidate(db: Database, session: Session | null, input: { induction: number; applicantId: string }) {
+  assertCan(session, "portal");
+  const applicantId = input.applicantId.replace(/\D/g, "").slice(0, 10);
+  if (!applicantId) return null;
+  const rec = await simRecordFor(db, { induction: input.induction, applicantId });
+  if (!rec) return null;
+  const [who] = await db.select({ name: simCandidates.name, pmdcNo: simCandidates.pmdcNo, verification: simCandidates.verification })
+    .from(simCandidates).where(and(eq(simCandidates.inductionId, input.induction), eq(simCandidates.applicantId, applicantId))).limit(1);
+  const rounds = await db
+    .select({ roundNo: meritRounds.roundNo, program: meritAllocations.program, quota: meritAllocations.quota, speciality: meritAllocations.speciality, hospital: meritAllocations.hospital, marks: meritAllocations.marks, preferenceNo: meritAllocations.preferenceNo })
+    .from(meritAllocations).innerJoin(meritRounds, eq(meritRounds.id, meritAllocations.roundId))
+    .where(and(eq(meritRounds.inductionId, input.induction), eq(meritAllocations.applicantId, applicantId)))
+    .orderBy(asc(meritRounds.roundNo));
+  const corrections = await db.select({ field: candidateCorrections.field, program: candidateCorrections.program, value: candidateCorrections.value, kind: candidateCorrections.kind, createdAt: candidateCorrections.createdAt })
+    .from(candidateCorrections)
+    .where(and(eq(candidateCorrections.inductionId, input.induction), eq(candidateCorrections.applicantId, applicantId), isNull(candidateCorrections.revokedAt)))
+    .orderBy(asc(candidateCorrections.createdAt));
+  return { ...rec, applicantId, name: who?.name ?? null, pmdcNo: who?.pmdcNo ?? null, verification: (who?.verification ?? []) as VerificationStep[], rounds, corrections };
+}
+
+/** Inductions with a gazette loaded, newest first (the Candidates page's picker). */
+export async function gazetteInductions(db: Database, session: Session | null): Promise<number[]> {
+  assertCan(session, "portal");
+  return (await db.select({ id: simDatasets.inductionId }).from(simDatasets).orderBy(desc(simDatasets.inductionId))).map((r) => r.id);
+}
