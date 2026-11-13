@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cleanName, cleanPmdc } from "./merit-round";
 
 /**
  * Restricted simulation inputs for one induction. The split format (what the
@@ -92,8 +93,38 @@ const certificateSchema = z.looseObject({
 export const certificatesFileSchema = z.union([z.record(z.string(), z.array(certificateSchema)), z.array(certificateSchema.extend({ applicantId }))]);
 
 export const profileStatusFileSchema = z.looseObject({
-  entries: z.array(z.looseObject({ applicantId: z.union([z.number().int(), z.string().regex(/^\d+$/)]), statusId: z.number().int(), statusTypeId: z.number().int() })),
+  /** v2: { "131": { label: "Verification : Round 01" }, "132": { label: "Amendment Process" } } */
+  statusTypes: z.record(z.string(), z.looseObject({ label: z.string().nullish() })).nullish(),
+  entries: z.array(z.looseObject({
+    applicantId: z.union([z.number().int(), z.string().regex(/^\d+$/)]),
+    statusId: z.number().int(),
+    statusTypeId: z.number().int(),
+    remarks: z.string().nullish(),
+  })),
 });
+
+/** One verification step for a candidate, as PHF reported it (Round 01, then Amendment). */
+export type VerificationStep = { type: number; label: string; status: number; remarks: string | null };
+
+const STEP_LABELS: Record<number, string> = { 131: "Verification : Round 01", 132: "Amendment Process" };
+
+/** Every verification step per applicant, in step order, with PHF's remarks (trimmed, at most 200 characters). */
+export function verificationSteps(file: z.infer<typeof profileStatusFileSchema>): Map<string, VerificationStep[]> {
+  const out = new Map<string, VerificationStep[]>();
+  for (const e of file.entries) {
+    const id = String(e.applicantId);
+    const label = file.statusTypes?.[String(e.statusTypeId)]?.label ?? STEP_LABELS[e.statusTypeId] ?? `Step ${e.statusTypeId}`;
+    const remarks = (e.remarks ?? "").replace(/\s+/g, " ").trim().slice(0, 200) || null;
+    const list = out.get(id) ?? [];
+    const i = list.findIndex((s) => s.type === e.statusTypeId);
+    const step = { type: e.statusTypeId, label, status: e.statusId, remarks };
+    if (i >= 0) list[i] = step;
+    else list.push(step);
+    out.set(id, list);
+  }
+  for (const list of out.values()) list.sort((a, b) => a.type - b.type);
+  return out;
+}
 
 export type SimCertificate = {
   disciplineId: number | null;
@@ -145,6 +176,11 @@ export type SimCandidate = {
   appliedIn: Record<string, boolean>;
   certificates: SimCertificate[];
   profileStatus: number | null;
+  /** Each verification step with PHF's remarks; empty when no status file was given. */
+  verification: VerificationStep[];
+  /** From the gazette, when one was given. */
+  name: string | null;
+  pmdcNo: string | null;
   preferences: SimPreference[];
 };
 
@@ -204,8 +240,8 @@ const duplicate = (id: string, file: string) => new z.ZodError([{ code: "custom"
 
 /**
  * PHF's gazette (the eligible-candidates list published before round 1): one row per
- * applicant in Table5, with total marks, the parts of the score and eligibility.
- * Names and PMDC numbers in it are never read.
+ * applicant in Table5, with total marks, the parts of the score and eligibility. The name
+ * and PMDC number are kept (the gazette is public); email, phone and CNIC are never read.
  */
 export const gazetteFileSchema = z.looseObject({
   Table5: z.array(
@@ -214,13 +250,17 @@ export const gazetteFileSchema = z.looseObject({
       marksTotal: z.number(),
       statusId: z.number().int().nullish(),
       status: z.string().nullish(),
+      /** PHF's report calls it nameFull; some exports use name. */
+      nameFull: z.string().nullish(),
+      name: z.string().nullish(),
+      pmdcNo: z.union([z.string(), z.number()]).nullish(),
     }),
   ).min(1, "the gazette has no candidates"),
 });
 /** Parts of the score the gazette prints; kept as base-marks formula parameters. */
 export const GAZETTE_PARAMS = ["matric", "fsc", "degree", "attempts", "houseJob", "experience", "hardArea", "research", "position"] as const;
 
-export type GazetteMarks = { marksTotal: number; params: Record<string, number>; profileStatus: number | null };
+export type GazetteMarks = { marksTotal: number; params: Record<string, number>; profileStatus: number | null; name: string | null; pmdcNo: string | null };
 
 /** Gazette rows by applicant: marks, score parts, and eligibility (Eligible → 1, Rejected → 2). */
 export function fromGazette(file: unknown): Map<string, GazetteMarks> {
@@ -232,7 +272,7 @@ export function fromGazette(file: unknown): Map<string, GazetteMarks> {
     for (const k of GAZETTE_PARAMS) if (typeof row[k] === "number" && Number.isFinite(row[k])) params[k] = row[k] as number;
     const st = (r.status ?? "").toLowerCase();
     const profileStatus = r.statusId === 1 || st === "eligible" ? 1 : r.statusId === 2 || st === "rejected" ? 2 : null;
-    out.set(r.applicantId, { marksTotal: r.marksTotal, params, profileStatus });
+    out.set(r.applicantId, { marksTotal: r.marksTotal, params, profileStatus, name: cleanName(r.nameFull ?? r.name), pmdcNo: cleanPmdc(r.pmdcNo == null ? null : String(r.pmdcNo)) });
   }
   return out;
 }
@@ -309,7 +349,9 @@ export function sanitizeSimDataset(files: {
   const certificates: Record<string, z.infer<typeof certificateSchema>[]> = {};
   if (Array.isArray(certParsed)) for (const c of certParsed) (certificates[c.applicantId] ??= []).push(c);
   else Object.assign(certificates, certParsed);
-  const status = files.profileStatus == null ? new Map<string, number>() : effectiveProfileStatus(profileStatusFileSchema.parse(files.profileStatus));
+  const statusFile = files.profileStatus == null ? null : profileStatusFileSchema.parse(files.profileStatus);
+  const status = statusFile ? effectiveProfileStatus(statusFile) : new Map<string, number>();
+  const steps = statusFile ? verificationSteps(statusFile) : new Map<string, VerificationStep[]>();
 
   const seen = new Set<string>();
   const out: SimCandidate[] = [];
@@ -345,6 +387,9 @@ export function sanitizeSimDataset(files: {
         computerizedMarks: x.computerizedMarks,
       })),
       profileStatus: status.get(id) ?? c.profileStatus,
+      verification: steps.get(id) ?? [],
+      name: gazette?.get(id)?.name ?? null,
+      pmdcNo: gazette?.get(id)?.pmdcNo ?? null,
       preferences: c.preferences.slice().sort((a, b) => a.preferenceNo - b.preferenceNo || a.typeName.localeCompare(b.typeName)).map((p) => ({
         program: p.typeName,
         preferenceNo: p.preferenceNo,

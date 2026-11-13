@@ -830,6 +830,11 @@ export const simCandidates = pgTable(
     appliedIn: json("applied_in").notNull(),
     certificates: json("certificates").notNull(),
     profileStatus: integer("profile_status"),
+    /** Each verification step (Round 01, Amendment Process) with status and PHF's remarks. */
+    verification: json("verification").notNull().default([]),
+    /** From the gazette (public): name and PMDC number. */
+    name: text("name"),
+    pmdcNo: text("pmdc_no"),
   },
   (t) => [primaryKey({ columns: [t.inductionId, t.applicantId] })],
 );
@@ -978,6 +983,8 @@ export const candidateCorrections = pgTable(
     program: text("program"),
     value: doublePrecision("value").notNull(),
     reason: text("reason").notNull(),
+    /** grievance, amendment or admin (the team's own fix). */
+    kind: text("kind").notNull().default("admin"),
     changeId: uuid("change_id").references(() => stagedChanges.id, { onDelete: "set null" }),
     createdBy: text("created_by").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -987,6 +994,7 @@ export const candidateCorrections = pgTable(
   (t) => [
     index("candidate_corrections_candidate_idx").on(t.inductionId, t.applicantId),
     check("candidate_corrections_field", sql`${t.field} in ('base_marks', 'program_marks', 'profile_status', 'parameter')`),
+    check("candidate_corrections_kind", sql`${t.kind} in ('grievance', 'amendment', 'admin')`),
   ],
 );
 

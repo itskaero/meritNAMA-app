@@ -34,9 +34,9 @@ describe("corrections", () => {
         "101,base_marks,,62\n",
     );
     expect(corrections).toEqual([
-      { applicantId: "101", field: "base_marks", program: null, value: 62 },
-      { applicantId: "102", field: "program_marks", program: "FCPS", value: 4 },
-      { applicantId: "103", field: "profile_status", program: null, value: 2 },
+      { applicantId: "101", field: "base_marks", program: null, value: 62, kind: "admin" },
+      { applicantId: "102", field: "program_marks", program: "FCPS", value: 4, kind: "admin" },
+      { applicantId: "103", field: "profile_status", program: null, value: 2, kind: "admin" },
     ]);
     expect(errors).toEqual([
       "Line 5: Programme marks need a programme",

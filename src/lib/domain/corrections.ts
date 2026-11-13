@@ -10,6 +10,11 @@ import { formulaVariables } from "@/lib/engine/formula";
 export const CORRECTION_FIELDS = ["base_marks", "program_marks", "profile_status", "parameter"] as const;
 export type CorrectionField = (typeof CORRECTION_FIELDS)[number];
 
+/** Why a correction exists: a PHF grievance decision, the amendment window, or the team's own fix. */
+export const CORRECTION_KINDS = ["grievance", "amendment", "admin"] as const;
+export type CorrectionKind = (typeof CORRECTION_KINDS)[number];
+export const CORRECTION_KIND_LABELS: Record<CorrectionKind, string> = { grievance: "Grievance", amendment: "Amendment", admin: "Team correction" };
+
 export const CORRECTION_LABELS: Record<CorrectionField, string> = {
   base_marks: "Base marks",
   program_marks: "Programme marks",
@@ -27,6 +32,7 @@ export const correctionSchema = z
     field: z.enum(CORRECTION_FIELDS),
     program: z.string().trim().min(1).nullable().default(null),
     value: z.number().finite(),
+    kind: z.enum(CORRECTION_KINDS).default("admin"),
   })
   .superRefine((c, ctx) => {
     if (c.field === "program_marks" && !c.program) ctx.addIssue({ code: "custom", message: "Programme marks need a programme", path: ["program"] });
@@ -35,7 +41,8 @@ export const correctionSchema = z
     if (c.field === "profile_status" && !(c.value in PROFILE_STATUS)) ctx.addIssue({ code: "custom", message: "Profile status is 1 (Accepted), 2 (Rejected) or 11 (Pending)", path: ["value"] });
     if (c.field !== "profile_status" && (c.value < 0 || c.value > 1000)) ctx.addIssue({ code: "custom", message: "Marks must be between 0 and 1000", path: ["value"] });
   });
-export type Correction = z.output<typeof correctionSchema>;
+/** A correction; `kind` defaults to "admin" when missing (older stored rows and callers). */
+export type Correction = Omit<z.output<typeof correctionSchema>, "kind"> & { kind?: CorrectionKind };
 
 export const correctionKey = (c: Pick<Correction, "applicantId" | "field" | "program">) => `${c.applicantId}|${c.field}|${c.program ?? ""}`;
 
@@ -97,7 +104,8 @@ export const MAX_CSV_CORRECTIONS = 2000;
 
 /**
  * Parse a corrections file: a header row `applicant_id,field,program,value` (any
- * column order), then one correction per line. Every line is checked; errors name
+ * column order; an optional `kind` column says grievance, amendment or admin), then one
+ * correction per line. Every line is checked; errors name
  * the line. A later line for the same value replaces an earlier one.
  */
 export function parseCorrectionsCsv(text: string): { corrections: Correction[]; errors: string[] } {
@@ -105,7 +113,7 @@ export function parseCorrectionsCsv(text: string): { corrections: Correction[]; 
   const errors: string[] = [];
   const header = splitCsvLine(lines[0] ?? "").map((h) => h.toLowerCase());
   const col = (name: string) => header.indexOf(name);
-  const [ia, ifield, iprog, ival] = [col("applicant_id"), col("field"), col("program"), col("value")];
+  const [ia, ifield, iprog, ival, ikind] = [col("applicant_id"), col("field"), col("program"), col("value"), col("kind")];
   if (ia < 0 || ifield < 0 || ival < 0) return { corrections: [], errors: [`The first line must be the header: ${CORRECTIONS_CSV_HEADER}`] };
   const byKey = new Map<string, Correction>();
   for (let n = 1; n < lines.length; n++) {
@@ -117,6 +125,7 @@ export function parseCorrectionsCsv(text: string): { corrections: Correction[]; 
       applicantId: cells[ia] ?? "",
       field: (cells[ifield] ?? "").toLowerCase(),
       program: iprog >= 0 && cells[iprog] ? cells[iprog] : null,
+      ...(ikind >= 0 && cells[ikind] ? { kind: cells[ikind]!.toLowerCase() } : {}),
       value: raw === "" ? Number.NaN : Number(raw),
     });
     if (!parsed.success) {

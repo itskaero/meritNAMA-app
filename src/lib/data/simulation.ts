@@ -255,6 +255,9 @@ export async function importSimulationDataset(db: Database, session: Session | n
           appliedIn: c.appliedIn,
           certificates: c.certificates,
           profileStatus: c.profileStatus,
+          verification: c.verification,
+          name: c.name,
+          pmdcNo: c.pmdcNo,
         })),
       );
     }

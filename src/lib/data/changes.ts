@@ -386,7 +386,7 @@ export async function proposeCorrections(db: Database, session: Session | null, 
     }
     const imported = currentValue({ ...r, programMarks: r.programMarks as Record<string, number>, params: r.params as Record<string, number> }, c.field, c.program);
     const from = corrected.has(correctionKey(c)) ? corrected.get(correctionKey(c))! : imported;
-    return { applicantId: c.applicantId, field: c.field, program: c.program, imported, from, to: c.value };
+    return { applicantId: c.applicantId, field: c.field, program: c.program, kind: c.kind, imported, from, to: c.value };
   });
   const changed = preview.filter((p) => p.from !== p.to);
   if (!changed.length) return { applied: true, message: "Nothing changes: every value is already as given." };
@@ -395,7 +395,7 @@ export async function proposeCorrections(db: Database, session: Session | null, 
     kind: "candidate_correction",
     target: single ? `corrections:${input.induction}:${ids[0]}` : `corrections:${input.induction}:file`,
     title: single ? `Correct applicant ${ids[0]} (induction ${input.induction})` : `Correct ${new Set(changed.map((c) => c.applicantId)).size} applicants (induction ${input.induction})`,
-    payload: { induction: input.induction, corrections: changed.map(({ applicantId, field, program, to }) => ({ applicantId, field, program, value: to })) },
+    payload: { induction: input.induction, corrections: changed.map(({ applicantId, field, program, kind, to }) => ({ applicantId, field, program, kind, value: to })) },
     preview: { induction: input.induction, applicants: new Set(changed.map((c) => c.applicantId)).size, unchanged: preview.length - changed.length, rows: changed.slice(0, 500), more: Math.max(0, changed.length - 500) },
     baseline: await correctionsBaseline(db, input.induction),
     reason,
@@ -524,7 +524,7 @@ export async function publishChange(db: Database, sessionIn: Session | null, inp
     case "candidate_correction": {
       const p = c.payload as { induction: number; corrections: Correction[] };
       const inserted = await db.insert(candidateCorrections)
-        .values(p.corrections.map((x) => ({ inductionId: p.induction, applicantId: x.applicantId, field: x.field, program: x.program, value: x.value, reason: why, changeId: c.id, createdBy: session.email })))
+        .values(p.corrections.map((x) => ({ inductionId: p.induction, applicantId: x.applicantId, field: x.field, program: x.program, kind: x.kind ?? "admin", value: x.value, reason: why, changeId: c.id, createdBy: session.email })))
         .returning({ id: candidateCorrections.id });
       snapshot = { induction: p.induction, ids: inserted.map((r) => r.id) };
       await writeAudit(db, session.email, { action: "candidate.correct", entityType: "candidate_correction", entityId: c.id, after: { induction: p.induction, corrections: p.corrections.length }, reason: why });

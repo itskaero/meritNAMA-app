@@ -44,6 +44,10 @@ describe("simulation dataset import", () => {
       appliedIn: { FCPS: true, MS: false },
       certificates: [],
       profileStatus: null,
+      verification: [],
+      // Names and PMDC numbers come only from the public gazette, never from portal candidate files.
+      name: null,
+      pmdcNo: null,
       preferences: [
         { program: "FCPS", preferenceNo: 1, quota: "Punjab", specialityId: 2, hospital: "Mayo Hospital", typeId: 1, disciplineIds: [2], programMarks: 5, parentMarks: 0 },
         { program: "FCPS", preferenceNo: 2, quota: "Punjab", specialityId: 2, hospital: "Services Hospital", typeId: 1, disciplineIds: [2], programMarks: 5, parentMarks: 0 },
@@ -67,7 +71,12 @@ describe("simulation dataset import", () => {
     });
     expect(out[0]).toMatchObject({ baseMarks: 62, programMarks: { FCPS: 4 }, profileStatus: 1 });
     expect(out[0]!.certificates).toEqual([{ disciplineId: 2, typeId: 1, typeName: null, program: null, specialty: null, status: "Pass", certificateMarks: 5, computerizedMarks: 4 }]);
-    expect(JSON.stringify(out)).not.toMatch(/secret-ref|private remark/);
+    // Certificate references stay out; PHF's verification remarks are kept per step (shown on the Candidates page).
+    expect(JSON.stringify(out)).not.toMatch(/secret-ref/);
+    expect(out[0]!.verification).toEqual([
+      { type: 131, label: "Verification : Round 01", status: 2, remarks: "private remark" },
+      { type: 132, label: "Amendment Process", status: 1, remarks: null },
+    ]);
     expect(out[1]!.profileStatus).toBe(2);
     expect(summary).toEqual({ candidates: 2, preferences: 3, withCertificates: 1, withStatus: 2, eligible: 1, correctedMarks: 1, parameters: {}, preferencesWithoutMarks: 0, format: "combined" });
   });
@@ -108,9 +117,9 @@ describe("simulation dataset import", () => {
     expect(() => sanitizeSimDataset({ marks: [{ applicantId: 1, marksTotal: 1 }, { applicantId: 1, marksTotal: 2 }], preferences: [] })).toThrow(/twice/);
   });
 
-  it("reads the gazette: official marks, score parts and eligibility, never names", () => {
+  it("reads the gazette: official marks, score parts, eligibility, name and PMDC; never contacts or CNIC", () => {
     const gazette = { Table: [{}], Table5: [
-      { rowNo: 1, applicantId: 101, marksTotal: 24.07, degree: 12.31, houseJob: 5, experience: 5, fsc: 0, statusId: 1, status: "Eligible", nameFull: "Synthetic Person", pmdcNo: "12345-P" },
+      { rowNo: 1, applicantId: 101, marksTotal: 24.07, degree: 12.31, houseJob: 5, experience: 5, fsc: 0, statusId: 1, status: "Eligible", nameFull: "Synthetic Person", pmdcNo: "12345-P", contactNumber: "0300-1112223", cnic: "35202-1234567-1" },
       { rowNo: 2, applicantId: 102, marksTotal: 19.5, degree: 10, statusId: 2, status: "Rejected", nameFull: "Another Person", pmdcNo: "999-P" },
       { rowNo: 3, applicantId: 103, marksTotal: 18, degree: 9, statusId: 1 },
     ] };
@@ -120,7 +129,9 @@ describe("simulation dataset import", () => {
     expect(out.map((c) => [c.applicantId, c.baseMarks, c.profileStatus, c.preferences.length])).toEqual([["101", 24.07, 1, 1], ["102", 19.5, 2, 1], ["103", 18, 1, 0]]);
     expect(out[0]!.params).toMatchObject({ degree: 12.31, houseJob: 5, experience: 5 });
     expect(Object.keys(out[0]!.params)).not.toContain("rowNo");
-    expect(JSON.stringify(out)).not.toMatch(/Synthetic|Another|12345|999-P/);
+    expect(JSON.stringify(out)).not.toMatch(/0300-1112223|35202-1234567-1/);
+    expect(out[0]).toMatchObject({ name: "Synthetic Person", pmdcNo: "12345-P" });
+    expect(out[2]).toMatchObject({ name: null, pmdcNo: null });
     expect(summary).toMatchObject({ format: "split", gazette: { rows: 3, matched: 3 } });
     // With the portal's combined file, the gazette's marks win; a status file still wins over the gazette.
     const combined = sanitizeSimDataset({ gazette, candidates: [{ applicantId: 101, marksTotal: 30, preferences: [pref(1)] }], profileStatus: { entries: [{ applicantId: 101, statusId: 2, statusTypeId: 132 }] } });
