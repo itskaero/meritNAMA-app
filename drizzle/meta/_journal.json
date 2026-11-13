@@ -183,6 +183,13 @@
       "when": 1794582735802,
       "tag": "0025_candidate_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794583241144,
+      "tag": "0026_activity_counts",
+      "breakpoints": true
     }
   ]
 }

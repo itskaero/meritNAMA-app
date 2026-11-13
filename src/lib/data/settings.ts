@@ -11,6 +11,7 @@ import { sendMail } from "@/lib/mail";
 import { UserFacingError } from "@/lib/errors";
 import { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
 import { requireReason, writeAudit, type Db } from "./shared";
+import { pruneActivity } from "./activity";
 
 export { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey };
 
@@ -156,6 +157,8 @@ async function purge(db: Database, actor: string, reason: string, opts: { root?:
         ? await n(tx.update(candidateLinks).set({ evidenceFile: null }).where(inArray(candidateLinks.id, evidence.map((e) => e.id))).returning({ id: candidateLinks.id }))
         : 0,
     };
+    // Activity counts are short-lived by design (a day of pings, a week of searches); not configurable.
+    await pruneActivity(tx);
     const value = { ...r.days, lastRun: new Date().toISOString(), lastResult: out };
     await tx.insert(appSettings).values({ key: "retention", value, updatedBy: r.updatedBy ?? actor }).onConflictDoUpdate({ target: appSettings.key, set: { value } });
     await writeAudit(tx, actor, { action: "settings.retention_run", entityType: "settings", entityId: "retention", after: out, reason });

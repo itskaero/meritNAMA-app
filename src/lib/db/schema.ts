@@ -1058,3 +1058,32 @@ export const dataFiles = pgTable(
     check("data_files_status", sql`${t.status} in ('new', 'replaces', 'live', 'held', 'problem', 'ignored', 'missing')`),
   ],
 );
+
+// ── Activity counts (counts only, never shown per person) ─────────────────────
+
+/**
+ * Who is looking at a page right now, for "N viewing now". One row per page key and
+ * member, refreshed on each view; only counts within the last few minutes are ever
+ * read. Rows older than a day are removed by the daily retention run.
+ */
+export const activityPings = pgTable(
+  "activity_pings",
+  {
+    key: text("key").notNull(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    seenAt: timestamp("seen_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.userId] }), index("activity_pings_seen_idx").on(t.key, t.seenAt)],
+);
+
+/** Searches per hour and key (a seat, hospital or speciality), for "searched right now". No user is stored. */
+export const searchCounts = pgTable(
+  "search_counts",
+  {
+    key: text("key").notNull(),
+    label: text("label").notNull(),
+    hour: timestamp("hour", { withTimezone: true }).notNull(),
+    n: integer("n").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.hour] }), index("search_counts_hour_idx").on(t.hour)],
+);

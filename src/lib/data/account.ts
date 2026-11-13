@@ -4,6 +4,7 @@ import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
   accessRequests,
+  activityPings,
   candidateLinks,
   chatBlocks,
   chatMembers,
@@ -105,6 +106,7 @@ export async function deleteMyAccount(db: Database, session: Session | null, inp
     await tx.delete(chatBlocks).where(or(eq(chatBlocks.blockerId, me.id), eq(chatBlocks.blockedId, me.id)));
     await tx.delete(chatMessages).where(eq(chatMessages.authorId, me.id));
     await tx.delete(chatMembers).where(eq(chatMembers.userId, me.id));
+    await tx.delete(activityPings).where(eq(activityPings.userId, me.id));
     await tx
       .update(users)
       .set({ email: `deleted-${me.id}@deleted.invalid`, displayName: "Deleted member", shortlistAlerts: false, showBand: false, peerCounted: false, dmOpen: false })
