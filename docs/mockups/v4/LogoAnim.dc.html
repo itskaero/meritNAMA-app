@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>meritNAMA logo B · animated</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Noto+Nastaliq+Urdu:wght@500;700&amp;family=Noto+Naskh+Arabic:wght@500&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0;background:#0C0C0E}
+.m{color:#8B8B93}
+.cell{border-radius:18px;border:1px solid rgba(255,255,255,.07);background:#141418;display:flex;align-items:center;justify-content:center;position:relative;padding:22px;box-sizing:border-box;overflow:hidden}
+.cap{position:absolute;left:16px;top:12px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#7B61FF;font-weight:700}
+.en{font-family:Inter,sans-serif;color:#F3EEE5;letter-spacing:-.01em}
+.ur{font-family:'Noto Nastaliq Urdu',serif;color:#F3EEE5;direction:rtl}
+
+/* Intro: draw the stroke, then drop the rank point; cycle every 6 s for the showcase (in the app it plays once). */
+.mk .stroke{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 6s cubic-bezier(.65,0,.35,1) infinite}
+.mk .pt{transform-box:fill-box;transform-origin:center;animation:drop 6s cubic-bezier(.34,1.56,.64,1) infinite}
+.mk .ping{transform-box:fill-box;transform-origin:center;animation:ping 6s ease-out infinite}
+.mk .glow{animation:glow 6s ease-in-out infinite}
+@keyframes draw{0%{stroke-dashoffset:1}28%{stroke-dashoffset:0}88%{stroke-dashoffset:0;opacity:1}96%{opacity:0;stroke-dashoffset:0}100%{opacity:0;stroke-dashoffset:1}}
+@keyframes drop{0%,24%{opacity:0;transform:translateY(-26px) scale(.4)}34%{opacity:1;transform:translateY(0) scale(1.35)}40%{transform:translateY(0) scale(1)}55%{transform:scale(1.18)}62%{transform:scale(1)}74%{transform:scale(1.18)}80%{transform:scale(1)}88%{opacity:1}96%,100%{opacity:0;transform:scale(1)}}
+@keyframes ping{0%,36%{opacity:0;transform:scale(1)}40%{opacity:.8;transform:scale(1)}56%{opacity:0;transform:scale(3.2)}60%{opacity:.6;transform:scale(1)}76%{opacity:0;transform:scale(3.2)}100%{opacity:0}}
+@keyframes glow{0%,26%{filter:drop-shadow(0 0 0 rgba(123,97,255,0))}40%{filter:drop-shadow(0 0 16px rgba(123,97,255,.85))}60%,85%{filter:drop-shadow(0 0 9px rgba(123,97,255,.55))}100%{filter:drop-shadow(0 0 0 rgba(123,97,255,0))}}
+
+/* Idle: after the intro, only the rank point breathes (the steady state in the app). */
+.idle .pt{transform-box:fill-box;transform-origin:center;animation:breathe 2.4s ease-in-out infinite}
+.idle .ping{transform-box:fill-box;transform-origin:center;animation:ping2 2.4s ease-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes ping2{0%{opacity:.7;transform:scale(1)}70%,100%{opacity:0;transform:scale(3)}}
+
+/* Loader: the gesture draws and undraws continuously. */
+.ld .stroke{stroke-dasharray:.32 .68;animation:run 1.6s linear infinite}
+@keyframes run{to{stroke-dashoffset:-1}}
+
+/* Hover (sidebar logo): point lifts and glows. */
+.hv{transition:filter .3s}.hv:hover{filter:drop-shadow(0 0 12px rgba(123,97,255,.8))}
+.hv .pt{transform-box:fill-box;transform-origin:center;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.hv:hover .pt{transform:translateY(-6px) scale(1.2)}
+
+@media (prefers-reduced-motion: reduce){.mk .stroke,.mk .pt,.mk .ping,.mk .glow,.idle .pt,.idle .ping,.ld .stroke{animation:none!important}.mk .stroke{stroke-dashoffset:0}.ping{opacity:0}.ld .stroke{stroke-dasharray:none}}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 980px; box-sizing: border-box; padding: 44px 52px; background: radial-gradient(700px 400px at 20% 0%, rgba(123,97,255,0.16), transparent 70%), #0C0C0E; color: #EDEDEF; font-family: Inter, system-ui, sans-serif">
+  <p style="margin: 0; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #9B87FF; font-weight: 700">Logo B · Rank point · animated</p>
+  <h1 style="margin: 8px 0 4px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em">The gesture draws itself, then you land on the map</h1>
+  <p class="m" style="margin: 0 0 24px">Intro plays once on load (here it repeats every 6 s to preview). Idle keeps only a soft pulse on the rank point. Reduced motion shows the finished mark, still.</p>
+
+  <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px">
+    <div class="cell" style="height: 470px; background: radial-gradient(420px 300px at 50% 55%, rgba(123,97,255,0.18), transparent 70%), #121216"><span class="cap">Intro · hero and splash</span>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 22px">
+        <svg class="mk" viewBox="0 0 110 106" width="250" height="241" fill="none" role="img" aria-label="meritNAMA">
+          <g class="glow"><path class="stroke" pathLength="1" d="M14 90 V44 a13 13 0 0 1 26 0 V90 M40 44 a13 13 0 0 1 26 0 a14 14 0 1 1 28 0 a14 14 0 1 1 -28 0 V98" stroke="#9B87FF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"></path></g>
+          <circle class="ping" cx="80" cy="12" r="6.5" fill="none" stroke="#B9AAFF" stroke-width="1.5"></circle>
+          <circle class="pt" cx="80" cy="12" r="6.5" fill="#C4B8FF" style="filter: drop-shadow(0 0 6px #9B87FF)"></circle>
+        </svg>
+        <div style="display: flex; gap: 28px; align-items: baseline">
+          <div class="en" style="font-size: 40px"><span style="font-weight: 400">merit</span><span style="font-weight: 700">NAMA</span></div>
+          <div class="ur" lang="ur" style="font-size: 34px; line-height: 1.5">میرٹ نامہ</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-rows: 1fr 1fr; gap: 16px">
+      <div class="cell"><span class="cap">Idle · sidebar and headers (hover me)</span>
+        <div class="hv idle" style="display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-radius: 14px; cursor: pointer">
+          <svg viewBox="0 0 110 106" width="64" height="62" fill="none" aria-hidden="true"><path d="M14 90 V44 a13 13 0 0 1 26 0 V90 M40 44 a13 13 0 0 1 26 0 a14 14 0 1 1 28 0 a14 14 0 1 1 -28 0 V98" stroke="#9B87FF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"></path><circle class="ping" cx="80" cy="12" r="6.5" fill="none" stroke="#B9AAFF" stroke-width="1.5"></circle><circle class="pt" cx="80" cy="12" r="6.5" fill="#C4B8FF"></circle></svg>
+          <div class="en" style="font-size: 30px"><span style="font-weight: 400">merit</span><span style="font-weight: 700">NAMA</span></div>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+        <div class="cell" style="flex-direction: column; gap: 10px"><span class="cap">Loader</span>
+          <svg class="ld" viewBox="0 0 110 106" width="84" height="81" fill="none" role="img" aria-label="Loading"><path d="M14 90 V44 a13 13 0 0 1 26 0 V90 M40 44 a13 13 0 0 1 26 0 a14 14 0 1 1 28 0 a14 14 0 1 1 -28 0 V98" stroke="rgba(155,135,255,0.18)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"></path><path class="stroke" pathLength="1" d="M14 90 V44 a13 13 0 0 1 26 0 V90 M40 44 a13 13 0 0 1 26 0 a14 14 0 1 1 28 0 a14 14 0 1 1 -28 0 V98" stroke="#B9AAFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 6px rgba(155,135,255,0.8))"></path></svg>
+          <span class="m" style="font-size: 12px">Loading round 5…</span>
+        </div>
+        <div class="cell" style="flex-direction: column; gap: 12px"><span class="cap">App icon · favicon</span>
+          <span class="idle" style="width: 86px; height: 86px; border-radius: 22px; background: linear-gradient(160deg, #18304D, #10243A); display: grid; place-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5)"><svg viewBox="0 0 110 106" width="56" height="54" fill="none" aria-hidden="true"><path d="M16 88 V46 a12 12 0 0 1 24 0 V88 M40 46 a12 12 0 0 1 24 0 a15 15 0 1 1 30 0 a15 15 0 1 1 -30 0 V92" stroke="#F3EEE5" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"></path><circle class="pt" cx="79" cy="11" r="7" fill="#B9AAFF"></circle></svg></span>
+          <span class="m" style="font-size: 11px">Icon and favicon stay still (compact strokes)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 18px; padding: 16px 18px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); font-size: 13px; line-height: 1.6">
+    <b>Where each plays:</b> intro on the public landing hero, the sign-in panel and first load after sign-in (once per session) · idle pulse on the sidebar logo, with a lift on hover · loader on page transitions and while a list or estimate loads · still everywhere when reduced motion is on, in emails, the favicon and the app icon.
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
