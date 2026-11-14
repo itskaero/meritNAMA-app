@@ -8,7 +8,6 @@ import { AuroraHeader } from "@/components/ui/aurora-header";
 import { Card, CardHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Pill, Segmented } from "@/components/ui/segmented";
 import { cycleSteps } from "@/lib/admin/today";
 import { getSession } from "@/lib/auth/session";
 import { topSearches } from "@/lib/data/activity";
@@ -23,8 +22,6 @@ import { findSection } from "@/lib/navigation";
 export const metadata = { title: "Merit lists" };
 export const dynamic = "force-dynamic";
 
-const IVORY = "text-[#F3EEE5]";
-const IVORY_DIM = "text-[#F3EEE5]/65";
 const fmt = (n: number) => n.toLocaleString("en-US");
 const FILTERS = ["all", "same", "running"] as const;
 
@@ -67,156 +64,166 @@ export default async function MeritListsPage({ searchParams }: { searchParams: P
   const shown = inductions.filter((i) => (show === "running" ? i.id === latest.id && running : show === "same" ? i.maxMarks === latest.maxMarks : true));
   const delta = now?.medianClosing != null && before?.medianClosing != null ? now.medianClosing - before.medianClosing : null;
 
+  const short = (h: string) => h.split(",")[0]!;
+  const spark = (d: string, c: string, rgb: string) => (
+    <svg aria-hidden width="110" height="40" viewBox="0 0 110 40" className="flex-none"><path className="mn-draw-line" d={d} fill="none" stroke={c} strokeWidth="2.5" style={{ filter: `drop-shadow(0 0 5px rgba(${rgb},0.7))` }} /></svg>
+  );
+
   return (
     <AreaPage {...frame} bare>
-      <AuroraHeader as="section" className="grid gap-5 p-5 sm:p-7">
-        <p className={cn("flex items-center gap-2 text-xs", IVORY_DIM)}>
-          <span aria-hidden className={cn("h-2 w-2 rounded-full", running ? "bg-success shadow-[0_0_10px_var(--mn-success)]" : "bg-white/40")} />
-          Round {last.roundNo} of induction {latest.id} is {running ? "live" : "the last list"}
-        </p>
-        <div>
-          <h1 className={cn("text-3xl font-semibold tracking-tight sm:text-4xl", IVORY)}>Merit lists</h1>
-          {now?.medianClosing != null ? (
-            <p className={cn("mt-1 text-sm", IVORY_DIM)}>
-              Round {last.roundNo} closed at a median of <span className={cn("font-semibold", IVORY)}>{formatMarks(now.medianClosing)}</span>
-              {delta != null ? <>, <span className={delta <= 0 ? "text-success" : "text-danger"}>{Math.abs(delta).toFixed(2)} {delta <= 0 ? "lower" : "higher"}</span> than round {before!.roundNo}</> : null}.
-              {prev ? ` Merit fell in ${fellIn} of ${specs} specialities.` : ""}
+      <AuroraHeader as="section" className="grid gap-[18px] px-5 py-[22px] sm:px-6">
+        <div className="grid items-end gap-4 lg:grid-cols-[minmax(0,1fr)_460px]">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-[13px] text-[#F3EEE5]/[.68]">
+              <span aria-hidden className={cn("h-2 w-2 rounded-full", running ? "mn-live bg-[#3DDC97] shadow-[0_0_10px_#3DDC97]" : "bg-white/40")} />
+              Round {last.roundNo} of induction {latest.id} is {running ? "live" : "the last list"}
             </p>
-          ) : null}
+            <h1 className="mt-2 text-[2rem] font-bold tracking-[-0.03em] sm:text-[36px]">Merit lists</h1>
+            {now?.medianClosing != null ? (
+              <p className="mt-1.5 max-w-[640px] text-[#F3EEE5]/[.68]">
+                Round {last.roundNo} closed at a median of <b className="text-[#F3EEE5]">{formatMarks(now.medianClosing)}</b>
+                {delta != null ? <>, <span className={delta <= 0 ? "text-[#3DDC97]" : "text-[#FF7A7A]"}>{Math.abs(delta).toFixed(2)} {delta <= 0 ? "lower" : "higher"}</span> than round {before!.roundNo}</> : null}.
+                {prev ? ` Merit fell in ${fellIn} of ${specs} specialities.` : ""}
+              </p>
+            ) : null}
+          </div>
+          <form method="get" action="/portal/history/find" role="search" className="flex w-full gap-2">
+            <label className="flex h-11 flex-1 items-center gap-2 rounded-xl border border-[#F3EEE5]/[.18] bg-[rgba(16,36,58,.55)] px-3.5 text-[#F3EEE5]/60">
+              <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <span className="sr-only">Find anyone</span>
+              <input name="q" autoComplete="off" placeholder="Find anyone: name, PMDC or ID" className="h-full min-w-0 flex-1 bg-transparent text-sm text-[#F3EEE5] outline-none placeholder:text-[#F3EEE5]/60" />
+            </label>
+            <button type="submit" className="mn-btn h-11 rounded-xl px-[18px] text-[13px] font-semibold">Find</button>
+          </form>
         </div>
-        <form method="get" action="/portal/history/find" role="search" className="flex max-w-2xl gap-2">
-          <label className="sr-only" htmlFor="find-q">Find anyone</label>
-          <input id="find-q" name="q" autoComplete="off" placeholder="Find anyone: name, PMDC number or applicant ID" className="h-11 min-w-0 flex-1 rounded-xl border border-white/15 bg-black/25 px-4 text-sm text-[#F3EEE5] placeholder:text-[#F3EEE5]/45" />
-          <button type="submit" className="mn-btn h-11 rounded-xl px-5 text-sm font-semibold">Find</button>
-        </form>
         <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {([["Inductions", fmt(overview.inductions)], ["Rounds published", fmt(overview.rounds)], ["Allocations on record", fmt(overview.allocations)], ["Next list", nextText]] as const).map(([l, v], i) => (
-            <div key={l} className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-              <dt className={cn("text-xs", IVORY_DIM)}>{l}</dt>
-              <dd className={cn("mt-1 truncate text-2xl font-semibold tabular-nums", i === 3 ? "text-amber" : IVORY)}>{v}</dd>
-            </div>
+            <div key={l} className="mn-glass"><dt className="text-xs text-[#F3EEE5]/[.68]">{l}</dt><dd className={cn("mt-1 truncate text-2xl font-bold tabular-nums", i === 3 && "text-[#E5A04B]")}>{v}</dd></div>
           ))}
         </dl>
       </AuroraHeader>
 
       {ticker.length ? (
-        <div className="-mx-1 overflow-x-auto rounded-xl border border-line bg-card px-4 py-2.5" aria-label={`Biggest moves in round ${last.roundNo}`}>
-          <ul className="flex gap-6 whitespace-nowrap text-sm">
-            {ticker.map((g) => (
-              <li key={`${g.program}|${g.quota}|${g.speciality}|${g.hospital}`} className="text-muted">
-                {g.speciality} · {g.hospital.split(",")[0]} <span className={g.delta < 0 ? "text-success" : "text-danger"}>{g.delta < 0 ? "▼" : "▲"} {Math.abs(g.delta).toFixed(2)}</span>
-              </li>
+        <div aria-label={`Biggest moves in round ${last.roundNo}`} className="overflow-hidden whitespace-nowrap rounded-xl border border-white/[.07] bg-[rgba(23,23,28,.82)] py-2.5 text-[13px]">
+          <div className="mn-ticker pl-4">
+            {[...ticker, ...ticker].map((g, i) => (
+              <span key={i} aria-hidden={i >= ticker.length ? true : undefined}>
+                <span className="text-muted">{g.speciality} · {short(g.hospital)}</span>{" "}
+                <span className={g.delta < 0 ? "text-[#3DDC97]" : "text-[#FF7A7A]"}>{g.delta < 0 ? "▼" : "▲"} {Math.abs(g.delta).toFixed(2)}</span>
+              </span>
             ))}
-          </ul>
+          </div>
         </div>
       ) : null}
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         {biggestFall && biggestFall.delta < 0 ? (
-          <Link href={`/portal/history/${latest.id}/rounds/${last.roundNo}?speciality=${encodeURIComponent(biggestFall.speciality)}`} className="rounded-2xl border border-line bg-card p-4 hover:border-success/40">
+          <Link href={`/portal/history/${latest.id}/rounds/${last.roundNo}?tab=closing&speciality=${encodeURIComponent(biggestFall.speciality)}`} className="mn-card-glass mn-hover rounded-[20px] border border-line p-4">
             <p className="text-xs text-muted">↘ Biggest fall this round</p>
-            <p className="mt-1 truncate font-semibold text-heading">{biggestFall.speciality} · {biggestFall.hospital.split(",")[0]}</p>
-            <p className="text-2xl font-semibold tabular-nums text-success">▼ {Math.abs(biggestFall.delta).toFixed(2)}</p>
+            <div className="mt-2 flex items-end justify-between gap-2">
+              <div className="min-w-0"><b className="block truncate">{biggestFall.speciality} · {short(biggestFall.hospital)}</b><p className="mt-1 text-[22px] font-bold text-[#3DDC97]">▼ {Math.abs(biggestFall.delta).toFixed(2)}</p></div>
+              {spark("M2 6 C25 8, 40 16, 60 22 S 95 34, 108 36", "#3DDC97", "61,220,151")}
+            </div>
           </Link>
         ) : null}
         {hardest ? (
-          <Link href={`/portal/history/${latest.id}/rounds/${last.roundNo}?speciality=${encodeURIComponent(hardest.speciality)}`} className="rounded-2xl border border-line bg-card p-4 hover:border-danger/40">
+          <Link href={`/portal/history/${latest.id}/rounds/${last.roundNo}?tab=closing&speciality=${encodeURIComponent(hardest.speciality)}`} className="mn-card-glass mn-hover rounded-[20px] border border-line p-4">
             <p className="text-xs text-muted">↗ Hardest seat</p>
-            <p className="mt-1 truncate font-semibold text-heading">{hardest.speciality} · {hardest.hospital.split(",")[0]}</p>
-            <p className="font-mono text-2xl font-semibold tabular-nums text-danger">{formatMarks(hardest.closing)}</p>
+            <div className="mt-2 flex items-end justify-between gap-2">
+              <div className="min-w-0"><b className="block truncate">{hardest.speciality} · {short(hardest.hospital)}</b><p className="mt-1 font-mono text-[22px] font-bold text-[#FF7A7A]">{formatMarks(hardest.closing)}</p></div>
+              {spark("M2 36 C25 34, 45 26, 62 20 S 95 8, 108 4", "#FF7A7A", "255,122,122")}
+            </div>
           </Link>
         ) : null}
-        <Link href={est ? `/portal/estimates?run=${est.id}` : "/portal/calendar"} className="rounded-2xl border border-line bg-card p-4 hover:border-violet-soft/40">
+        <Link href={est ? `/portal/estimates?run=${est.id}` : "/portal/calendar"} className="mn-card-glass mn-hover rounded-[20px] border border-line p-4">
           <p className="text-xs text-muted">◷ Coming next</p>
-          <p className="mt-1 font-semibold text-heading">{est ? `Estimated round ${est.roundNo}` : running ? `Round ${last.roundNo + 1}` : nextPhf ? nextPhf.title : "Next induction"}</p>
-          <p className="flex items-center justify-between gap-2 text-xl font-semibold text-amber">
-            <span>{est ? "Out now" : nextPhf ? nextPhf.when : running ? "after consent" : "not announced"}</span>
-            {est ? <Pill tone="violet">Estimate</Pill> : null}
-          </p>
+          <div className="mt-2 flex items-end justify-between gap-2">
+            <div className="min-w-0"><b className="block truncate">{est ? `Estimated round ${est.roundNo}` : running ? `Round ${last.roundNo + 1}` : nextPhf ? nextPhf.title : "Next induction"}</b><p className="mt-1 text-[22px] font-bold text-[#E5A04B]">{est ? "Out now" : nextPhf ? nextPhf.when : running ? "After consent" : "Not announced"}</p></div>
+            {est ? <span className="mn-pill v">Estimate</span> : null}
+          </div>
         </Link>
       </div>
 
       <EstimateListCard estimates={estimates} />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <Card>
-          <CardHeader title="Inductions" action={<Segmented label="Show" items={[
-            { href: "/portal/history", label: "All", active: show === "all" },
-            { href: "/portal/history?show=same", label: "Scored like now", active: show === "same" },
-            { href: "/portal/history?show=running", label: "Running", active: show === "running" },
-          ]} />} />
-          {shown.length ? (
-            <div className="-mx-5 overflow-x-auto sm:-mx-6">
-              <table className="w-full min-w-[48rem] text-sm">
-                <thead className="text-left text-xs text-subtle">
-                  <tr><th className="px-5 py-2 font-medium sm:px-6">Induction</th><th className="px-2 py-2 font-medium">Rounds</th><th className="px-2 py-2 text-right font-medium">Allocations</th><th className="px-2 py-2 text-right font-medium">Median</th><th className="px-2 py-2 pr-5 font-medium sm:pr-6">Scoring</th></tr>
-                </thead>
-                <tbody>
-                  {shown.map((ind) => {
-                    const t = tl.get(ind.id) ?? [];
-                    const lastT = t.at(-1);
-                    const isRunning = ind.id === latest.id && running;
-                    const estHere = estimates.find((e) => !e.official && e.induction === ind.id);
-                    const same = ind.maxMarks === latest.maxMarks;
-                    return (
-                      <tr key={ind.id} className="border-t border-line">
-                        <td className="px-5 py-2.5 sm:px-6">
-                          <Link href={`/portal/history/${ind.id}`} className="whitespace-nowrap font-semibold text-heading hover:underline">Induction {ind.id}</Link>
-                          {isRunning ? <Pill tone="success" className="ml-2">Running</Pill> : null}
-                          <span className="block text-xs text-muted">{ind.rounds[0]!.cycleName}</span>
-                        </td>
-                        <td className="px-2 py-2.5">
-                          <ol className="flex gap-1">
-                            {ind.rounds.map((r) => (
-                              <li key={r.roundNo}>
-                                <Link href={`/portal/history/${ind.id}/rounds/${r.roundNo}`} title={`${fmt(r.allocations)} allocations`}
-                                  className={cn("grid h-8 min-w-10 place-items-center rounded-lg px-2 text-xs font-semibold", r.roundNo === ind.rounds.at(-1)!.roundNo && isRunning ? "mn-btn" : "border border-line bg-hover/40 text-muted hover:text-ink")}>R{r.roundNo}</Link>
-                              </li>
-                            ))}
-                            {estHere ? <li><Link href={`/portal/estimates?run=${estHere.id}`} className="grid h-8 min-w-10 place-items-center rounded-lg border border-dashed border-amber/60 px-2 text-xs font-semibold text-amber">R{estHere.roundNo}</Link></li> : null}
-                          </ol>
-                        </td>
-                        <td className="px-2 py-2.5 text-right font-mono tabular-nums">{lastT ? fmt(lastT.allocations) : "—"}</td>
-                        <td className="px-2 py-2.5 text-right font-mono tabular-nums">{lastT?.medianClosing != null ? formatMarks(lastT.medianClosing) : "—"}</td>
-                        <td className="px-2 py-2.5 pr-5 sm:pr-6">{ind.maxMarks ? <span className={cn("whitespace-nowrap rounded-md px-2 py-0.5 text-xs", same ? "bg-[var(--mn-violet-fill)] text-violet-pale" : "bg-hover text-muted")}>out of {ind.maxMarks}{same && ind.id === latest.id ? " · now" : ""}</span> : null}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : <p className="text-sm text-muted">No induction matches.</p>}
-          <p className="mt-3 text-xs text-muted">Grey scoring was different from today&apos;s, so compare with care.</p>
-        </Card>
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <section aria-labelledby="inds" className="mn-card-glass overflow-hidden rounded-[20px] border border-line">
+          <header className="flex flex-wrap items-center justify-between gap-3 px-4 pb-2.5 pt-4">
+            <h2 id="inds" className="text-[15px] font-semibold text-heading">Inductions</h2>
+            <nav aria-label="Show" className="mn-seg">
+              <Link href="/portal/history" aria-current={show === "all" ? "page" : undefined}>All</Link>
+              <Link href="/portal/history?show=same" aria-current={show === "same" ? "page" : undefined}>Scored like now</Link>
+              <Link href="/portal/history?show=running" aria-current={show === "running" ? "page" : undefined}>Running</Link>
+            </nav>
+          </header>
+          <div className="overflow-x-auto">
+            <table className="mn-tbl min-w-[46rem]">
+              <thead><tr><th scope="col">Induction</th><th scope="col">Rounds</th><th scope="col" className="!text-right">Allocations</th><th scope="col" className="!text-right">Median</th><th scope="col">Scoring</th></tr></thead>
+              <tbody>
+                {shown.map((ind) => {
+                  const t = tl.get(ind.id) ?? [];
+                  const lastT = t.at(-1), beforeT = t.at(-2);
+                  const isRunning = ind.id === latest.id && running;
+                  const estHere = estimates.find((e) => !e.official && e.induction === ind.id);
+                  const same = ind.maxMarks === latest.maxMarks;
+                  return (
+                    <tr key={ind.id}>
+                      <td>
+                        <Link href={`/portal/history/${ind.id}`} className="whitespace-nowrap font-bold text-ink">Induction {ind.id}</Link>
+                        {isRunning ? <span className="mn-pill g ml-1.5"><span className="mn-live">●</span> Running</span> : null}
+                        <span className="block text-xs text-muted">{ind.rounds[0]!.cycleName}</span>
+                      </td>
+                      <td>
+                        <span className="flex gap-[5px]">
+                          {ind.rounds.map((r) => (
+                            <Link key={r.roundNo} href={`/portal/history/${ind.id}/rounds/${r.roundNo}`} title={`${fmt(r.allocations)} allocations`} className={cn("mn-chip", isRunning && r.roundNo === ind.rounds.at(-1)!.roundNo && "on")}>R{r.roundNo}</Link>
+                          ))}
+                          {estHere ? <Link href={`/portal/estimates?run=${estHere.id}`} className="mn-chip est">R{estHere.roundNo}</Link> : null}
+                        </span>
+                      </td>
+                      <td className="text-right font-mono">{lastT ? fmt(lastT.allocations) : "—"}</td>
+                      <td className="whitespace-nowrap text-right font-mono">
+                        {lastT?.medianClosing != null ? formatMarks(lastT.medianClosing) : "—"}
+                        {lastT?.medianClosing != null && beforeT?.medianClosing != null ? <span className={lastT.medianClosing <= beforeT.medianClosing ? "text-[#3DDC97]" : "text-[#FF7A7A]"}> {lastT.medianClosing <= beforeT.medianClosing ? "▼" : "▲"}</span> : null}
+                      </td>
+                      <td>{ind.maxMarks ? <span className={cn("mn-pill", same ? "v" : "n")}>out of {ind.maxMarks}{same && ind.id === latest.id ? " · now" : ""}</span> : null}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="border-t border-white/5 px-4 pb-3.5 pt-3 text-xs text-muted">Grey scoring was different from today&apos;s, so compare with care.</p>
+        </section>
 
-        <div className="grid content-start gap-5">
+        <aside className="grid gap-4">
           {searches.length ? (
-            <Card>
-              <CardHeader title="Searched right now" action={<Pill tone="success">live</Pill>} />
-              <ul className="grid gap-1.5 text-sm">{searches.map((x) => <li key={x.key} className="flex justify-between gap-3"><span className="truncate">{x.label}</span><span className="tabular-nums text-muted">{fmt(x.n)}</span></li>)}</ul>
-            </Card>
+            <section className="mn-card-glass rounded-[20px] border border-line p-4">
+              <div className="flex items-center justify-between"><h2 className="text-[15px] font-semibold text-heading">Searched right now</h2><span className="mn-pill g"><span className="mn-live">●</span> live</span></div>
+              <ol className="mt-3 grid gap-2.5 text-[13px]">{searches.map((x) => <li key={x.key} className="flex justify-between gap-3"><span className="truncate">{x.label}</span><span className="text-muted">{fmt(x.n)}</span></li>)}</ol>
+            </section>
           ) : null}
           {now ? (
-            <Card>
-              <CardHeader title={`Round ${now.roundNo} in numbers`} />
+            <section className="mn-card-glass rounded-[20px] border border-line p-4">
+              <h2 className="text-[15px] font-semibold text-heading">Round {now.roundNo} in numbers</h2>
               {now.accepted + now.rejected + now.notAvail ? (
                 <>
-                  <div className="flex h-7 gap-1 overflow-hidden rounded-lg" aria-hidden>
-                    <span className="bg-success" style={{ flex: now.accepted }} />
-                    <span className="bg-danger" style={{ flex: now.rejected }} />
-                    <span className="bg-white/20" style={{ flex: now.notAvail }} />
+                  <div aria-hidden className="mt-3.5 flex h-7 gap-[3px]">
+                    <span className="rounded-md bg-[#3DDC97] shadow-[0_0_12px_rgba(61,220,151,.4)]" style={{ flex: now.accepted }} />
+                    <span className="rounded-md bg-[#FF7A7A]" style={{ flex: now.rejected }} />
+                    <span className="rounded-md bg-white/20" style={{ flex: now.notAvail }} />
                   </div>
-                  <p className="mt-2 flex flex-wrap gap-x-3 text-xs text-muted">
-                    <span className="text-success">● Accepted {Math.round((now.accepted / now.allocations) * 100)}%</span>
-                    <span className="text-danger">● Rejected {Math.round((now.rejected / now.allocations) * 100)}%</span>
+                  <p className="mt-2.5 flex flex-wrap gap-3 text-xs text-muted">
+                    <span><span className="text-[#3DDC97]">●</span> Accepted {Math.round((now.accepted / now.allocations) * 100)}%</span>
+                    <span><span className="text-[#FF7A7A]">●</span> Rejected {Math.round((now.rejected / now.allocations) * 100)}%</span>
                     <span>● N/A {Math.round((now.notAvail / now.allocations) * 100)}%</span>
                   </p>
                 </>
-              ) : <p className="text-sm text-muted">{fmt(now.allocations)} allocations, {fmt(now.applicants)} candidates. Consent is not on this list.</p>}
-              <Link href={`/portal/history/${latest.id}/rounds/${now.roundNo}`} className="mn-btn-ghost mt-3 inline-flex h-9 w-full items-center justify-center rounded-lg text-sm">Open round {now.roundNo}</Link>
-            </Card>
+              ) : <p className="mt-3 text-[13px] text-muted">{fmt(now.allocations)} allocations, {fmt(now.applicants)} candidates. Consent is not on this list.</p>}
+              <Link href={`/portal/history/${latest.id}/rounds/${now.roundNo}`} className="mn-ob mt-3.5 w-full">Open round {now.roundNo}</Link>
+            </section>
           ) : null}
-        </div>
+        </aside>
       </div>
 
       {seats.inductions.length > 1 ? (

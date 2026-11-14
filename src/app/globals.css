@@ -223,6 +223,35 @@ html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger te
 @keyframes mn-card-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (hover: hover) { .mn-card-glass.mn-hover:hover { transform: translateY(-3px); border-color: rgba(155,135,255,.35); box-shadow: 0 18px 40px rgba(0,0,0,.45), 0 0 32px rgba(110,86,255,.18); } }
 
+/*
+ * Pieces repeated across the mockups (docs/mockups/v4): table, round chips, pills, the small
+ * outlined button, glass tiles in a hero, and the scrolling ticker.
+ */
+.mn-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mn-tbl th { padding: 10px 14px; font-weight: 500; font-size: 12px; color: #8B8B93; text-align: left; border-bottom: 1px solid rgba(255,255,255,.07); }
+.mn-tbl td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.mn-tbl tbody tr { transition: background .2s; }
+.mn-tbl tbody tr:hover { background: rgba(110,86,255,.08); }
+.mn-tbl tbody tr:last-child td { border-bottom: 0; }
+.mn-chip { display: inline-grid; place-items: center; min-width: 34px; height: 28px; padding: 0 6px; border-radius: 8px; background: #1E1E24; color: #C9C9D1; font-size: 12px; font-weight: 600; transition: box-shadow .2s, background .2s; }
+.mn-chip:hover { background: #2A2A33; box-shadow: 0 0 12px rgba(110,86,255,.4); }
+.mn-chip.on { background: linear-gradient(90deg, rgba(255,255,255,.05) 20%, rgba(110,86,255,.45)); border: 1px solid rgba(155,135,255,.65); color: #fff; box-shadow: inset -2px 0 0 #7B61FF, 0 0 14px rgba(110,86,255,.4); }
+.mn-chip.est { background: transparent; border: 1px dashed rgba(229,160,75,.7); color: #E5A04B; }
+.mn-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
+.mn-pill.g { background: rgba(61,220,151,.14); color: #3DDC97; }
+.mn-pill.a { background: rgba(229,160,75,.16); color: #E5A04B; }
+.mn-pill.r { background: rgba(255,122,122,.15); color: #FF7A7A; }
+.mn-pill.v { background: rgba(155,135,255,.18); color: #C4B8FF; }
+.mn-pill.c { background: rgba(92,225,230,.13); color: #5CE1E6; }
+.mn-pill.n { background: rgba(255,255,255,.06); color: #A3A3AD; }
+.mn-ob { display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid rgba(255,255,255,.14); color: #EDEDEF; font-size: 12px; font-weight: 500; transition: border-color .2s, box-shadow .2s; }
+.mn-ob:hover { border-color: rgba(155,135,255,.7); box-shadow: 0 0 16px rgba(110,86,255,.35); color: #fff; }
+.mn-glass { background: rgba(16,36,58,.45); border: 1px solid rgba(243,238,229,.12); border-radius: 16px; padding: 14px 16px; transition: transform .25s, border-color .25s; }
+.mn-glass:hover { transform: translateY(-2px); border-color: rgba(229,160,75,.45); }
+.mn-ticker { display: flex; gap: 34px; width: max-content; animation: mn-ticker 40s linear infinite; }
+@keyframes mn-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .mn-ticker, .mn-glass { animation: none; transition: none; } }
+
 /* Lines that draw themselves in (sparklines, the Overview chart). */
 .mn-draw-line { stroke-dasharray: 1200; stroke-dashoffset: 1200; animation: mn-draw-line 2.2s ease forwards; }
 @keyframes mn-draw-line { to { stroke-dashoffset: 0; } }
