@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
-import { StatTiles } from "@/components/charts/stat-tiles";
+import { AuroraHeader } from "@/components/ui/aurora-header";
 import { ThreadList } from "@/components/community/thread-list";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { ButtonLink } from "@/components/ui/button";
@@ -61,8 +61,20 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
       trail={about ? [{ label: s.label, href: "/portal/community" }, { label: about.label }] : [{ label: s.label }]}
       title={about ? `Questions: ${about.label}` : s.label}
       description={s.description}
+      bare
     >
-      <StatTiles stats={[{ label: "Questions", value: stats.threads }, { label: "Answers", value: stats.replies }]} />
+      <AuroraHeader as="section" className="relative overflow-hidden p-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/v4/library-group.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-25" />
+        <div className="relative flex flex-wrap items-end justify-between gap-4 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-5 pt-20 sm:p-7 sm:pt-28">
+          <div>
+            <p className="text-xs text-[#F3EEE5]/70">{about ? <><Link href="/portal/community" className="hover:underline">Community</Link> / {about.label}</> : `${stats.threads.toLocaleString("en-US")} questions · ${stats.replies.toLocaleString("en-US")} answers`}</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-[#F3EEE5] sm:text-4xl">{about ? about.label : s.label}</h1>
+            <p className="mt-1 max-w-xl text-sm text-[#F3EEE5]/70">{about ? "Questions and answers on this topic." : s.description}</p>
+          </div>
+          <Link href={`/portal/community/new${topicQ ? `?topic=${encodeURIComponent(topicQ)}` : ""}`} className="mn-btn inline-flex h-11 items-center rounded-xl px-4 text-sm font-semibold">Ask a question</Link>
+        </div>
+      </AuroraHeader>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="grid min-w-0 content-start gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
