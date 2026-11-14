@@ -3,6 +3,7 @@ import { latestJoining } from "@/lib/data/joining";
 import { ChancesTabs } from "@/components/chances-tabs";
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
+import { AuroraHeader } from "@/components/ui/aurora-header";
 import { LineChart } from "@/components/charts/line-chart";
 import { CountUp } from "@/components/charts/count-up";
 import { whenDatabaseDown } from "@/components/database-unavailable";
@@ -129,7 +130,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   const isPicked = (o: FinderOption) => [sp.a, sp.b].includes(optionKey(o));
 
   const options = result?.options ?? [];
-  // Seats declined or not taken before the final round: why waiting can pay for Borderline options.
+  // Seats declined or not taken before the final round: why waiting can pay for Target options.
   const released = result ? await releasedBeforeFinal(db, session, { induction: induction.id, track: trackValue }) : new Map<string, number>();
   // While the compared cycle is still running, the next round's likely closing for each option.
   const ahead = result && (await inductionRunning(db, induction.id))
@@ -147,11 +148,16 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
 
   const query = new URLSearchParams(Object.entries(sp).filter((e): e is [string, string] => typeof e[1] === "string" && e[1] !== "")).toString();
   return (
-    <AreaPage {...frame}>
-      <ChancesTabs current="/portal/finder" />
-      {query ? <div><SaveView href={`/portal/finder?${query}`} label={`Finder${sp.marks ? `: ${sp.marks} marks` : ""}${sp.track ? `, ${sp.track.replace("|", " · ")}` : ""}`} /></div> : null}
-      <Card className="lg:sticky lg:top-0 lg:z-20 lg:rounded-t-none lg:shadow-[var(--mn-shadow-2)]">
-        <form method="get" className="grid gap-4 md:grid-cols-[repeat(4,minmax(0,1fr))_auto] md:items-end">
+    <AreaPage {...frame} bare>
+      <AuroraHeader as="section" className="grid gap-5 p-5 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-[#F3EEE5] sm:text-4xl">My chances</h1>
+            <p className="mt-1 text-sm text-[#F3EEE5]/70">Where your marks can get a seat, from past closing merit under the same scoring.</p>
+          </div>
+          <ChancesTabs current="/portal/finder" variant="pills" />
+        </div>
+        <form method="get" className="grid gap-4 text-[#F3EEE5] md:grid-cols-[repeat(4,minmax(0,1fr))_auto] md:items-end">
           <label className="grid gap-1.5 text-sm font-medium">
             Your marks
             <span className="flex items-center gap-2">
@@ -173,16 +179,17 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
             </select>
           </label>
           <input type="hidden" name="view" value={view} />
-          <Button type="submit" className="md:self-end">Find options</Button>
+          <Button type="submit" className="md:self-end">Analyse →</Button>
         </form>
-      </Card>
-      <div className="-mt-2 px-1">
+      <div className="text-[#F3EEE5]/70 [&_.text-subtle]:text-[#F3EEE5]/60">
           {own ? <p className="mt-3 text-xs font-medium text-success">Filled in from your verified record: induction {own.induction}, round {own.roundNo} (out of {total}).</p> : null}
           <p className="mt-3 text-xs text-subtle">
             {opts.activePolicy ? `Your marks are on the current policy (${opts.activePolicy}, out of ${opts.defaultTotal}). ` : ""}
             Inductions are compared in percent of their total, so a score out of 30 lines up with one out of 35. Weights of the parts differ between years, so treat this as a guide, not a guarantee.
           </p>
       </div>
+      </AuroraHeader>
+      {query ? <div><SaveView href={`/portal/finder?${query}`} label={`Finder${sp.marks ? `: ${sp.marks} marks` : ""}${sp.track ? `, ${sp.track.replace("|", " · ")}` : ""}`} /></div> : null}
 
       {!opts.likeForLike.length ? (
         <Notice tone="warning" title="No past induction was scored like the current one">
@@ -209,7 +216,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
       ) : (
         <>
           <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="mn-rise rounded-xl border border-ember/40 bg-[linear-gradient(140deg,color-mix(in_srgb,var(--mn-ember-deep)_35%,var(--mn-navy-900)),var(--mn-navy-900)_70%)] p-5">
+            <div className="mn-rise rounded-xl border border-violet-soft/45 bg-[var(--mn-violet-fill)] p-5 shadow-[0_0_24px_var(--mn-violet-glow)]">
               <p className="text-xs text-muted">Your score</p>
               <p className="mt-3 font-display text-4xl font-extrabold tracking-tight [font-stretch:110%]">{pct(result.mePct)}</p>
               <p className="mt-1 text-xs text-subtle">{marks} of {total} · compared with induction {induction.id} (out of {induction.total})</p>

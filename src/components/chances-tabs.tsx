@@ -13,10 +13,23 @@ const TABS: { href: string; label: string; hint: string; icon: IconName; feature
 ];
 
 /** The three parts of "My chances", as large tabs (switched-off features are left out for candidates). */
-export async function ChancesTabs({ current }: { current: "/portal/finder" | "/portal/calculator" | "/portal/preferences" }) {
+export async function ChancesTabs({ current, variant = "cards" }: { current: "/portal/finder" | "/portal/calculator" | "/portal/preferences"; variant?: "cards" | "pills" }) {
   const session = await getSession();
   const flags = session && !isStaff(session) && (await checkDatabase()) === "ok" ? await featureFlags(getDb(), session) : null;
   const tabs = TABS.filter((t) => !t.feature || !flags || flags[t.feature]);
+  if (variant === "pills") {
+    // Inside an aurora hero (v4 Chances mockup): a compact segmented control.
+    return (
+      <nav aria-label="My chances" className="flex max-w-full gap-1 overflow-x-auto rounded-xl border border-white/10 bg-black/20 p-1">
+        {tabs.map((t) => (
+          <Link key={t.href} href={t.href} aria-current={t.href === current ? "page" : undefined}
+            className={cn("whitespace-nowrap rounded-lg px-3 py-1.5 text-sm", t.href === current ? "mn-btn font-semibold" : "text-[#F3EEE5]/70 hover:text-[#F3EEE5]")}>
+            {t.href === "/portal/finder" ? "I know my score" : t.href === "/portal/calculator" ? "Calculator" : "Preference list"}
+          </Link>
+        ))}
+      </nav>
+    );
+  }
   return (
     <nav aria-label="My chances" className="grid gap-2 sm:grid-cols-3">
       {tabs.map((t) => {

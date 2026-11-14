@@ -13,8 +13,8 @@ export type FinderStatus = "safe" | "borderline" | "out";
 
 export const STATUS_LABEL: Record<FinderStatus, string> = {
   safe: "Safe",
-  borderline: "Borderline",
-  out: "Out of reach",
+  borderline: "Target",
+  out: "Reach",
 };
 
 export function toPercent(marks: number, total: number): number {

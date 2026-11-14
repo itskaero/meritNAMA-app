@@ -10,7 +10,7 @@ describe("preference list analysis", () => {
     const a = analyseList(items, on);
     expect(a).toMatchObject({ likely: 4, possible: [2, 3], unreached: [5, 6] });
     expect(a.warnings.map((w) => w.kind)).toEqual(["below-safe"]);
-    expect(outcomeSummary(a, items)).toBe("Most likely: #4 Spec 4, Hosp 4 (Safe). #2–#3 are Borderline and could come in later rounds.");
+    expect(outcomeSummary(a, items)).toBe("Most likely: #4 Spec 4, Hosp 4 (Safe). #2–#3 are targets and could come in later rounds.");
   });
 
   it("warns when nothing is Safe, everything is Out, an option was not offered, or marks are missing", () => {

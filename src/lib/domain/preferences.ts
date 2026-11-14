@@ -3,7 +3,7 @@ import type { FinderStatus } from "./finder";
 /**
  * Reading a preference list the way PHF allocates: candidates are placed in merit
  * order, each getting the highest preference whose closing their merit reaches.
- * So the first Safe option is where you most likely land; Borderline options above
+ * So the first Safe option is where you most likely land; Target options above
  * it can still come in later rounds; options below it are effectively never used;
  * and a list with no Safe option risks no allocation at all.
  */
@@ -59,7 +59,7 @@ export function analyseList(items: PlannedItem[], o: { hasMarks: boolean; induct
   const unreached = likely === null ? [] : sorted.filter((i) => i.position > likely).map((i) => i.position);
 
   if (sorted.every((i) => i.status === "out" || i.status === null) && sorted.some((i) => i.status === "out")) {
-    warnings.push({ kind: "all-out", positions: sorted.map((i) => i.position), message: "Every option is Out of reach for your marks: last time each closed above them." });
+    warnings.push({ kind: "all-out", positions: sorted.map((i) => i.position), message: "Every option is a reach for your marks: last time each closed above them." });
   } else if (likely === null) {
     warnings.push({ kind: "no-safe", positions: [], message: "No option on this list is Safe for your marks, so you might not be placed. Add at least one Safe option near the end." });
   }
@@ -75,8 +75,8 @@ export function outcomeSummary(a: ListAnalysis, items: PlannedItem[]): string {
   const name = (p: number) => `#${p} ${at(p).speciality}, ${at(p).hospital}`;
   if (items.length === 0) return "Nothing on this list yet.";
   if (a.warnings.some((w) => w.kind === "no-marks")) return "Add your marks to see the likely outcome.";
-  const later = a.possible.length ? ` ${ranges(a.possible)} ${a.possible.length === 1 ? "is" : "are"} Borderline and could come in later rounds.` : "";
+  const later = a.possible.length ? ` ${ranges(a.possible)} ${a.possible.length === 1 ? "is a target" : "are targets"} and could come in later rounds.` : "";
   if (a.likely !== null) return `Most likely: ${name(a.likely)} (Safe).${later}`;
-  if (a.possible.length) return `No Safe option. Best hope: ${ranges(a.possible)} (Borderline), which could come in later rounds.`;
+  if (a.possible.length) return `No Safe option. Best hope: ${ranges(a.possible)} (Target), which could come in later rounds.`;
   return "No option on this list is within reach of your marks on last induction's closings.";
 }

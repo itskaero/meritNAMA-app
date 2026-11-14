@@ -74,7 +74,7 @@ export default async function PreferencesPage() {
         <CardHeader title="How the planner reads a list" />
         <ul className="grid list-disc gap-1.5 pl-5 text-sm text-muted">
           <li>PHF places candidates in merit order, each into the highest preference whose closing their merit reaches.</li>
-          <li>So the first <strong className="text-success">Safe</strong> option is where you most likely land. <strong className="text-amber">Borderline</strong> options above it can still come in later rounds.</li>
+          <li>So the first <strong className="text-success">Safe</strong> option is where you most likely land. <strong className="text-amber">Target</strong> options above it can still come in later rounds.</li>
           <li>Options below the first Safe one are unlikely to be used, and a list with no Safe option risks no placement at all.</li>
           <li>Closings change every cycle, so treat this as a planning aid. It is not an official submission.</li>
         </ul>

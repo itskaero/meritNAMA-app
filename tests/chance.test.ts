@@ -13,7 +13,7 @@ describe("chance dial", () => {
 
   it("frames the score and both closings with headroom, and maps them onto the half circle", () => {
     const m = dialModel({ ...base, mePct: 63 });
-    expect(m).toMatchObject({ lo: 59, hi: 68, label: "Borderline" });
+    expect(m).toMatchObject({ lo: 59, hi: 68, label: "Target" });
     expect(m.angle(m.lo)).toBeCloseTo(Math.PI);
     expect(m.angle(m.hi)).toBeCloseTo(2 * Math.PI);
     expect(m.angle(1000)).toBeCloseTo(2 * Math.PI);
