@@ -1,4 +1,5 @@
 import { SaveView } from "@/components/workspace/save-view";
+import { latestJoining } from "@/lib/data/joining";
 import { ChancesTabs } from "@/components/chances-tabs";
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
@@ -63,6 +64,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   const sp = await searchParams;
   const db = getDb();
   const session = await getSession();
+  const joining = await latestJoining(db, session).catch(() => null);
   const [opts, mine] = await Promise.all([finderOptions(db, session), myMerit(db, session).catch(() => null)]);
   // A verified candidate's latest official marks fill the form when nothing is entered yet.
   const own = !sp.marks ? mine?.rows[0] : undefined;
@@ -70,6 +72,12 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
     return (
       <AreaPage {...frame}>
         <ChancesTabs current="/portal/finder" />
+      {joining && joining.total.wasted ? (
+        <p className="rounded-xl border border-line bg-card px-4 py-3 text-sm text-muted">
+          <span className="font-semibold text-heading">After joining, seats go unused.</span> In induction {joining.induction}, {joining.total.wasted.toLocaleString("en-US")} of {joining.total.seats.toLocaleString("en-US")} seats ({Math.round(joining.total.pct * 100)}%) were not taken up. A place that looks out of reach on the last list can still be empty at the end.{" "}
+          <Link href={`/portal/history/${joining.induction}/joining`} className="font-semibold text-signal hover:underline">See which</Link>
+        </p>
+      ) : null}
         <EmptyState title="No merit data to compare with yet">The finder needs imported merit rounds and the scoring policy file (for each induction&apos;s total marks).</EmptyState>
       </AreaPage>
     );

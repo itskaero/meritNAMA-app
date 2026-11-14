@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { WasteNote } from "@/components/joining";
+import { wasteFor } from "@/lib/data/joining";
 import { PageSections } from "@/components/ui/page-sections";
 import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
@@ -44,6 +46,7 @@ export default async function HospitalPage({ params, searchParams }: { params: P
   const specFilter = choices.specialities.find((x) => x.id === wanted) ?? null;
   const rv = await listHospitalReviews(db, session, { hospitalId: id, specialityId: specFilter?.id ?? null });
   const path = `/portal/explore/hospitals/${id}`;
+  const waste = await wasteFor(db, session, { kind: "hospital", id });
 
   const seatsBySpec = new Map<string, { id: number; seats: number }>();
   for (const r of p.seats) seatsBySpec.set(r.speciality, { id: r.speciality_id, seats: (seatsBySpec.get(r.speciality)?.seats ?? 0) + r.seats });
@@ -94,6 +97,7 @@ export default async function HospitalPage({ params, searchParams }: { params: P
           </div>
         </section>
       ) : null}
+      <WasteNote data={waste} what="at this hospital" />
       {seatItems.length === 0 && p.closing.length === 0 ? (
         <EmptyState title="No seats or merit data for this hospital yet" />
       ) : (

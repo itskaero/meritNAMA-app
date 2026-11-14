@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { JoinPill } from "@/components/joining";
+import { roundJoinStates } from "@/lib/data/joining";
+import { joinKey, JOIN_LABELS, type JoinState } from "@/lib/domain/joining";
 import { AreaPage } from "@/components/area-page";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Icon } from "@/components/icon";
@@ -120,6 +123,8 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
     return `/portal/candidates?${q}`;
   };
   const panel = sp.id ? await gazetteCandidate(db, session, { induction, applicantId: sp.id }) : null;
+  // Joining status once PHF's joining file for the last round is in.
+  const join = board.latestRound ? await roundJoinStates(db, session, induction, board.latestRound) : null;
 
   return (
     <AreaPage
@@ -182,7 +187,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
         </div>
       </Card>
 
-      {panel ? <CandidatePanel c={panel} closeHref={href({ id: undefined, page: sp.page })} latestRound={board.latestRound} /> : null}
+      {panel ? <CandidatePanel c={panel} closeHref={href({ id: undefined, page: sp.page })} latestRound={board.latestRound} join={join} /> : null}
 
       <Card>
         <CardHeader title={`${matches.length.toLocaleString("en-US")} candidate${matches.length === 1 ? "" : "s"}`} description={`Page ${page} of ${pages}. Click a candidate for their record and every preference.`} />
@@ -224,7 +229,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
                       <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><StepMark s={step(r.verification, R01)} label="R01" /><span className="text-subtle">→</span><StepMark s={step(r.verification, AMEND)} label="Amend" /></span>
                     </td>
                     <td className="px-2 py-2.5 text-xs text-muted">{r.programmes.length ? r.programmes.map((p) => `${p.program} (${p.prefs})`).join(" · ") : <span className="text-subtle">No preferences</span>}</td>
-                    <td className="px-2 py-2.5 pr-5 text-xs sm:pr-6">{r.seat ? <><span className="text-ink">{r.seat.speciality}</span><span className="block text-muted">{r.seat.hospital} · {r.seat.program}</span></> : <span className="text-subtle">—</span>}</td>
+                    <td className="px-2 py-2.5 pr-5 text-xs sm:pr-6">{r.seat ? <><span className="text-ink">{r.seat.speciality}</span><span className="block text-muted">{r.seat.hospital} · {r.seat.program}</span>{join?.get(joinKey(r.applicantId, r.seat.program)) ? <span className="mt-1 block"><JoinPill state={join.get(joinKey(r.applicantId, r.seat.program))!} /></span> : null}</> : <span className="text-subtle">—</span>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -256,13 +261,15 @@ function SourceTile({ icon, title, body, meter, tone = "violet" }: { icon: "list
 
 type Panel = NonNullable<Awaited<ReturnType<typeof gazetteCandidate>>>;
 
-function CandidatePanel({ c, closeHref, latestRound }: { c: Panel; closeHref: string; latestRound: number | null }) {
+function CandidatePanel({ c, closeHref, latestRound, join }: { c: Panel; closeHref: string; latestRound: number | null; join: Map<string, JoinState> | null }) {
   const latest = latestRound != null ? c.rounds.filter((r) => r.roundNo === latestRound) : [];
+  const joined = join ? latest.map((r) => join.get(joinKey(c.applicantId, r.program))).find(Boolean) ?? null : null;
   const events: { when: string; text: string; tone: "neutral" | "success" | "danger" | "amber" | "info" }[] = [
     { when: "Gazette", text: `Base marks ${formatMarks(c.imported.baseMarks)} as published`, tone: "neutral" },
     ...c.verification.map((v) => ({ when: v.label.replace("Verification : ", ""), text: `${v.status === 1 ? "Accepted" : v.status === 2 ? "Rejected" : "Pending"}${v.remarks ? ` · PHF: ${v.remarks}` : ""}`, tone: (v.status === 1 ? "success" : v.status === 2 ? "danger" : "amber") as "success" | "danger" | "amber" })),
     ...c.corrections.map((k) => ({ when: CORRECTION_KIND_LABELS[k.kind as CorrectionKind] ?? k.kind, text: `${CORRECTION_LABELS[k.field as CorrectionField] ?? k.field}${k.program ? ` (${k.program})` : ""} → ${k.field === "profile_status" ? k.value : formatMarks(k.value)}`, tone: "info" as const })),
     ...c.rounds.map((r) => ({ when: `Round ${r.roundNo}`, text: `${r.speciality}, ${r.hospital} · ${r.program} ${r.quota} · pref #${r.preferenceNo ?? "?"}`, tone: "success" as const })),
+    ...(joined ? [{ when: "Joining", text: JOIN_LABELS[joined], tone: (joined === "joined" ? "success" : joined === "pending" ? "amber" : "danger") as "success" | "amber" | "danger" }] : []),
   ];
   return (
     <section aria-labelledby="cand-panel" className="mn-card-glass rounded-xl border border-violet-soft/40 p-5 shadow-[0_0_30px_var(--mn-violet-glow)] sm:p-6">

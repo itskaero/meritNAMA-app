@@ -23,6 +23,9 @@ import { formatMarks } from "@/lib/format";
 import { inductionRunning, methodCheck, predictRound } from "@/lib/data/predictions";
 import { MethodNote, PredictionBadge } from "@/components/charts/prediction-badge";
 import { intParam, oneOf } from "@/lib/params";
+import { JoinPill } from "@/components/joining";
+import { roundJoinStates } from "@/lib/data/joining";
+import { joinKey } from "@/lib/domain/joining";
 
 export const metadata = { title: "Merit round" };
 export const dynamic = "force-dynamic";
@@ -79,6 +82,9 @@ export default async function RoundPage({ params, searchParams }: {
   const cpage = Math.max(intParam(typeof sp.cp === "string" ? sp.cp : undefined) ?? 1, 1);
   const cands = await roundCandidates(db, session, { roundId: round.id, filters, q, offset: (cpage - 1) * PAGE, limit: PAGE });
   const cpages = Math.max(1, Math.ceil(cands.total / PAGE));
+  // Last round of an induction with PHF's joining file: who joined their seat.
+  const join = nextNo ? null : await roundJoinStates(db, session, induction, roundNo);
+  const joinCount = (s: string) => (join ? [...join.values()].filter((x) => x === s).length : 0);
   const keep = (extra: Record<string, string>) => {
     const u = new URLSearchParams();
     for (const [k] of FILTERS) if (filters[k]) u.set(k, filters[k]!);
@@ -104,6 +110,18 @@ export default async function RoundPage({ params, searchParams }: {
           { label: running ? "Round room (live)" : "Round room", href: "#room", icon: "chat" as const },
         ]}
       />
+      {join ? (
+        <Card className="border-success/30">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="font-semibold text-heading">Joining is in for this last list:</span>
+            <span className="text-success">{joinCount("joined").toLocaleString("en-US")} joined</span>
+            {joinCount("pending") ? <span className="text-amber">{joinCount("pending").toLocaleString("en-US")} pending</span> : null}
+            <span className="text-danger">{joinCount("not_joined").toLocaleString("en-US")} did not join</span>
+            <span className="flex-1" />
+            <Link href={`/portal/history/${induction}/joining`} className="font-semibold text-signal hover:underline">Wasted seats →</Link>
+          </div>
+        </Card>
+      ) : null}
       <Card>
         <div className="grid gap-3">
           <div>
@@ -237,6 +255,11 @@ export default async function RoundPage({ params, searchParams }: {
             { key: "pq", header: "Programme · quota", tone: "muted", sort: (r) => `${r.program} ${r.quota}`, cell: (r) => `${r.program} · ${r.quota}` },
             { key: "p", header: "Pref.", align: "right", sort: (r) => r.preferenceNo ?? 0, cell: (r) => (r.preferenceNo ? `#${r.preferenceNo}` : "—") },
             { key: "c", header: "Consent", tone: "muted", sort: (r) => r.consent ?? "", cell: (r) => r.consent || "—" },
+            ...(join ? [{
+              key: "j", header: "Joining",
+              sort: (r: (typeof cands.rows)[number]) => join.get(joinKey(r.applicantId, r.program)) ?? "",
+              cell: (r: (typeof cands.rows)[number]) => { const s = join.get(joinKey(r.applicantId, r.program)); return s ? <JoinPill state={s} /> : <span className="text-subtle">—</span>; },
+            }] : []),
           ]}
         />
         {cpages > 1 ? (

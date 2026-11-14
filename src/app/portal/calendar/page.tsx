@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Pill } from "@/components/ui/segmented";
 import { getSession } from "@/lib/auth/session";
 import { listJobs } from "@/lib/data/jobs";
+import { latestSchedule } from "@/lib/data/schedule";
 import { listInductionsWithRounds } from "@/lib/data/merit";
 import { publishedEstimates } from "@/lib/data/simulation";
 import { getDb } from "@/lib/db/client";
@@ -19,9 +20,10 @@ import { findSection } from "@/lib/navigation";
 export const metadata = { title: "Calendar" };
 export const dynamic = "force-dynamic";
 
-type Kind = "list" | "expected" | "estimate" | "cycle" | "job";
+type Kind = "phf" | "list" | "expected" | "estimate" | "cycle" | "job";
 type Ev = { date: string; kind: Kind; label: string; note?: string; href?: string };
 const KIND: Record<Kind, { label: string; dot: string; tone: "success" | "neutral" | "amber" | "info" | "violet" }> = {
+  phf: { label: "PHF date", dot: "bg-teal", tone: "info" },
   list: { label: "List out", dot: "bg-success", tone: "success" },
   expected: { label: "Expected", dot: "bg-violet-soft", tone: "violet" },
   estimate: { label: "Estimate", dot: "bg-amber", tone: "amber" },
@@ -44,10 +46,11 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   if (down) return down;
   const db = getDb();
   const session = await getSession();
-  const [inductions, estimates, jobs] = await Promise.all([
+  const [inductions, estimates, jobs, schedule] = await Promise.all([
     listInductionsWithRounds(db, session),
     publishedEstimates(db, session),
     listJobs(db, session).catch(() => null),
+    latestSchedule(db, session).catch(() => null),
   ]);
   const latest = inductions[0];
   const today = todayPk();
@@ -61,6 +64,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       events.push({ date: first.startsOn, kind: "cycle", label: `${first.cycleName} cycle starts` }, { date: first.endsOn, kind: "cycle", label: `${first.cycleName} cycle ends` });
       for (const r of cycle.rounds) if (r.state !== "published") events.push({ date: r.estimatedOn, kind: "expected", label: `Round ${r.roundNo} (expected)`, note: "Estimated from the cycle dates; PHF does not date rounds" });
     }
+  }
+  // PHF's own schedule: each step's opening and closing day (Pakistan time).
+  const pkDay = (d: Date) => new Date(d.getTime() + 5 * 3_600_000).toISOString().slice(0, 10);
+  for (const st of schedule?.rows ?? []) {
+    if (st.startsAt) events.push({ date: pkDay(st.startsAt), kind: "phf", label: `${st.title} opens`, note: `PHF schedule · induction ${schedule!.induction}` });
+    if (st.endsAt && (!st.startsAt || pkDay(st.endsAt) !== pkDay(st.startsAt))) events.push({ date: pkDay(st.endsAt), kind: "phf", label: `${st.title} closes`, note: `PHF schedule · induction ${schedule!.induction}` });
   }
   for (const e of estimates.filter((x) => !x.official)) events.push({ date: isoDay(e.publishedAt), kind: "estimate", label: `Estimated round ${e.roundNo}`, href: `/portal/estimates?run=${e.id}` });
   for (const j of jobs?.jobs ?? []) if (j.lastDate && j.state !== "closed") events.push({ date: j.lastDate, kind: "job", label: j.title, href: `/portal/jobs?job=${j.id}` });
@@ -137,7 +146,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
           <div className="grid content-start gap-5">
             <Card>
-              <CardHeader title="What's coming" description="Expected dates are spread across PHF's cycle dates; the real day can differ." />
+              <CardHeader title="What's coming" description={schedule ? "PHF dates come from PHF's own schedule. Expected rounds are spread across the cycle; the real day can differ." : "Expected dates are spread across PHF's cycle dates; the real day can differ."} />
               {coming.length ? (
                 <ol className="grid gap-3">
                   {coming.map((e, i) => <EventRow key={i} e={e} />)}

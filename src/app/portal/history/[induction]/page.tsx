@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { wasteSentence } from "@/components/joining";
+import { joiningOverview } from "@/lib/data/joining";
 import { PageSections } from "@/components/ui/page-sections";
 import { EstimateListCard } from "@/components/estimate-list-card";
 import { publishedEstimates } from "@/lib/data/simulation";
@@ -61,6 +63,7 @@ export default async function InductionPage({ params, searchParams }: { params: 
     running ? predictRound(db, session, { induction, fromRound: lastRound, track: ladderTrack }) : Promise.resolve(null),
   ]);
   const last = ind.rounds[ind.rounds.length - 1]!;
+  const joining = await joiningOverview(db, session, induction);
 
   return (
     <AreaPage
@@ -73,6 +76,11 @@ export default async function InductionPage({ params, searchParams }: { params: 
       {gazetteTotal ? (
         <Card>
           <CardHeader title="Candidates list (gazette)" description={`${gazetteTotal.toLocaleString("en-US")} candidates with their marks, as PHF published them before round 1.`} action={<ButtonLink href={`/portal/history/${induction}/gazette`} size="sm">Open the list</ButtonLink>} />
+        </Card>
+      ) : null}
+      {joining ? (
+        <Card>
+          <CardHeader title="Joining and wasted seats" description={wasteSentence(joining.total)} action={<ButtonLink href={`/portal/history/${induction}/joining`} size="sm">See where</ButtonLink>} />
         </Card>
       ) : null}
       <PageSections

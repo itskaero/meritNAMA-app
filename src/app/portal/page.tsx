@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { WasteTiles, wasteSentence } from "@/components/joining";
+import { cycleSteps } from "@/lib/admin/today";
+import { latestJoining } from "@/lib/data/joining";
+import { latestSchedule } from "@/lib/data/schedule";
 import { TaskCards } from "@/components/task-cards";
 import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
@@ -61,6 +65,13 @@ export default async function PortalDashboard() {
     featureFlags(db, session),
   ]);
   const currentEstimates = (await publishedEstimates(db, session)).filter((e) => !e.official);
+  // PHF's own dates, and wasted seats once joining has closed.
+  const [schedule, joining] = await Promise.all([latestSchedule(db, session), latestJoining(db, session)]);
+  const phf = schedule ? cycleSteps(schedule.rows, new Date()) : [];
+  const phfNow = phf.filter((x) => x.state === "now");
+  const phfNext = phf.find((x) => x.state === "next") ?? null;
+  const joiningStep = phf.find((x) => /join/i.test(x.title));
+  const showJoining = joining && (!joiningStep || joiningStep.state === "done") ? joining : null;
   const pulse = flags.community ? await roomPulse(db, session, { limit: 3 }) : null;
   const peerOf = new Map(peers.seats.map((p) => [peerKey(p), p.peers]));
   const room = pulse?.rooms[0] ?? null;
@@ -103,6 +114,25 @@ export default async function PortalDashboard() {
   return (
     <AreaPage {...frame}>
       {currentEstimates.length ? <EstimateListCard estimates={currentEstimates} title="Estimated merit list out" /> : null}
+      {phfNow.length || phfNext ? (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-line bg-card px-4 py-3 text-sm">
+          <span className="font-semibold text-heading">PHF · induction {schedule!.induction}</span>
+          {phfNow.map((x) => <span key={x.title} className="text-amber">{x.title}: {x.when}</span>)}
+          {phfNext ? <span className="text-muted">Next: {phfNext.title}, {phfNext.when}</span> : null}
+          <span className="flex-1" />
+          <Link href="/portal/calendar" className="font-semibold text-signal hover:underline">Calendar →</Link>
+        </div>
+      ) : null}
+      {showJoining ? (
+        <section aria-label="Wasted seats" className="grid gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className="font-serif text-xl font-semibold text-heading">Induction {showJoining.induction} after joining</h2>
+            <Link href={`/portal/history/${showJoining.induction}/joining`} className="text-sm font-semibold text-signal hover:underline">Where the wasted seats were →</Link>
+          </div>
+          <p className="text-sm text-muted">{wasteSentence(showJoining.total)}</p>
+          <WasteTiles w={showJoining.total} />
+        </section>
+      ) : null}
       <TaskCards
         tasks={[
           { href: merit ? `/portal/history/find?id=${merit.applicantId}` : "/portal/history/find", icon: "search", title: "Find myself in the merit lists", body: "Your seat, marks and consent in every round, by applicant ID." },

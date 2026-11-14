@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { WasteNote } from "@/components/joining";
+import { wasteFor } from "@/lib/data/joining";
 import { PageSections } from "@/components/ui/page-sections";
 import { ChartSource } from "@/components/charts/chart-source";
 import { AreaPage } from "@/components/area-page";
@@ -58,6 +60,7 @@ export default async function SpecialityPage({ params, searchParams }: {
       ])
     : [null, []];
   const said = await specialityReviewSummary(getDb(), await getSession(), id);
+  const waste = await wasteFor(getDb(), await getSession(), { kind: "speciality", id });
   // CPSP accreditation for this speciality, matched to the hospitals by name.
   const acc = await specialityAccreditation(getDb(), await getSession(), h.speciality.name);
   const accredited = new Set(acc ? h.byHospital.filter((r) => matchHospital(r.hospital, acc.hospitals)).map((r) => r.hospital) : []);
@@ -81,6 +84,7 @@ export default async function SpecialityPage({ params, searchParams }: {
           ]}
         />
       ) : null}
+      <WasteNote data={waste} what="in this speciality" />
       {h.rows.length === 0 ? (
         <EmptyState title="No merit data for this speciality yet" />
       ) : (
