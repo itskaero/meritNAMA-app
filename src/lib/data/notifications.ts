@@ -40,6 +40,13 @@ export async function isFollowing(db: Db, session: Session | null, target: Follo
 }
 
 /** Follow or unfollow; returns the new state. */
+/** How many people follow something (the count on the Follow button). */
+export async function followerCount(db: Db, session: Session | null, target: FollowTarget) {
+  assertCan(session, "portal");
+  const [r] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(follows).where(and(eq(follows.kind, target.kind), eq(follows.key, target.key)));
+  return r?.n ?? 0;
+}
+
 export async function setFollow(db: Db, session: Session | null, target: FollowTarget, on: boolean) {
   assertCan(session, "portal");
   const me = await ensureUser(db, session);

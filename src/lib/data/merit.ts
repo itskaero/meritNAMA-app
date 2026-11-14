@@ -721,3 +721,17 @@ export async function seatsInRound(db: Database, session: Session | null, input:
     .from(meritAllocations).where(and(eq(meritAllocations.roundId, input.roundId), inArray(meritAllocations.applicantId, ids)));
   return new Map(rows.map((r) => [`${r.applicantId}|${r.program}`, { speciality: r.speciality, hospital: r.hospital, preferenceNo: r.preferenceNo }]));
 }
+
+/** Who was placed at a hospital in a round, best marks first: names and IDs as published. */
+export async function hospitalRoundPeople(db: Database, session: Session | null, input: { induction: number; roundNo: number; hospitalId: number; limit?: number }) {
+  assertCan(session, "portal");
+  const [r] = await db.select({ id: meritRounds.id }).from(meritRounds).where(and(eq(meritRounds.inductionId, input.induction), eq(meritRounds.roundNo, input.roundNo))).limit(1);
+  if (!r) return { total: 0, rows: [] };
+  const where = and(eq(meritAllocations.roundId, r.id), eq(meritAllocations.hospitalId, input.hospitalId));
+  const [rows, [c]] = await Promise.all([
+    db.select({ applicantId: meritAllocations.applicantId, name: meritAllocations.name, speciality: meritAllocations.speciality, program: meritAllocations.program, preferenceNo: meritAllocations.preferenceNo, marks: meritAllocations.marks })
+      .from(meritAllocations).where(where).orderBy(desc(meritAllocations.marks)).limit(Math.min(input.limit ?? 4, 20)),
+    db.select({ n: count() }).from(meritAllocations).where(where),
+  ]);
+  return { total: Number(c?.n ?? 0), rows };
+}
