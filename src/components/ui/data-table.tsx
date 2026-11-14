@@ -28,13 +28,21 @@ export function DataTable<T>({ caption, columns, rows, rowKey, empty, maxHeight 
   if (rows.length === 0 && empty) return <>{empty}</>;
   // Long tables scroll inside their frame so the header row stays in view.
   const height = maxHeight ?? (rows.length > 30 ? "70vh" : undefined);
+  // Published lists can repeat a row (one applicant listed twice): keep React keys unique.
+  const seen = new Map<string, number>();
+  const keyOf = (r: T) => {
+    const k = rowKey(r);
+    const n = seen.get(k) ?? 0;
+    seen.set(k, n + 1);
+    return n ? `${k}#${n}` : k;
+  };
   return (
     <DataTableClient
       caption={caption}
       height={height}
       columns={columns.map((c) => ({ key: c.key, header: c.header, align: c.align, tone: c.tone, sortable: Boolean(c.sort) }))}
       rows={rows.map((r) => ({
-        key: rowKey(r),
+        key: keyOf(r),
         cells: columns.map((c) => c.cell(r)),
         sort: columns.map((c) => {
           const v = c.sort?.(r);

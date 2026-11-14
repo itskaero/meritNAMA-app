@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { FollowButton } from "@/components/community/follow-button";
+import { followerCount, isFollowing } from "@/lib/data/notifications";
 import { WasteNote } from "@/components/joining";
 import { wasteFor } from "@/lib/data/joining";
 import { PageSections } from "@/components/ui/page-sections";
@@ -61,6 +63,10 @@ export default async function SpecialityPage({ params, searchParams }: {
     : [null, []];
   const said = await specialityReviewSummary(getDb(), await getSession(), id);
   const waste = await wasteFor(getDb(), await getSession(), { kind: "speciality", id });
+  const target = { kind: "speciality" as const, key: String(id) };
+  const [following, followers] = await Promise.all([isFollowing(getDb(), await getSession(), target).catch(() => false), followerCount(getDb(), await getSession(), target).catch(() => null)]);
+  const latestRows = latest ? h.byHospital.filter((r) => r.induction_id === latest.induction_id && r.round_no === latest.round_no) : [];
+  const closingsNow = latestRows.map((r) => Number(r.closing)).sort((a, b) => a - b);
   // CPSP accreditation for this speciality, matched to the hospitals by name.
   const acc = await specialityAccreditation(getDb(), await getSession(), h.speciality.name);
   const accredited = new Set(acc ? h.byHospital.filter((r) => matchHospital(r.hospital, acc.hospitals)).map((r) => r.hospital) : []);
@@ -70,6 +76,13 @@ export default async function SpecialityPage({ params, searchParams }: {
       area="portal"
       trail={[{ label: "Hospitals & specialities", href: "/portal/explore" }, { label: h.speciality.name }]}
       title={h.speciality.name}
+      aside={
+        <div className="flex flex-wrap items-end gap-6">
+          {latest ? <div><p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#F3EEE5]/65">Hospitals · round {latest.round_no}</p><p className="mt-1 text-2xl font-semibold tabular-nums text-[#F3EEE5]">{latestRows.length}</p></div> : null}
+          {closingsNow.length ? <div><p className="text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-[#F3EEE5]/65">Closing range</p><p className="mt-1 text-2xl font-semibold tabular-nums text-[#F3EEE5]">{formatMarks(closingsNow[0]!)}–{formatMarks(closingsNow.at(-1)!)}</p></div> : null}
+          <FollowButton target={target} following={following} path={`/portal/explore/specialities/${id}`} count={followers} />
+        </div>
+      }
       description={`Closing merit across ${inductionsSeen.length} induction${inductionsSeen.length === 1 ? "" : "s"} and their rounds.`}
     >
       {h.rows.length ? (
