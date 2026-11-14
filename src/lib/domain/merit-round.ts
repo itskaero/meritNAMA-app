@@ -33,9 +33,12 @@ export const meritRowSchema = z.looseObject({
   pmdcNo: z.union([z.string(), z.number()]).nullish().transform((v) => (v == null ? v : String(v))),
 });
 
-/** Name as published, tidied: trimmed, inner spaces collapsed; empty becomes null. */
+/**
+ * Name as published, tidied: trimmed, inner spaces collapsed; empty becomes null. Some
+ * reports append the parent ("Maria Ijaz D/O Ijaz Ahmed"): the relation is never kept.
+ */
 export function cleanName(v: string | null | undefined): string | null {
-  const s = (v ?? "").replace(/\s+/g, " ").trim();
+  const s = (v ?? "").replace(/\s+/g, " ").replace(/\s+(?:[SDW]\s*\/\s*O|[SDW]\.O\.?|son of|daughter of|wife of)(?![A-Za-z]).*$/i, "").trim();
   return s ? s.slice(0, 120) : null;
 }
 

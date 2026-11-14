@@ -84,3 +84,14 @@ describe("flat round files (scraper format)", () => {
     expect(f.Table5[0]).toMatchObject({ type: "FCPS", institute: "AIMC", seats: 2, marks: 22.7, consent: "", pmdcNo: "12345", specialityJobId: 0 });
   });
 });
+
+describe("names from PHF reports", () => {
+  it("drop the parent a report appends to a name", async () => {
+    const { cleanName } = await import("@/lib/domain/merit-round");
+    expect(cleanName("Maria Ijaz D/O Ijaz Ahmed")).toBe("Maria Ijaz");
+    expect(cleanName("  Ali   Raza s/o Muhammad Raza ")).toBe("Ali Raza");
+    expect(cleanName("Sana W/O Bilal")).toBe("Sana");
+    expect(cleanName("Hira Saleem")).toBe("Hira Saleem");
+    expect(cleanName("Sodo Khan")).toBe("Sodo Khan");
+  });
+});

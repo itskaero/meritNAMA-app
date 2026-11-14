@@ -334,6 +334,7 @@ export async function roundCandidates(
   const [rows, counted] = await Promise.all([
     db
       .select({
+        rowNo: meritAllocations.rowNo,
         applicantId: meritAllocations.applicantId,
         marks: meritAllocations.marks,
         program: meritAllocations.program,
@@ -709,4 +710,14 @@ export async function marksStanding(db: Database, session: Session | null, input
     .where(and(eq(meritRounds.inductionId, input.induction), eq(meritRounds.roundNo, input.roundNo), eq(meritAllocations.program, input.program)));
   const total = Number(r?.total ?? 0);
   return total ? { percentile: Math.round(((r!.below) / total) * 100), total } : null;
+}
+
+/** Where these applicants were placed in another round (by applicant and programme): for "vs the round before". */
+export async function seatsInRound(db: Database, session: Session | null, input: { roundId: number; applicantIds: string[] }) {
+  assertCan(session, "portal");
+  const ids = [...new Set(input.applicantIds)].slice(0, 500);
+  if (!ids.length) return new Map<string, { speciality: string; hospital: string; preferenceNo: number }>();
+  const rows = await db.select({ applicantId: meritAllocations.applicantId, program: meritAllocations.program, speciality: meritAllocations.speciality, hospital: meritAllocations.hospital, preferenceNo: meritAllocations.preferenceNo })
+    .from(meritAllocations).where(and(eq(meritAllocations.roundId, input.roundId), inArray(meritAllocations.applicantId, ids)));
+  return new Map(rows.map((r) => [`${r.applicantId}|${r.program}`, { speciality: r.speciality, hospital: r.hospital, preferenceNo: r.preferenceNo }]));
 }
