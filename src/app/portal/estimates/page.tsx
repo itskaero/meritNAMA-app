@@ -1,42 +1,47 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { BuiltOn } from "@/components/built-on";
-import { basisLabel } from "@/lib/ingest/workflow";
 import { whenDatabaseDown } from "@/components/database-unavailable";
-import { AuroraStat } from "@/components/ui/aurora-header";
+import { AuroraHeader } from "@/components/ui/aurora-header";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
-import { Card, CardHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Pill } from "@/components/ui/segmented";
-import { fieldClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
 import { verifiedApplicant } from "@/lib/data/candidates";
 import { estimateApplicantResult, estimateList, officialReplies, publishedEstimates, publishedRound } from "@/lib/data/simulation";
 import { ensureUser } from "@/lib/data/users";
 import { getDb } from "@/lib/db/client";
 import { marginText, RESULT_LABELS, trackSummary, type ResultStatus } from "@/lib/domain/applicant-result";
-import { formatMarks, formatUtc, isUuid } from "@/lib/format";
+import { formatMarks, isUuid } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
 
 export const metadata = { title: "Estimates" };
 export const dynamic = "force-dynamic";
 
-const STATUS_TONE: Record<ResultStatus, "success" | "danger" | "info" | "neutral" | "amber"> = {
-  placed: "success",
-  fell_short: "danger",
-  clears_cutoff: "info",
-  skipped: "neutral",
-  no_seats: "amber",
+type Sp = { run?: string; id?: string; track?: string; view?: string; all?: string };
+
+/** Row colours of the applicant result, as Estimate.dc.html draws them. */
+const ROW: Record<ResultStatus, { sb: string; sc: string; bg: string; sh: string; nc: string; tc: string; dc: string }> = {
+  placed: { sb: "rgba(61,220,151,.18)", sc: "#3DDC97", bg: "rgba(61,220,151,.10)", sh: "inset 0 0 0 1px rgba(61,220,151,.45), 0 0 14px rgba(61,220,151,.15)", nc: "#3DDC97", tc: "#EDEDEF", dc: "#3DDC97" },
+  clears_cutoff: { sb: "rgba(61,220,151,.12)", sc: "#3DDC97", bg: "rgba(255,255,255,.025)", sh: "none", nc: "#8B8B93", tc: "#EDEDEF", dc: "#3DDC97" },
+  fell_short: { sb: "rgba(255,122,122,.16)", sc: "#FF7A7A", bg: "rgba(255,122,122,.06)", sh: "none", nc: "#FF7A7A", tc: "#EDEDEF", dc: "#FF7A7A" },
+  skipped: { sb: "rgba(255,255,255,.06)", sc: "#8B8B93", bg: "rgba(255,255,255,.025)", sh: "none", nc: "#6B6B73", tc: "#A3A3AD", dc: "#8B8B93" },
+  no_seats: { sb: "rgba(229,160,75,.14)", sc: "#E5A04B", bg: "rgba(255,255,255,.025)", sh: "none", nc: "#6B6B73", tc: "#A3A3AD", dc: "#8B8B93" },
 };
 
-type Sp = { run?: string; id?: string };
+const ago = (d: Date, now: number) => {
+  const m = Math.max(1, Math.round((now - d.getTime()) / 60_000));
+  return m < 60 ? `${m} min ago` : m < 48 * 60 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+};
+const initials = (s: string) => s.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+const seatOf = (r: { program: string; quota: string; speciality: string; hospital: string }) => `${r.program}|${r.quota}|${r.speciality}|${r.hospital}`.toLowerCase();
+const trackOf = (r: { program: string; quota: string }) => `${r.program}|${r.quota}`;
 
 /**
- * Estimates (v4): the current published estimate of the next list, how many consent
- * replies it rests on, where closing merit is likely to move, and any applicant's
- * result preference by preference, as the old simulator showed it. Never probabilities,
+ * Estimates (docs/mockups/v4/Estimate.dc.html): the current published estimate of the
+ * next list, what it rests on, likely closing ranges per seat against the last published
+ * round, and an applicant's result preference by preference. Never probabilities,
  * never official.
  */
 export default async function EstimatesPage({ searchParams }: { searchParams: Promise<Sp> }) {
@@ -61,185 +66,313 @@ export default async function EstimatesPage({ searchParams }: { searchParams: Pr
     );
   }
 
+  const now = new Date().getTime();
   const est = await estimateList(db, session, pick.id);
+  const rows = est?.rows ?? [];
   const me = session ? await verifiedApplicant(db, (await ensureUser(db, session)).id) : null;
   const asked = (sp.id ?? "").replace(/\D/g, "").slice(0, 8);
   const applicant = asked || me || "";
   const result = applicant ? await estimateApplicantResult(db, session, { runId: pick.id, applicantId: applicant }) : null;
 
-  // Consent replies the estimate rests on (the round before it), and closing merit then vs now.
+  // The round this estimate follows: its list and the consent replies to it.
   const prevNo = pick.roundNo - 1;
-  const [replies, prev] = prevNo >= 1 ? await Promise.all([officialReplies(db, pick.induction, prevNo), publishedRound(db, pick.induction, prevNo)]) : [[], null];
+  const [replies, prevList] = prevNo >= 1 ? await Promise.all([officialReplies(db, pick.induction, prevNo), publishedRound(db, pick.induction, prevNo)]) : [[], null];
+  const prev = prevList ?? [];
   const byApplicant = new Map<string, string>();
   for (const r of replies) if (byApplicant.get(r.applicantId) !== "Accepted") byApplicant.set(r.applicantId, r.status);
   const tally = { Accepted: 0, Rejected: 0, Awaited: 0 };
   for (const v of byApplicant.values()) tally[v === "Accepted" || v === "Rejected" ? v : "Awaited"]++;
   const replied = tally.Accepted + tally.Rejected;
   const totalReplies = replied + tally.Awaited;
+  const pct = totalReplies ? Math.round((replied / totalReplies) * 100) : null;
 
-  const closing = (rows: { program: string; quota: string; speciality: string; hospital: string; mark: number }[]) => {
-    const m = new Map<string, { program: string; quota: string; speciality: string; hospital: string; closing: number; n: number }>();
-    for (const r of rows) {
-      const k = `${r.program}|${r.quota}|${r.speciality}|${r.hospital}`.toLowerCase();
-      const g = m.get(k);
-      m.set(k, g ? { ...g, closing: Math.min(g.closing, r.mark), n: g.n + 1 } : { program: r.program, quota: r.quota, speciality: r.speciality, hospital: r.hospital, closing: r.mark, n: 1 });
-    }
-    return m;
-  };
-  const nowMap = est ? closing(est.rows) : new Map();
-  const thenMap = prev ? closing(prev) : new Map();
-  const moves = [...nowMap.entries()]
-    .map(([k, g]) => ({ ...g, then: thenMap.get(k)?.closing ?? null }))
-    .filter((g) => g.then != null && Math.abs(g.closing - g.then) >= 0.01)
-    .sort((a, b) => Math.abs(b.closing - b.then!) - Math.abs(a.closing - a.then!))
-    .slice(0, 8);
-  const prevKeys = new Set((prev ?? []).map((p) => `${p.applicantId}|${p.program}`));
-  const seatsReoffered = prev && est ? est.rows.filter((r) => !prevKeys.has(`${r.applicantId}|${r.program}`)).length : null;
+  // Who was where in the last round, and where the estimate puts them.
+  const prevSeat = new Map(prev.map((p) => [`${p.applicantId}|${p.program}`, p]));
+  const newcomers = rows.filter((r) => !prevSeat.has(`${r.applicantId}|${r.program}`));
+  const movers = rows.filter((r) => { const p = prevSeat.get(`${r.applicantId}|${r.program}`); return p && seatOf(p) !== seatOf(r); });
+
+  // Per seat: closing mark then and now, newcomers, and how many of last round's holders have not replied.
+  type Seat = { program: string; quota: string; speciality: string; hospital: string; closing: number; then: number | null; fresh: number; held: number; awaited: number };
+  const seats = new Map<string, Seat>();
+  for (const r of rows) {
+    const k = seatOf(r);
+    const g = seats.get(k) ?? { program: r.program, quota: r.quota, speciality: r.speciality, hospital: r.hospital, closing: r.mark, then: null, fresh: 0, held: 0, awaited: 0 };
+    g.closing = Math.min(g.closing, r.mark);
+    if (!prevSeat.has(`${r.applicantId}|${r.program}`)) g.fresh++;
+    seats.set(k, g);
+  }
+  for (const p of prev) {
+    const g = seats.get(seatOf(p));
+    if (!g) continue;
+    g.then = g.then == null ? p.mark : Math.min(g.then, p.mark);
+    g.held++;
+    if (totalReplies && byApplicant.get(p.applicantId) !== "Accepted" && byApplicant.get(p.applicantId) !== "Rejected") g.awaited++;
+  }
+
+  // One quota track at a time, as the mockup shows it: the applicant's own, else the biggest.
+  const trackCount = new Map<string, number>();
+  for (const g of seats.values()) trackCount.set(trackOf(g), (trackCount.get(trackOf(g)) ?? 0) + 1);
+  const tracks = [...trackCount.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const placedRow = result?.programmes.map((p) => ({ p, sum: trackSummary(p.rows) })).find((x) => x.sum.placed);
+  const ownTrack = placedRow ? `${placedRow.p.program}|${placedRow.sum.placed!.quota}` : null;
+  const track = sp.track && trackCount.has(sp.track) ? sp.track : ownTrack && trackCount.has(ownTrack) ? ownTrack : (tracks[0] ?? "");
+  const changing = [...seats.values()]
+    .filter((g) => trackOf(g) === track && g.then != null)
+    .sort((a, b) => Math.abs(b.closing - b.then!) - Math.abs(a.closing - a.then!) || a.speciality.localeCompare(b.speciality));
+  const shown = sp.all ? changing : changing.slice(0, 12);
+
+  const view = sp.view === "moves" ? "moves" : "ranges";
   const base = "/portal/estimates";
+  const href = (over: Partial<Sp>) => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries({ run: sp.run, id: asked || undefined, track: sp.track, view: sp.view, ...over })) if (v) q.set(k, v);
+    const s = q.toString();
+    return s ? `${base}?${s}` : base;
+  };
   const listHref = `/portal/history/${pick.induction}/estimates/${pick.id}`;
+  const whatIf = `/portal/simulation?i=${pick.induction}&base=${encodeURIComponent(`run:${pick.id}`)}`;
+  const ticks = 40, on = pct == null ? 0 : Math.round((pct / 100) * ticks);
+
+  // "You in this estimate" and "up from #n" both read the last round's place.
+  const youPrev = (program: string) => (result ? prevSeat.get(`${result.applicantId}|${program}`)?.preferenceNo ?? null : null);
+  const mine = result && result.applicantId === me ? result : null;
+  const minePlaced = mine?.programmes.map((p) => ({ p, sum: trackSummary(p.rows) })).find((x) => x.sum.placed) ?? null;
+  const mineMiss = mine && !minePlaced ? mine.programmes.map((p) => trackSummary(p.rows).closestMiss).find(Boolean) ?? null : null;
 
   return (
-    <AreaPage
-      area="portal"
-      trail={[{ label: s.label }]}
-      title={`Induction ${pick.induction} · estimated round ${pick.roundNo}`}
-      description={`Published ${formatUtc(pick.publishedAt)} UTC. Simulated from the gazette, portal preferences and consent replies. The real list can differ.`}
-      status={<Badge tone="simulated" className="mx-2">Estimate{pick.basis ? ` · ${basisLabel(pick.basis)}` : ""} · not official</Badge>}
-      aside={
-        <div className="grid grid-cols-3 gap-6">
-          <AuroraStat label="Allocations" value={(est?.rows.length ?? pick.placed ?? 0).toLocaleString("en-US")} />
-          <AuroraStat label="New in this list" value={seatsReoffered == null ? "—" : seatsReoffered.toLocaleString("en-US")} hint={prevNo >= 1 ? `vs round ${prevNo}` : undefined} />
-          <AuroraStat label="Replies in" value={totalReplies ? `${Math.round((replied / totalReplies) * 100)}%` : "—"} />
+    <AreaPage area="portal" trail={[{ label: s.label }]} title={`Estimated round ${pick.roundNo}`} bare>
+      <AuroraHeader as="section" className="flex flex-col gap-4 border border-dashed border-[rgba(229,160,75,.45)] px-5 py-[22px] sm:px-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[13px] text-[#F3EEE5]/[.68]">
+              <Link href="/portal/history" className="text-[#F3EEE5]/70 hover:underline">Merit lists</Link> / <Link href={`/portal/history/${pick.induction}`} className="hover:underline">Induction {pick.induction}</Link> ·{" "}
+              <span className="mn-pill a border border-dashed border-[rgba(229,160,75,.7)]">Estimate · not official</span>
+            </p>
+            <h1 className="mt-2 text-[2rem] font-bold tracking-[-0.03em]">Estimated round {pick.roundNo}</h1>
+            <p className="mt-1.5 max-w-[700px] text-sm text-[#F3EEE5]/[.68]">
+              {prevNo >= 1 ? `Built from the gazette, the round ${prevNo} list and the consent replies so far.` : "Built from the gazette and the portal preferences."} It is redone as more replies come in; PHF&apos;s real list can differ.
+            </p>
+          </div>
+          <Link href={whatIf} className="mn-btn inline-flex h-10 items-center rounded-xl px-4 text-[13px] font-semibold">What if someone rejects?</Link>
         </div>
-      }
-    >
-      <Card className="py-3 sm:py-3"><BuiltOn basis={pick.basis} /></Card>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.4fr_repeat(3,minmax(0,1fr))]">
+          <div className="rounded-[14px] border border-[#F3EEE5]/[.12] bg-[rgba(16,36,58,.45)] px-3.5 py-3">
+            <div className="flex justify-between gap-2 text-xs text-[#F3EEE5]/[.68]">
+              <p><span className="text-[#E5A04B] motion-safe:animate-pulse">●</span> Consent replies in</p>
+              <b className="text-sm text-[#E5A04B]">{pct == null ? "—" : `${pct}%`}</b>
+            </div>
+            <div className="mt-2.5 flex h-5 gap-0.5" role="img" aria-label={totalReplies ? `${replied.toLocaleString("en-US")} of ${totalReplies.toLocaleString("en-US")} replied` : "No consent replies loaded"}>
+              {Array.from({ length: ticks }, (_, i) => {
+                const t = i / (ticks - 1);
+                return <span key={i} className="flex-1 rounded-[2px]" style={i < on ? { background: `hsl(${38 - t * 6}, 78%, ${50 + t * 10}%)`, boxShadow: "0 0 6px rgba(229,160,75,.55)" } : { background: "rgba(243,238,229,.12)" }} />;
+              })}
+            </div>
+            <p className="mt-1.5 text-[11px] text-[#F3EEE5]/[.68]">
+              Published {ago(pick.publishedAt, now)}{totalReplies ? ` · ${tally.Accepted.toLocaleString("en-US")} accepted, ${tally.Rejected.toLocaleString("en-US")} rejected, ${tally.Awaited.toLocaleString("en-US")} awaited` : prevNo >= 1 ? ` · no round ${prevNo} replies loaded yet` : ""}
+            </p>
+          </div>
+          <div className="rounded-[14px] border border-[#F3EEE5]/[.12] bg-[rgba(16,36,58,.45)] px-3.5 py-3">
+            <p className="text-xs text-[#F3EEE5]/[.68]">Seats re-offered</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{prevList ? newcomers.length.toLocaleString("en-US") : rows.length.toLocaleString("en-US")}</p>
+            {prevList ? <p className="mt-0.5 text-[11px] text-[#F3EEE5]/[.68]">to people not placed in round {prevNo}</p> : null}
+          </div>
+          <div className="rounded-[14px] border border-[#F3EEE5]/[.12] bg-[rgba(16,36,58,.45)] px-3.5 py-3">
+            <p className="text-xs text-[#F3EEE5]/[.68]">Likely to move</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums text-[#3DDC97]">{prevList ? `~${movers.length.toLocaleString("en-US")}` : "—"}</p>
+            {prevList ? <p className="mt-0.5 text-[11px] text-[#F3EEE5]/[.68]">placed people who change seat</p> : null}
+          </div>
+          <div className="rounded-[14px] border border-[rgba(155,135,255,.55)] bg-[rgba(16,36,58,.45)] px-3.5 py-3 shadow-[0_0_22px_rgba(110,86,255,.25)]">
+            <p className="text-xs text-[#F3EEE5]/[.68]">You in this estimate</p>
+            {!me ? (
+              <p className="mt-1 text-sm text-[#F3EEE5]/[.85]"><Link href="/portal/profile" className="font-semibold text-[#D6CCFF] hover:underline">Link your merit record</Link> to see yourself here.</p>
+            ) : !mine ? (
+              <p className="mt-1 text-base font-bold text-[#D6CCFF]">Not in this estimate</p>
+            ) : minePlaced ? (
+              <>
+                <p className="mt-1 truncate text-base font-bold text-[#D6CCFF]">Placed · #{minePlaced.sum.placed!.preferenceNo} {minePlaced.sum.placed!.speciality}</p>
+                <p className="mt-0.5 truncate text-[11px] text-[#F3EEE5]/[.68]">{minePlaced.sum.placed!.hospital}{youPrev(minePlaced.p.program) ? ` · ${youPrev(minePlaced.p.program)! > minePlaced.sum.placed!.preferenceNo ? "up" : youPrev(minePlaced.p.program) === minePlaced.sum.placed!.preferenceNo ? "same as" : "down"} from #${youPrev(minePlaced.p.program)}` : ""} · {marginText(minePlaced.sum.placed!).toLowerCase()}</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-base font-bold text-[#D6CCFF]">Not placed</p>
+                {mineMiss ? <p className="mt-0.5 truncate text-[11px] text-[#F3EEE5]/[.68]">closest: #{mineMiss.preferenceNo} {mineMiss.speciality}, {marginText(mineMiss).toLowerCase()}</p> : null}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#F3EEE5]/[.12] bg-[rgba(16,36,58,.45)] px-3 py-2.5 [&_span:first-child]:text-[#F3EEE5]/[.68]">
+          <BuiltOn basis={pick.basis} />
+        </div>
+      </AuroraHeader>
 
       {pick.official ? (
-        <Card className="border-amber/50">
-          <p className="text-sm">PHF has published round {pick.roundNo}; this estimate is kept for comparison. <Link href={`/portal/history/${pick.induction}/rounds/${pick.roundNo}`} className="font-semibold text-signal hover:underline">Open the official list →</Link></p>
-        </Card>
+        <p className="rounded-[14px] border border-[rgba(229,160,75,.5)] bg-[rgba(229,160,75,.08)] px-4 py-3 text-sm">
+          PHF has published round {pick.roundNo}; this estimate is kept for comparison. <Link href={`/portal/history/${pick.induction}/rounds/${pick.roundNo}`} className="font-semibold text-[#B9AAFF] hover:underline">Open the official list →</Link>
+        </p>
       ) : null}
 
-      {/* Applicant result, as the old simulator showed it. */}
-      <Card className="border-dashed border-amber/50">
-        <CardHeader
-          title="Result for an applicant"
-          description="Every preference, in order: placed, fell short, would clear the cutoff, or skipped because an earlier one was placed. One seat per track."
-          action={
-            <form action={base} className="flex items-center gap-2">
-              {sp.run ? <input type="hidden" name="run" value={sp.run} /> : null}
-              <label htmlFor="est-id" className="sr-only">Applicant ID</label>
-              <input id="est-id" name="id" inputMode="numeric" defaultValue={asked || me || ""} placeholder="Applicant ID" className={cn(fieldClass, "h-10 w-36 font-mono")} />
-              <button type="submit" className="mn-btn h-10 rounded-lg px-4 text-sm font-semibold">Show</button>
-            </form>
-          }
-        />
-        {!applicant ? (
-          <p className="text-sm text-muted">Enter an applicant ID{me ? "" : ", or link your account on Me to see your own result here every time"}.</p>
-        ) : !result ? (
-          <p className="text-sm text-muted">Applicant {applicant} has no preferences in this induction&apos;s data, so the estimate cannot place them.</p>
-        ) : (
-          <div className="grid gap-5">
-            <p className="text-sm text-muted">
-              <span className="font-mono text-ink">{result.applicantId}</span>
-              {result.name ? <> · <span className="font-semibold text-heading">{result.name}</span></> : null}
-              {result.pmdcNo ? <> · PMDC <span className="font-mono">{result.pmdcNo}</span></> : null}
-              {result.applicantId === me ? <Badge tone="current" className="ml-2">you</Badge> : null}
-            </p>
-            {result.programmes.map((p) => {
-              const sum = trackSummary(p.rows);
-              return (
-                <section key={p.program} className="overflow-hidden rounded-xl border border-line">
-                  <div className={cn("flex flex-wrap items-center gap-3 border-b border-line px-4 py-3", sum.placed ? "bg-success/10" : "bg-[var(--mn-amber-soft)]")}>
-                    <span className="font-semibold text-heading">{p.program}</span>
-                    <span className="text-sm text-muted">mark <span className="font-mono">{formatMarks(p.mark)}</span></span>
-                    {sum.placed ? (
-                      <Pill tone="success">Placed at preference #{sum.placed.preferenceNo} · {sum.placed.speciality}, {sum.placed.hospital}</Pill>
-                    ) : (
-                      <Pill tone="amber">Not placed{sum.closestMiss ? ` · closest: #${sum.closestMiss.preferenceNo}, ${marginText(sum.closestMiss)}` : ""}</Pill>
-                    )}
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[40rem] text-sm">
-                      <thead className="text-left text-xs text-subtle">
-                        <tr><th className="px-4 py-2 font-medium">Pref.</th><th className="px-2 py-2 font-medium">Seat</th><th className="px-2 py-2 text-right font-medium">Filled</th><th className="px-2 py-2 text-right font-medium">Cutoff</th><th className="px-2 py-2 font-medium">Margin</th><th className="px-4 py-2 font-medium">Status</th></tr>
-                      </thead>
-                      <tbody>
-                        {p.rows.map((r) => (
-                          <tr key={r.preferenceNo} className={cn("border-t border-line", r.status === "placed" && "bg-success/5")}>
-                            <td className="px-4 py-2 font-mono text-muted">#{r.preferenceNo}</td>
-                            <td className="px-2 py-2"><span className="text-ink">{r.speciality}</span><span className="block text-xs text-muted">{r.hospital} · {r.quota}</span></td>
-                            <td className="px-2 py-2 text-right tabular-nums text-muted">{r.filled ?? "—"}</td>
-                            <td className="px-2 py-2 text-right font-mono">{r.cutoff == null ? "—" : formatMarks(r.cutoff)}</td>
-                            <td className={cn("px-2 py-2 text-xs", r.status === "fell_short" ? "text-danger" : r.status === "placed" || r.status === "clears_cutoff" ? "text-success" : "text-muted")}>{marginText(r)}</td>
-                            <td className="px-4 py-2"><Pill tone={STATUS_TONE[r.status]}>{RESULT_LABELS[r.status]}</Pill></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        )}
-      </Card>
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
+        <section aria-label="Estimated closing" className="mn-card-glass min-w-0 overflow-hidden rounded-[20px] border border-white/[.07]">
+          <header className="flex flex-wrap items-center justify-between gap-2.5 p-3.5">
+            <nav aria-label="View" className="mn-seg">
+              <Link href={href({ view: undefined, all: undefined })} aria-current={view === "ranges" ? "page" : undefined}>Closing ranges</Link>
+              <Link href={listHref}>Estimated list</Link>
+              <Link href={href({ view: "moves", all: undefined })} aria-current={view === "moves" ? "page" : undefined}>Who moves</Link>
+            </nav>
+            {view === "ranges" ? (
+              <form action={base} className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                {sp.run ? <input type="hidden" name="run" value={sp.run} /> : null}
+                {asked ? <input type="hidden" name="id" value={asked} /> : null}
+                <label htmlFor="est-track" className="sr-only">Quota track</label>
+                <select id="est-track" name="track" defaultValue={track} className="mn-sel h-8 text-xs">
+                  {tracks.map((t) => <option key={t} value={t}>{t.replace("|", " · ")}</option>)}
+                </select>
+                <button type="submit" className="mn-ob">Show</button>
+                {prevList ? <span><span className="text-ink">▮</span> round {prevNo} · <span className="text-[#E5A04B]">▬</span> likely round {pick.roundNo}</span> : null}
+              </form>
+            ) : null}
+          </header>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-        <Card>
-          <CardHeader title="Consent replies" description={prevNo >= 1 ? `Round ${prevNo} replies this estimate rests on. More replies make it firmer.` : "The first round is estimated from the gazette and preferences alone."} />
-          {totalReplies ? (
-            <>
-              <div className="flex h-3 overflow-hidden rounded-full bg-hover" role="img" aria-label={`${tally.Accepted} accepted, ${tally.Rejected} rejected, ${tally.Awaited} awaited`}>
-                <span className="mn-grow-x bg-success" style={{ width: `${(tally.Accepted / totalReplies) * 100}%` }} />
-                <span className="mn-grow-x bg-danger" style={{ width: `${(tally.Rejected / totalReplies) * 100}%` }} />
-                <span className="bg-amber/40" style={{ width: `${(tally.Awaited / totalReplies) * 100}%` }} />
+          {view === "ranges" ? (
+            shown.length ? (
+              <div className="overflow-x-auto">
+                <table className="mn-tbl min-w-[40rem]">
+                  <thead>
+                    <tr><th scope="col">Seat</th><th scope="col" className="!text-right">R{prevNo} closing</th><th scope="col" className="w-[260px]">Likely R{pick.roundNo} range</th><th scope="col">Change</th><th scope="col">Confidence</th></tr>
+                  </thead>
+                  <tbody>
+                    {shown.map((g) => {
+                      const d = g.closing - g.then!;
+                      const share = g.held ? g.awaited / g.held : totalReplies ? 0 : 1;
+                      const half = Math.round((0.02 + Math.abs(d) * share) * 100) / 100;
+                      const lo = g.closing - half, hi = g.closing + half;
+                      const a = Math.min(lo, g.then!), b = Math.max(hi, g.then!);
+                      const pad = Math.max(0.1, (b - a) * 0.4);
+                      const pos = (v: number) => ((v - (a - pad)) / (b - a + 2 * pad)) * 100;
+                      const conf = !totalReplies ? null : share < 0.2 ? ["High", "g"] : share < 0.5 ? ["Medium", "a"] : ["Low", "r"];
+                      return (
+                        <tr key={seatOf(g)}>
+                          <td className="max-w-[16rem]"><b className="block truncate font-semibold">{g.speciality} · {g.hospital}</b><span className="block text-[11px] text-muted">{g.fresh ? `${g.fresh} ${g.fresh === 1 ? "seat" : "seats"} re-offered` : "0 re-offered"}</span></td>
+                          <td className="text-right font-mono">{formatMarks(g.then)}</td>
+                          <td>
+                            <div className="mn-rng" aria-hidden>
+                              <span className="band" style={{ left: `${pos(lo)}%`, width: `${Math.max(2, pos(hi) - pos(lo))}%` }} />
+                              <span className="now" style={{ left: `${pos(g.then!)}%` }} />
+                            </div>
+                            <span className="font-mono text-[11px] text-[#E5A04B]">{formatMarks(lo)} – {formatMarks(hi)}</span>
+                          </td>
+                          <td>{Math.abs(d) < 0.01 ? <span className="mn-pill n">≈ same</span> : d < 0 ? <span className="mn-pill g">▼ ~{Math.abs(d).toFixed(2)}</span> : <span className="mn-pill r">▲ ~{d.toFixed(2)}</span>}</td>
+                          <td>{conf ? <span className={cn("mn-pill", conf[1])}>{conf[0]}</span> : <span className="text-xs text-muted">—</span>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <ul className="mt-3 grid grid-cols-3 gap-2 text-sm">
-                <li><span className="block text-xl font-semibold tabular-nums text-success">{tally.Accepted.toLocaleString("en-US")}</span>accepted</li>
-                <li><span className="block text-xl font-semibold tabular-nums text-danger">{tally.Rejected.toLocaleString("en-US")}</span>rejected</li>
-                <li><span className="block text-xl font-semibold tabular-nums text-amber">{tally.Awaited.toLocaleString("en-US")}</span>no reply yet</li>
-              </ul>
-            </>
-          ) : <p className="text-sm text-muted">No consent replies are loaded for this round yet.</p>}
-          <div className="mt-5 flex flex-wrap gap-2">
-            <ButtonLink href={listHref} size="sm">Open the full estimated list</ButtonLink>
-            <ButtonLink href={`/portal/simulation?i=${pick.induction}&base=${encodeURIComponent(`run:${pick.id}`)}`} variant="secondary" size="sm">What if… change consent</ButtonLink>
-          </div>
-        </Card>
+            ) : (
+              <p className="px-3.5 pb-4 text-sm text-muted">{prevList ? "No seat in this track was in the last published round to compare with." : "There is no published round before this one to compare with."}</p>
+            )
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="mn-tbl min-w-[36rem]">
+                <thead><tr><th scope="col">Applicant</th><th scope="col" className="!text-right">Mark</th><th scope="col">Round {prevNo}</th><th scope="col">Likely round {pick.roundNo}</th></tr></thead>
+                <tbody>
+                  {[...movers, ...newcomers].sort((x, y) => y.mark - x.mark).slice(0, 100).map((r) => {
+                    const p = prevSeat.get(`${r.applicantId}|${r.program}`);
+                    return (
+                      <tr key={`${r.applicantId}|${r.program}`}>
+                        <td className="font-mono">{r.applicantId}<span className="block font-sans text-[11px] text-muted">{r.program} · {r.quota}</span></td>
+                        <td className="text-right font-mono">{formatMarks(r.mark)}</td>
+                        <td className="text-muted">{p ? `#${p.preferenceNo} ${p.speciality} · ${p.hospital}` : <span className="mn-pill v">New</span>}</td>
+                        <td>#{r.preferenceNo} {r.speciality} · {r.hospital}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        <Card>
-          <CardHeader title={prevNo >= 1 ? `Where closing merit moves vs round ${prevNo}` : "Estimated closing merit"} description="The biggest changes in this estimate. Amber is the estimate; the tick is the published round." action={<Badge tone="simulated">Estimate</Badge>} />
-          {moves.length ? (
-            <ul className="grid gap-3">
-              {moves.map((g) => {
-                const lo = Math.min(g.closing, g.then!) - 2, hi = Math.max(g.closing, g.then!) + 2;
-                const pos = (v: number) => `${((v - lo) / (hi - lo)) * 100}%`;
-                const down = g.closing < g.then!;
-                return (
-                  <li key={`${g.program}|${g.quota}|${g.speciality}|${g.hospital}`}>
-                    <div className="flex items-baseline justify-between gap-3 text-sm">
-                      <span className="min-w-0 truncate"><span className="text-ink">{g.speciality}</span> <span className="text-muted">· {g.hospital} · {g.program} {g.quota}</span></span>
-                      <span className={cn("flex-none font-mono text-xs", down ? "text-success" : "text-danger")}>{formatMarks(g.then)} → {formatMarks(g.closing)}</span>
+          <p className="border-t border-white/[.05] px-3.5 pb-3.5 pt-3 text-xs text-muted">
+            {view === "ranges" ? (
+              <>Ranges, not single numbers. Wider bands mean more of last round&apos;s holders have not replied for that seat.{changing.length > shown.length ? <> <Link href={href({ all: "1" })} className="text-[#B9AAFF]">Show all {changing.length} seats</Link>.</> : null} <Link href="/portal/help" className="text-[#B9AAFF]">How estimates are made</Link></>
+            ) : (
+              <>The {Math.min(100, movers.length + newcomers.length)} highest marks among {(movers.length + newcomers.length).toLocaleString("en-US")} people who are new or change seat. <Link href={listHref} className="text-[#B9AAFF]">Open the full estimated list</Link></>
+            )}
+          </p>
+        </section>
+
+        <aside aria-label="Applicant result" className="mn-card-glass flex min-w-0 flex-col gap-3 rounded-[20px] border border-[rgba(155,135,255,.45)] p-[18px] shadow-[0_0_40px_rgba(110,86,255,.18)]">
+          <div className="flex items-center gap-2.5">
+            <span aria-hidden className="mn-av !h-10 !w-10 !text-sm bg-[linear-gradient(135deg,#8B73FF,#5B3FF5)] shadow-[0_0_14px_rgba(110,86,255,.6)]">{result?.name ? initials(result.name) : "#"}</span>
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-base font-semibold">{result ? result.name ?? `Applicant ${result.applicantId}` : "Result for an applicant"} {result && result.applicantId === me ? <span className="mn-pill v">you</span> : null}</h2>
+              {result ? <p className="mt-0.5 truncate font-mono text-[11px] text-muted">{[result.applicantId, result.pmdcNo, result.programmes[0] ? formatMarks(result.programmes[0].mark) : null].filter(Boolean).join(" · ")}</p> : <p className="mt-0.5 text-[11px] text-muted">Every preference, in order</p>}
+            </div>
+            <details className="relative">
+              <summary className="mn-ob h-[30px] cursor-pointer list-none text-xs text-[#B9B9C2] [&::-webkit-details-marker]:hidden">Change</summary>
+              <form action={base} className="absolute right-0 top-9 z-10 flex gap-2 rounded-xl border border-white/10 bg-[#17171C] p-2 shadow-xl">
+                {sp.run ? <input type="hidden" name="run" value={sp.run} /> : null}
+                <label htmlFor="est-id" className="sr-only">Applicant ID</label>
+                <input id="est-id" name="id" inputMode="numeric" defaultValue={applicant} placeholder="Applicant ID" className="h-9 w-32 rounded-lg border border-white/10 bg-transparent px-2.5 font-mono text-sm outline-none focus:border-[rgba(155,135,255,.7)]" />
+                <button type="submit" className="mn-ob h-9">Show</button>
+              </form>
+            </details>
+          </div>
+
+          {!applicant ? (
+            <p className="text-sm text-muted">Pick an applicant with Change{me ? "" : ", or link your merit record on Me to see your own result here every time"}.</p>
+          ) : !result ? (
+            <p className="text-sm text-muted">Applicant {applicant} has no preferences in this induction&apos;s data, so the estimate cannot place them.</p>
+          ) : (
+            result.programmes.map((p) => {
+              const sum = trackSummary(p.rows);
+              const was = youPrev(p.program);
+              return (
+                <div key={p.program} className="grid gap-3">
+                  {sum.placed ? (
+                    <div className="rounded-xl border border-[rgba(61,220,151,.4)] bg-[rgba(61,220,151,.10)] p-3 shadow-[0_0_18px_rgba(61,220,151,.15)]">
+                      <div className="flex items-center justify-between gap-2"><b className="text-[13px]">{p.program} · {sum.placed.quota} placement</b><span className="mn-pill g">Placed</span></div>
+                      <p className="mt-1 text-xs">Placed at preference #{sum.placed.preferenceNo}: <b>{sum.placed.speciality} @ {sum.placed.hospital}</b>{was ? <span className="text-muted"> ({was > sum.placed.preferenceNo ? "up from" : was === sum.placed.preferenceNo ? "same as" : "down from"} #{was} in round {prevNo})</span> : null}</p>
                     </div>
-                    <div className="relative mt-1.5 h-2 rounded-full bg-hover">
-                      <span className="mn-grow-x absolute inset-y-0 rounded-full bg-amber/60" style={{ left: pos(Math.min(g.closing, g.then!)), width: `calc(${pos(Math.max(g.closing, g.then!))} - ${pos(Math.min(g.closing, g.then!))})` }} />
-                      <span aria-hidden className="absolute -top-1 h-4 w-0.5 rounded bg-ink" style={{ left: pos(g.then!) }} />
+                  ) : (
+                    <div className="rounded-xl border border-[rgba(229,160,75,.4)] bg-[rgba(229,160,75,.08)] p-3">
+                      <div className="flex items-center justify-between gap-2"><b className="text-[13px]">{p.program} placement</b><span className="mn-pill a">Not placed</span></div>
+                      <p className="mt-1 text-xs">{sum.closestMiss ? <>Closest: #{sum.closestMiss.preferenceNo} <b>{sum.closestMiss.speciality} @ {sum.closestMiss.hospital}</b>, {marginText(sum.closestMiss).toLowerCase()}</> : "No preference clears its cutoff in this estimate."}</p>
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : <p className="text-sm text-muted">No seat&apos;s closing merit changes against the published round, or there is no published round to compare with.</p>}
-        </Card>
+                  )}
+                  <div className="grid grid-cols-[26px_1fr_46px_92px_68px] gap-1.5 px-2 text-[10px] uppercase tracking-[0.05em] text-muted"><span>Pref</span><span>Seat</span><span className="text-right">Cutoff</span><span className="text-right">Margin</span><span className="text-right">Status</span></div>
+                  <ol className="flex max-h-[470px] flex-col gap-1 overflow-auto pr-0.5">
+                    {p.rows.map((r) => {
+                      const t = ROW[r.status];
+                      const m = marginText(r);
+                      return (
+                        <li key={r.preferenceNo} className="grid grid-cols-[26px_1fr_46px_92px_68px] items-center gap-1.5 rounded-[9px] px-2 py-[7px] text-xs" style={{ background: t.bg, boxShadow: t.sh }}>
+                          <span className="font-mono" style={{ color: t.nc }}>#{r.preferenceNo}</span>
+                          <span className="min-w-0"><span className="block truncate" style={{ color: t.tc }}>{r.speciality}</span><span className="block truncate text-[10px] text-muted">{r.hospital}{r.filled != null ? ` · ${r.filled} placed` : ""}</span></span>
+                          <span className="text-right font-mono text-muted">{r.cutoff == null ? "—" : formatMarks(r.cutoff)}</span>
+                          <span className="text-right font-mono text-[11px]" style={{ color: /short/i.test(m) ? "#FF7A7A" : t.dc }}>{m}</span>
+                          <span className="text-right"><span className="mn-pill !px-[7px] !py-0.5 !text-[10px]" style={{ background: t.sb, color: t.sc }}>{RESULT_LABELS[r.status]}</span></span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              );
+            })
+          )}
+          <p className="text-[11px] leading-normal text-muted">One final seat per quota track. Lower preferences can still show &quot;would clear&quot;, but they are skipped once an earlier one is placed.</p>
+          <Link href={whatIf} className="mn-btn inline-flex h-10 items-center justify-center rounded-xl px-4 text-[13px] font-semibold">What if someone above me rejects?</Link>
+        </aside>
       </div>
 
       {all.length > 1 ? (
         <p className="text-xs text-muted">
           Other estimates:{" "}
           {all.filter((e) => e.id !== pick.id).map((e, i) => (
-            <span key={e.id}>{i ? ", " : ""}<Link href={`${base}?run=${e.id}`} className="text-signal underline underline-offset-2">induction {e.induction} round {e.roundNo}{e.official ? " (superseded)" : ""}</Link></span>
+            <span key={e.id}>{i ? ", " : ""}<Link href={`${base}?run=${e.id}`} className="text-[#B9AAFF] underline underline-offset-2">induction {e.induction} round {e.roundNo}{e.official ? " (superseded)" : ""}</Link></span>
           ))}
         </p>
       ) : null}

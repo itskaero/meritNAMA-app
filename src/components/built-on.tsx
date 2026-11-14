@@ -15,7 +15,7 @@ export function BuiltOn({ basis, className }: { basis: Basis | null | undefined;
         <span
           key={c.label}
           className={cn(
-            "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5",
+            "inline-flex h-[26px] items-center gap-[5px] rounded-full border px-2.5",
             c.tone === "official" ? "border-success/45 text-success" : c.tone === "unofficial" ? "border-dashed border-amber/60 text-amber" : "border-info/40 text-info",
           )}
         >
