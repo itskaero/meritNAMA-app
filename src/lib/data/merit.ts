@@ -483,12 +483,12 @@ export async function compareRounds(db: Database, session: Session | null, induc
 
   // Movement, computed in SQL so applicant ids stay in the database.
   const [movement] = (await db.execute(sql`
-    with a as (select applicant_id, program, quota, speciality_job_id from merit_allocations where round_id = ${a.id}),
-         b as (select applicant_id, program, quota, speciality_job_id from merit_allocations where round_id = ${b.id})
+    with a as (select applicant_id, program, quota, speciality, hospital from merit_allocations where round_id = ${a.id}),
+         b as (select applicant_id, program, quota, speciality, hospital from merit_allocations where round_id = ${b.id})
     select
       (select count(*) from b where not exists (select 1 from a where a.applicant_id = b.applicant_id and a.program = b.program and a.quota = b.quota))::int as entered,
       (select count(*) from a where not exists (select 1 from b where b.applicant_id = a.applicant_id and b.program = a.program and b.quota = a.quota))::int as left_,
-      (select count(*) from a join b on a.applicant_id = b.applicant_id and a.program = b.program and a.quota = b.quota and a.speciality_job_id <> b.speciality_job_id)::int as moved
+      (select count(*) from a join b on a.applicant_id = b.applicant_id and a.program = b.program and a.quota = b.quota and (a.speciality <> b.speciality or a.hospital <> b.hospital))::int as moved
   `)) as unknown as { entered: number; left_: number; moved: number }[];
 
   return { from: a, to: b, groups, movement: { entered: movement?.entered ?? 0, left: movement?.left_ ?? 0, moved: movement?.moved ?? 0 } };
@@ -693,4 +693,20 @@ export async function findApplicant(db: Database, session: Session | null, rawId
     estimates: estimates.map((e) => ({ runId: e.run_id, induction: e.induction, roundNo: e.round_no, program: e.program, quota: e.quota, speciality: e.speciality, hospital: e.hospital, mark: Number(e.mark), preferenceNo: e.preference_no })),
     neighbours,
   };
+}
+
+/**
+ * Where marks stand on a published list: how many allocations of the same programme in that
+ * round were below them (0–100). Public figures only.
+ */
+export async function marksStanding(db: Database, session: Session | null, input: { induction: number; roundNo: number; program: string; marks: number }) {
+  assertCan(session, "portal");
+  const [r] = await db.select({
+    total: count(),
+    below: sql<number>`count(*) filter (where ${meritAllocations.marks} < ${input.marks})`.mapWith(Number),
+  }).from(meritAllocations)
+    .innerJoin(meritRounds, eq(meritRounds.id, meritAllocations.roundId))
+    .where(and(eq(meritRounds.inductionId, input.induction), eq(meritRounds.roundNo, input.roundNo), eq(meritAllocations.program, input.program)));
+  const total = Number(r?.total ?? 0);
+  return total ? { percentile: Math.round(((r!.below) / total) * 100), total } : null;
 }

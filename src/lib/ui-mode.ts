@@ -11,9 +11,6 @@ export function parseUiMode(value: string | undefined): UiMode {
   return value === "pro" ? "pro" : "simple";
 }
 
-/** Time (ms) up to which "What's new" items were dismissed. */
-export const WHATS_NEW_COOKIE = "mn_news_seen";
-
 /** Colour theme: dark by default (v3); light, or follow the device ("system"), on request. */
 export const THEMES = ["light", "dark", "system"] as const;
 export type Theme = (typeof THEMES)[number];
