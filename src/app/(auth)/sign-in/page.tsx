@@ -48,7 +48,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       ) : (
         <SignInForm google={Boolean(googleConfig())} />
       )}
-      <p className="text-center text-xs text-subtle">No password. meritNAMA is independent and not an official admissions authority. <Link href="/privacy" className="hover:underline">Privacy</Link> · <Link href="/terms" className="hover:underline">Terms</Link> · <Link href="/contact" className="hover:underline">Contact</Link></p>
+      <p className="text-center text-xs text-subtle">No password: we email you a one-time link.</p>
       {isDev ? (
         <p className="text-center text-xs text-muted">
           Development: links are not emailed without SMTP_URL; open <Link href="/dev/mailbox" className="font-semibold text-signal hover:underline">the dev mailbox</Link>.

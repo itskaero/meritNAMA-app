@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { Landing } from "@/components/landing/landing";
+import { LandingV4 } from "@/components/landing/landing-v4";
+import { jobTeaser } from "@/lib/data/jobs";
 import { isStaff } from "@/lib/auth/roles";
 import { getSession } from "@/lib/auth/session";
 import { landingCheck, landingFigures, landingTracks } from "@/lib/data/public";
@@ -35,5 +36,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ m
   const [tracks, check] = up
     ? await Promise.all([landingTracks(getDb()).catch(() => null), landingCheck(getDb(), { marks: typeof sp.marks === "string" ? sp.marks : undefined, track: typeof sp.track === "string" ? sp.track : undefined }).catch(() => ({ ok: false as const, message: "That did not work. Try again." }))])
     : [null, null];
-  return <Landing f={figures} features={features} tracks={tracks} check={check} query={{ marks: typeof sp.marks === "string" ? sp.marks : "", track: typeof sp.track === "string" ? sp.track : "" }} />;
+  const jobs = up ? await jobTeaser(getDb()).catch(() => null) : null;
+  return <LandingV4 f={figures} features={features} tracks={tracks} check={check} jobs={jobs} query={{ marks: typeof sp.marks === "string" ? sp.marks : "", track: typeof sp.track === "string" ? sp.track : "" }} />;
 }

@@ -66,7 +66,7 @@ type Tracks = { induction: number; total: number; tracks: { program: string; quo
  * "Check your marks": a plain GET form answered on the server, so it works without
  * JavaScript. It returns counts only; which options they are is in the score finder.
  */
-function MarksCheck({ tracks, check, query }: { tracks: Tracks; check: LandingCheck | null; query: { marks: string; track: string } }) {
+export function MarksCheck({ tracks, check, query }: { tracks: Tracks; check: LandingCheck | null; query: { marks: string; track: string } }) {
   if (!tracks || !tracks.tracks.length) {
     return (
       <Link href="/portal/finder" className="inline-flex items-center gap-2 justify-self-start rounded-lg bg-gold px-5 py-3 font-semibold text-navy transition-colors hover:bg-ivory">
