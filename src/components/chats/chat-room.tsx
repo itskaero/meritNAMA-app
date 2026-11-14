@@ -6,7 +6,6 @@ import { blockAction, chatUpdatesAction, muteAction, reactAction, readAction, re
 import type { ChatMessage } from "@/lib/data/chats";
 import { CHAT_MESSAGE_MAX, CHAT_REACTIONS, CHAT_REPORT_REASONS } from "@/lib/domain/chats";
 import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
 import { cn } from "../ui/cn";
 
 function ago(iso: string, now: number) {
@@ -39,14 +38,16 @@ function Row({ m, now, kind, onChange }: { m: ChatMessage; now: number; kind: "g
     return <li className="px-3 py-2 text-center text-xs text-muted">{m.body}</li>;
   }
   return (
-    <li className={cn("group flex flex-col gap-1 rounded-xl px-3 py-2", m.mine ? "items-end" : "items-start", m.hidden && "opacity-60")}>
-      <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
-        <span className="font-semibold text-heading">{m.mine ? "You" : m.author ?? "Member"}</span>
+    <li className={cn("group flex gap-2.5", m.mine ? "justify-end" : "items-end", m.hidden && "opacity-60")}>
+      {!m.mine ? <span aria-hidden className="mn-av mb-5 bg-[#5B3FF5]">{(m.author ?? "M").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("")}</span> : null}
+      <div className={cn("flex min-w-0 flex-col gap-1", m.mine ? "items-end" : "items-start")}>
+      <p className={cn("max-w-[440px] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm leading-normal", m.mine ? "bg-[linear-gradient(135deg,#8B73FF,#5B3FF5)] text-white shadow-[0_8px_26px_rgba(110,86,255,.4)]" : "border border-white/[.06] bg-[#1C1C21] text-ink")}>{m.body}</p>
+      <p className="flex flex-wrap items-center gap-x-2 text-[11px] text-muted">
+        <span>{m.mine ? "You" : m.author ?? "Member"}</span>
         {m.team ? <Badge tone="official">Team</Badge> : null}
-        <time dateTime={m.at}>{ago(m.at, now)}</time>
+        <time dateTime={m.at}>· {ago(m.at, now)}</time>
         {m.hidden ? <Badge tone="warning">Hidden</Badge> : null}
       </p>
-      <p className={cn("max-w-[34rem] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm", m.mine ? "bg-action text-action-ink" : "bg-hover text-ink")}>{m.body}</p>
       {m.reactions.length ? (
         <p className="flex flex-wrap gap-1" aria-label="Reactions">
           {m.reactions.map((r) => (
@@ -82,6 +83,7 @@ function Row({ m, now, kind, onChange }: { m: ChatMessage; now: number; kind: "g
         </div>
       ) : null}
       {note ? <p className="text-xs text-muted" role="status">{note}</p> : null}
+      </div>
     </li>
   );
 }
@@ -154,15 +156,15 @@ export function ChatRoom({
   const left = CHAT_MESSAGE_MAX - draft.length;
 
   return (
-    <section aria-label="Conversation" className="min-w-0 rounded-xl border border-line bg-surface shadow-[var(--mn-shadow-1)]">
-      <div role="log" aria-live="polite">
-        <ol ref={listRef} tabIndex={0} aria-label="Messages" className="grid max-h-[30rem] min-h-[14rem] content-start gap-1 overflow-y-auto px-3 py-3">
+    <section aria-label="Conversation" className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div role="log" aria-live="polite" className="min-h-0 flex-1">
+        <ol ref={listRef} tabIndex={0} aria-label="Messages" className="flex h-full max-h-[calc(100dvh-16rem)] min-h-[14rem] flex-col gap-3.5 overflow-y-auto px-[22px] py-[18px]">
           {messages.length === 0 ? <li className="px-2 py-10 text-center text-sm text-muted">No messages yet. Say hello.</li> : messages.map((m) => (
             <Row key={m.id} m={m} now={now} kind={kind} onChange={(n) => setMessages((p) => p.map((x) => (x.id === n.id ? n : x)))} />
           ))}
         </ol>
       </div>
-      <footer className="grid gap-2 border-t border-line px-4 py-3">
+      <footer className="grid gap-2 border-t border-white/[.06] px-[22px] py-3.5">
         {mayPost ? (
           <form onSubmit={(e) => { e.preventDefault(); if (draft.trim()) send(); }} className="grid gap-2">
             <div className="flex gap-2">
@@ -170,8 +172,8 @@ export function ChatRoom({
               <textarea id="chat-draft" value={draft} rows={1} maxLength={CHAT_MESSAGE_MAX} placeholder="Write a message"
                 onChange={(e) => setDraft(e.target.value.slice(0, CHAT_MESSAGE_MAX))}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (draft.trim() && !sending) send(); } }}
-                className="min-h-10 min-w-0 flex-1 resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm text-ink placeholder:text-subtle hover:border-decor" />
-              <Button type="submit" disabled={sending || !draft.trim()}>{sending ? "Sending" : "Send"}</Button>
+                className="h-[46px] min-w-0 flex-1 resize-none rounded-xl border border-white/10 bg-[#17171A] px-4 py-3 text-sm text-ink placeholder:text-muted" />
+              <button type="submit" disabled={sending || !draft.trim()} className="mn-btn h-[46px] rounded-xl px-5 text-sm font-semibold disabled:opacity-60">{sending ? "Sending" : "Send"}</button>
             </div>
             <p className={cn("text-right text-xs text-subtle", left < 40 && "text-amber")} aria-live="polite">{left} left</p>
             {error ? <p role="alert" className="text-sm text-danger">{error}</p> : null}
