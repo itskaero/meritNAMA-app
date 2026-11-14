@@ -1189,3 +1189,22 @@ export const joiningStatus = pgTable(
   },
   (t) => [primaryKey({ columns: [t.inductionId, t.applicantId, t.program] })],
 );
+
+/**
+ * Notices for the bar at the top of every page, posted by the team. Automatic notices
+ * (a PHF deadline, a new round, a published estimate) are worked out on the fly and
+ * not stored. Shown between starts_at and ends_at; audience "all" or "members".
+ */
+export const announcements = pgTable("announcements", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  text: text("text").notNull(),
+  href: text("href"),
+  /** info, warning or highlight. */
+  tone: text("tone").notNull().default("info"),
+  audience: text("audience").notNull().default("all"),
+  startsAt: timestamp("starts_at", { withTimezone: true }).notNull().defaultNow(),
+  endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  removedAt: timestamp("removed_at", { withTimezone: true }),
+});

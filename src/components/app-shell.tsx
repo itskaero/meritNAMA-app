@@ -9,6 +9,8 @@ import { unreadCount } from "@/lib/data/notifications";
 import { Icon } from "./icon";
 import type { Section } from "@/lib/navigation";
 import { whatsNew } from "@/lib/data/whats-new";
+import { liveNotices } from "@/lib/data/announcements";
+import { NoticeBar } from "./notice-bar";
 import { getDb } from "@/lib/db/client";
 import { parseTheme, parseUiMode, THEME_COOKIE, UI_MODE_COOKIE, WHATS_NEW_COOKIE, type Theme, type UiMode } from "@/lib/ui-mode";
 import { LogoMark, Wordmark } from "./brand";
@@ -93,6 +95,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
   const news = (await whatsNew(getDb(), session).catch(() => []))
     .filter((n) => n.at.getTime() > seen)
     .map((n) => ({ text: n.text, href: n.href, at: n.at.toISOString() }));
+  const notices = await liveNotices(getDb(), session).catch(() => []);
   const pro = mode === "pro";
   const items: NavItem[] = [...sections.filter((x) => !x.hideInNav).map(({ href, label, group, icon, match }) => ({ href, label, group, icon, match })), ...links];
   const palette: Command[] = [
@@ -131,6 +134,7 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
       />
       <div className="min-w-0">
         <main id="main" className={cn("pg min-h-screen", Boolean(bottomTabs?.length) && "pb-28 lg:pb-0")}>
+          {notices.length ? <NoticeBar notices={notices} /> : null}
           {news.length ? <WhatsNew items={news} /> : null}
           {children}
         </main>

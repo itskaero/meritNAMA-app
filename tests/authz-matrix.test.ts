@@ -24,6 +24,7 @@ const name = (file: string, fn: string) => `${path.basename(file, ".ts")}#${fn}`
 const EXEMPT: Record<string, string> = {
   "candidates#mayPost": "answers whether the caller may post: false when signed out",
   "users#ensureUser": "internal helper; callers check permissions and pass a signed-in session",
+  "announcements#liveNotices": "public notification bar: signed-out visitors see 'everyone' notices; 'members' posts need a session",
 };
 
 /**

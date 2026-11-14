@@ -18,6 +18,7 @@ import { listPolicyVersions } from "@/lib/data/policies";
 import { getReferenceOverview } from "@/lib/data/reference-data";
 import { checkDatabase, getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
+import { NoticesCard } from "./notices";
 
 export const metadata = { title: "Admin overview" };
 export const dynamic = "force-dynamic";
@@ -71,6 +72,7 @@ export default async function AdminOverviewPage() {
   return (
     <AreaPage {...frame}>
       <WorkQueues queues={queues} />
+      <NoticesCard db={db} session={session!} />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Database" value="Online" badge={dbBadge.ok} hint="Live check" />
         <Metric label="Active scoring policy" value={active ? active.policyKey : null} unit={active ? `v${active.version}` : undefined} hint={active ? "Manage under Scoring policies" : "Not imported yet"} />

@@ -204,6 +204,13 @@
       "when": 1794595664307,
       "tag": "0028_schedule_joining",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794624942587,
+      "tag": "0029_announcements",
+      "breakpoints": true
     }
   ]
 }
