@@ -3,7 +3,7 @@ import type { LandingCheck, LandingFigures } from "@/lib/data/public";
 import type { FeatureFlags } from "@/lib/domain/settings";
 import { LogoMark, Wordmark } from "../brand";
 import { cn } from "../ui/cn";
-import { MarksCheck } from "./landing";
+import { MarksCheck } from "./marks-check";
 
 type Tracks = { induction: number; total: number; tracks: { program: string; quota: string }[] } | null;
 type Teaser = { open: number; latest: { title: string; employer: string | null; city: string | null; lastDate: string | null; official: boolean }[] } | null;
