@@ -163,6 +163,7 @@
  "merit#hospitalRoundPeople": "candidate data_editor policy_editor verifier moderator owner",
  "merit#applicantIdentity": "candidate data_editor policy_editor verifier moderator owner",
  "merit#consentReadiness": "candidate data_editor policy_editor verifier moderator owner",
+ "merit#hospitalStats": "candidate data_editor policy_editor verifier moderator owner",
  "notifications#isFollowing": "candidate data_editor policy_editor verifier moderator owner",
  "notifications#followerCount": "candidate data_editor policy_editor verifier moderator owner",
  "notifications#setFollow": "candidate data_editor policy_editor verifier moderator owner",

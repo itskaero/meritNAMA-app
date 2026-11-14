@@ -762,3 +762,57 @@ export async function consentReadiness(db: Database, session: Session | null, in
   const replied = rows.reduce((s, r) => s + Number(r.replied), 0);
   return placed ? { placed, replied, share: replied / placed, byProgram: rows.map((r) => ({ program: r.program.trim(), placed: Number(r.placed), replied: Number(r.replied) })) } : null;
 }
+
+/**
+ * A hospital's demand and history (Hospital page): applicants per seat from the latest
+ * induction's portal preferences, against every hospital; median closing merit in the last
+ * round of each induction; and each speciality's closing merit by induction. Aggregates only.
+ */
+export async function hospitalStats(db: Database, session: Session | null, hospitalId: number) {
+  assertCan(session, "portal");
+  const [h] = await db.select({ name: hospitals.name }).from(hospitals).where(eq(hospitals.id, hospitalId)).limit(1);
+  if (!h) return null;
+  const key = nameKey(h.name);
+  const [ds] = (await db.execute(sql`select max(induction_id) as ind from sim_datasets`)) as unknown as { ind: number | null }[];
+  const ind = ds?.ind ?? null;
+  let demand: { applications: number; seats: number; perSeat: number; busierThan: number } | null = null;
+  const perSpec = new Map<number, number>();
+  if (ind) {
+    const [prefs, seats] = await Promise.all([
+      db.execute(sql`select hospital, speciality_id, count(distinct applicant_id)::int as n from sim_preferences where induction_id = ${ind} group by hospital, speciality_id`) as unknown as Promise<{ hospital: string; speciality_id: number; n: number }[]>,
+      db.execute(sql`select h.name, s.speciality_id, sum(s.seats)::int as seats from induction_seats s join hospitals h on h.id = s.hospital_id where s.induction_id = ${ind} group by h.name, s.speciality_id`) as unknown as Promise<{ name: string; speciality_id: number; seats: number }[]>,
+    ]);
+    const appCount = new Map<string, number>();
+    // Applications per hospital: an applicant who lists several specialities there counts once for each.
+    for (const r of prefs) appCount.set(nameKey(r.hospital), (appCount.get(nameKey(r.hospital)) ?? 0) + r.n);
+    const seatBy = new Map<string, number>();
+    for (const s of seats) seatBy.set(nameKey(s.name), (seatBy.get(nameKey(s.name)) ?? 0) + s.seats);
+    const ratios = [...seatBy.entries()].filter(([, s]) => s > 0).map(([k, s]) => (appCount.get(k) ?? 0) / s);
+    const mineSeats = seatBy.get(key) ?? 0, mineApps = appCount.get(key) ?? 0;
+    if (mineSeats) {
+      const perSeat = mineApps / mineSeats;
+      demand = { applications: mineApps, seats: mineSeats, perSeat, busierThan: Math.round((ratios.filter((x) => x < perSeat).length / Math.max(1, ratios.length)) * 100) };
+      const seatSpec = new Map(seats.filter((s) => nameKey(s.name) === key).map((s) => [s.speciality_id, s.seats]));
+      for (const r of prefs.filter((p) => nameKey(p.hospital) === key)) {
+        const s = seatSpec.get(r.speciality_id);
+        if (s) perSpec.set(r.speciality_id, r.n / s);
+      }
+    }
+  }
+  const history = (await db.execute(sql`
+    with last as (select distinct on (induction_id) id, induction_id from merit_rounds order by induction_id, round_no desc),
+    g as (select l.induction_id, m.speciality_id, min(m.marks) as closing
+          from merit_allocations m join last l on l.id = m.round_id
+          where m.hospital_id = ${hospitalId} group by l.induction_id, m.program, m.quota, m.speciality_id)
+    select induction_id, speciality_id, closing from g order by induction_id`)) as unknown as { induction_id: number; speciality_id: number | null; closing: number }[];
+  const inductionIds = [...new Set(history.map((r) => r.induction_id))];
+  const medianOf = (v: number[]) => { const s = [...v].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)]! : null; };
+  const medians = inductionIds.map((i) => ({ induction: i, median: medianOf(history.filter((r) => r.induction_id === i).map((r) => Number(r.closing))) }));
+  const trend = new Map<number, number[]>();
+  for (const i of inductionIds) {
+    const bySpec = new Map<number, number>();
+    for (const r of history.filter((x) => x.induction_id === i && x.speciality_id != null)) bySpec.set(r.speciality_id!, Math.min(bySpec.get(r.speciality_id!) ?? Infinity, Number(r.closing)));
+    for (const [s, c] of bySpec) trend.set(s, [...(trend.get(s) ?? []), c]);
+  }
+  return { demand, perSpec, medians, trend };
+}
