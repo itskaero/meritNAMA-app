@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { JOIN_LABELS, type JoinState, type Waste, type WasteRow } from "@/lib/domain/joining";
-import { Pill } from "./ui/segmented";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 export const pct = (x: number) => `${Math.round(x * 100)}%`;
 
 export function JoinPill({ state }: { state: JoinState }) {
-  return <Pill tone={state === "joined" ? "success" : state === "pending" ? "amber" : "danger"}>{JOIN_LABELS[state]}</Pill>;
+  return <span className={`mn-pill ${state === "joined" ? "g" : state === "pending" ? "a" : "r"}`}>{JOIN_LABELS[state]}</span>;
 }
 
 /** Seats → placed → joined, and what was wasted (not joined + never filled). */

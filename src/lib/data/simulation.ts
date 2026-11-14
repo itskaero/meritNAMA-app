@@ -1239,7 +1239,9 @@ export type GazetteBoardRow = {
   /** Programmes applied in, with how many preferences each. */
   programmes: { program: string; prefs: number }[];
   /** Seat in the latest published round of the induction, if any. */
-  seat: { program: string; speciality: string; hospital: string } | null;
+  seat: { program: string; speciality: string; hospital: string; preferenceNo: number | null } | null;
+  /** Consent reply to the latest round (Accepted, Rejected, or anything else as waiting); null when none is loaded. */
+  consent: string | null;
 };
 
 /**
@@ -1263,8 +1265,10 @@ export async function gazetteBoard(db: Database, session: Session | null, induct
   const prefsBy = new Map<string, { program: string; prefs: number }[]>();
   for (const p of prefCounts) (prefsBy.get(p.applicantId) ?? prefsBy.set(p.applicantId, []).get(p.applicantId)!).push({ program: nm(p.program), prefs: p.n });
   const [latest] = await db.select({ roundNo: meritRounds.roundNo }).from(meritRounds).where(eq(meritRounds.inductionId, induction)).orderBy(desc(meritRounds.roundNo)).limit(1);
-  const seats = new Map<string, { program: string; speciality: string; hospital: string }>();
-  if (latest) for (const a of (await publishedRound(db, induction, latest.roundNo)) ?? []) if (!seats.has(a.applicantId)) seats.set(a.applicantId, { program: a.program, speciality: a.speciality, hospital: a.hospital });
+  const seats = new Map<string, { program: string; speciality: string; hospital: string; preferenceNo: number | null }>();
+  if (latest) for (const a of (await publishedRound(db, induction, latest.roundNo)) ?? []) if (!seats.has(a.applicantId)) seats.set(a.applicantId, { program: a.program, speciality: a.speciality, hospital: a.hospital, preferenceNo: a.preferenceNo ?? null });
+  const consent = new Map<string, string>();
+  if (latest) for (const r of await officialReplies(db, induction, latest.roundNo)) if (consent.get(r.applicantId) !== "Accepted") consent.set(r.applicantId, r.status);
   const rows: GazetteBoardRow[] = raw.map((c) => {
     const e = eff.get(c.applicantId);
     return {
@@ -1278,6 +1282,7 @@ export async function gazetteBoard(db: Database, session: Session | null, induct
       corrected: [...(correctedBy.get(c.applicantId) ?? [])],
       programmes: (prefsBy.get(c.applicantId) ?? []).sort((a, b) => a.program.localeCompare(b.program)),
       seat: seats.get(c.applicantId) ?? null,
+      consent: consent.get(c.applicantId) ?? null,
     };
   });
   rows.sort((a, b) => b.marks - a.marks || a.applicantId.localeCompare(b.applicantId));

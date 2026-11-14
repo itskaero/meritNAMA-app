@@ -285,6 +285,17 @@ html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger te
 .mn-seg > :not(li):hover, .mn-seg > li > *:hover { color: #EDEDEF; }
 .mn-seg > .on, .mn-seg > [aria-current], .mn-seg > li > .on, .mn-seg > li > [aria-current] { color: #fff; background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(110,86,255,.5)); box-shadow: inset 0 -2px 0 #7B61FF, 0 0 18px rgba(110,86,255,.35); }
 .mn-seg-iv { border-color: rgba(243,238,229,.18); }
+/* Gazette.dc.html: filter chips with a count, programme tags, two-part verification steps, small labelled selects. */
+.mn-chipf { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,.12); color: #B9B9C2; font-size: 12px; transition: border-color .2s, box-shadow .2s, color .2s; }
+.mn-chipf:hover { border-color: rgba(155,135,255,.6); color: #fff; }
+.mn-chipf[aria-current] { color: #fff; border-color: rgba(155,135,255,.7); background: rgba(110,86,255,.18); box-shadow: 0 0 14px rgba(110,86,255,.3); }
+.mn-chipf b { font-weight: 600; color: #8B8B93; }
+.mn-chipf[aria-current] b { color: #D6CCFF; }
+.mn-tag { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 5px; border: 1px solid rgba(255,255,255,.14); color: #B9B9C2; margin-right: 3px; }
+.mn-step { display: inline-flex; align-items: center; border-radius: 7px; overflow: hidden; font-size: 10px; font-weight: 700; border: 1px solid rgba(255,255,255,.1); white-space: nowrap; }
+.mn-step > span { padding: 2px 6px; }
+.mn-lbl { display: flex; flex-direction: column; gap: 3px; font-size: 10px; color: #8B8B93; text-transform: uppercase; letter-spacing: .05em; }
+.mn-lbl > select { height: 32px; padding: 0 8px; border-radius: 9px; background: #141418; color: #EDEDEF; border: 1px solid rgba(255,255,255,.1); font: inherit; font-size: 12px; text-transform: none; letter-spacing: 0; }
 /* .mn-rng: a likely range (marching amber band) with the last published value as a tick. */
 .mn-rng { position: relative; height: 12px; border-radius: 99px; background: rgba(255,255,255,.05); }
 .mn-rng > .band { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: repeating-linear-gradient(90deg, rgba(229,160,75,.55) 0 6px, rgba(229,160,75,.3) 6px 12px); background-size: 24px 100%; animation: mn-march 1.2s linear infinite; box-shadow: 0 0 12px rgba(229,160,75,.45); }
