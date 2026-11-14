@@ -72,7 +72,7 @@ export default async function MeritListsPage({ searchParams }: { searchParams: P
   return (
     <AreaPage {...frame} bare>
       <AuroraHeader as="section" className="grid gap-[18px] px-5 py-[22px] sm:px-6">
-        <div className="grid items-end gap-4 lg:grid-cols-[minmax(0,1fr)_460px]">
+        <div className="grid gap-3.5">
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-[13px] text-[#F3EEE5]/[.68]">
               <span aria-hidden className={cn("h-2 w-2 rounded-full", running ? "mn-live bg-[#3DDC97] shadow-[0_0_10px_#3DDC97]" : "bg-white/40")} />
@@ -80,14 +80,14 @@ export default async function MeritListsPage({ searchParams }: { searchParams: P
             </p>
             <h1 className="mt-2 text-[2rem] font-bold tracking-[-0.03em] sm:text-[36px]">Merit lists</h1>
             {now?.medianClosing != null ? (
-              <p className="mt-1.5 max-w-[640px] text-[#F3EEE5]/[.68]">
+              <p className="mt-1.5 max-w-[700px] text-sm text-[#F3EEE5]/[.68]">
                 Round {last.roundNo} closed at a median of <b className="text-[#F3EEE5]">{formatMarks(now.medianClosing)}</b>
                 {delta != null ? <>, <span className={delta <= 0 ? "text-[#3DDC97]" : "text-[#FF7A7A]"}>{Math.abs(delta).toFixed(2)} {delta <= 0 ? "lower" : "higher"}</span> than round {before!.roundNo}</> : null}.
                 {prev ? ` Merit fell in ${fellIn} of ${specs} specialities.` : ""}
               </p>
             ) : null}
           </div>
-          <form method="get" action="/portal/history/find" role="search" className="flex w-full gap-2">
+          <form method="get" action="/portal/history/find" role="search" className="flex w-full max-w-[460px] gap-2">
             <label className="flex h-11 flex-1 items-center gap-2 rounded-xl border border-[#F3EEE5]/[.18] bg-[rgba(16,36,58,.55)] px-3.5 text-[#F3EEE5]/60">
               <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
               <span className="sr-only">Find anyone</span>

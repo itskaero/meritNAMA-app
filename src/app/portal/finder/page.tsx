@@ -90,13 +90,15 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   const [program, quota] = trackValue.split("|") as [string, string];
   const ownTotal = own ? opts.inductions.find((i) => i.id === own.induction)?.total : undefined;
   const total = num(sp.total) ?? ownTotal ?? opts.defaultTotal ?? induction.total;
-  const marks = num(sp.marks);
+  // A verified record analyses straight away; typed marks win.
+  const marksText = sp.marks ?? (own ? own.marks.toFixed(2) : undefined);
+  const marks = num(marksText);
   const view = sp.view === "grid" ? "grid" : "list";
   const show = oneOf(sp.show, STATUSES);
 
   const href = (patch: Partial<Params>) => {
     const p = new URLSearchParams();
-    const merged: Params = { marks: sp.marks, total: String(total), induction: String(induction.id), track: trackValue, view, show, a: sp.a, b: sp.b, ...patch };
+    const merged: Params = { marks: marksText, total: String(total), induction: String(induction.id), track: trackValue, view, show, a: sp.a, b: sp.b, ...patch };
     for (const [k, v] of Object.entries(merged)) if (v) p.set(k, v);
     return `/portal/finder?${p.toString()}`;
   };
@@ -170,7 +172,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
     <AreaPage {...frame} bare>
       <AuroraHeader as="section" className="grid gap-[18px] px-5 py-[22px] sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h1 className="text-[2rem] font-bold tracking-[-0.03em]">My chances</h1><p className={cn("mt-1", IV)}>Where your marks can get a seat, from past closing merit under the same scoring.</p></div>
+          <div><h1 className="text-[2rem] font-bold tracking-[-0.03em]">My chances</h1><p className={cn("mt-1 text-sm", IV)}>Where your marks can get a seat, from past closing merit under the same scoring.</p></div>
           <ChancesTabs current="/portal/finder" variant="pills" />
         </div>
         <form method="get" className="grid items-end gap-3 md:grid-cols-[1fr_0.7fr_1.2fr_1.2fr_auto]">
@@ -247,7 +249,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
             ) : view === "list" ? (
               <div className="max-h-[70vh] overflow-auto">
                 <table className="mn-tbl min-w-[46rem]">
-                  <thead className="sticky top-0 z-[1] bg-[#17171C]"><tr><th scope="col"><span className="sr-only">Compare</span></th><th scope="col">Speciality · hospital</th><th scope="col" className="!text-right">Final</th><th scope="col">You vs final</th><th scope="col">Next round likely</th><th scope="col"><span className="sr-only">Shortlist</span></th></tr></thead>
+                  <thead className="sticky top-0 z-[1] bg-[#17171C]"><tr><th scope="col"><span className="sr-only">Compare</span></th><th scope="col">Speciality · hospital</th><th scope="col" className="!text-right">Final</th><th scope="col">You vs final</th>{ahead ? <th scope="col">Next round likely</th> : null}<th scope="col"><span className="sr-only">Shortlist</span></th></tr></thead>
                   <tbody>
                     {visible.map((o) => {
                       const diff = you != null ? ((you - pctOf(o)) / 100) * induction.total : 0;
@@ -265,7 +267,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                             </span>
                             <span className={cn("text-[11px]", diff >= 0 ? "text-[#3DDC97]" : "text-[#FF7A7A]")}>{diff >= 0 ? "+" : "−"}{Math.abs(diff).toFixed(2)} {diff >= 0 ? "above" : "below"}</span>
                           </td>
-                          <td className="font-mono text-[#E5A04B]">{nb ? `${nb.low.toFixed(1)} – ${nb.high.toFixed(1)}` : <span className="text-muted">—</span>}</td>
+                          {ahead ? <td className="font-mono text-[#E5A04B]">{nb ? `${nb.low.toFixed(1)} – ${nb.high.toFixed(1)}` : <span className="text-muted">—</span>}</td> : null}
                           <td><Star saved={saved.has(optionKey(o))} item={{ program, quota, speciality: o.speciality, hospital: o.hospital }} label={`${o.speciality} at ${o.hospital}`} /></td>
                         </tr>
                       );

@@ -150,7 +150,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
   return (
     <AreaPage area="portal" trail={[{ label: s.label }]} title={`Candidates · induction ${induction}`} bare>
       <AuroraHeader as="section" className="flex flex-col gap-3.5 px-5 py-[22px] sm:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4 xl:flex-nowrap">
+        <div className="grid gap-3.5">
           <div className="min-w-0">
             <p className="text-[13px] text-[#F3EEE5]/[.68]">
               <Link href="/portal/history" className="text-[#F3EEE5]/70 hover:underline">Merit lists</Link> / <Link href={`/portal/history/${induction}`} className="hover:underline">Induction {induction}</Link>
@@ -159,7 +159,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
             <h1 className="mt-1.5 text-[2rem] font-bold tracking-[-0.03em]">Candidates <span className="text-base font-medium tracking-normal text-[#F3EEE5]/[.68]">· induction {induction}</span></h1>
             <p className="mt-1.5 max-w-[700px] text-sm text-[#F3EEE5]/[.68]">PHF&apos;s gazette as published, each candidate&apos;s verification steps, and any correction shown on top, never in place of the original. Seats and consent come from the latest round.</p>
           </div>
-          <form action="/portal/candidates" role="search" className="flex w-full flex-none gap-2 sm:w-[400px]">
+          <form action="/portal/candidates" role="search" className="flex w-full max-w-[460px] gap-2">
             {keep(["q"])}
             <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#F3EEE5]/[.18] bg-[rgba(16,36,58,.55)] px-3.5 text-[#F3EEE5]/60">
               <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
@@ -268,10 +268,10 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
                       <tr key={r.applicantId} className={cn(open && "bg-[rgba(110,86,255,.12)] shadow-[inset_3px_0_0_#7B61FF]", mine && !open && "bg-[rgba(155,135,255,.06)]")}>
                         <td className={cn("font-mono", mine ? "text-[#D6CCFF]" : "text-muted")}>{n(r.rank)}</td>
                         <td>
-                          <Link href={href({ id: r.applicantId, page: String(page) })} scroll={false} className="group flex items-center gap-[9px]">
+                          <Link href={`${href({ id: r.applicantId, page: String(page) })}#cand-panel`} scroll={false} className="group flex items-center gap-[9px]">
                             <span aria-hidden className="mn-av !h-7 !w-7 !text-[10px]" style={mine ? { background: "linear-gradient(135deg,#8B73FF,#5B3FF5)", boxShadow: "0 0 10px rgba(110,86,255,.6)" } : { background: avatarOf(r.applicantId) }}>{initials(r.name, r.applicantId)}</span>
                             <span className="min-w-0">
-                              <b className="whitespace-nowrap font-semibold group-hover:text-[#D6CCFF]">{r.name ?? "Name not in the gazette"}</b>{mine ? <> <span className="mn-pill v">you</span></> : null}
+                              <b className="whitespace-nowrap font-semibold group-hover:text-[#D6CCFF]">{r.name ?? "Name not published"}</b>{mine ? <> <span className="mn-pill v">you</span></> : null}
                               <span className="block font-mono text-[11px] text-muted">{r.applicantId}{r.pmdcNo ? ` · ${r.pmdcNo}` : ""}</span>
                               <span className="mt-[3px] block">{r.programmes.map((p) => <span key={p.program} className="mn-tag">{p.program}</span>)}{r.programmes.length === 0 ? <span className="mn-tag !border-[rgba(229,160,75,.5)] !text-[#E5A04B]">no preferences</span> : null}</span>
                             </span>
@@ -312,7 +312,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
           </footer>
         </section>
 
-        {panel ? <CandidatePanel c={panel} rank={panelRank} closeHref={href({ id: undefined, page: sp.page })} latestRound={board.latestRound} join={join} mine={panel.applicantId === me} /> : null}
+        {panel ? <CandidatePanel c={{ ...panel, name: panel.name ?? ranked.find((r) => r.applicantId === panel.applicantId)?.name ?? null }} rank={panelRank} closeHref={href({ id: undefined, page: sp.page })} latestRound={board.latestRound} join={join} mine={panel.applicantId === me} /> : null}
       </div>
     </AreaPage>
   );
@@ -344,11 +344,11 @@ function CandidatePanel({ c, rank, closeHref, latestRound, join, mine }: { c: Pa
   const joined = join ? latest.map((r) => join.get(joinKey(c.applicantId, r.program))).find(Boolean) ?? null : null;
   const dot = (color: string, glow = true) => <span aria-hidden className="absolute -left-[21px] top-[3px] h-2.5 w-2.5 rounded-full" style={{ background: color, boxShadow: glow ? `0 0 8px ${color}` : undefined }} />;
   return (
-    <aside aria-labelledby="cand-panel" className="mn-card-glass flex w-full flex-none flex-col gap-3.5 rounded-[20px] border border-[rgba(155,135,255,.4)] p-[18px] shadow-[0_0_40px_rgba(110,86,255,.15)] xl:w-[350px]">
+    <aside id="cand-panel" aria-labelledby="cand-panel-h" className="mn-card-glass order-first flex w-full flex-none scroll-mt-4 flex-col gap-3.5 rounded-[20px] border border-[rgba(155,135,255,.4)] p-[18px] shadow-[0_0_40px_rgba(110,86,255,.15)] xl:sticky xl:top-4 xl:order-none xl:max-h-[calc(100dvh-2rem)] xl:w-[350px] xl:overflow-y-auto">
       <div className="flex items-center gap-3">
         <span aria-hidden className="mn-av !h-11 !w-11 !text-[15px]" style={mine ? { background: "linear-gradient(135deg,#8B73FF,#5B3FF5)" } : { background: avatarOf(c.applicantId), boxShadow: `0 0 0 3px ${avatarOf(c.applicantId)}66` }}>{initials(c.name, c.applicantId)}</span>
         <div className="min-w-0 flex-1">
-          <h2 id="cand-panel" className="truncate text-[17px] font-semibold">{c.name ?? `Applicant ${c.applicantId}`}</h2>
+          <h2 id="cand-panel-h" className="truncate text-[17px] font-semibold">{c.name ?? `Applicant ${c.applicantId}`}</h2>
           <p className="mt-0.5 font-mono text-[11px] text-muted">{c.applicantId}{c.pmdcNo ? ` · PMDC ${c.pmdcNo}` : ""}{rank ? ` · rank ${n(rank)}` : ""}</p>
         </div>
         <Link href={closeHref} scroll={false} aria-label="Close" className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg border border-white/[.12] text-[#A3A3AD] hover:text-white">✕</Link>

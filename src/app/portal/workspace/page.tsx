@@ -9,7 +9,8 @@ import { computeOptions, finderOptions, listShortlist, type FinderOption } from 
 import { applicantIdentity, compareRounds, listInductionsWithRounds, marksStanding } from "@/lib/data/merit";
 import { listInbox as listNotices, shortlistAlerts } from "@/lib/data/notifications";
 import { latestSchedule } from "@/lib/data/schedule";
-import { publishedEstimates } from "@/lib/data/simulation";
+import { publishedEstimates, roundApplicantResult } from "@/lib/data/simulation";
+import { marginText, RESULT_LABELS, trackSummary, type ResultStatus } from "@/lib/domain/applicant-result";
 import { followedPlaces, listSavedViews } from "@/lib/data/workspace";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
@@ -22,6 +23,15 @@ export const dynamic = "force-dynamic";
 const IV = "text-[#F3EEE5]/[.68]";
 const card = "mn-card-glass mn-hover rounded-[20px] border border-line p-5";
 const shortH = (h: string) => h.split(",")[0]!;
+
+/** Row colours of a preference result, as Estimate.dc.html draws them. */
+const ROW: Record<ResultStatus, { sb: string; sc: string; bg: string; sh: string; nc: string; tc: string }> = {
+  placed: { sb: "rgba(61,220,151,.18)", sc: "#3DDC97", bg: "rgba(61,220,151,.10)", sh: "inset 0 0 0 1px rgba(61,220,151,.45), 0 0 14px rgba(61,220,151,.15)", nc: "#3DDC97", tc: "#EDEDEF" },
+  clears_cutoff: { sb: "rgba(61,220,151,.12)", sc: "#3DDC97", bg: "rgba(255,255,255,.025)", sh: "none", nc: "#8B8B93", tc: "#EDEDEF" },
+  fell_short: { sb: "rgba(255,122,122,.16)", sc: "#FF7A7A", bg: "rgba(255,122,122,.06)", sh: "none", nc: "#FF7A7A", tc: "#EDEDEF" },
+  skipped: { sb: "rgba(255,255,255,.06)", sc: "#8B8B93", bg: "rgba(255,255,255,.025)", sh: "none", nc: "#6B6B73", tc: "#A3A3AD" },
+  no_seats: { sb: "rgba(229,160,75,.14)", sc: "#E5A04B", bg: "rgba(255,255,255,.025)", sh: "none", nc: "#6B6B73", tc: "#A3A3AD" },
+};
 
 /** Me (docs/mockups/v4/Me.dc.html): who you are on the lists, your journey, today, your shortlist, and what you follow. */
 export default async function MePage() {
@@ -41,10 +51,11 @@ export default async function MePage() {
   const latest = inductions[0] ?? null;
   const lastRound = latest?.rounds.at(-1) ?? null;
   const prevRound = latest?.rounds.at(-2) ?? null;
-  const [who, standing, movement] = await Promise.all([
+  const [who, standing, movement, prefs] = await Promise.all([
     merit ? applicantIdentity(db, session, merit.applicantId).catch(() => null) : null,
     own ? marksStanding(db, session, { induction: own.induction, roundNo: own.roundNo, program: own.program, marks: own.marks }).catch(() => null) : null,
     latest && lastRound && prevRound ? compareRounds(db, session, latest.id, prevRound.roundNo, lastRound.roundNo).catch(() => null) : null,
+    merit && latest && lastRound ? roundApplicantResult(db, session, { induction: latest.id, roundNo: lastRound.roundNo, applicantId: merit.applicantId }).catch(() => null) : null,
   ]);
 
   // Safe / target / reach for each shortlisted seat, against the latest induction.
@@ -162,6 +173,52 @@ export default async function MePage() {
           </ul>
         </aside>
       </div>
+
+      {prefs && prefs.programmes.length ? (
+        <section aria-labelledby="prefs" className={card}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="prefs" className="text-[15px] font-semibold text-heading">My preferences · against round {prefs.roundNo}</h2>
+            <span className="text-xs text-muted">Cutoff is the lowest mark placed on that seat in round {prefs.roundNo}</span>
+          </div>
+          <div className="mt-3.5 grid gap-5 lg:grid-cols-2">
+            {prefs.programmes.map((p) => {
+              const sum = trackSummary(p.rows);
+              return (
+                <div key={p.program} className="grid min-w-0 content-start gap-2.5">
+                  {sum.placed ? (
+                    <div className="rounded-xl border border-[rgba(61,220,151,.4)] bg-[rgba(61,220,151,.10)] p-3">
+                      <div className="flex items-center justify-between gap-2"><b className="text-[13px]">{p.program}{p.mark != null ? <span className="font-mono font-normal text-muted"> · {formatMarks(p.mark)}</span> : null}</b><span className="mn-pill g">Placed</span></div>
+                      <p className="mt-1 text-xs">Preference #{sum.placed.preferenceNo}: <b>{sum.placed.speciality} @ {shortH(sum.placed.hospital)}</b>. Everything below it is skipped.</p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-[rgba(229,160,75,.4)] bg-[rgba(229,160,75,.08)] p-3">
+                      <div className="flex items-center justify-between gap-2"><b className="text-[13px]">{p.program}{p.mark != null ? <span className="font-mono font-normal text-muted"> · {formatMarks(p.mark)}</span> : null}</b><span className="mn-pill a">Not placed</span></div>
+                      <p className="mt-1 text-xs">{sum.closestMiss ? <>Closest: #{sum.closestMiss.preferenceNo} <b>{sum.closestMiss.speciality} @ {shortH(sum.closestMiss.hospital)}</b>, {marginText(sum.closestMiss).toLowerCase()}.</> : "No preference clears its cutoff in this list."}</p>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-[30px_minmax(0,1fr)_52px_128px_76px] gap-1.5 px-2 text-[10px] uppercase tracking-[0.05em] text-muted"><span>Pref</span><span>Seat</span><span className="text-right">Cutoff</span><span className="text-right">Margin</span><span className="text-right">Status</span></div>
+                  <ol className="flex max-h-[420px] flex-col gap-1 overflow-auto pr-0.5">
+                    {p.rows.map((r) => {
+                      const c = ROW[r.status];
+                      const m = marginText(r);
+                      return (
+                        <li key={r.preferenceNo} className="grid grid-cols-[30px_minmax(0,1fr)_52px_128px_76px] items-center gap-1.5 rounded-[9px] px-2 py-[7px] text-xs" style={{ background: c.bg, boxShadow: c.sh }}>
+                          <span className="font-mono" style={{ color: c.nc }}>#{r.preferenceNo}</span>
+                          <span className="min-w-0"><span className="block truncate" style={{ color: c.tc }}>{r.speciality}</span><span className="block truncate text-[10px] text-muted">{r.hospital}{r.filled != null ? ` · ${r.filled} placed` : ""}</span></span>
+                          <span className="text-right font-mono text-muted">{r.cutoff == null ? "—" : formatMarks(r.cutoff)}</span>
+                          <span className="text-right font-mono text-[11px]" style={{ color: /short/i.test(m) ? "#FF7A7A" : r.status === "skipped" || r.status === "no_seats" ? "#8B8B93" : "#3DDC97" }}>{m}</span>
+                          <span className="text-right"><span className="mn-pill !px-[7px] !py-0.5 !text-[10px]" style={{ background: c.sb, color: c.sc }}>{RESULT_LABELS[r.status]}</span></span>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[11px] text-muted">One final seat per programme. Lower preferences can still show &quot;would clear&quot;, but they are skipped once an earlier one is placed. <Link href={`/portal/estimates?id=${prefs.applicantId}`} className="text-[#A797FF]">Where you land in the estimate →</Link></p>
+        </section>
+      ) : null}
 
       <section aria-labelledby="short" className={card}>
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { lstat, mkdir, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import { cleanName } from "@/lib/domain/merit-round";
 import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
@@ -867,38 +868,49 @@ export async function estimateApplicantResult(db: Database, session: Session | n
   assertCan(session, "portal");
   const est = await estimateList(db, session, input.runId);
   if (!est) return null;
-  const applicantId = input.applicantId.replace(/\D/g, "").slice(0, 10);
+  return resultAgainstList(db, est.run.inductionId, est.roundNo, input.applicantId, est.rows);
+}
+
+/**
+ * The same result against a published round (Me: "where each of my preferences stands"):
+ * placed, fell short, clears the cutoff, skipped or no seats, per programme.
+ */
+export async function roundApplicantResult(db: Database, session: Session | null, input: { induction: number; roundNo: number; applicantId: string }) {
+  assertCan(session, "portal");
+  const rows = await publishedRound(db, input.induction, input.roundNo);
+  if (!rows) return null;
+  return resultAgainstList(db, input.induction, input.roundNo, input.applicantId, rows);
+}
+
+async function resultAgainstList(db: Database, induction: number, roundNo: number, rawId: string, list: PublishedAllocation[]) {
+  const applicantId = rawId.replace(/\D/g, "").slice(0, 10);
   if (!applicantId) return null;
-  const rec = await simRecordFor(db, { induction: est.run.inductionId, applicantId });
+  const rec = await simRecordFor(db, { induction, applicantId });
   if (!rec) return null;
   const [who] = await db.select({ name: simCandidates.name, pmdcNo: simCandidates.pmdcNo, verification: simCandidates.verification })
-    .from(simCandidates).where(and(eq(simCandidates.inductionId, est.run.inductionId), eq(simCandidates.applicantId, applicantId))).limit(1);
+    .from(simCandidates).where(and(eq(simCandidates.inductionId, induction), eq(simCandidates.applicantId, applicantId))).limit(1);
   // Seats in this list: lowest mark placed and how many, per programme and seat.
   const seats = new Map<string, Map<string, ListSeat>>();
-  const placed = new Map<string, number>();
-  for (const r of est.rows) {
+  const mine = new Map<string, PublishedAllocation>();
+  for (const r of list) {
     const byProgram = seats.get(r.program) ?? seats.set(r.program, new Map()).get(r.program)!;
     const k = resultSeatKey(r.quota, r.speciality, r.hospital);
     const s = byProgram.get(k);
     byProgram.set(k, { cutoff: s ? Math.min(s.cutoff, r.mark) : r.mark, filled: (s?.filled ?? 0) + 1 });
-    if (r.applicantId === applicantId) placed.set(r.program, r.preferenceNo);
+    if (r.applicantId === applicantId) mine.set(r.program, r);
   }
-  return {
-    induction: est.run.inductionId,
-    roundNo: est.roundNo,
-    applicantId,
-    name: who?.name ?? null,
-    pmdcNo: who?.pmdcNo ?? null,
-    verification: (who?.verification ?? []) as VerificationStep[],
-    programmes: rec.programmes
-      .filter((p) => p.preferences.length > 0)
-      .map((p) => ({
-        program: p.program,
-        mark: p.mark,
-        placedPreferenceNo: placed.get(p.program) ?? null,
-        rows: applicantResults(p.preferences.map((x) => ({ preferenceNo: x.preferenceNo, quota: x.quota, speciality: x.speciality, hospital: x.hospital, mark: x.mark })), seats.get(p.program) ?? new Map(), placed.get(p.program) ?? null),
-      })),
-  };
+  const programmes = rec.programmes.filter((p) => p.preferences.length > 0).map((p) => {
+    const got = mine.get(p.program);
+    // Some published files carry no preference number: find it by the seat instead.
+    const placedNo = !got ? null : got.preferenceNo || (p.preferences.find((x) => resultSeatKey(x.quota, x.speciality, x.hospital) === resultSeatKey(got.quota, got.speciality, got.hospital))?.preferenceNo ?? null);
+    return {
+      program: p.program,
+      mark: p.mark,
+      placedPreferenceNo: placedNo,
+      rows: applicantResults(p.preferences.map((x) => ({ preferenceNo: x.preferenceNo, quota: x.quota, speciality: x.speciality, hospital: x.hospital, mark: x.mark })), seats.get(p.program) ?? new Map(), placedNo),
+    };
+  });
+  return { induction, roundNo, applicantId, name: who?.name ?? null, pmdcNo: who?.pmdcNo ?? null, verification: (who?.verification ?? []) as VerificationStep[], programmes };
 }
 
 /**
@@ -1269,11 +1281,16 @@ export async function gazetteBoard(db: Database, session: Session | null, induct
   if (latest) for (const a of (await publishedRound(db, induction, latest.roundNo)) ?? []) if (!seats.has(a.applicantId)) seats.set(a.applicantId, { program: a.program, speciality: a.speciality, hospital: a.hospital, preferenceNo: a.preferenceNo ?? null });
   const consent = new Map<string, string>();
   if (latest) for (const r of await officialReplies(db, induction, latest.roundNo)) if (consent.get(r.applicantId) !== "Accepted") consent.set(r.applicantId, r.status);
+  // Names missing from the gazette: the name PHF printed on this induction's merit lists.
+  const listed = new Map<string, string>();
+  for (const r of await db.selectDistinct({ applicantId: meritAllocations.applicantId, name: meritAllocations.name }).from(meritAllocations)
+    .innerJoin(meritRounds, eq(meritRounds.id, meritAllocations.roundId))
+    .where(and(eq(meritRounds.inductionId, induction), isNotNull(meritAllocations.name)))) { const n = cleanName(r.name); if (n && !listed.has(r.applicantId)) listed.set(r.applicantId, n); }
   const rows: GazetteBoardRow[] = raw.map((c) => {
     const e = eff.get(c.applicantId);
     return {
       applicantId: c.applicantId,
-      name: c.name,
+      name: c.name || listed.get(c.applicantId) || null,
       pmdcNo: c.pmdcNo,
       published: c.baseMarks,
       marks: e?.baseMarks ?? c.baseMarks,
