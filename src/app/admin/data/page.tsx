@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { InductionCardView } from "@/components/admin/today";
-import { Segmented } from "@/components/ui/segmented";
+import { AuroraHeader } from "@/components/ui/aurora-header";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { StatusPill } from "@/components/ui/page-header";
 import { getSession, requireSection } from "@/lib/auth/session";
 import { dataRoot, dataSettings, estimateReadiness, listDataFiles, type DataFileItem, type DataStatus } from "@/lib/data/datastore";
 import { inductionCards } from "@/lib/data/admin-today";
@@ -73,43 +72,94 @@ export default async function AdminDataPage({ searchParams }: { searchParams: Pr
   for (const f of shown) byInduction.set(f.induction, [...(byInduction.get(f.induction) ?? []), f]);
   const groups = [...byInduction.entries()].sort((a, b) => (b[0] ?? -1) - (a[0] ?? -1));
   const general = shown.filter((f) => f.induction === null);
-  const open = cards.filter((c) => !c.closed);
-  const closed = cards.filter((c) => c.closed);
+  const newest = Math.max(...cards.map((c) => c.induction), 0);
+  const isOpen = (c: (typeof cards)[number]) => !c.closed && (c.hasSchedule || c.induction === newest || c.roundsWaiting.length > 0);
+  const open = cards.filter(isOpen);
+  const closed = cards.filter((c) => !isOpen(c));
   const tabs = [
-    { href: "/admin/data", label: "Inductions", active: tab === "inductions", count: cards.length },
+    { href: "/admin/data", label: "Inductions", active: tab === "inductions", count: undefined as number | undefined },
     { href: "/admin/data?tab=files", label: "Files", active: tab === "files", count: fresh + waiting + problems || undefined },
     { href: "/admin/data?tab=reference", label: "Reference", active: tab === "reference" },
     { href: "/admin/data?tab=estimates", label: "Estimates", active: tab === "estimates" },
   ];
 
+  const PILL: Record<DataStatus, string> = { new: "v", replaces: "a", live: "g", held: "c", problem: "r", ignored: "n", missing: "n" };
+  // Files that need someone first, then the newest.
+  const PRIO: Record<DataStatus, number> = { replaces: 0, problem: 1, new: 2, held: 3, live: 4, missing: 5, ignored: 6 };
+  const recent = [...shown].sort((x, y) => PRIO[x.status] - PRIO[y.status] || (y.appliedAt?.getTime() ?? 0) - (x.appliedAt?.getTime() ?? 0)).slice(0, 4);
+
   return (
-    <AreaPage
-      area="admin"
-      trail={[{ label: s.label }]}
-      title={s.label}
-      description={s.description}
-      status={<StatusPill tone={problems || waiting ? "warning" : "live"}>{problems ? `${problems} with a problem` : waiting ? `${waiting} waiting for a click` : "All up to date"}</StatusPill>}
-    >
-      <Segmented label="Data" items={tabs} />
-      <ol aria-label="What happens to a file" className="flex flex-wrap items-center gap-2 text-xs text-muted">
-        {["Folder", "Recognised", "Personal fields stripped", "Live", "Estimate"].map((x, i) => (
-          <li key={x} className="flex items-center gap-2">{i ? <span aria-hidden>→</span> : null}<span className="rounded-full border border-line px-2.5 py-1">{x}</span></li>
-        ))}
-      </ol>
+    <AreaPage area="admin" trail={[{ label: s.label }]} title={s.label} bare>
+      <p className="text-[13px] text-muted">Admin / <b className="font-semibold text-ink">Data</b></p>
+      <AuroraHeader as="section" className="flex flex-col gap-4 !rounded-[20px] px-5 py-[22px] sm:px-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-[30px] font-bold tracking-[-0.02em]">Data</h1>
+            <p className="mt-1.5 max-w-[640px] text-sm text-[#F3EEE5]/[.72]">Every file goes into one folder. The app recognises it, strips personal details, and applies it. New data goes live; anything that replaces live data waits for a click.</p>
+          </div>
+          <span className={`mn-pill ${problems ? "r" : waiting ? "a" : "g"}`}>{problems ? `${problems} with a problem` : waiting ? `${waiting} waiting for a click` : "All up to date"}</span>
+        </div>
+        <ol aria-label="What happens to a file" className="flex flex-wrap items-center gap-2 text-xs">
+          {([["Folder", "rgba(243,238,229,.18)", "#F3EEE5"], ["Recognised", "rgba(243,238,229,.18)", "#F3EEE5"], ["Personal fields stripped", "rgba(243,238,229,.18)", "#F3EEE5"], ["Live", "rgba(61,220,151,.45)", "#3DDC97"], ["Estimate", "rgba(229,160,75,.5)", "#E5A04B"]] as const).map(([x, bc, fg], i) => (
+            <li key={x} className="flex items-center gap-2">{i ? <span aria-hidden className="text-[#F3EEE5]/60">→</span> : null}<span className="inline-flex h-[30px] items-center rounded-full border bg-black/15 px-3" style={{ borderColor: bc, color: fg }}>{x}</span></li>
+          ))}
+        </ol>
+      </AuroraHeader>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav aria-label="Data" className="mn-seg max-w-full overflow-x-auto">
+          {tabs.map((x) => <Link key={x.label} href={x.href} aria-current={x.active ? "page" : undefined} className="!flex items-center">{x.label}{x.count ? <span className={`ml-1.5 rounded-full px-1.5 text-[11px] ${x.label === "Files" ? "bg-[rgba(229,160,75,.2)] text-[#E5A04B]" : "bg-white/10"}`}>{x.count}</span> : null}</Link>)}
+        </nav>
+        <div className="flex gap-2">
+          <Link href="/admin/data?tab=files#add" className="inline-flex h-10 items-center rounded-xl border border-white/[.14] px-3.5 text-[13px] text-[#ECECF1] hover:border-[rgba(155,135,255,.6)]">{settings.repo ? "Sync from GitHub" : "Set up GitHub sync"}</Link>
+          <Link href="/admin/data?tab=files#add" className="mn-btn inline-flex h-10 items-center rounded-xl px-4 text-[13px] font-semibold">Add files</Link>
+        </div>
+      </div>
 
       {tab === "inductions" ? (
         cards.length === 0 ? (
           <EmptyState title="No inductions yet">Drop an induction&apos;s files under the Files tab, or sync a data repository.</EmptyState>
         ) : (
-          <div className="grid gap-4">
-            {open.map((c) => <InductionCardView key={c.induction} c={c} />)}
-            {closed.length ? (
-              <details className="rounded-2xl border border-line bg-card p-4">
-                <summary className="cursor-pointer text-sm font-medium text-muted">Inductions {closed.at(-1)!.induction}–{closed[0]!.induction} · closed · {closed.length} more</summary>
-                <div className="mt-4 grid gap-4">{closed.map((c) => <InductionCardView key={c.induction} c={c} />)}</div>
-              </details>
-            ) : null}
-            <p className="text-xs text-muted">✓ official · ◐ unofficial (replaced as each official file lands) · ◆ estimate · ◷ a file is in, not applied yet · ○ not in yet</p>
+          <div className="grid items-start gap-[18px] xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+            <div className="grid min-w-0 gap-4">
+              {open.map((c) => <InductionCardView key={c.induction} c={c} />)}
+              {closed.length ? (
+                <details className="text-[13px] text-muted">
+                  <summary className="cursor-pointer">Inductions {closed.at(-1)!.induction}–{closed[0]!.induction} · closed · {closed.length} more card{closed.length === 1 ? "" : "s"}, collapsed</summary>
+                  <div className="mt-4 grid gap-4">{closed.map((c) => <InductionCardView key={c.induction} c={c} />)}</div>
+                </details>
+              ) : null}
+              <p className="text-xs text-muted">✓ official · ◐ unofficial (replaced as each official file lands) · ◆ estimate · ◷ a file is in, not applied yet · ○ not in yet</p>
+            </div>
+            <div className="flex min-w-0 flex-col gap-[18px]">
+              <section aria-labelledby="add" className="mn-card-glass rounded-[20px] border border-white/[.07] p-5">
+                <h2 id="add" className="mb-3 text-[15px] font-semibold text-[#F7F7FA]">Add data</h2>
+                <DropZone autoPublish={settings.autoPublish} />
+                {recent.length ? (
+                  <ul className="mt-3 grid gap-2">
+                    {recent.map((f) => (
+                      <li key={f.id} className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 truncate font-mono text-xs">{f.path.split("/").at(-1)}</span>
+                        <span className={`mn-pill flex-none ${PILL[f.status]}`}>{STATUS[f.status].label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                <Link href="/admin/data?tab=files" className="mt-3 inline-block text-xs text-[#B9AAFF] hover:text-[#D6CCFF]">All files →</Link>
+              </section>
+              <section aria-labelledby="kinds" className="mn-card-glass rounded-[20px] border border-white/[.07] p-5">
+                <h2 id="kinds" className="text-[15px] font-semibold text-[#F7F7FA]">File kinds</h2>
+                <p className="mb-3 mt-1 text-[13px] text-muted">Each kind is one module: how it is recognised, checked, stripped and applied.</p>
+                <ul className="grid gap-2">
+                  {FILE_KINDS.filter((k) => !k.ignore).map((k) => (
+                    <li key={k.kind} className="flex items-center justify-between gap-2.5 rounded-[14px] border border-white/[.07] bg-white/[.02] px-3.5 py-2.5">
+                      <span className="font-semibold text-[#F7F7FA]">{k.label}</span>
+                      <span className={`mn-pill ${k.official ? "g" : "a"}`}>{k.official ? "live" : "estimates"}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
           </div>
         )
       ) : null}
@@ -124,7 +174,7 @@ export default async function AdminDataPage({ searchParams }: { searchParams: Pr
         ]}
       />
 
-      <Card>
+      <Card id="add">
         <CardHeader title="Add data" description="Every way ends in the same folder and the same list below." />
         <div className="grid gap-5">
           <DropZone autoPublish={settings.autoPublish} />
@@ -174,18 +224,6 @@ export default async function AdminDataPage({ searchParams }: { searchParams: Pr
             </ul>
           </details>
         ) : null}
-      </Card>
-
-      <Card>
-        <CardHeader title="File kinds" description="Each kind is one module: how it is recognised, checked, stripped and applied." />
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {FILE_KINDS.filter((k) => !k.ignore).map((k) => (
-            <li key={k.kind} className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-sm">
-              <span>{k.label}</span>
-              <Badge tone={k.official ? "success" : "calculated"}>{k.official ? "official" : "for estimates"}</Badge>
-            </li>
-          ))}
-        </ul>
       </Card>
 
       <Card>
