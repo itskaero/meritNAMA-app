@@ -745,3 +745,20 @@ export async function applicantIdentity(db: Database, session: Session | null, a
     .orderBy(desc(meritRounds.inductionId), desc(meritRounds.roundNo)).limit(1);
   return r ?? null;
 }
+
+/** Consent replies in for a round (from the portal's consent file): replied of placed, by programme. */
+export async function consentReadiness(db: Database, session: Session | null, input: { induction: number; roundNo: number }) {
+  assertCan(session, "portal");
+  const rows = (await db.execute(sql`
+    with placed as (
+      select m.program, count(*)::int as n from merit_allocations m join merit_rounds r on r.id = m.round_id
+      where r.induction_id = ${input.induction} and r.round_no = ${input.roundNo} group by m.program),
+    replied as (
+      select c.program, count(*) filter (where c.status in ('Accepted', 'Rejected'))::int as n from sim_consent c
+      where c.induction_id = ${input.induction} and c.round_no = ${input.roundNo} group by c.program)
+    select p.program, p.n as placed, coalesce(r.n, 0) as replied from placed p left join replied r on upper(trim(r.program)) = upper(trim(p.program))
+    order by p.n desc`)) as unknown as { program: string; placed: number; replied: number }[];
+  const placed = rows.reduce((s, r) => s + Number(r.placed), 0);
+  const replied = rows.reduce((s, r) => s + Number(r.replied), 0);
+  return placed ? { placed, replied, share: replied / placed, byProgram: rows.map((r) => ({ program: r.program.trim(), placed: Number(r.placed), replied: Number(r.replied) })) } : null;
+}

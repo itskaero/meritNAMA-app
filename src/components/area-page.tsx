@@ -31,10 +31,10 @@ export function AreaPage({ area, trail, isRoot = false, title, description, stat
   const root = AREA_ROOT[area];
   const breadcrumb = [isRoot ? { label: root.label } : root, ...trail];
   return (
-    <>
-      {bare ? <div className="h-4 sm:h-6" /> : <PageHeader breadcrumb={breadcrumb} title={title} description={description} status={status} aside={aside} />}
-      {/* min-w-0 on every child: wide tables and charts scroll inside their card instead of widening the page */}
-      <div className="grid gap-5 px-4 pb-10 sm:px-8 [&>*]:min-w-0">{children}</div>
-    </>
+    // As in the mockups: 24px around the page, 16px between sections, the header is the first section.
+    <div className="grid gap-4 p-4 pb-10 sm:p-6 [&>*]:min-w-0">
+      {bare ? null : <PageHeader breadcrumb={breadcrumb} title={title} description={description} status={status} aside={aside} />}
+      {children}
+    </div>
   );
 }

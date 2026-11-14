@@ -102,12 +102,11 @@ export default async function RoundPage({ params, searchParams }: {
               Round {roundNo} <span className={cn("text-base font-normal", IVORY_DIM)}>{max ? `· out of ${max} ` : ""}· official</span>
             </h1>
           </div>
-          <nav aria-label="Rounds" className="flex max-w-full gap-1 overflow-x-auto rounded-xl border border-white/10 bg-black/20 p-1">
+          <nav aria-label="Rounds" className="mn-seg mn-seg-iv max-w-full overflow-x-auto">
             {ind.rounds.map((r) => (
-              <Link key={r.roundNo} href={`/portal/history/${induction}/rounds/${r.roundNo}`} aria-current={r.roundNo === roundNo ? "page" : undefined}
-                className={cn("grid h-8 min-w-10 place-items-center rounded-lg px-2 text-sm", r.roundNo === roundNo ? "mn-btn font-semibold" : cn("hover:bg-white/5", IVORY_DIM))}>R{r.roundNo}</Link>
+              <Link key={r.roundNo} href={`/portal/history/${induction}/rounds/${r.roundNo}`} aria-current={r.roundNo === roundNo ? "page" : undefined}>R{r.roundNo}</Link>
             ))}
-            {est ? <Link href={`/portal/estimates?run=${est.id}`} className="grid h-8 place-items-center rounded-lg border border-dashed border-amber/60 px-2 text-sm font-semibold text-amber">R{est.roundNo} est.</Link> : null}
+            {est ? <Link href={`/portal/estimates?run=${est.id}`} className="border border-dashed border-amber/60 !text-amber">R{est.roundNo} est.</Link> : null}
           </nav>
         </div>
         <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">

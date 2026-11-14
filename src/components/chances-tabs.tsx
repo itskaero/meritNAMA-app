@@ -20,10 +20,9 @@ export async function ChancesTabs({ current, variant = "cards" }: { current: "/p
   if (variant === "pills") {
     // Inside an aurora hero (v4 Chances mockup): a compact segmented control.
     return (
-      <nav aria-label="My chances" className="flex max-w-full gap-1 overflow-x-auto rounded-xl border border-white/10 bg-black/20 p-1">
+      <nav aria-label="My chances" className="mn-seg mn-seg-iv max-w-full overflow-x-auto">
         {tabs.map((t) => (
-          <Link key={t.href} href={t.href} aria-current={t.href === current ? "page" : undefined}
-            className={cn("whitespace-nowrap rounded-lg px-3 py-1.5 text-sm", t.href === current ? "mn-btn font-semibold" : "text-[#F3EEE5]/70 hover:text-[#F3EEE5]")}>
+          <Link key={t.href} href={t.href} aria-current={t.href === current ? "page" : undefined}>
             {t.href === "/portal/finder" ? "I know my score" : t.href === "/portal/calculator" ? "Calculator" : "Preference list"}
           </Link>
         ))}

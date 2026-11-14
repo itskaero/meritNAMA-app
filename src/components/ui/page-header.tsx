@@ -19,39 +19,33 @@ export function PageHeader({ breadcrumb, title, description, status, aside }: {
   aside?: ReactNode;
 }) {
   return (
-    <header>
-      <div className="flex min-h-12 flex-wrap items-center justify-between gap-3 px-4 pt-4 sm:px-8">
-        <nav aria-label="Breadcrumb" className="text-sm">
-          <ol className="flex min-w-0 items-center gap-1.5">
-            {breadcrumb.map((b, i) => {
-              const last = i === breadcrumb.length - 1;
-              return (
-                <li key={i} className={cn(last ? "min-w-0 max-w-[16rem] truncate font-medium text-ink" : "text-muted", i < breadcrumb.length - 2 && "hidden sm:list-item")}>
-                  {i > 0 ? <span aria-hidden className={cn("mr-1.5 text-subtle", i === breadcrumb.length - 2 && "max-sm:hidden")}>/</span> : null}
-                  {!last && b.href ? (
-                    <Link href={b.href} className="rounded-sm underline-offset-4 hover:text-ink hover:underline">{b.label}</Link>
-                  ) : (
-                    <span aria-current={last ? "page" : undefined}>{b.label}</span>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
-        {status ? (
-          <div className="flex items-center gap-1 rounded-full bg-surface/70 p-0.5 text-xs ring-1 ring-line backdrop-blur">{status}</div>
+    <AuroraHeader as="header" className="grid gap-4 px-5 py-[22px] sm:px-6">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0 max-w-3xl">
+          <nav aria-label="Breadcrumb" className="text-[13px] text-[#F3EEE5]/70">
+            <ol className="flex min-w-0 flex-wrap items-center gap-1">
+              {breadcrumb.map((b, i) => {
+                const last = i === breadcrumb.length - 1;
+                return (
+                  <li key={i} className={cn("min-w-0", last && "max-w-[18rem] truncate")}>
+                    {i > 0 ? <span aria-hidden className="mr-1">/</span> : null}
+                    {!last && b.href ? <Link href={b.href} className="hover:text-[#F3EEE5] hover:underline">{b.label}</Link> : <span aria-current={last ? "page" : undefined}>{b.label}</span>}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+          <h1 className="mt-1.5 text-[1.75rem] font-bold leading-tight tracking-[-0.03em] sm:text-[32px]">{title}</h1>
+          {description ? <p className="mt-1.5 text-sm text-[#F3EEE5]/68">{description}</p> : null}
+        </div>
+        {aside || status ? (
+          <div className="flex flex-wrap items-center gap-3">
+            {status ? <div className="flex items-center gap-1 rounded-full bg-black/20 p-0.5 text-xs ring-1 ring-white/15">{status}</div> : null}
+            {aside}
+          </div>
         ) : null}
       </div>
-      <div className="px-4 pt-3 pb-5 sm:px-8 sm:pt-4">
-        <AuroraHeader className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 px-5 py-6 sm:px-7 sm:py-7">
-          <div className="min-w-0 max-w-3xl">
-            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.02em] sm:text-[2.15rem]">{title}</h1>
-            {description ? <p className="mt-2 text-[0.95rem] text-[#F3EEE5]/75">{description}</p> : null}
-          </div>
-          {aside ? <div className="flex flex-wrap items-center gap-3">{aside}</div> : null}
-        </AuroraHeader>
-      </div>
-    </header>
+    </AuroraHeader>
   );
 }
 

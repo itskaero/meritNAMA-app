@@ -9,22 +9,15 @@ export type Segment = { href: string; label: ReactNode; active?: boolean; count?
  * in the URL). The active segment uses the glowing outline of the primary button.
  * Scrolls sideways on phones rather than wrapping.
  */
-export function Segmented({ items, label, className }: { items: Segment[]; label: string; className?: string }) {
+export function Segmented({ items, label, className, onAurora = false }: { items: Segment[]; label: string; className?: string; onAurora?: boolean }) {
   return (
-    <nav aria-label={label} className={cn("-mx-1 overflow-x-auto px-1 py-1", className)}>
-      <ul className="inline-flex gap-1 rounded-xl border border-line bg-surface/60 p-1">
+    <nav aria-label={label} className={cn("-mx-1 max-w-full overflow-x-auto px-1 py-1", className)}>
+      <ul className={cn("mn-seg w-max", onAurora && "mn-seg-iv")}>
         {items.map((s) => (
-          <li key={s.href}>
-            <Link
-              href={s.href}
-              aria-current={s.active ? "page" : undefined}
-              className={cn(
-                "inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-sm font-medium",
-                s.active ? "mn-btn" : "border border-transparent text-muted hover:text-ink",
-              )}
-            >
+          <li key={s.href} className="contents">
+            <Link href={s.href} aria-current={s.active ? "page" : undefined} className="flex items-center gap-1.5">
               {s.label}
-              {s.count != null ? <span className={cn("rounded-full px-1.5 text-[0.7rem] tabular-nums", s.active ? "bg-white/10" : "bg-hover")}>{s.count}</span> : null}
+              {s.count != null ? <span className="rounded-full bg-white/10 px-1.5 text-[0.7rem] tabular-nums">{s.count}</span> : null}
             </Link>
           </li>
         ))}

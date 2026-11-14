@@ -175,7 +175,7 @@
   --mn-border-strong: rgba(255, 255, 255, 0.14);
   --mn-text: #ECECF1;
   --mn-text-heading: #F7F7FA;
-  --mn-text-muted: #A3A3B2;
+  --mn-text-muted: #8B8B93;
   --mn-text-subtle: #9C9CAB;
   --mn-text-decor: #77778A;
   /* Links, active nav text and focus: pale violet. Buttons are outlined (see globals.css .mn-btn). */
@@ -244,7 +244,7 @@
     --mn-border-strong: rgba(255, 255, 255, 0.14);
     --mn-text: #ECECF1;
     --mn-text-heading: #F7F7FA;
-    --mn-text-muted: #A3A3B2;
+    --mn-text-muted: #8B8B93;
     --mn-text-subtle: #9C9CAB;
     --mn-text-decor: #77778A;
     /* Links, active nav text and focus: pale violet. Buttons are outlined (see globals.css .mn-btn). */
