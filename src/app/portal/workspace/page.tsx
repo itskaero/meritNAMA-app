@@ -1,245 +1,224 @@
-import { AreaPage } from "@/components/area-page";
-import { AuroraHeader } from "@/components/ui/aurora-header";
-import { Pill } from "@/components/ui/segmented";
-import { applicantIdentity, marksStanding } from "@/lib/data/merit";
-import { formatMarks } from "@/lib/format";
-import { whenDatabaseDown } from "@/components/database-unavailable";
-import { ButtonLink } from "@/components/ui/button";
-import { Card, CardHeader } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { getSession } from "@/lib/auth/session";
-import { computeOptions, finderOptions, listShortlist, type FinderOption } from "@/lib/data/finder";
-import { myMerit } from "@/lib/data/candidates";
-import { ChanceDial } from "@/components/charts/chance-dial";
-import { Button } from "@/components/ui/button";
-import { selectClass } from "@/components/ui/styles";
-import { getDb } from "@/lib/db/client";
-import { findSection } from "@/lib/navigation";
-import { toggleShortlistAction } from "../finder/actions";
 import Link from "next/link";
-import { shortlistAlerts } from "@/lib/data/notifications";
-import { peerInterest, peerKey } from "@/lib/data/social";
-import { PeerCount } from "@/components/rooms/peer-count";
+import { AreaPage } from "@/components/area-page";
+import { whenDatabaseDown } from "@/components/database-unavailable";
+import { AuroraHeader } from "@/components/ui/aurora-header";
+import { cn } from "@/components/ui/cn";
+import { getSession } from "@/lib/auth/session";
+import { myMerit } from "@/lib/data/candidates";
+import { computeOptions, finderOptions, listShortlist, type FinderOption } from "@/lib/data/finder";
+import { applicantIdentity, compareRounds, listInductionsWithRounds, marksStanding } from "@/lib/data/merit";
+import { listInbox as listNotices, shortlistAlerts } from "@/lib/data/notifications";
+import { latestSchedule } from "@/lib/data/schedule";
+import { publishedEstimates } from "@/lib/data/simulation";
 import { followedPlaces, listSavedViews } from "@/lib/data/workspace";
-import { formatUtc } from "@/lib/format";
-import { listInbox as listNotices } from "@/lib/data/notifications";
-import { buildJourney, seatFlow } from "@/lib/domain/journey";
-import { JourneyTimeline } from "@/components/me/journey-timeline";
-import { SeatFlowGraph } from "@/components/me/seat-flow";
-import { MeRail } from "@/components/me/me-rail";
+import { getDb } from "@/lib/db/client";
+import { formatMarks } from "@/lib/format";
+import { findSection } from "@/lib/navigation";
 import { deleteViewAction, setAlertsAction } from "./actions";
 
 export const metadata = { title: "Me" };
 export const dynamic = "force-dynamic";
 
-export default async function WorkspacePage({ searchParams }: { searchParams: Promise<{ marks?: string; total?: string }> }) {
+const IV = "text-[#F3EEE5]/[.68]";
+const card = "mn-card-glass mn-hover rounded-[20px] border border-line p-5";
+const shortH = (h: string) => h.split(",")[0]!;
+
+/** Me (docs/mockups/v4/Me.dc.html): who you are on the lists, your journey, today, your shortlist, and what you follow. */
+export default async function MePage() {
   const s = findSection("/portal/workspace");
   const frame = { area: "portal" as const, trail: [{ label: s.label }], title: s.label, description: s.description };
   const down = await whenDatabaseDown(frame);
   if (down) return down;
   const db = getDb();
-  const session = await getSession();
-  const [items, opts, mine] = await Promise.all([listShortlist(db, session), finderOptions(db, session), myMerit(db, session).catch(() => null)]);
-  const sp = await searchParams;
-  const [notes, views, places, alerts, peers] = await Promise.all([
-    listNotices(db, session, 12).catch(() => null),listSavedViews(db, session), followedPlaces(db, session), shortlistAlerts(db, session), peerInterest(db, session, { limit: 200 })]);
-  const peerOf = new Map(peers.seats.map((p) => [peerKey(p), p.peers]));
-  // Marks for the dials: typed here, else the verified record's latest marks.
+  const session = (await getSession())!;
+  const now = new Date();
+  const [items, opts, merit, notes, views, places, alerts, inductions, estimates, schedule] = await Promise.all([
+    listShortlist(db, session), finderOptions(db, session), myMerit(db, session).catch(() => null), listNotices(db, session, 12).catch(() => null),
+    listSavedViews(db, session), followedPlaces(db, session), shortlistAlerts(db, session), listInductionsWithRounds(db, session),
+    publishedEstimates(db, session), latestSchedule(db, session),
+  ]);
+  const own = merit?.rows[0] ?? null;
+  const latest = inductions[0] ?? null;
+  const lastRound = latest?.rounds.at(-1) ?? null;
+  const prevRound = latest?.rounds.at(-2) ?? null;
+  const [who, standing, movement] = await Promise.all([
+    merit ? applicantIdentity(db, session, merit.applicantId).catch(() => null) : null,
+    own ? marksStanding(db, session, { induction: own.induction, roundNo: own.roundNo, program: own.program, marks: own.marks }).catch(() => null) : null,
+    latest && lastRound && prevRound ? compareRounds(db, session, latest.id, prevRound.roundNo, lastRound.roundNo).catch(() => null) : null,
+  ]);
+
+  // Safe / target / reach for each shortlisted seat, against the latest induction.
   const latestInd = opts.inductions[0];
-  const own = mine?.rows[0];
-  const typed = Number(sp.marks), typedTotal = Number(sp.total);
-  const marks = Number.isFinite(typed) && typed > 0 ? typed : own?.marks ?? null;
-  const total = Number.isFinite(typed) && typed > 0
-    ? (Number.isFinite(typedTotal) && typedTotal > 0 ? typedTotal : opts.defaultTotal ?? latestInd?.total ?? null)
-    : own ? opts.inductions.find((i) => i.id === own.induction)?.total ?? null : null;
-  const fromRecord = !(Number.isFinite(typed) && typed > 0) && own;
-  // One finder calculation per programme·quota on the shortlist, against the latest induction.
+  const total = own ? opts.inductions.find((i) => i.id === own.induction)?.total ?? null : null;
   const chances = new Map<string, FinderOption>();
-  if (marks !== null && total && latestInd) {
-    const trackKeys = [...new Set(items.map((x) => `${x.program}|${x.quota}`))];
-    await Promise.all(trackKeys.map(async (k) => {
+  if (own && total && latestInd) {
+    const keys = [...new Set(items.map((x) => `${x.program}|${x.quota}`))];
+    await Promise.all(keys.map(async (k) => {
       const [program, quota] = k.split("|") as [string, string];
-      const r = await computeOptions(db, { induction: latestInd.id, program, quota, marks, total }).catch(() => null);
+      const r = await computeOptions(db, { induction: latestInd.id, program, quota, marks: own.marks, total }).catch(() => null);
       for (const o of r?.options ?? []) chances.set(`${k}|${o.speciality}|${o.hospital}`, o);
     }));
   }
-  const journey = buildJourney(mine?.rows ?? [], (notes?.items ?? []).map((n) => ({ id: n.id, title: n.title, href: n.href, at: n.createdAt, read: n.readAt != null })));
-  const flow = seatFlow(mine?.rows ?? []);
-  const mePct = marks !== null && total ? (marks / total) * 100 : null;
-  const groups = new Map<string, typeof items>();
-  for (const x of items) {
-    const k = `${x.program} · ${x.quota}`;
-    (groups.get(k) ?? groups.set(k, []).get(k)!).push(x);
-  }
 
-  const [who, standing] = await Promise.all([
-    mine ? applicantIdentity(db, session, mine.applicantId).catch(() => null) : null,
-    own ? marksStanding(db, session, { induction: own.induction, roundNo: own.roundNo, program: own.program, marks: own.marks }).catch(() => null) : null,
-  ]);
-  const display = who?.name ?? session?.email.replace(/@.*/, "") ?? "You";
+  // The journey: the seat in each round of the latest induction, consecutive same seats as one bar.
+  const rows = new Map((merit?.rows ?? []).filter((r) => r.induction === latest?.id).map((r) => [r.roundNo, r]));
+  const roundNos = latest?.rounds.map((r) => r.roundNo) ?? [];
+  const est = estimates.find((e) => !e.official && e.induction === latest?.id);
+  const cols = roundNos.length + (est ? 1 : 0);
+  type Bar = { key: string; from: number; to: number; title: string; sub: string; tone: "none" | "other" | "seat" };
+  const bars: Bar[] = [];
+  roundNos.forEach((n, i) => {
+    const r = rows.get(n);
+    const key = r ? `${r.speciality}|${r.hospital}` : "none";
+    const prev = bars.at(-1);
+    if (prev && prev.key === key) { prev.to = i; return; }
+    const tone = !r ? "none" : own && r.speciality === own.speciality && r.hospital === own.hospital ? "seat" : "other";
+    bars.push({ key, from: i, to: i, title: r ? `${r.speciality} · ${shortH(r.hospital)}` : "No seat", sub: r ? `${r.preferenceNo ? `pref #${r.preferenceNo}` : "seat"}${r.consent ? ` · ${r.consent.toLowerCase()}` : ""}` : "not on the list", tone });
+  });
+  bars.forEach((b) => { if (b.from !== b.to) b.sub = `${b.sub.split(" · ")[0]} · R${roundNos[b.from]}–R${roundNos[b.to]}${b.sub.includes(" · ") ? ` · ${b.sub.split(" · ").slice(1).join(" · ")}` : ""}`; });
+
+  // Today: the next PHF deadline, movement in shortlisted seats, unread notices.
+  const open = (schedule?.rows ?? []).filter((r) => r.endsAt && r.endsAt > now && (!r.startsAt || r.startsAt <= now)).sort((a, b) => a.endsAt!.getTime() - b.endsAt!.getTime())[0];
+  const left = open?.endsAt ? open.endsAt.getTime() - now.getTime() : 0;
+  const countdown = open ? `${Math.floor(left / 86_400_000)} day${Math.floor(left / 86_400_000) === 1 ? "" : "s"} ${Math.floor((left % 86_400_000) / 3_600_000)} h` : null;
+  const shortSpecs = new Set(items.map((x) => `${x.program}|${x.quota}|${x.speciality}`));
+  const moves = (movement?.groups ?? []).filter((g) => g.delta != null && Math.abs(g.delta) > 0.005 && shortSpecs.has(`${g.program}|${g.quota}|${g.speciality}`)).slice(0, 3);
+  const unread = notes?.items.filter((n) => !n.readAt) ?? [];
+
+  const display = who?.name ?? session.email.replace(/@.*/, "");
   const initials = display.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
   const following = places.hospitals.length + places.specialities.length;
+  const TONE = { none: "#FF7A7A", other: "#E5A04B", seat: "#3DDC97" } as const;
 
   return (
     <AreaPage {...frame} bare>
-      <AuroraHeader as="section" className="flex flex-wrap items-center gap-5 p-5 sm:p-6">
-        <span aria-hidden className="grid h-16 w-16 flex-none place-items-center rounded-full bg-violet text-xl font-semibold text-white shadow-[0_0_24px_var(--mn-violet-glow)]">{initials}</span>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-semibold tracking-tight text-[#F3EEE5] sm:text-3xl">{display}</h1>
-          <p className="font-mono text-xs text-[#F3EEE5]/70">
-            {mine ? [mine.applicantId, who?.pmdcNo ? `PMDC ${who.pmdcNo}` : null, own ? `${own.program.trim()} · ${own.quota.trim()}` : null].filter(Boolean).join(" · ") : "Not linked to an applicant record yet"}
-          </p>
-          <p className="mt-2 flex flex-wrap gap-1.5">
-            {standing ? <Pill tone="violet">{standing.percentile >= 75 ? "High" : standing.percentile >= 40 ? "Middle" : "Lower"} · {standing.percentile}th</Pill> : null}
-            {own ? <Pill tone="success">Seat in round {own.roundNo}</Pill> : null}
-            {own?.consent ? <Pill tone="amber">consent: {own.consent}</Pill> : null}
-            {!mine ? <Link href="/portal/profile" className="text-sm font-semibold text-violet-pale hover:underline">Link your record →</Link> : null}
-          </p>
-        </div>
-        <dl className="flex flex-wrap gap-2">
-          {([[own ? formatMarks(own.marks) : "—", "marks"], [String(items.length), "shortlist"], [String(following), "following"], [String(views.length), "saved views"]] as const).map(([v, l]) => (
-            <div key={l} className="grid min-w-20 place-items-center rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2"><dd className="text-xl font-semibold tabular-nums text-[#F3EEE5]">{v}</dd><dt className="text-[0.7rem] text-[#F3EEE5]/65">{l}</dt></div>
-          ))}
-          <Link href="/portal/account" className="mn-btn-ghost grid place-items-center rounded-xl px-4 text-sm text-[#F3EEE5]">Your data</Link>
-        </dl>
-      </AuroraHeader>
-      <div className="grid gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
-      <MeRail items={[
-        { href: "#seat", label: "My seat", icon: "target" },
-        { href: "#journey", label: "My journey", icon: "history", count: journey.rounds.length ? Math.ceil(journey.rounds.length / 2) : undefined },
-        { href: "#shortlist", label: "Shortlist", icon: "list", count: items.length || undefined },
-        { href: "#saved", label: "Saved views", icon: "folder", count: views.length || undefined },
-        { href: "#following", label: "Following", icon: "heart" },
-        { href: "#alerts", label: "Alerts", icon: "inbox" },
-        { href: "/portal/preferences", label: "Preference list", icon: "calculator" },
-        { href: "/portal/profile", label: "My record", icon: "user" },
-      ]} />
-      <div className="grid min-w-0 content-start gap-5">
-      <Card id="seat" className="mn-glow">
-        <CardHeader title="My seat" description={flow ? "Your latest allocation, and how close it was." : "Your latest allocation shows here once your account is linked to your merit record."} />
-        {flow ? <SeatFlowGraph flow={flow} /> : (
-          <ButtonLink href="/portal/profile" size="sm">Link your merit record</ButtonLink>
-        )}
-      </Card>
-      <Card id="journey">
-        <CardHeader title="My journey" description="Your rounds, your consent replies and what the app told you, newest first." />
-        <div className="grid gap-6 md:grid-cols-2">
-          <JourneyTimeline events={journey.rounds} empty="No rounds yet. You will see each round you appear in here." />
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">Notices</p>
-            <JourneyTimeline events={journey.notices} empty="No notices yet." />
+      <AuroraHeader as="section" className="flex flex-wrap items-center justify-between gap-5 px-5 py-[22px] sm:px-6">
+        <div className="flex items-center gap-[18px]">
+          <span aria-hidden className="grid h-[76px] w-[76px] flex-none place-items-center rounded-full bg-[linear-gradient(135deg,#8B73FF,#5B3FF5)] text-[26px] font-bold shadow-[0_0_30px_rgba(110,86,255,.5)]">{initials}</span>
+          <div className="min-w-0">
+            <h1 className="truncate text-[30px] font-bold tracking-[-0.03em]">{display}</h1>
+            <p className={cn("mt-1 font-mono text-xs", IV)}>{merit ? [merit.applicantId, who?.pmdcNo ? `PMDC ${who.pmdcNo}` : null, own ? `${own.program.trim()} · ${own.quota.trim()}` : null].filter(Boolean).join(" · ") : "Not linked to an applicant record yet"}</p>
+            <p className="mt-2 flex flex-wrap gap-1.5">
+              {standing ? <span className="mn-pill v">{standing.percentile >= 75 ? "High" : standing.percentile >= 40 ? "Middle" : "Lower"} · {standing.percentile}th</span> : null}
+              {own ? <span className="mn-pill g">Seat in round {own.roundNo}</span> : null}
+              {open ? <span className="mn-pill a"><span className="mn-live">●</span> {open.title} due {open.endsAt!.toLocaleDateString("en-GB", { weekday: "short", timeZone: "Asia/Karachi" })}</span> : null}
+              {!merit ? <Link href="/portal/profile" className="mn-pill v">Link your record →</Link> : null}
+            </p>
           </div>
         </div>
-      </Card>
-      {items.length ? (
-        <Card>
-          <form method="get" className="flex flex-wrap items-end gap-3">
-            <label className="grid gap-1.5 text-sm font-medium">Your marks
-              <span className="flex items-center gap-2">
-                <input name="marks" inputMode="decimal" defaultValue={marks ?? ""} placeholder="e.g. 22.5" className={`${selectClass} w-28 font-mono`} />
-                <span className="text-sm text-muted">of</span>
-                <input name="total" inputMode="decimal" defaultValue={total ?? ""} aria-label="Out of (total marks)" className={`${selectClass} w-20 font-mono`} />
-              </span>
-            </label>
-            <Button type="submit" variant="secondary">Show my chances</Button>
-            <p className="min-w-0 flex-1 text-xs text-subtle">
-              {mePct === null ? "Enter your marks to see a chance dial for each saved option." : `${fromRecord ? "From your verified record. " : ""}Each option is compared with induction ${latestInd?.id} (out of ${latestInd?.total}), in percent of total.`}
-            </p>
-          </form>
-        </Card>
-      ) : null}
-      {items.length === 0 ? (
-        <EmptyState title="Your shortlist is empty" action={<ButtonLink href="/portal/finder">Open the score finder</ButtonLink>}>
-          Star options in the score finder to save them here. The shortlist will feed the preference planner.
-        </EmptyState>
-      ) : (
-        [...groups].map(([track, rows]) => {
-          const [program, quota] = track.split(" · ");
-          return (
-            <Card key={track} id={track === [...groups.keys()][0] ? "shortlist" : undefined}>
-              <CardHeader
-                title={track}
-                description={`${rows.length} saved ${rows.length === 1 ? "option" : "options"}`}
-                action={
-                  <div className="flex flex-wrap gap-2">
-                    <ButtonLink href={`/portal/finder?track=${encodeURIComponent(`${program}|${quota}`)}`} variant="ghost" size="sm">Check in the finder</ButtonLink>
-                    <ButtonLink href="/portal/preferences" size="sm">Make a preference list</ButtonLink>
-                  </div>
-                }
-              />
-              <ul className="divide-y divide-line rounded-2xl border border-line">
-                {rows.map((x) => {
-                  const o = chances.get(`${program}|${quota}|${x.speciality}|${x.hospital}`);
-                  return (
-                  <li key={`${x.speciality}|${x.hospital}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-sm md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)_auto]">
-                    <span className="min-w-0">
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">{x.speciality}<PeerCount n={peerOf.get(peerKey(x))} /></span>
-                      <span className="block truncate text-muted">{x.hospital}</span>
-                    </span>
-                    {mePct !== null ? (
-                      <div className="col-span-2 row-start-2 min-w-0 md:col-span-1 md:row-start-auto">
-                        {o ? <ChanceDial compact mePct={mePct} firstPct={o.firstPct} lastPct={o.lastPct} firstRound={o.firstRound} lastRound={o.lastRound} /> : <p className="text-xs text-subtle">Not offered in induction {latestInd?.id}.</p>}
-                      </div>
-                    ) : null}
-                    <form action={toggleShortlistAction}>
-                      <input type="hidden" name="program" value={x.program} />
-                      <input type="hidden" name="quota" value={x.quota} />
-                      <input type="hidden" name="speciality" value={x.speciality} />
-                      <input type="hidden" name="hospital" value={x.hospital} />
-                      <button type="submit" className="rounded-full px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-ink">Remove</button>
-                    </form>
-                  </li>
-                  );
-                })}
-              </ul>
-            </Card>
-          );
-        })
-      )}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <Card id="saved">
-          <CardHeader title={`Saved views${views.length ? ` · ${views.length}` : ""}`} description="Comparisons and finder results you saved, with their filters. Only you see them." />
-          {views.length ? (
-            <ul className="divide-y divide-line text-sm">
-              {views.map((v) => (
-                <li key={v.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <span className="grid min-w-0 gap-0.5">
-                    <Link href={v.href} className="truncate font-medium text-signal hover:underline">{v.label}</Link>
-                    <span className="text-xs text-subtle">saved {formatUtc(v.createdAt).slice(0, 10)}</span>
-                  </span>
-                  <form action={deleteViewAction}>
-                    <input type="hidden" name="id" value={v.id} />
-                    <button type="submit" className="rounded-full px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-ink">Remove</button>
-                  </form>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="text-sm text-muted">Use “Save this view” on the score finder, a round comparison or your preference comparison to keep it here.</p>}
-        </Card>
-        <Card id="following">
-          <CardHeader title="Hospitals and specialities you follow" description="Follow one from its page to see it here and hear about new rounds and questions." />
-          {places.hospitals.length || places.specialities.length ? (
-            <div className="grid gap-3 text-sm">
-              {([["Hospitals", places.hospitals, "hospitals"], ["Specialities", places.specialities, "specialities"]] as const).map(([title, list, path]) => list.length ? (
-                <div key={title} className="grid gap-1.5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-subtle">{title}</p>
-                  <ul className="flex flex-wrap gap-2">
-                    {list.map((x) => <li key={x.id}><Link href={`/portal/explore/${path}/${x.id}`} className="inline-block rounded-full px-3 py-1.5 ring-1 ring-line-strong hover:text-signal">{x.name}</Link></li>)}
-                  </ul>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {([[own ? formatMarks(own.marks) : "—", "marks"], [String(items.length), "shortlist"], [String(following), "following"], [String(views.length), "saved"]] as const).map(([v, l]) => (
+            <div key={l} className="mn-glass min-w-[4.5rem] text-center"><p className="text-[22px] font-bold tabular-nums">{v}</p><p className={cn("text-[11px]", IV)}>{l}</p></div>
+          ))}
+          <Link href="/portal/account" className="mn-ob">Your data</Link>
+        </div>
+      </AuroraHeader>
+
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <section aria-labelledby="journey" className={card}>
+          <div className="flex items-center justify-between"><h2 id="journey" className="text-[15px] font-semibold text-heading">My journey{latest ? ` · induction ${latest.id}` : ""}</h2><span className="text-xs text-muted">Seat in each round</span></div>
+          {bars.length ? (
+            <div className="relative mt-3.5 overflow-x-auto">
+              <div className="relative min-w-[36rem]" style={{ height: `${Math.max(180, 40 + bars.length * 60)}px` }}>
+                <div className="absolute inset-x-0 top-0 grid text-xs text-muted" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}>
+                  {roundNos.map((n) => <span key={n} className={n === lastRound?.roundNo ? "text-[#D6CCFF]" : undefined}>R{n}{n === lastRound?.roundNo ? " · now" : ""}</span>)}
+                  {est ? <span className="text-[#E5A04B]">R{est.roundNo}</span> : null}
                 </div>
-              ) : null)}
+                <div aria-hidden className="absolute inset-x-0 bottom-0 top-6 grid" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))` }}>
+                  {Array.from({ length: cols }, (_, i) => <span key={i} className="border-l border-dashed border-white/[.06]" />)}
+                </div>
+                {bars.map((b, i) => (
+                  <div key={i} className="absolute rounded-xl px-3 py-2.5 text-xs transition-transform hover:-translate-y-0.5"
+                    style={{ left: `calc(${(b.from / cols) * 100}% + 4px)`, width: `calc(${((b.to - b.from + 1) / cols) * 100}% - 8px)`, top: `${40 + i * 60}px`,
+                      background: b.tone === "seat" ? "rgba(61,220,151,0.14)" : "#1E1E24", boxShadow: `inset 3px 0 0 ${TONE[b.tone]}${b.tone === "seat" ? ", 0 0 22px rgba(61,220,151,0.25)" : ""}` }}>
+                    <b className="block truncate">{b.title}</b><span className={cn("block truncate", b.tone === "seat" ? "text-[#3DDC97]" : "text-muted")}>{b.sub}</span>
+                  </div>
+                ))}
+                {est ? (
+                  <Link href={`/portal/estimates?run=${est.id}`} className="absolute rounded-xl border border-dashed border-[rgba(155,135,255,.7)] px-3 py-2.5 text-xs" style={{ left: `calc(${((cols - 1) / cols) * 100}% + 4px)`, width: `calc(${(1 / cols) * 100}% - 8px)`, top: "100px" }}>
+                    <b className="block text-[#C4B8FF]">Estimate</b><span className="block text-muted">round {est.roundNo}</span>
+                  </Link>
+                ) : null}
+              </div>
             </div>
-          ) : <p className="text-sm text-muted">You follow none yet. Open a hospital or speciality under Hospitals &amp; specialities and choose Follow.</p>}
-        </Card>
+          ) : <p className="mt-3 text-sm text-muted">{merit ? "You are not on a list of the latest induction yet." : <>Your seat in each round shows once your account is linked. <Link href="/portal/profile" className="text-[#A797FF]">Link it</Link>.</>}</p>}
+        </section>
+
+        <aside aria-label="Today" className={card}>
+          <h2 className="text-[15px] font-semibold text-heading">Today</h2>
+          <p className="mb-3 mt-0.5 text-xs text-muted">{now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Karachi" })}</p>
+          {countdown ? (
+            <div className="rounded-[14px] border border-[rgba(229,160,75,.4)] bg-[rgba(229,160,75,.10)] p-3.5 shadow-[0_0_22px_rgba(229,160,75,.15)]">
+              <p className="text-[26px] font-bold text-[#E5A04B]">{countdown}</p>
+              <p className="mt-0.5 text-[13px]">until {open!.title} closes</p>
+            </div>
+          ) : null}
+          <ul className="mt-3.5 grid gap-3 text-[13px]">
+            {moves.map((g) => (
+              <li key={`${g.program}|${g.quota}|${g.speciality}`} className="flex justify-between gap-2"><span className="truncate">{g.speciality} {g.delta! < 0 ? "fell" : "rose"}</span><span className={cn("mn-pill", g.delta! < 0 ? "g" : "r")}>{g.delta! < 0 ? "▼" : "▲"} {Math.abs(g.delta!).toFixed(2)}</span></li>
+            ))}
+            {unread.slice(0, 3).map((n) => <li key={n.id} className="flex justify-between gap-2"><Link href={n.href} className="truncate hover:underline">{n.title}</Link><span className="mn-pill v">new</span></li>)}
+            {!countdown && !moves.length && !unread.length ? <li className="text-muted">Nothing new today.</li> : null}
+          </ul>
+        </aside>
       </div>
-      <Card id="alerts">
-        <CardHeader title="Shortlist alerts" description={alerts ? "When a new merit round is published, your inbox gets the closing merit of every shortlisted seat in it, and how it moved." : "Alerts are off: new rounds will not message you about your shortlist."} />
-        <form action={setAlertsAction}>
-          <input type="hidden" name="on" value={alerts ? "0" : "1"} />
-          <Button type="submit" variant="secondary" size="sm">{alerts ? "Turn alerts off" : "Turn alerts on"}</Button>
-        </form>
-      </Card>
-      </div>
+
+      <section aria-labelledby="short" className={card}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="short" className="text-[15px] font-semibold text-heading">Shortlist · {items.length}</h2>
+          <div className="flex items-center gap-3">
+            <form action={setAlertsAction}><input type="hidden" name="on" value={alerts ? "0" : "1"} /><button type="submit" className="mn-ob">{alerts ? "Alerts on" : "Alerts off"}</button></form>
+            <Link href="/portal/finder" className="text-[13px] text-[#A797FF]">Add from My chances →</Link>
+          </div>
+        </div>
+        {items.length ? (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {items.map((x) => {
+              const o = chances.get(`${x.program}|${x.quota}|${x.speciality}|${x.hospital}`);
+              const st = o?.status;
+              const c = st === "safe" ? ["g", "rgba(61,220,151,.3)", "#3DDC97"] : st === "borderline" ? ["a", "rgba(229,160,75,.3)", "#E5A04B"] : st === "out" ? ["r", "rgba(255,122,122,.3)", "#FF7A7A"] : ["n", "rgba(255,255,255,.08)", "#8B8B93"];
+              const fill = o && own && total ? Math.max(6, Math.min(100, 100 - Math.max(0, (o.lastClosing - (own.marks / total) * (latestInd?.total ?? total)) * 25))) : 30;
+              return (
+                <article key={`${x.program}|${x.quota}|${x.speciality}|${x.hospital}`} className="rounded-[14px] border bg-white/[.03] p-3.5" style={{ borderColor: c[1] }}>
+                  <div className="flex justify-between gap-2"><b className="truncate">{x.speciality}</b>{st ? <span className={cn("mn-pill", c[0])}>{st === "safe" ? "Safe" : st === "borderline" ? "Target" : "Reach"}</span> : null}</div>
+                  <p className="mt-1 truncate text-xs text-muted">{shortH(x.hospital)}{o ? ` · closing ${o.lastClosing.toFixed(2)}` : ` · ${x.program} ${x.quota}`}</p>
+                  <div className="mn-fill mt-2.5"><span style={{ width: `${fill}%`, background: c[2], boxShadow: st === "safe" ? `0 0 8px ${c[2]}` : "none" }} /></div>
+                </article>
+              );
+            })}
+          </div>
+        ) : <p className="mt-3 text-sm text-muted">Nothing saved yet. Star seats in <Link href="/portal/finder" className="text-[#A797FF]">My chances</Link>.</p>}
+      </section>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <section className={card}>
+          <h2 className="text-[15px] font-semibold text-heading">Following</h2>
+          <p className="mt-3 flex flex-wrap gap-1.5">
+            {places.hospitals.map((h) => <Link key={`h${h.id}`} href={`/portal/explore/hospitals/${h.id}`} className="mn-pill v">{h.name.split(",")[0]}</Link>)}
+            {places.specialities.map((x) => <Link key={`s${x.id}`} href={`/portal/explore/specialities/${x.id}`} className="mn-pill v">{x.name}</Link>)}
+            {!following ? <span className="text-[13px] text-muted">Follow a hospital or speciality to hear about new lists and jobs.</span> : null}
+          </p>
+        </section>
+        <section className={card}>
+          <h2 className="text-[15px] font-semibold text-heading">Saved views</h2>
+          <ul className="mt-3 grid gap-2 text-[13px]">
+            {views.map((v) => (
+              <li key={v.id} className="flex items-center justify-between gap-2">
+                <Link href={v.href} className="truncate text-[#A797FF] hover:underline">{v.label}</Link>
+                <form action={deleteViewAction}><input type="hidden" name="id" value={v.id} /><button type="submit" aria-label={`Remove ${v.label}`} className="text-xs text-muted hover:text-ink">✕</button></form>
+              </li>
+            ))}
+            {!views.length ? <li className="text-muted">Save a finder search or a filtered list to come back to it.</li> : null}
+          </ul>
+        </section>
+        <section className={card}>
+          <h2 className="text-[15px] font-semibold text-heading">Your activity</h2>
+          <ul className="mt-3 grid gap-2 text-[13px] text-muted">
+            {(notes?.items ?? []).slice(0, 4).map((n) => <li key={n.id} className="truncate"><Link href={n.href} className="hover:text-ink">{n.title}</Link></li>)}
+            {!notes?.items.length ? <li>Nothing yet. Answers, new rounds and alerts show here.</li> : null}
+          </ul>
+          <p className="mt-3 flex gap-3 text-xs"><Link href="/portal/profile" className="text-[#A797FF]">My record</Link><Link href="/portal/preferences" className="text-[#A797FF]">Preference list</Link><Link href="/portal/inbox" className="text-[#A797FF]">Inbox</Link></p>
+        </section>
       </div>
     </AreaPage>
   );
