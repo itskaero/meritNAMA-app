@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function AdvancedPage() {
   const session = await requireSection("/admin/advanced");
   const s = findSection("/admin/advanced");
-  const pages = sectionsFor(session, adminSections).filter((x) => x.proOnly && x.group === "Advanced");
+  const pages = sectionsFor(session, adminSections).filter((x) => x.group === "Advanced" && x.href !== "/admin/advanced");
   const pending = await pendingChangeCount(getDb(), session).catch(() => null);
 
   return (

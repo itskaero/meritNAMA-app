@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { checkDatabase, getDb } from "@/lib/db/client";
+import { recordWorkerTick } from "@/lib/data/admin-today";
 import { autoImportDataFolder } from "@/lib/data/datastore";
 import { jobsSyncIfDue } from "@/lib/data/jobs";
 import { failInterruptedRuns, processQueuedRuns } from "@/lib/data/simulation";
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
   if ((await checkDatabase()) !== "ok") return Response.json({ ok: false, database: "unreachable" }, { status: 503 });
 
   const db = getDb();
+  await recordWorkerTick(db).catch((e) => console.error("worker: tick record", e));
   const started = await processQueuedRuns(db).catch((e) => { console.error("worker: queued runs", e); return -1; });
   await failInterruptedRuns(db).catch((e) => console.error("worker: interrupted runs", e));
   const synced = await syncIfDue(db).catch((e) => { console.error("worker: data sync", e); return false; });

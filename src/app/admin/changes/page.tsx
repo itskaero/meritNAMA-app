@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PairTabs } from "@/components/admin/pair-tabs";
 import { AreaPage } from "@/components/area-page";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ export default async function ChangesPage() {
 
   return (
     <AreaPage {...frame}>
+      <PairTabs pair="changes" current="/admin/changes" />
       <Card>
         <CardHeader title={`Waiting for review · ${pending.length}`} description="Each one shows what will change before anything is applied." />
         {pending.length === 0 ? (

@@ -5,6 +5,7 @@ const TABS = [
   { href: "/admin/candidates", label: "Requests to verify" },
   { href: "/admin/candidates/records", label: "Records" },
   { href: "/admin/candidates/duplicates", label: "Possible duplicates" },
+  { href: "/admin/access", label: "Access requests" },
 ] as const;
 
 /** The Candidates section's pages. */

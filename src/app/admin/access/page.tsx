@@ -1,4 +1,5 @@
 import { AreaPage } from "@/components/area-page";
+import { CandidateTabs } from "../candidates/tabs";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +29,8 @@ export default async function AdminAccessPage() {
   const rejected = requests.filter((r) => r.status === "rejected");
 
   return (
-    <AreaPage {...frame} status={<StatusPill tone={settings.paywall ? "warning" : "live"}>{settings.paywall ? "Paywall on" : "Paywall off: link sign-in"}</StatusPill>}>
+    <AreaPage {...frame} status={<StatusPill tone={settings.paywall ? "warning" : "live"}>
+      <CandidateTabs current="/admin/access" />{settings.paywall ? "Paywall on" : "Paywall off: link sign-in"}</StatusPill>}>
       <StatTiles stats={[{ label: "Waiting", value: pending.length }, { label: "Approved", value: approved.length }, { label: "Rejected", value: rejected.length }]} />
       <Card id="waiting">
         <CardHeader title={`Waiting for payment check · ${pending.length}`} description="Check the amount and reference in the bank account, then approve. The person is emailed and signs in with an email link." />

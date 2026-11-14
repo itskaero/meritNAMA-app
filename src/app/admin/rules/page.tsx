@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PairTabs } from "@/components/admin/pair-tabs";
 import { AreaPage } from "@/components/area-page";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -36,6 +37,7 @@ export default async function RulesPage() {
       description="How each induction's seats are allocated in the simulation. The scoring policy decides whether the certificate and parent bonuses count and caps them; these rules decide how they are applied, how quotas split into tracks and how later rounds behave."
       status={dbStatus === "ok" ? <StatusPill tone="live">Live data</StatusPill> : <StatusPill tone="warning">Database unavailable</StatusPill>}
     >
+      <PairTabs pair="policies" current="/admin/rules" />
       {!db ? (
         <EmptyState title="Database not available">Configure DATABASE_URL and run migrations to manage allocation rules.</EmptyState>
       ) : (

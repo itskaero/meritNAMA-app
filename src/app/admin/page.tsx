@@ -1,39 +1,32 @@
+import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
-import { BarList } from "@/components/charts/bar-list";
-import { StatTiles } from "@/components/charts/stat-tiles";
+import { CycleStripView, HealthRow, InductionCardView, laneHeadline, NeedsYouList } from "@/components/admin/today";
 import { Badge } from "@/components/ui/badge";
+import { AuroraHeader, AuroraStat } from "@/components/ui/aurora-header";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Metric } from "@/components/ui/metric";
-import { can } from "@/lib/auth/roles";
-import { pendingLinkCount } from "@/lib/data/candidates";
 import { getSession, requireSection } from "@/lib/auth/session";
-import { latestRoundChange, listInductionsWithRounds, listUnmatchedNames, meritOverview } from "@/lib/data/merit";
-import { latestRoundStats } from "@/lib/round-stats";
-import { InductionTimeline } from "@/components/charts/induction-timeline";
-import { WorkQueues, type Queue } from "@/components/work-queues";
-import { pendingChangeCount } from "@/lib/data/changes";
-import { communityStats } from "@/lib/data/community";
-import { listInbox } from "@/lib/data/inbox";
-import { listPolicyVersions } from "@/lib/data/policies";
-import { getReferenceOverview } from "@/lib/data/reference-data";
+import { cycleStrip, inductionCards, needsYou, systemHealth } from "@/lib/data/admin-today";
 import { checkDatabase, getDb } from "@/lib/db/client";
 import { findSection } from "@/lib/navigation";
 import { NoticesCard } from "./notices";
 
-export const metadata = { title: "Admin overview" };
+export const metadata = { title: "Today" };
 export const dynamic = "force-dynamic";
 
 const dbBadge = {
-  ok: <Badge tone="success">Connected</Badge>,
   unreachable: <Badge tone="danger">Unreachable</Badge>,
   not_configured: <Badge tone="warning">Not configured</Badge>,
 } as const;
 
-export default async function AdminOverviewPage() {
+const fmt = (n: number) => n.toLocaleString("en-US");
+
+/** Admin Today: where the cycle is, what needs a person, the running induction, the bar, and health. */
+export default async function AdminTodayPage() {
   await requireSection("/admin");
   const s = findSection("/admin");
   const status = await checkDatabase();
-  const frame = { area: "admin" as const, trail: [{ label: s.label }], isRoot: true, title: s.label, description: "System health, what has been imported, and what needs attention." };
+  const frame = { area: "admin" as const, trail: [{ label: s.label }], isRoot: true, title: s.label, description: s.description };
   if (status !== "ok") {
     return (
       <AreaPage {...frame}>
@@ -42,66 +35,55 @@ export default async function AdminOverviewPage() {
     );
   }
   const db = getDb();
-  const session = await getSession();
-  const [policies, merit, inductions, unmatched, reference, pendingChanges, change, community] = await Promise.all([
-    listPolicyVersions(db, session),
-    meritOverview(db, session),
-    listInductionsWithRounds(db, session),
-    listUnmatchedNames(db, session),
-    getReferenceOverview(db, session),
-    pendingChangeCount(db, session),
-    latestRoundChange(db, session),
-    communityStats(db, session),
-  ]);
-  const reports = community.openReports;
-  const active = policies.find((r) => r.status === "active");
-  const toMap = unmatched.speciality.length + unmatched.hospital.length;
-  const inbox = can(session, "data.edit") || can(session, "policy.edit") ? await listInbox(db, session).catch(() => null) : null;
-  const inboxWaiting = inbox?.filter((i) => i.kind !== "unrecognised").length ?? 0;
-  const toVerify = can(session, "candidates.verify") ? await pendingLinkCount(db) : null;
-  const queues: Queue[] = [
-    { title: "Changes to review", count: pendingChanges, icon: "history", href: "/admin/changes", cta: pendingChanges ? "Review" : "Open", text: pendingChanges ? "Staged changes wait for a decision before they go live." : "Nothing is waiting to be published." },
-    ...(inbox ? [{ title: "Files in the inbox", count: inboxWaiting, icon: "upload" as const, href: "/admin/inductions#inbox", cta: inboxWaiting ? "Import" : "Open", text: inboxWaiting ? "New files on the server, checked and ready to import." : "Drop round, seat or policy files into the server's inbox folder." }] : []),
-    ...(can(session, "data.edit") ? [{ title: "Names to map", count: toMap, icon: "list" as const, href: "/admin/inductions", cta: "Map names", text: toMap ? "Published names that match no hospital or speciality yet." : "Every published name is mapped." }] : []),
-    ...(can(session, "community.moderate") ? [{ title: "Community reports", count: reports, icon: "flag" as const, href: "/admin/community", cta: "Moderate", text: reports ? "Posts members reported for review." : "No reports waiting." }] : []),
-    ...(can(session, "data.edit") && reference.seatMatrices.length === 0 ? [{ title: "Seat matrix", count: 1, icon: "database" as const, href: "/admin/reference-data", cta: "Import", text: "No seat matrix yet: import induction<n>_seats.json." }] : []),
-    ...(can(session, "policy.edit") && !active ? [{ title: "Scoring policy", count: 1, icon: "sliders" as const, href: "/admin/policies", cta: "Import", text: "No active policy: import scoring_policy.json so merit shows out of each total." }] : []),
-    ...(toVerify !== null ? [{ title: "Records to verify", count: toVerify, icon: "users" as const, href: "/admin/candidates", cta: toVerify ? "Verify" : "Open", text: toVerify ? "Candidates asking to link their account to a merit record." : "No requests waiting. Matching emails link automatically." }] : []),
-  ];
+  const session = (await getSession())!;
+  const [queue, cards, strip, health] = await Promise.all([needsYou(db, session), inductionCards(db, session), cycleStrip(db, session), systemHealth(db, session)]);
+  const running = cards.find((c) => c.induction === strip?.induction) ?? cards.find((c) => !c.closed) ?? cards[0] ?? null;
 
   return (
     <AreaPage {...frame}>
-      <WorkQueues queues={queues} />
-      <NoticesCard db={db} session={session!} />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Database" value="Online" badge={dbBadge.ok} hint="Live check" />
-        <Metric label="Active scoring policy" value={active ? active.policyKey : null} unit={active ? `v${active.version}` : undefined} hint={active ? "Manage under Scoring policies" : "Not imported yet"} />
-        <Metric label="Latest induction" value={inductions[0] ? String(inductions[0].id) : null} unit={inductions[0] ? `${inductions[0].rounds.length} rounds` : undefined} hint={inductions[0]?.rounds[0]?.cycleName ?? "No merit rounds yet"} />
-        <Metric label="Candidates" value={null} hint="Arrives with candidate accounts" />
-      </div>
-      <StatTiles
-        stats={[
-          { label: "Merit rounds", value: merit.rounds },
-          { label: "Allocations", value: merit.allocations },
-          { label: "Seats in the latest matrix", value: merit.seats },
-          { label: "Policy versions", value: policies.length },
-        ]}
-      />
-      {change ? <StatTiles stats={latestRoundStats(change, inductions[0]?.maxMarks ?? undefined)} /> : null}
-      {inductions.length ? (
-        <Card>
-          <CardHeader title="Timeline" description="Imported induction cycles and their rounds." />
-          <InductionTimeline inductions={inductions} />
-        </Card>
+      <AuroraHeader as="section" className="grid gap-5 p-5 sm:p-6">
+        <div className="flex flex-wrap items-start gap-6">
+          <div className="min-w-0 flex-1">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-[#F3EEE5]/65">{strip ? "Running · from PHF's schedule" : "Running"}</p>
+            <h2 className="mt-1 text-2xl font-semibold text-[#F3EEE5]">
+              {running ? <>Induction {running.induction} · {laneHeadline(running).toLowerCase()}</> : "No induction data yet"}
+            </h2>
+            <p className="mt-1 text-sm text-[#F3EEE5]/75">
+              {strip?.next ? <>Next PHF step: <span className="font-semibold text-[#F3EEE5]">{strip.next.title}</span>, {strip.next.when}.</> : strip ? "Every step on PHF's schedule has started." : "Drop the induction's schedule file into Data to see PHF's dates here."}
+            </p>
+          </div>
+          {running ? (
+            <div className="flex flex-wrap gap-6">
+              <AuroraStat label="Official rounds" value={running.rounds.length ? fmt(running.rounds.length) : "—"} />
+              <AuroraStat label="Consent rounds" value={running.consent.length ? fmt(running.consent.length) : "—"} />
+              {running.joining ? <AuroraStat label="Joined" value={fmt(running.joining.joined)} hint={`of ${fmt(running.joining.total)} listed`} /> : null}
+            </div>
+          ) : null}
+        </div>
+        {strip?.steps.length ? <CycleStripView steps={strip.steps} /> : null}
+      </AuroraHeader>
+
+      <Card>
+        <CardHeader title={queue.length ? `Needs you · ${queue.length}` : "Needs you"} description="Everything waiting for a person, most urgent first. You see what your role can act on." />
+        <NeedsYouList items={queue} />
+      </Card>
+
+      {running ? (
+        <section aria-label={`Induction ${running.induction} data`} className="grid gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-muted">Induction {running.induction} data</h2>
+            <Link href="/admin/data" className="text-sm font-semibold text-signal hover:underline">Open in Data →</Link>
+          </div>
+          <InductionCardView c={running} compact />
+        </section>
       ) : null}
-      <div className="grid grid-cols-1 gap-5">
-        <Card>
-          <CardHeader title="Allocations per induction" description="Latest round of each." />
-          {inductions.length ? (
-            <BarList items={inductions.map((i) => ({ label: `Induction ${i.id}`, detail: i.rounds[0]!.cycleName, value: i.rounds.at(-1)!.allocations, href: `/portal/history/${i.id}` }))} format={(v) => v.toLocaleString("en-US")} />
-          ) : <p className="text-sm text-muted">No merit rounds imported yet.</p>}
-        </Card>
-      </div>
+
+      <NoticesCard db={db} session={session} />
+
+      <section aria-label="Health" className="grid gap-2">
+        <h2 className="text-sm font-semibold text-muted">Health</h2>
+        <HealthRow items={health} />
+      </section>
     </AreaPage>
   );
 }

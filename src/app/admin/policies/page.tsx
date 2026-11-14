@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PairTabs } from "@/components/admin/pair-tabs";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -36,6 +37,7 @@ export default async function PoliciesPage() {
       description="Import, review, edit and activate scoring policies, and export them back to the public site's scoring_policy.json."
       status={dbStatus === "ok" ? <StatusPill tone="live">Live data</StatusPill> : <StatusPill tone="warning">Database unavailable</StatusPill>}
     >
+      <PairTabs pair="policies" current="/admin/policies" />
       {dbStatus !== "ok" ? (
         <EmptyState title="Database not available">Configure DATABASE_URL and run migrations to manage scoring policies.</EmptyState>
       ) : (

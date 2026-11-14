@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PairTabs } from "@/components/admin/pair-tabs";
 import { AreaPage } from "@/components/area-page";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -56,6 +57,7 @@ export default async function AdminAuditPage({ searchParams }: { searchParams: P
       description="Every change made in the app, with who made it, when, why and what it changed. Newest first."
       status={dbStatus === "ok" ? <StatusPill tone="live">Live data</StatusPill> : <StatusPill tone="warning">Database unavailable</StatusPill>}
     >
+      <PairTabs pair="changes" current="/admin/audit" />
       {children}
     </AreaPage>
   );

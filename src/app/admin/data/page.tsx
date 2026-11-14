@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
+import { InductionCardView } from "@/components/admin/today";
+import { Segmented } from "@/components/ui/segmented";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -8,7 +10,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/page-header";
 import { getSession, requireSection } from "@/lib/auth/session";
 import { dataRoot, dataSettings, estimateReadiness, listDataFiles, type DataFileItem, type DataStatus } from "@/lib/data/datastore";
+import { inductionCards } from "@/lib/data/admin-today";
 import { getDb } from "@/lib/db/client";
+import { FILE_KINDS } from "@/lib/ingest/registry";
 import { formatUtc } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
 import { BuildEstimateForm, DropZone, FileActions, PublishAllButton, RescanButton, SettingsForm, SyncButton } from "./forms";
@@ -47,14 +51,19 @@ function FileRow({ f }: { f: DataFileItem }) {
   );
 }
 
-export default async function AdminDataPage() {
+const TABS = ["inductions", "files", "reference", "estimates"] as const;
+type Tab = (typeof TABS)[number];
+
+export default async function AdminDataPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const asked = (await searchParams).tab;
+  const tab: Tab = (TABS as readonly string[]).includes(asked ?? "") ? (asked as Tab) : "inductions";
   await requireSection("/admin/data");
   const s = findSection("/admin/data");
   const down = await whenDatabaseDown({ area: "admin", trail: [{ label: s.label }], title: s.label, description: s.description });
   if (down) return down;
   const db = getDb();
   const session = await getSession();
-  const [files, settings, readiness] = await Promise.all([listDataFiles(db, session), dataSettings(db, session), estimateReadiness(db, session)]);
+  const [files, settings, readiness, cards] = await Promise.all([listDataFiles(db, session), dataSettings(db, session), estimateReadiness(db, session), inductionCards(db, session)]);
 
   const shown = files.filter((f) => f.status !== "ignored");
   const skipped = files.filter((f) => f.status === "ignored");
@@ -63,6 +72,15 @@ export default async function AdminDataPage() {
   const byInduction = new Map<number | null, DataFileItem[]>();
   for (const f of shown) byInduction.set(f.induction, [...(byInduction.get(f.induction) ?? []), f]);
   const groups = [...byInduction.entries()].sort((a, b) => (b[0] ?? -1) - (a[0] ?? -1));
+  const general = shown.filter((f) => f.induction === null);
+  const open = cards.filter((c) => !c.closed);
+  const closed = cards.filter((c) => c.closed);
+  const tabs = [
+    { href: "/admin/data", label: "Inductions", active: tab === "inductions", count: cards.length },
+    { href: "/admin/data?tab=files", label: "Files", active: tab === "files", count: fresh + waiting + problems || undefined },
+    { href: "/admin/data?tab=reference", label: "Reference", active: tab === "reference" },
+    { href: "/admin/data?tab=estimates", label: "Estimates", active: tab === "estimates" },
+  ];
 
   return (
     <AreaPage
@@ -72,6 +90,31 @@ export default async function AdminDataPage() {
       description={s.description}
       status={<StatusPill tone={problems || waiting ? "warning" : "live"}>{problems ? `${problems} with a problem` : waiting ? `${waiting} waiting for a click` : "All up to date"}</StatusPill>}
     >
+      <Segmented label="Data" items={tabs} />
+      <ol aria-label="What happens to a file" className="flex flex-wrap items-center gap-2 text-xs text-muted">
+        {["Folder", "Recognised", "Personal fields stripped", "Live", "Estimate"].map((x, i) => (
+          <li key={x} className="flex items-center gap-2">{i ? <span aria-hidden>→</span> : null}<span className="rounded-full border border-line px-2.5 py-1">{x}</span></li>
+        ))}
+      </ol>
+
+      {tab === "inductions" ? (
+        cards.length === 0 ? (
+          <EmptyState title="No inductions yet">Drop an induction&apos;s files under the Files tab, or sync a data repository.</EmptyState>
+        ) : (
+          <div className="grid gap-4">
+            {open.map((c) => <InductionCardView key={c.induction} c={c} />)}
+            {closed.length ? (
+              <details className="rounded-2xl border border-line bg-card p-4">
+                <summary className="cursor-pointer text-sm font-medium text-muted">Inductions {closed.at(-1)!.induction}–{closed[0]!.induction} · closed · {closed.length} more</summary>
+                <div className="mt-4 grid gap-4">{closed.map((c) => <InductionCardView key={c.induction} c={c} />)}</div>
+              </details>
+            ) : null}
+            <p className="text-xs text-muted">✓ official · ◐ unofficial (replaced as each official file lands) · ◆ estimate · ◷ a file is in, not applied yet · ○ not in yet</p>
+          </div>
+        )
+      ) : null}
+
+      {tab === "files" ? (<>
       <StatTiles
         stats={[
           { label: "Files", value: shown.length },
@@ -134,6 +177,37 @@ export default async function AdminDataPage() {
       </Card>
 
       <Card>
+        <CardHeader title="File kinds" description="Each kind is one module: how it is recognised, checked, stripped and applied." />
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {FILE_KINDS.filter((k) => !k.ignore).map((k) => (
+            <li key={k.kind} className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-sm">
+              <span>{k.label}</span>
+              <Badge tone={k.official ? "success" : "calculated"}>{k.official ? "official" : "for estimates"}</Badge>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <Card>
+        <CardHeader title="Settings" />
+        <SettingsForm initial={{ autoPublish: settings.autoPublish, repo: settings.repo, branch: settings.branch }} tokenSet={settings.tokenSet} />
+      </Card>
+      </>) : null}
+
+      {tab === "reference" ? (
+        <Card>
+          <CardHeader title={`Policy and reference files · ${general.length}`} description="Scoring policy, seat-independent lookups and documents shared by every induction." />
+          {general.length ? <ul className="grid gap-2">{general.map((f) => <FileRow key={f.id} f={f} />)}</ul> : <p className="text-sm text-muted">No policy or reference files in the folder.</p>}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/admin/reference-data" className="mn-btn-ghost inline-flex h-9 items-center rounded-lg px-3 text-sm">Seat matrices, lookups and documents</Link>
+            <Link href="/admin/inductions" className="mn-btn-ghost inline-flex h-9 items-center rounded-lg px-3 text-sm">Merit lists and names to map</Link>
+            <Link href="/admin/policies" className="mn-btn-ghost inline-flex h-9 items-center rounded-lg px-3 text-sm">Scoring policies</Link>
+          </div>
+        </Card>
+      ) : null}
+
+      {tab === "estimates" ? (
+      <Card>
         <CardHeader title="Estimates" description="Estimated merit lists need the gazette, the candidates (or marks and preferences) and, optionally, certificates and components for the induction." />
         {readiness.length === 0 ? (
           <p className="text-sm text-muted">No estimate inputs in the folder yet. Put a gazette and the candidates&apos; preferences in <code className="font-mono text-xs">inductions/&lt;n&gt;/</code>.</p>
@@ -147,12 +221,9 @@ export default async function AdminDataPage() {
             ))}
           </ul>
         )}
+        <p className="mt-4 text-sm text-muted">Runs, comparisons and publishing are under <Link href="/admin/processing" className="text-signal hover:underline">Processing &amp; simulation</Link>. New official files queue the next estimate by themselves; nothing is published without a person.</p>
       </Card>
-
-      <Card>
-        <CardHeader title="Settings" />
-        <SettingsForm initial={{ autoPublish: settings.autoPublish, repo: settings.repo, branch: settings.branch }} tokenSet={settings.tokenSet} />
-      </Card>
+      ) : null}
     </AreaPage>
   );
 }
