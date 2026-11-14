@@ -90,7 +90,7 @@ try {
       const res = await sql`
         update merit_allocations m
         set name = v.name, pmdc_no = v.pmdc_no
-        from (select * from json_to_recordset(${JSON.stringify(chunk)}::json) as x(row_no int, name text, pmdc_no text)) v
+        from (select * from json_to_recordset(${JSON.stringify(chunk)}::text::json) as x(row_no int, name text, pmdc_no text)) v
         where m.round_id = ${round.id} and m.row_no = v.row_no`;
       updated += res.count;
     }
