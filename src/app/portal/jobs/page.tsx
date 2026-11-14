@@ -2,11 +2,10 @@ import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Icon } from "@/components/icon";
-import { AuroraStat } from "@/components/ui/aurora-header";
+import { AuroraHeader } from "@/components/ui/aurora-header";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Pill, Segmented } from "@/components/ui/segmented";
-import { selectClass, fieldClass } from "@/components/ui/styles";
+import { Pill } from "@/components/ui/segmented";
 import { getSession } from "@/lib/auth/session";
 import { listJobs, type JobCard, type JobFilter } from "@/lib/data/jobs";
 import { getDb } from "@/lib/db/client";
@@ -63,19 +62,24 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const state = filter.state ?? "open";
 
   return (
-    <AreaPage
-      area="portal"
-      trail={[{ label: s.label }]}
-      title={title}
-      description="Adverts from the official SHC&ME, P&SHD and PPSC pages, and jobz.pk, checked every 6 hours. Doctor posts only."
-      aside={
-        <div className="grid grid-cols-3 gap-6">
-          <AuroraStat label="Open" value={data.open} />
-          <AuroraStat label="Closing ≤ 7 days" value={data.closingSoon} />
-          <AuroraStat label="Checked" value={<span className="text-base">{ago(data.lastSync)}</span>} />
+    <AreaPage area="portal" trail={[{ label: s.label }]} title={title} bare>
+      <AuroraHeader as="section" className="grid items-end gap-5 px-5 py-[22px] sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="min-w-0">
+          <p className="flex items-center gap-2 text-[13px] text-[#F3EEE5]/[.68]"><span className="mn-live h-2 w-2 rounded-full bg-[#3DDC97] shadow-[0_0_10px_#3DDC97]" />Updated {ago(data.lastSync)} · checked every 6 hours · official pages and jobz.pk</p>
+          <h1 className="mt-2 text-[2rem] font-bold tracking-[-0.03em]">{data.open.toLocaleString("en-US")} open jobs for doctors</h1>
+          <p className="mt-1.5 max-w-[640px] text-[#F3EEE5]/[.68]">Medical officer, demonstrator, registrar and specialist posts from PPSC, the Punjab health departments and newspaper adverts. We link to the original advert; always apply there.</p>
         </div>
-      }
-    >
+        <div className="flex flex-wrap items-center gap-2">
+          <form action="/portal/jobs" role="search" className="flex h-11 w-full items-center gap-2 rounded-xl border border-[#F3EEE5]/[.18] bg-[rgba(16,36,58,.55)] px-3.5 text-[#F3EEE5]/60 sm:w-[300px]">
+            <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            {filter.folder ? <input type="hidden" name="folder" value={filter.folder} /> : null}
+            {filter.state ? <input type="hidden" name="state" value={filter.state} /> : null}
+            <input name="q" defaultValue={filter.q ?? ""} aria-label="Search jobs" placeholder="Post, hospital or city" className="min-w-0 flex-1 bg-transparent text-sm text-[#F3EEE5] outline-none placeholder:text-[#F3EEE5]/60" />
+          </form>
+          <Link href="/portal/explore" title="Follow a hospital: new jobs there reach your inbox" className="mn-btn inline-flex h-11 items-center rounded-xl px-[18px] text-[13px] font-semibold">Alert me</Link>
+        </div>
+      </AuroraHeader>
+
       {/* Folders: glass fronts over a photo cover. */}
       <nav aria-label="Job folders" className="-mx-1 overflow-x-auto px-1 pb-1">
         <ul className="grid min-w-[52rem] grid-cols-7 gap-3">
@@ -90,26 +94,21 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
       </nav>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Segmented
-          label="Job state"
-          items={[
-            { href: href(sp, { state: undefined, job: undefined }), label: "Open", active: state === "open" },
-            { href: href(sp, { state: "closing", job: undefined }), label: "Closing this week", active: state === "closing" },
-            { href: href(sp, { state: "closed", job: undefined }), label: "Closed", active: state === "closed" },
-          ]}
-        />
+        <nav aria-label="Job state" className="mn-seg">
+          <Link href={href(sp, { state: undefined, job: undefined })} aria-current={state === "open" ? "page" : undefined}>Open {data.open}</Link>
+          <Link href={href(sp, { state: "closing", job: undefined })} aria-current={state === "closing" ? "page" : undefined}>Closing this week {data.closingSoon}</Link>
+          <Link href={href(sp, { state: "closed", job: undefined })} aria-current={state === "closed" ? "page" : undefined}>Closed</Link>
+        </nav>
         <form action="/portal/jobs" className="flex flex-wrap items-center gap-2">
           {filter.folder ? <input type="hidden" name="folder" value={filter.folder} /> : null}
           {filter.state ? <input type="hidden" name="state" value={filter.state} /> : null}
           {filter.saved ? <input type="hidden" name="saved" value="1" /> : null}
-          <label className="sr-only" htmlFor="jobs-q">Search jobs</label>
-          <input id="jobs-q" name="q" defaultValue={filter.q ?? ""} placeholder="Hospital, city or post" className={cn(fieldClass, "h-10 w-56")} />
-          <label className="sr-only" htmlFor="jobs-type">Post type</label>
-          <select id="jobs-type" name="type" defaultValue={filter.postType ?? ""} className={cn(selectClass, "w-48")}>
+          {filter.q ? <input type="hidden" name="q" value={filter.q} /> : null}
+          <select name="type" defaultValue={filter.postType ?? ""} aria-label="Post type" className="mn-sel w-48">
             <option value="">All posts</option>
             {Object.entries(POST_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <button type="submit" className="mn-btn h-10 rounded-lg px-4 text-sm font-semibold">Find</button>
+          <button type="submit" className="mn-ob h-9">Show</button>
         </form>
       </div>
 
