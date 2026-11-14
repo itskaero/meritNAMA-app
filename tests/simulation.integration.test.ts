@@ -89,7 +89,8 @@ describe.skipIf(!url)("simulation data and runs (integration)", () => {
       await db.select().from(schema.simPreferences).where(eq(schema.simPreferences.inductionId, IND)),
       await db.select().from(schema.simDatasets).where(eq(schema.simDatasets.inductionId, IND)),
     ]);
-    expect(stored).not.toMatch(/Synthetic Name|example\.test|PMDC-|private/);
+    // Names and PMDC numbers come only from a gazette (none here); PHF's verification remarks are kept on purpose (step 1b).
+    expect(stored).not.toMatch(/Synthetic Name|example\.test|PMDC-/);
     await importSimulationDataset(db, editor, { induction: IND, reason: "again" }, { root });
     expect((await db.select().from(schema.simCandidates).where(eq(schema.simCandidates.inductionId, IND))).length).toBe(60);
     const ds = (await listDatasets(db, editor)).find((d) => d.inductionId === IND)!;

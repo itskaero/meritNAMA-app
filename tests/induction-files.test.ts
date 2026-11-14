@@ -70,3 +70,17 @@ describe.skipIf(!existsSync(OLD))("induction 21 files from the old site", () => 
     expect(parseRevisions(read("induction21_revisions.json")).length).toBeGreaterThan(100);
   });
 });
+
+describe("flat round files (scraper format)", () => {
+  it("become PHF's shape, with institute and seats from the seat matrix and no consent", async () => {
+    const { flatToPhf } = await import("@/lib/ingest/kinds/merit");
+    const lines = new Map([["fcps|punjab|anaesthesia|jinnah hospital lahore", { institute: "AIMC", seats: 2 }]]);
+    const f = flatToPhf(
+      [{ rowNo: 1, applicantId: "36373", typeName: "FCPS", quotaName: "Punjab", specialityName: "Anaesthesia", hospitalName: "Jinnah Hospital, Lahore", marksTotal: 22.7, preferenceNo: 1, nameFull: "A B", pmdcNo: 12345 }],
+      { inductionId: 21, name: "PHF/26/JUL/01", displayName: "June 2026", startDate: "2026-05-01", endDate: "2026-07-01" },
+      lines,
+    );
+    expect(f.Table[0]!.inductionId).toBe(21);
+    expect(f.Table5[0]).toMatchObject({ type: "FCPS", institute: "AIMC", seats: 2, marks: 22.7, consent: "", pmdcNo: "12345", specialityJobId: 0 });
+  });
+});

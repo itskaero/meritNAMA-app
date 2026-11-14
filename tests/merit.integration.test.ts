@@ -77,9 +77,11 @@ describe.skipIf(!url)("merit rounds (integration)", () => {
     expect(round).toMatchObject({ cycleCode: "PHF/26/JAN/01", cycleName: "Jan 2026", startsOn: "2025-10-01", endsOn: "2025-12-31" });
   });
 
-  it("stores no personal fields", async () => {
+  it("stores no personal fields beyond the published name and PMDC number", async () => {
     const cols = Object.keys(schema.meritAllocations);
-    for (const pii of ["name", "relation", "pmdcNo", "emailId", "empInfo"]) expect(cols).not.toContain(pii);
+    for (const pii of ["relation", "relationType", "emailId", "contactNumber", "cnic", "empInfo", "empType"]) expect(cols).not.toContain(pii);
+    // Name and PMDC number are on the public merit list and kept on purpose (v4 step 1a).
+    expect(cols).toEqual(expect.arrayContaining(["name", "pmdcNo"]));
   });
 
   it("resolves known names and reports the rest", async () => {

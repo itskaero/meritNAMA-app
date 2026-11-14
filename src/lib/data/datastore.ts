@@ -8,7 +8,7 @@ import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import { appSettings, dataFiles, stagedChanges } from "@/lib/db/schema";
 import { DATA_FILE_MAX_BYTES, type Classified, type DataStatus, type Inspection } from "@/lib/ingest/kind";
-import { cleanRelPath } from "@/lib/ingest/paths";
+import { cleanRelPath, pathInfo } from "@/lib/ingest/paths";
 import { classifyByContents, classifyByPath, DATA_KIND_LABELS, fileKind, missingDetail } from "@/lib/ingest/registry";
 import { simulationTarget, type SimRole } from "@/lib/ingest/sim-roles";
 import { afterApply, type TriggerResult } from "@/lib/ingest/triggers";
@@ -123,12 +123,17 @@ async function readParsed(abs: string): Promise<unknown> {
   }
 }
 
+/** Kinds whose file belongs to one induction. */
+const NEEDS_INDUCTION = new Set(["sim_input", "consent", "schedule", "joining", "revisions", "seats"]);
+
 /**
  * Work out what a file is and whether it is good to apply. Never throws for a bad file.
  * The checks themselves belong to each kind (src/lib/ingest/kinds/).
  */
-async function inspect(db: Database, f: Found): Promise<Inspection> {
+async function inspect(db: Database, f: Found, folderInduction: number | null = null): Promise<Inspection> {
   let cls = classifyByPath(f.rel);
+  // A file without an induction in its name (ProfileStatus.json) belongs to the one induction its folder's other files name.
+  if (cls && cls.induction == null && folderInduction != null && NEEDS_INDUCTION.has(cls.kind)) cls = { ...cls, induction: folderInduction };
   let parsed: Promise<unknown> | null = null;
   const json = () => (parsed ??= readParsed(f.abs));
   try {
@@ -174,6 +179,18 @@ async function doScan(db: Database, rootOverride?: string): Promise<ScanResult> 
 
   const rows = await db.select().from(dataFiles);
   const byPath = new Map(rows.map((r) => [r.path, r]));
+  // Per folder: the induction its files name, when they all name the same one.
+  const folderInds = new Map<string, Set<number>>();
+  for (const f of found) {
+    const info = pathInfo(f.rel);
+    if (info.induction == null) continue;
+    const dir = f.rel.split("/").slice(0, -1).join("/");
+    (folderInds.get(dir) ?? folderInds.set(dir, new Set()).get(dir)!).add(info.induction);
+  }
+  const folderInduction = (rel: string) => {
+    const s = folderInds.get(rel.split("/").slice(0, -1).join("/"));
+    return s && s.size === 1 ? [...s][0]! : null;
+  };
   const now = new Date();
   const result: ScanResult = { files: found.length, added: 0, changed: 0, missing: 0 };
 
@@ -182,7 +199,9 @@ async function doScan(db: Database, rootOverride?: string): Promise<ScanResult> 
     const sha = await sha256File(f.abs);
     const row = byPath.get(f.rel);
     byPath.delete(f.rel);
-    if (row && row.sha256 === sha && row.status !== "missing") {
+    // Unchanged files are not read again, except ones with a problem: what was missing (an
+    // induction, a dataset) may be there now.
+    if (row && row.sha256 === sha && row.status !== "missing" && row.status !== "problem") {
       // Unchanged. A staged change that was published since makes the file live.
       if (row.changeId && row.status === "replaces") {
         const [c] = await db.select({ status: stagedChanges.status }).from(stagedChanges).where(eq(stagedChanges.id, row.changeId)).limit(1);
@@ -194,7 +213,11 @@ async function doScan(db: Database, rootOverride?: string): Promise<ScanResult> 
       }
       continue;
     }
-    const ins = await inspect(db, f);
+    const ins = await inspect(db, f, folderInduction(f.rel));
+    if (row && row.sha256 === sha && row.status === "problem" && ins.status === "problem" && ins.message === row.message) {
+      await db.update(dataFiles).set({ lastSeenAt: now }).where(eq(dataFiles.id, row.id));
+      continue;
+    }
     const values = {
       kind: ins.cls?.kind ?? "unknown",
       induction: ins.cls?.induction ?? null,
