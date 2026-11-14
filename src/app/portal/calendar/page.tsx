@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { whenDatabaseDown } from "@/components/database-unavailable";
-import { Icon } from "@/components/icon";
-import { AuroraStat } from "@/components/ui/aurora-header";
+import { AuroraHeader, AuroraStat } from "@/components/ui/aurora-header";
+import { FollowButton } from "@/components/community/follow-button";
+import { isFollowing } from "@/lib/data/notifications";
 import { Card, CardHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Pill } from "@/components/ui/segmented";
 import { getSession } from "@/lib/auth/session";
 import { listJobs } from "@/lib/data/jobs";
 import { latestSchedule } from "@/lib/data/schedule";
@@ -57,7 +57,10 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const events: Ev[] = [];
   let cycle: ReturnType<typeof cycleProgress> | null = null;
   if (latest) {
-    for (const r of latest.rounds) events.push({ date: isoDay(r.importedAt), kind: "list", label: `Round ${r.roundNo} list`, note: `${r.allocations.toLocaleString("en-US")} seats`, href: `/portal/history/${latest.id}/rounds/${r.roundNo}` });
+    // A list is dated by the day it came in; a bulk import brings several on one day, so keep the latest of each day.
+    const byDay = new Map<string, (typeof latest.rounds)[number]>();
+    for (const r of latest.rounds) { const d = isoDay(r.importedAt); if (!byDay.has(d) || byDay.get(d)!.roundNo < r.roundNo) byDay.set(d, r); }
+    for (const [d, r] of byDay) events.push({ date: d, kind: "list", label: `Round ${r.roundNo} list`, note: `${r.allocations.toLocaleString("en-US")} seats`, href: `/portal/history/${latest.id}/rounds/${r.roundNo}` });
     const first = latest.rounds[0];
     if (first?.startsOn && first.endsOn) {
       cycle = cycleProgress({ startsOn: first.startsOn, endsOn: first.endsOn, published: latest.rounds.length, expectedRounds: inductions[1]?.rounds.length, today: new Date(`${today}T00:00:00Z`) });
@@ -91,22 +94,48 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const nextRound = cycle?.next;
   const daysTo = nextRound ? Math.round((Date.parse(`${nextRound.estimatedOn}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000) : null;
 
+  // The nearest PHF step that is open now and closes soonest: the countdown.
+  const openStep = (schedule?.rows ?? []).filter((r) => r.endsAt && r.endsAt > new Date() && (!r.startsAt || r.startsAt <= new Date())).sort((a, b) => a.endsAt!.getTime() - b.endsAt!.getTime())[0];
+  const leftMs = openStep ? openStep.endsAt!.getTime() - new Date().getTime() : 0;
+  const deadline = openStep ? { title: openStep.title, d: Math.floor(leftMs / 86_400_000), h: Math.floor((leftMs % 86_400_000) / 3_600_000), m: Math.floor((leftMs % 3_600_000) / 60_000) } : null;
+  const followingInd = latest ? await isFollowing(db, session, { kind: "induction", key: String(latest.id) }).catch(() => false) : false;
+
   return (
-    <AreaPage
-      area="portal"
-      trail={[{ label: s.label }]}
-      title={latest ? `Induction ${latest.id} calendar` : s.label}
-      description={s.description}
-      aside={
-        latest ? (
-          <div className="grid grid-cols-3 gap-6">
+    <AreaPage area="portal" trail={[{ label: s.label }]} title={latest ? `Induction ${latest.id} calendar` : s.label} bare>
+      <AuroraHeader as="section" className="flex flex-wrap items-end justify-between gap-5 px-5 py-[22px] sm:px-6">
+        <div className="min-w-0">
+          <p className="text-[13px] text-[#F3EEE5]/70"><Link href="/portal/history" className="hover:underline">Merit lists</Link>{latest ? <> / <Link href={`/portal/history/${latest.id}`} className="hover:underline">Induction {latest.id}</Link></> : null}</p>
+          <h1 className="mt-1.5 text-[2rem] font-bold tracking-[-0.03em]">{latest ? `Induction ${latest.id} · ${latest.rounds[0]?.cycleName ?? ""}` : s.label}</h1>
+          {latest ? (
+            <nav aria-label="Induction" className="mn-seg mn-seg-iv mt-3 w-max max-w-full overflow-x-auto">
+              <Link href={`/portal/history/${latest.id}`}>Overview</Link>
+              {latest.rounds.length > 1 ? <Link href={`/portal/history/${latest.id}/compare?from=${latest.rounds.at(-2)!.roundNo}&to=${latest.rounds.at(-1)!.roundNo}`}>Movement</Link> : null}
+              <Link href="/portal/estimates">Predictions</Link>
+              <Link href="/portal/calendar" aria-current="page">Calendar</Link>
+              <Link href={`/portal/community?topic=${encodeURIComponent(`induction|${latest.id}`)}&tab=questions`}>Questions</Link>
+            </nav>
+          ) : null}
+        </div>
+        {deadline ? (
+          <div className="flex flex-wrap items-end gap-2.5">
+            <div>
+              <p className="mb-2 text-[13px] text-[#E5A04B]"><span className="mn-live">●</span> {deadline.title} closes in</p>
+              <div className="flex gap-2">
+                {([[deadline.d, deadline.d === 1 ? "day" : "days"], [deadline.h, "hours"], [deadline.m, "min"]] as const).map(([v, l]) => (
+                  <span key={l} className="grid min-w-[5.5rem] place-items-center rounded-xl border border-[rgba(229,160,75,.45)] bg-black/20 px-3 py-2"><span className="text-3xl font-bold tabular-nums">{String(v).padStart(2, "0")}</span><span className="text-[11px] text-[#F3EEE5]/65">{l}</span></span>
+                ))}
+              </div>
+            </div>
+            {latest ? <FollowButton target={{ kind: "induction", key: String(latest.id) }} following={followingInd} path="/portal/calendar" label="Remind me" /> : null}
+          </div>
+        ) : latest ? (
+          <div className="flex gap-6">
             <AuroraStat label="Lists out" value={latest.rounds.length} />
-            <AuroraStat label={nextRound ? `Round ${nextRound.roundNo}` : "Next round"} value={daysTo == null ? "—" : daysTo <= 0 ? (nextRound!.overdue ? "Due" : "Today") : `${daysTo} d`} hint={nextRound ? "expected, from cycle dates" : undefined} />
+            <AuroraStat label={nextRound ? `Round ${nextRound.roundNo}` : "Next round"} value={daysTo == null ? "—" : daysTo <= 0 ? (nextRound!.overdue ? "Due" : "Today") : `${daysTo} d`} hint={nextRound ? "expected" : undefined} />
             <AuroraStat label="Cycle" value={cycle ? `${cycle.pct}%` : "—"} hint={cycle?.status} />
           </div>
-        ) : null
-      }
-    >
+        ) : null}
+      </AuroraHeader>
       {!latest ? <EmptyState title="No induction yet">Dates appear once the first merit list of an induction is in.</EmptyState> : (
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           <Card>
@@ -172,17 +201,19 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   );
 }
 
+const ROW_TONE: Record<Kind, string> = { phf: "#E5A04B", list: "#3DDC97", expected: "#5CE1E6", estimate: "#C4B8FF", cycle: "#5CE1E6", job: "#FF7A7A" };
+
 function EventRow({ e }: { e: Ev }) {
+  const today = e.date === todayPk();
   const body = (
     <>
-      <span className="w-24 flex-none text-xs font-semibold uppercase tracking-wide text-muted">{nice(e.date)}</span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-2"><Pill tone={KIND[e.kind].tone}>{KIND[e.kind].label}</Pill></span>
-        <span className="mt-1 block truncate text-sm font-medium text-heading">{e.label}</span>
-        {e.note ? <span className="block text-xs text-muted">{e.note}</span> : null}
-      </span>
-      {e.href ? <Icon name="arrow" className="h-4 w-4 flex-none text-decor" /> : null}
+      <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: ROW_TONE[e.kind] }}>{nice(e.date)} · {KIND[e.kind].label}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-heading">{e.label}</p>
+      {e.note ? <p className="mt-0.5 text-xs text-muted">{e.note}</p> : null}
     </>
   );
-  return <li>{e.href ? <Link href={e.href} className="flex items-start gap-3 rounded-lg p-1 hover:bg-hover/50">{body}</Link> : <div className="flex items-start gap-3 p-1">{body}</div>}</li>;
+  const cls = today
+    ? "block rounded-[14px] border border-[rgba(229,160,75,.5)] bg-[linear-gradient(135deg,rgba(229,160,75,.12),rgba(23,23,28,.82))] p-3 shadow-[0_0_22px_rgba(229,160,75,.15)]"
+    : "block rounded-[14px] border border-white/[.07] bg-[rgba(23,23,28,.82)] p-3 transition-colors hover:border-[rgba(155,135,255,.35)]";
+  return <li>{e.href ? <Link href={e.href} className={cls}>{body}</Link> : <div className={cls}>{body}</div>}</li>;
 }
