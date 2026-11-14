@@ -1,4 +1,7 @@
 import { cookies } from "next/headers";
+import { applicantIdentity, listInductionsWithRounds } from "@/lib/data/merit";
+import { inductionRunning } from "@/lib/data/predictions";
+import { publishedEstimates } from "@/lib/data/simulation";
 import { BottomTabs, type BottomTab } from "./bottom-tabs";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -24,8 +27,8 @@ import { cn } from "./ui/cn";
  * upward) with the colour theme, interface mode and sign out. A <details> element, so
  * it works before scripts load.
  */
-function AccountMenu({ session, mode, theme, verified }: { session: Session; mode: UiMode; theme: Theme; verified: boolean }) {
-  const initials = session.email.slice(0, 2).toUpperCase();
+function AccountMenu({ session, mode, theme, verified, who }: { session: Session; mode: UiMode; theme: Theme; verified: boolean; who: { name: string | null; applicantId: string; pmdcNo: string | null } | null }) {
+  const initials = (who?.name ?? session.email).split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
   const pro = mode === "pro";
   return (
     <details className="group relative">
@@ -35,7 +38,8 @@ function AccountMenu({ session, mode, theme, verified }: { session: Session; mod
       >
         <span aria-hidden className="grid h-8 w-8 flex-none place-items-center rounded-full bg-gradient-to-br from-violet to-[#176B67] text-xs font-semibold text-white ring-1 ring-violet-soft/40">{initials}</span>
         <span className={cn("min-w-0 flex-1", pro && "lg:sr-only")}>
-          <span className="block truncate text-sm font-medium text-ink">{session.email}</span>
+          <span className="block truncate text-sm font-medium text-ink">{who?.name ?? session.email}</span>
+          {who ? <span className="block truncate font-mono text-[0.68rem] text-muted">{who.applicantId}{who.pmdcNo ? ` · ${who.pmdcNo}` : ""}</span> : null}
           <span className="flex items-center gap-1.5 text-xs text-muted">
             {ROLE_LABELS[session.role]}
             {verified ? <span className="inline-flex items-center gap-0.5 text-success"><Icon name="check" className="h-3 w-3" />Verified</span> : null}
@@ -66,6 +70,18 @@ function AccountMenu({ session, mode, theme, verified }: { session: Session; mod
   );
 }
 
+
+/** The sidebar card: an estimate that is out, or the next round of a running induction. */
+async function sidebarNext(session: Session): Promise<{ title: string; tag: string; text: string; href: string; cta: string } | null> {
+  const db = getDb();
+  const est = (await publishedEstimates(db, session)).find((e) => !e.official);
+  if (est) return { title: `Round ${est.roundNo}`, tag: "estimate", text: "The estimated list is out. Not official: the real list replaces it.", href: `/portal/estimates?run=${est.id}`, cta: "See it" };
+  const [ind] = await listInductionsWithRounds(db, session);
+  if (!ind || !(await inductionRunning(db, ind.id))) return null;
+  const next = ind.rounds.at(-1)!.roundNo + 1;
+  return { title: `Round ${next}`, tag: "estimate", text: "Lands once the consent replies are in. Follow the induction and we tell you when it is out.", href: `/portal/history/${ind.id}`, cta: "Remind me" };
+}
+
 /**
  * Two-pane layout: a sidebar (labelled in Simple mode, an icon rail in Pro mode on
  * wide screens) and the content inside a framed panel. The mode comes from a cookie
@@ -86,7 +102,10 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
   const jar = await cookies();
   const mode = parseUiMode(jar.get(UI_MODE_COOKIE)?.value);
   const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
-  const verified = session.role === "candidate" && (await myLink(getDb(), session).catch(() => null))?.status === "verified";
+  const link = session.role === "candidate" ? await myLink(getDb(), session).catch(() => null) : null;
+  const verified = link?.status === "verified";
+  const who = link?.status === "verified" ? { applicantId: link.applicantId, ...((await applicantIdentity(getDb(), session, link.applicantId).catch(() => null)) ?? { name: null, pmdcNo: null }) } : null;
+  const nextList = area === "Candidate portal" ? await sidebarNext(session).catch(() => null) : null;
   const unread = await unreadCount(getDb(), session).catch(() => 0);
   const notices = await liveNotices(getDb(), session).catch(() => []);
   const pro = mode === "pro";
@@ -123,7 +142,18 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
           </Link>
         }
         tools={pro ? <><PaletteButton compact className="hidden lg:inline-flex" /><PaletteButton className="w-full lg:hidden" /></> : <PaletteButton className="w-full" />}
-        profile={<AccountMenu session={session} mode={mode} theme={theme} verified={verified} />}
+        profile={
+          <>
+            {nextList ? (
+              <div className={cn("mb-3 grid gap-2 rounded-xl border border-line bg-card p-3", pro && "lg:hidden")}>
+                <p className="flex items-center gap-2 text-sm"><Icon name="spark" className="h-4 w-4 text-violet-pale" /><span className="font-semibold text-heading">{nextList.title}</span><span className="text-muted">{nextList.tag}</span></p>
+                <p className="text-xs text-muted">{nextList.text}</p>
+                <Link href={nextList.href} className="mn-btn inline-flex h-9 items-center justify-center rounded-lg text-sm font-semibold">{nextList.cta}</Link>
+              </div>
+            ) : null}
+            <AccountMenu session={session} mode={mode} theme={theme} verified={verified} who={who} />
+          </>
+        }
       />
       <div className="min-w-0">
         <main id="main" className={cn("pg min-h-screen", Boolean(bottomTabs?.length) && "pb-28 lg:pb-0")}>
