@@ -8,7 +8,7 @@ import { cn } from "./cn";
  */
 export function AuroraHeader({ children, className, as: Tag = "div" }: { children: ReactNode; className?: string; as?: "div" | "section" | "header" }) {
   return (
-    <Tag className={cn("mn-head rounded-[16px]", className)}>
+    <Tag className={cn("mn-head rounded-[16px] [&>*]:min-w-0", className)}>
       <span aria-hidden className="mn-head-blob b1" />
       <span aria-hidden className="mn-head-blob b2" />
       <span aria-hidden className="mn-head-blob b3" />

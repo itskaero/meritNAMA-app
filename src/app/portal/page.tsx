@@ -18,6 +18,7 @@ import { latestSchedule, seatMatrixTotal } from "@/lib/data/schedule";
 import { calculatorPolicies } from "@/lib/data/policies";
 import { policyInductions } from "@/lib/domain/scoring-policy";
 import { NewInduction } from "@/components/overview/new-induction";
+import { PhoneHome } from "@/components/overview/phone-home";
 import { featureFlags } from "@/lib/data/settings";
 import { gazetteCandidate, publishedEstimates } from "@/lib/data/simulation";
 import { ensureUser } from "@/lib/data/users";
@@ -157,8 +158,24 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
     ...current.slice(0, 1).map((e) => ({ label: `Round ${e.roundNo} estimate`, from: e.publishedAt, to: new Date(e.publishedAt.getTime() + 3 * day), tone: "estimate" as const })),
   ].sort((a, b) => a.from.getTime() - b.from.getTime());
 
+  // The open consent window, for the seat countdown on phones.
+  const consentStep = (schedule?.rows ?? []).find((r) => /consent/i.test(r.title) && r.endsAt && r.endsAt > now && (!r.startsAt || r.startsAt <= now));
+  const leftMs = consentStep ? consentStep.endsAt!.getTime() - now.getTime() : 0;
+  const consentLeft = consentStep ? `${Math.floor(leftMs / 86_400_000)} d ${Math.floor((leftMs % 86_400_000) / 3_600_000)} h left` : null;
+
   return (
     <AreaPage {...frame} bare title={`${greeting(now)}${name ? `, ${name}` : ""}`}>
+      <PhoneHome
+        greeting={greeting(now)} name={name} initials={(me?.displayName ?? "Me").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("")}
+        live={lastRound ? `Round ${lastRound.roundNo} is ${running ? "live" : "the last list"}` : null}
+        marks={mine ? formatMarks(mine.marks) : null} total={mineTotal} percentile={standing?.percentile ?? null}
+        counts={options ? { safe: count("safe"), target: count("borderline"), reach: count("out") } : null}
+        seat={mine ? { round: mine.roundNo, title: `${mine.speciality} · ${mine.hospital.split(",")[0]}`, left: consentLeft, cells } : null}
+        list={lastRound && latest ? { title: `Round ${lastRound.roundNo} · ${fmt(lastRound.allocations)} seats`, detail: lastMedian != null ? `Median ${formatMarks(lastMedian)}${prevMedian != null ? `, ${lastMedian <= prevMedian ? "down" : "up"} ${Math.abs(lastMedian - prevMedian).toFixed(2)}` : ""}` : `Induction ${latest.id}`, href: `/portal/history/${latest.id}/rounds/${lastRound.roundNo}` } : null}
+        estimate={current[0] ? { title: `Estimated round ${current[0].roundNo}`, detail: `Published ${ago(current[0].publishedAt, now)} · not official`, href: `/portal/estimates?run=${current[0].id}` } : null}
+        finderHref={finderHref}
+      />
+      <div className="hidden sm:block">
       <VideoHero>
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
@@ -208,6 +225,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
           </Glass>
         </div>
       </VideoHero>
+      </div>
 
       {current.length ? <EstimateListCard estimates={current} title="Estimated merit list out" /> : null}
 
