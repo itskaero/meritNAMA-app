@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ActionResult } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
 
-const inputClass = "h-11 w-full rounded-[10px] border border-line bg-elevated px-3.5 text-sm text-ink placeholder:text-subtle";
 
 function GoogleMark() {
   return (
@@ -38,25 +37,25 @@ export function SignInForm({ google }: { google: boolean }) {
     );
   }
   return (
-    <div className="grid gap-4">
-      {google ? (
-        <>
-          <a href="/auth/google/start" className="inline-flex h-11 items-center justify-center gap-2.5 rounded-[10px] border border-line-strong text-sm font-semibold text-ink transition-colors hover:bg-elevated">
-            <GoogleMark />Continue with Google
-          </a>
-          <p className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs text-subtle before:border-t before:border-line after:border-t after:border-line">or</p>
-        </>
-      ) : null}
-      <form action={(f) => { setAgain(false); return action(f); }} className="grid gap-4">
-        <label className="grid gap-1.5 text-sm font-medium">
-          Email
-          <input name="email" type="email" required autoComplete="email" inputMode="email" placeholder="e.g. ayesha.khan@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
-        </label>
-        <button type="submit" disabled={pending} className="h-11 rounded-lg bg-signal text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-strong disabled:opacity-60">
-          {pending ? "Sending…" : "Email me a sign-in link"}
-        </button>
+    <div className="grid gap-[22px]">
+      <form action={(f) => { setAgain(false); return action(f); }} className="grid gap-2">
+        <div className="flex items-end">
+          <label className="flex flex-1 flex-col gap-2 text-xs text-[#A3ABBD]">
+            Email
+            <input name="email" type="email" required autoComplete="email" inputMode="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)}
+              className="h-12 border-0 border-b border-white/25 bg-transparent px-0.5 text-base text-[#E5E8EE] outline-none placeholder:text-[#737C90] focus:border-[rgba(155,135,255,.8)]" />
+          </label>
+          <button type="submit" disabled={pending} aria-label={pending ? "Sending" : "Email me a sign-in link"} className="mn-btn mn-breathe grid h-[52px] w-[52px] flex-none place-items-center rounded-xl disabled:opacity-60">
+            {pending ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : <svg aria-hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>}
+          </button>
+        </div>
         {state.status === "error" ? <ActionResult state={state} /> : null}
       </form>
+      {google ? (
+        <a href="/auth/google/start" className="inline-flex h-[46px] items-center justify-center gap-2.5 rounded-xl border border-white/[.14] font-semibold text-[#E5E8EE] transition-colors hover:border-[rgba(155,135,255,.6)]">
+          <GoogleMark />Continue with Google
+        </a>
+      ) : null}
     </div>
   );
 }

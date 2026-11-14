@@ -20,38 +20,40 @@ const ERRORS: Record<string, string> = {
   "google-unverified": "Google has not verified that email address. Use an email link instead.",
 };
 
-export default async function SignInPage({ searchParams }: { searchParams: Promise<{ signedOut?: string; deleted?: string; error?: string }> }) {
+export default async function SignInPage({ searchParams }: { searchParams: Promise<{ signedOut?: string; deleted?: string; error?: string; tab?: string }> }) {
   const session = await getSession();
   if (session && !session.isStub) redirect(session.role === "candidate" ? "/portal" : "/admin");
-  const { signedOut, deleted, error } = await searchParams;
+  const { signedOut, deleted, error, tab } = await searchParams;
   // While the paywall is on, a new person asks for access; approved people still sign in by link.
   const access = await loadAccessSettings(getDb()).catch(() => DEFAULT_ACCESS);
   const isDev = process.env.NODE_ENV !== "production";
+  const asking = access.paywall && tab !== "signin" && !signedOut && !error;
   return (
     <AuthShell step={1}>
-      <div className="grid gap-2 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight">{access.paywall ? "Request access to meritNAMA" : "Sign in to meritNAMA"}</h2>
-        <p className="text-sm text-muted">{access.paywall ? "Access is by approval, for one induction. Pay by Easypaisa or JazzCash and give the transaction ID: if we already have the payment you are in at once." : "Use the email from your PHF application and your merit record links itself."}</p>
+      {access.paywall ? (
+        <nav aria-label="Choose" className="flex gap-1 self-start rounded-xl bg-white/5 p-1 text-[13px]">
+          <Link href="/sign-in?tab=signin" aria-current={!asking ? "page" : undefined} className={!asking ? "flex h-[34px] items-center rounded-[9px] px-4 font-semibold text-white [background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.45))] shadow-[inset_0_-2px_0_#7B61FF,0_0_18px_rgba(110,86,255,.3)]" : "flex h-[34px] items-center rounded-[9px] px-4 text-[#A3ABBD] hover:text-white"}>Sign in</Link>
+          <Link href="/sign-in" aria-current={asking ? "page" : undefined} className={asking ? "flex h-[34px] items-center rounded-[9px] px-4 font-semibold text-white [background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.45))] shadow-[inset_0_-2px_0_#7B61FF,0_0_18px_rgba(110,86,255,.3)]" : "flex h-[34px] items-center rounded-[9px] px-4 text-[#A3ABBD] hover:text-white"}>Request access</Link>
+        </nav>
+      ) : null}
+      <div>
+        <h1 className="text-2xl font-bold">{asking ? "Request access" : "Welcome back"}</h1>
+        <p className="mt-1.5 text-[#A3ABBD]">{asking ? "Access is by approval, for one induction. Pay by Easypaisa or JazzCash and give the transaction ID: if we already have the payment you are in at once." : "We email you a one-time link. No password to remember."}</p>
       </div>
       {signedOut ? <Notice title="You are signed out." /> : null}
       {deleted ? <Notice title="Your account was deleted." /> : null}
       {error && ERRORS[error] ? <Notice tone="warning" title={ERRORS[error]} /> : null}
-      {access.paywall ? (
+      {asking ? (
         <>
           <RequestAccessForm s={access} />
-          <p className="text-center text-sm text-muted">Sent a request already? <Link href="/access" className="font-semibold text-signal hover:underline">Check its status</Link> · <Link href="/access?renew=1" className="font-semibold text-signal hover:underline">Renew</Link></p>
-          <details className="rounded-xl border border-line p-4" open={Boolean(signedOut || error)}>
-            <summary className="cursor-pointer text-sm font-semibold text-heading">Already approved? Sign in</summary>
-            <div className="mt-4"><SignInForm google={Boolean(googleConfig())} /></div>
-          </details>
+          <p className="text-sm text-[#A3ABBD]">Sent a request already? <Link href="/access" className="font-semibold text-[#B9AAFF] hover:underline">Check its status</Link> · <Link href="/access?renew=1" className="font-semibold text-[#B9AAFF] hover:underline">Renew</Link></p>
         </>
       ) : (
         <SignInForm google={Boolean(googleConfig())} />
       )}
-      <p className="text-center text-xs text-subtle">No password: we email you a one-time link.</p>
       {isDev ? (
-        <p className="text-center text-xs text-muted">
-          Development: links are not emailed without SMTP_URL; open <Link href="/dev/mailbox" className="font-semibold text-signal hover:underline">the dev mailbox</Link>.
+        <p className="text-xs text-[#737C90]">
+          Development: links are not emailed without SMTP_URL; open <Link href="/dev/mailbox" className="font-semibold text-[#B9AAFF] hover:underline">the dev mailbox</Link>.
         </p>
       ) : null}
     </AuthShell>

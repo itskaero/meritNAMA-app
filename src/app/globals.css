@@ -296,6 +296,10 @@ html:has([data-mode="simple"]) { font-size: 106.25%; }   /* 17px base: larger te
 .mn-step > span { padding: 2px 6px; }
 .mn-lbl { display: flex; flex-direction: column; gap: 3px; font-size: 10px; color: #8B8B93; text-transform: uppercase; letter-spacing: .05em; }
 .mn-lbl > select { height: 32px; padding: 0 8px; border-radius: 9px; background: #141418; color: #EDEDEF; border: 1px solid rgba(255,255,255,.1); font: inherit; font-size: 12px; text-transform: none; letter-spacing: 0; }
+/* The sign-in arrow: its glow breathes (SignIn.dc.html .go). */
+.mn-breathe { animation: mn-breathe 2.8s ease-in-out infinite; }
+@keyframes mn-breathe { 0%, 100% { box-shadow: inset -3px 0 0 #7B61FF, 0 8px 24px rgba(110,86,255,.45); } 50% { box-shadow: inset -3px 0 0 #7B61FF, 0 8px 40px rgba(110,86,255,.85); } }
+@media (prefers-reduced-motion: reduce) { .mn-breathe { animation: none; } }
 /* .mn-rng: a likely range (marching amber band) with the last published value as a tick. */
 .mn-rng { position: relative; height: 12px; border-radius: 99px; background: rgba(255,255,255,.05); }
 .mn-rng > .band { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: repeating-linear-gradient(90deg, rgba(229,160,75,.55) 0 6px, rgba(229,160,75,.3) 6px 12px); background-size: 24px 100%; animation: mn-march 1.2s linear infinite; box-shadow: 0 0 12px rgba(229,160,75,.45); }
