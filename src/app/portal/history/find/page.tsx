@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AreaPage } from "@/components/area-page";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getSession } from "@/lib/auth/session";
 import { verifiedApplicant } from "@/lib/data/candidates";
-import { findApplicant } from "@/lib/data/merit";
+import { findApplicant, listInductionsWithRounds } from "@/lib/data/merit";
 import { ensureUser } from "@/lib/data/users";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
@@ -21,7 +22,7 @@ export const dynamic = "force-dynamic";
  * applicant in every published list, their seat's closing merit, published estimates,
  * and who else holds the same seats. Applicant ids, marks and seats only.
  */
-export default async function FindPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+export default async function FindPage({ searchParams }: { searchParams: Promise<{ id?: string; q?: string }> }) {
   const frame = {
     area: "portal" as const,
     trail: [{ label: "Merit lists", href: "/portal/history" }, { label: "Find yourself" }],
@@ -34,7 +35,14 @@ export default async function FindPage({ searchParams }: { searchParams: Promise
   const session = await getSession();
   const mine = session ? await verifiedApplicant(db, (await ensureUser(db, session)).id) : null;
   const sp = await searchParams;
-  const id = (sp.id ?? "").replace(/\D/g, "");
+  // One box for everything: digits are an applicant ID; a name or PMDC number searches the latest list.
+  const q = (sp.q ?? "").replace(/\s+/g, " ").trim().slice(0, 60);
+  if (q && !/^\d{1,8}$/.test(q)) {
+    const [ind] = await listInductionsWithRounds(db, session);
+    const r = ind?.rounds.at(-1);
+    if (r) redirect(`/portal/history/${ind!.id}/rounds/${r.roundNo}?q=${encodeURIComponent(q)}#candidates`);
+  }
+  const id = (sp.id ?? q).replace(/\D/g, "");
   const found = id ? await findApplicant(db, session, id) : null;
   const latest = found?.rounds[0] ?? null;
   const latestSeats = found && latest ? found.rounds.filter((r) => r.induction === latest.induction && r.roundNo === latest.roundNo) : [];
