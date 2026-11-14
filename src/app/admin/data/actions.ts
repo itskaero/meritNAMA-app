@@ -53,13 +53,18 @@ export async function applyAllAction(): Promise<ActionState> {
   try {
     const r = await applyAllDataFiles(getDb(), await getSession());
     refresh();
-    const issues = [...r.staged.map((p) => `${p}: replaces live data, staged for review`), ...r.failed.map((f) => `${f.path}: ${f.message}`)];
+    const issues = [
+      ...r.staged.map((p) => `${p}: replaces live data, staged for review`),
+      ...r.failed.map((f) => `${f.path}: ${f.message}`),
+      // What the new files set off: a rebuilt estimate dataset, a queued estimate (unpublished), or why not.
+      ...r.triggers.map((t) => `Induction ${t.induction}: ${[t.rebuilt ? "estimate data rebuilt" : null, t.queued ? `estimate of ${t.queued} queued (not published)` : null, t.note].filter(Boolean).join("; ") || "nothing to rebuild"}`),
+    ];
     const done = r.applied.length;
     return {
       status: r.failed.length ? "error" : "success",
       message: done || r.staged.length ? `${done} file${done === 1 ? "" : "s"} published${r.staged.length ? `, ${r.staged.length} staged for review` : ""}.` : r.failed.length ? "Nothing was published." : "Nothing new to publish.",
       issues,
-      ...(r.staged.length ? { href: "/admin/changes", hrefLabel: "Review staged changes" } : {}),
+      ...(r.staged.length ? { href: "/admin/changes", hrefLabel: "Review staged changes" } : r.triggers.some((t) => t.queued) ? { href: "/admin/processing", hrefLabel: "See the queued estimate" } : {}),
     };
   } catch (e) {
     return toActionState(e);

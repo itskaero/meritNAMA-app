@@ -11,6 +11,7 @@ import { DATA_FILE_MAX_BYTES, type Classified, type DataStatus, type Inspection 
 import { cleanRelPath } from "@/lib/ingest/paths";
 import { classifyByContents, classifyByPath, DATA_KIND_LABELS, fileKind, missingDetail } from "@/lib/ingest/registry";
 import { simulationTarget, type SimRole } from "@/lib/ingest/sim-roles";
+import { afterApply, type TriggerResult } from "@/lib/ingest/triggers";
 import { env } from "@/lib/env";
 import { UserFacingError } from "@/lib/errors";
 import type { Proposal } from "./changes";
@@ -251,7 +252,7 @@ async function copyToSimulation(abs: string, target: string, rootOverride?: stri
  * Apply one file. Goes through the same proposals as an upload: new data is live at
  * once, data that would replace live data is staged with a before/after to review.
  */
-async function applyRow(db: Database, session: Session, row: typeof dataFiles.$inferSelect, rootOverride?: string): Promise<Proposal> {
+async function applyRow(db: Database, session: Session, row: typeof dataFiles.$inferSelect, rootOverride?: string): Promise<Proposal & { cls: Classified }> {
   const { abs, rel } = await safeAbs(row.path, rootOverride);
   const sha = await sha256File(abs);
   if (sha !== row.sha256) throw new UserFacingError("The file changed since the list was made. Rescan and check it again.");
@@ -282,7 +283,7 @@ async function applyRow(db: Database, session: Session, row: typeof dataFiles.$i
     changeId: result.applied ? null : result.changeId,
   }).where(eq(dataFiles.id, row.id));
   await writeAudit(db, session.email, { action: "data_file.apply", entityType: "data_file", entityId: rel, after: { applied: result.applied, kind: row.kind }, reason });
-  return result;
+  return { ...result, cls };
 }
 
 /** Apply one listed file (a click on its row). */
@@ -292,24 +293,29 @@ export async function applyDataFile(db: Database, session: Session | null, input
   if (!row) throw new UserFacingError("That file is not in the list.");
   if (row.status === "problem" || row.status === "ignored" || row.status === "missing") throw new UserFacingError(row.message ?? "This file cannot be applied.");
   try {
-    return await applyRow(db, session, row, opts.root);
+    const { cls, ...result } = await applyRow(db, session, row, opts.root);
+    // Rebuild the estimate dataset / queue the next estimate when this file feeds one.
+    if (result.applied) await afterApply(db, session, [cls], opts).catch((e) => console.error("data folder triggers", e));
+    return result;
   } catch (e) {
     if (e instanceof UserFacingError) await db.update(dataFiles).set({ status: "problem", message: e.message }).where(eq(dataFiles.id, row.id));
     throw e;
   }
 }
 
-export type ApplyAllResult = { applied: string[]; staged: string[]; failed: { path: string; message: string }[] };
+export type ApplyAllResult = { applied: string[]; staged: string[]; failed: { path: string; message: string }[]; triggers: TriggerResult[] };
 
 /** Apply every file that is new (not those replacing live data), in a safe order. */
 async function applyNew(db: Database, session: Session, opts: { root?: string } = {}): Promise<ApplyAllResult> {
   const rows = (await db.select().from(dataFiles).where(eq(dataFiles.status, "new")))
     .sort((a, b) => order(a.kind) - order(b.kind) || (a.induction ?? 0) - (b.induction ?? 0) || (a.round ?? 0) - (b.round ?? 0) || a.path.localeCompare(b.path));
-  const out: ApplyAllResult = { applied: [], staged: [], failed: [] };
+  const out: ApplyAllResult = { applied: [], staged: [], failed: [], triggers: [] };
+  const done: Classified[] = [];
   for (const row of rows) {
     try {
       const r = await applyRow(db, session, row, opts.root);
       (r.applied ? out.applied : out.staged).push(row.path);
+      if (r.applied) done.push(r.cls);
     } catch (e) {
       const message = e instanceof UserFacingError ? e.message : "Applying failed; see the server log.";
       if (!(e instanceof UserFacingError)) console.error("data folder apply", row.path, e);
@@ -317,6 +323,8 @@ async function applyNew(db: Database, session: Session, opts: { root?: string } 
       out.failed.push({ path: row.path, message });
     }
   }
+  // Once per batch: a dozen new estimate files rebuild the dataset once, not twelve times.
+  if (done.length) out.triggers = await afterApply(db, session, done, opts).catch((e) => { console.error("data folder triggers", e); return []; });
   return out;
 }
 
