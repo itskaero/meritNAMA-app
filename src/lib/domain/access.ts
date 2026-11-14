@@ -3,8 +3,11 @@ import { normalizeEmail } from "./identity";
 
 /*
  * The paywall: while it is on, signing in needs an approved access request. People pay by
- * bank transfer, tell us the amount and the bank's reference, and staff check the payment
- * by hand before approving. Pure rules; src/lib/data/access.ts does the reading and writing.
+ * Easypaisa, JazzCash or bank transfer and give the transaction ID (TID). A TID found in an
+ * imported statement with the right amount approves the request at once
+ * (src/lib/domain/payments.ts); anything else waits for a person. A voucher code also lets
+ * someone in. Access lasts one induction cycle. Pure rules; src/lib/data/access.ts does the
+ * reading and writing.
  */
 
 export type AccessSettings = {
@@ -20,6 +23,12 @@ export type AccessSettings = {
   accountNumber: string;
   accountTitle: string;
   raastId: string;
+  easypaisaNumber: string;
+  jazzcashNumber: string;
+  /** Account title of the wallets, shown to payers. */
+  walletTitle: string;
+  /** Access ends with the induction cycle it was bought in. */
+  perInduction: boolean;
   /** Shown above the payment details. */
   note: string;
   closedMessage: string;
@@ -37,11 +46,15 @@ export const DEFAULT_ACCESS: AccessSettings = {
   paymentRequired: true,
   priceMinPkr: 250,
   priceMaxPkr: 670,
-  bankName: "Mashreq Pakistan",
+  bankName: "",
   accountNumber: "",
   accountTitle: "",
   raastId: "",
-  note: "Send the amount to the account below from your banking app, then paste the transaction reference. We check each payment by hand, so approval can take a little while.",
+  easypaisaNumber: "",
+  jazzcashNumber: "",
+  walletTitle: "",
+  perInduction: true,
+  note: "Send the amount from Easypaisa, JazzCash or your bank app, then enter the transaction ID (TID) from the confirmation. If we already have the payment you are in at once; otherwise we check it, usually the same day.",
   closedMessage: "Access requests are closed for now. Please check back later.",
   refundNote: "If your request is rejected, or you ask within 7 days and have not used the site, we send your payment back. Write to us from the Contact page with your transaction reference.",
   keepExisting: true,
@@ -59,15 +72,19 @@ export const accessSettingsSchema = z
     accountNumber: z.string().trim().max(60),
     accountTitle: z.string().trim().max(80),
     raastId: z.string().trim().max(60),
+    easypaisaNumber: z.string().trim().max(30),
+    jazzcashNumber: z.string().trim().max(30),
+    walletTitle: z.string().trim().max(80),
+    perInduction: z.boolean(),
     note: z.string().trim().max(600),
     closedMessage: z.string().trim().max(300),
     refundNote: z.string().trim().max(500),
     keepExisting: z.boolean(),
   })
   .refine((s) => s.priceMinPkr <= s.priceMaxPkr, { path: ["priceMaxPkr"], message: "The highest amount cannot be below the lowest." })
-  .refine((s) => !s.paywall || !s.paymentRequired || s.accountNumber.length > 0 || s.raastId.length > 0, {
-    path: ["accountNumber"],
-    message: "Add the account number or Raast ID people should pay, before turning the paywall on.",
+  .refine((s) => !s.paywall || !s.paymentRequired || [s.accountNumber, s.raastId, s.easypaisaNumber, s.jazzcashNumber].some((x) => x.length > 0), {
+    path: ["easypaisaNumber"],
+    message: "Add a wallet number, account number or Raast ID people should pay, before turning the paywall on.",
   });
 
 /** "PKR 250–670", or one amount when both are the same. */
@@ -76,27 +93,32 @@ export function priceText(s: Pick<AccessSettings, "priceMinPkr" | "priceMaxPkr">
   return s.priceMinPkr === s.priceMaxPkr ? `PKR ${f(s.priceMinPkr)}` : `PKR ${f(s.priceMinPkr)}–${f(s.priceMaxPkr)}`;
 }
 
-/** The request form's fields, checked against the settings. */
+/** The request form's fields, checked against the settings. A voucher code replaces the payment. */
 export function accessRequestSchema(s: Pick<AccessSettings, "paymentRequired" | "priceMinPkr">) {
-  return z.object({
-    email: z.string().transform((v) => normalizeEmail(v) ?? "").pipe(z.string().min(3, "Enter a valid email address.")),
-    applicantId: z
-      .string()
-      .trim()
-      .max(20)
-      .regex(/^\d*$/, "The applicant ID is numbers only.")
-      .transform((v) => v || null),
-    amountPkr: s.paymentRequired
-      ? z.number({ message: "Enter the amount you sent." }).min(s.priceMinPkr, `The lowest amount is PKR ${s.priceMinPkr.toLocaleString("en-US")}.`).max(1_000_000, "That amount is too large.")
-      : z.number().min(0).max(1_000_000).nullable(),
-    reference: s.paymentRequired
-      ? z.string().trim().min(4, "Paste the transaction reference from your banking app.").max(120)
-      : z.string().trim().max(120).transform((v) => v || null),
-    message: z.string().trim().max(500).transform((v) => v || null),
-  });
+  return z
+    .object({
+      email: z.string().transform((v) => normalizeEmail(v) ?? "").pipe(z.string().min(3, "Enter a valid email address.")),
+      applicantId: z
+        .string()
+        .trim()
+        .max(20)
+        .regex(/^\d*$/, "The applicant ID is numbers only.")
+        .transform((v) => v || null),
+      channel: z.enum(["easypaisa", "jazzcash", "bank"]).nullable().catch(null),
+      amountPkr: z.number().min(0).max(1_000_000).nullable(),
+      /** Transaction ID (TID) or bank reference. */
+      reference: z.string().trim().max(120).transform((v) => v || null),
+      voucher: z.string().trim().max(40).optional().transform((v) => v || null),
+      message: z.string().trim().max(500).transform((v) => v || null),
+    })
+    .superRefine((v, ctx) => {
+      if (v.voucher || !s.paymentRequired) return;
+      if (!v.reference || v.reference.replace(/[^A-Za-z0-9]/g, "").length < 6) ctx.addIssue({ code: "custom", path: ["reference"], message: "Enter the transaction ID (TID) from your payment confirmation." });
+      if (v.amountPkr != null && v.amountPkr < s.priceMinPkr) ctx.addIssue({ code: "custom", path: ["amountPkr"], message: `The lowest amount is PKR ${s.priceMinPkr.toLocaleString("en-US")}.` });
+    });
 }
 
-export type AccessDecision = { allowed: true } | { allowed: false; reason: "paywall" };
+export type AccessDecision = { allowed: true } | { allowed: false; reason: "paywall" | "expired" };
 
 /**
  * May this email sign in? Always when the paywall is off, for owners and team members,
@@ -108,14 +130,19 @@ export function accessDecision(input: {
   existingRole: string | null;
   existingSince: Date | null;
   approved: boolean;
+  /** When the approved access ends (null = no end). */
+  expiresAt?: Date | null;
+  now?: Date;
 }): AccessDecision {
   if (!input.settings.paywall) return { allowed: true };
   if (input.ownerEmail) return { allowed: true };
   if (input.existingRole && input.existingRole !== "candidate") return { allowed: true };
-  if (input.approved) return { allowed: true };
+  const expired = input.approved && input.expiresAt != null && input.expiresAt <= (input.now ?? new Date());
+  if (input.approved && !expired) return { allowed: true };
   const since = input.settings.since ? Date.parse(input.settings.since) : NaN;
   if (input.settings.keepExisting && input.existingSince && Number.isFinite(since) && input.existingSince.getTime() < since) return { allowed: true };
-  return { allowed: false, reason: "paywall" };
+  return { allowed: false, reason: expired ? "expired" : "paywall" };
 }
 
 export const ACCESS_DENIED = "Sign-in needs approval first. Use Request access on the sign-in page.";
+export const ACCESS_EXPIRED = "Your access ended with the last induction. Renew it at /access with the same email; your account stays as it is.";

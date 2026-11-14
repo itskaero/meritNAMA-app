@@ -33,7 +33,7 @@ const EXEMPT: Record<string, string> = {
  */
 const NO_SESSION = new Set([
   "allocation-rules#parseInduction", "allocation-rules#rulesBaseline", "allocation-rules#scoringPolicyForInduction", "allocation-rules#resolveFor", "allocation-rules#loadInductionRules",
-  "merit#relinkMeritNames", "activity#pruneActivity", "admin-today#recordWorkerTick", "jobs#syncJobs", "jobs#jobsSyncIfDue", "jobs#jobTeaser", "jobs#mySavedJobs", "candidates#indexCandidates", "candidates#verifiedApplicant", "candidates#verifiedUserIds", "candidates#autoLink", "candidates#sniffEvidence", "candidates#pendingLinkCount",
+  "merit#relinkMeritNames", "activity#pruneActivity", "access#accessRemindersIfDue", "access#accessStatus", "access#autoMatchPending", "access#currentCycle", "admin-today#recordWorkerTick", "jobs#syncJobs", "jobs#jobsSyncIfDue", "jobs#jobTeaser", "jobs#mySavedJobs", "candidates#indexCandidates", "candidates#verifiedApplicant", "candidates#verifiedUserIds", "candidates#autoLink", "candidates#sniffEvidence", "candidates#pendingLinkCount",
   "community#describeTopics", "community#voteCount",
   "datastore#autoImportDataFolder", "datastore#dataRoot", "datastore#loadDataSettings", "datastore#recordSync", "datastore#plainIssues",
   "sync#syncIfDue",

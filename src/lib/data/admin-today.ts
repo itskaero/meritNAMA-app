@@ -71,8 +71,11 @@ export const QUEUE_SOURCES: QueueSource[] = [
   {
     id: "access", capability: "candidates.verify",
     load: async (db) => {
-      const c = n(await db.select({ n: count() }).from(accessRequests).where(eq(accessRequests.status, "pending")));
-      return c ? { id: "access", tag: "People", tone: "neutral", urgency: 70, title: `${plural(c, "access request")}`, detail: "People waiting to be let in: check their payment, then approve.", cta: "Check", href: "/admin/access" } : null;
+      const [r] = await db.select({ n: count(), near: sql<number>`count(*) filter (where ${accessRequests.autoResult} in ('amount_short', 'tid_reused', 'duplicate_tid', 'stale'))`.mapWith(Number) }).from(accessRequests).where(eq(accessRequests.status, "pending"));
+      const c = Number(r?.n ?? 0);
+      if (!c) return null;
+      const near = r?.near ?? 0;
+      return { id: "access", tag: "People", tone: near ? "amber" : "neutral", urgency: near ? 75 : 70, title: `${plural(c, "access request")}`, detail: near ? `${near} near miss${near === 1 ? "" : "es"} (amount short, ID reused…). The rest: import the latest Easypaisa/JazzCash statement and they match by themselves.` : "Import the latest Easypaisa/JazzCash statement under Payments: matching requests approve by themselves.", cta: "Check", href: "/admin/access" };
     },
   },
   {

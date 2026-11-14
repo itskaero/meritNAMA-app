@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { checkDatabase, getDb } from "@/lib/db/client";
+import { accessRemindersIfDue, autoMatchPending } from "@/lib/data/access";
 import { recordWorkerTick } from "@/lib/data/admin-today";
 import { autoImportDataFolder } from "@/lib/data/datastore";
 import { jobsSyncIfDue } from "@/lib/data/jobs";
@@ -17,6 +18,7 @@ export const dynamic = "force-dynamic";
  *   - mark runs that died mid-way as failed, so they can be run again,
  *   - apply data retention once a day, without waiting for a staff visit,
  *   - refresh doctor job adverts every 6 hours (src/lib/data/jobs.ts),
+ *   - approve access requests whose transaction ID is now in an imported statement; send expiry reminders daily,
  *   - sync the data repository (at most hourly, when one is set), then rescan the data folder
  *     and publish new files when auto-publish is on. Replacements are never applied here.
  * Off unless INTERNAL_TOKEN is set. Requests that came through a proxy or tunnel are
@@ -42,6 +44,9 @@ export async function POST(req: Request) {
   const synced = await syncIfDue(db).catch((e) => { console.error("worker: data sync", e); return false; });
   const data = await autoImportDataFolder(db).catch((e) => { console.error("worker: data folder", e); return null; });
   const jobsRan = await jobsSyncIfDue(db).catch((e) => { console.error("worker: jobs", e); return false; });
+  // Access: re-check waiting requests against imported payments; once a day, expiry reminders.
+  const accessApproved = await autoMatchPending(db).catch((e) => { console.error("worker: access match", e); return 0; });
+  await accessRemindersIfDue(db).catch((e) => console.error("worker: access reminders", e));
   const retention = await retentionIfDue(db).catch((e) => { console.error("worker: retention", e); return false; });
-  return Response.json({ ok: true, startedRuns: started, retentionRan: retention, dataSynced: synced, jobsSynced: jobsRan, dataApplied: data?.applied ?? 0 }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ ok: true, startedRuns: started, retentionRan: retention, dataSynced: synced, jobsSynced: jobsRan, dataApplied: data?.applied ?? 0, accessApproved }, { headers: { "Cache-Control": "no-store" } });
 }

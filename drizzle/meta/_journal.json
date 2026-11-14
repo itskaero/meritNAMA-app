@@ -211,6 +211,13 @@
       "when": 1794624942587,
       "tag": "0029_announcements",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794649300433,
+      "tag": "0030_access_automation",
+      "breakpoints": true
     }
   ]
 }

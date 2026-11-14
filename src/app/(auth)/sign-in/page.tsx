@@ -31,7 +31,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
     <AuthShell step={1}>
       <div className="grid gap-2 text-center">
         <h2 className="text-2xl font-semibold tracking-tight">{access.paywall ? "Request access to meritNAMA" : "Sign in to meritNAMA"}</h2>
-        <p className="text-sm text-muted">{access.paywall ? "Access is by approval. Pay, tell us the reference, and we will email you once it is checked." : "Use the email from your PHF application and your merit record links itself."}</p>
+        <p className="text-sm text-muted">{access.paywall ? "Access is by approval, for one induction. Pay by Easypaisa or JazzCash and give the transaction ID: if we already have the payment you are in at once." : "Use the email from your PHF application and your merit record links itself."}</p>
       </div>
       {signedOut ? <Notice title="You are signed out." /> : null}
       {deleted ? <Notice title="Your account was deleted." /> : null}
@@ -39,6 +39,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       {access.paywall ? (
         <>
           <RequestAccessForm s={access} />
+          <p className="text-center text-sm text-muted">Sent a request already? <Link href="/access" className="font-semibold text-signal hover:underline">Check its status</Link> · <Link href="/access?renew=1" className="font-semibold text-signal hover:underline">Renew</Link></p>
           <details className="rounded-xl border border-line p-4" open={Boolean(signedOut || error)}>
             <summary className="cursor-pointer text-sm font-semibold text-heading">Already approved? Sign in</summary>
             <div className="mt-4"><SignInForm google={Boolean(googleConfig())} /></div>

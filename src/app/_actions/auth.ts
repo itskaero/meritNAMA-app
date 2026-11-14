@@ -4,7 +4,8 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { consumeLoginLink, endSession, requestLoginLink, SESSION_COOKIE, sessionFromId } from "@/lib/auth/login";
-import { submitAccessRequest } from "@/lib/data/access";
+import { accessStatus, submitAccessRequest } from "@/lib/data/access";
+import { AUTO_LABELS } from "@/lib/domain/payments";
 import { getDb } from "@/lib/db/client";
 import { setSessionCookie } from "@/lib/auth/session-cookie";
 
@@ -46,19 +47,44 @@ export async function signOutAction() {
   redirect("/sign-in?signedOut=1");
 }
 
-/** Ask for access while the paywall is on. The data layer checks the settings, limits and the amount. */
+/** Ask for access while the paywall is on. The data layer checks the settings, limits, the payment or the voucher. */
 export async function requestAccessAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
     const amount = formText(form, "amount").replace(/,/g, "").trim();
-    await submitAccessRequest(getDb(), {
+    const r = await submitAccessRequest(getDb(), {
       email: formText(form, "email"),
       applicantId: formText(form, "applicantId"),
+      channel: formText(form, "channel"),
       amountPkr: amount === "" ? null : Number(amount),
       reference: formText(form, "reference"),
+      voucher: formText(form, "voucher"),
       message: formText(form, "message"),
     });
+    if (r.status === "approved") {
+      const until = r.expiresAt ? ` until ${r.expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "Asia/Karachi" })}` : "";
+      return { status: "success", message: `You are in${until}. Sign in with an email link below; we also sent you an email.` };
+    }
+    const why = r.autoResult && r.autoResult !== "tid_unseen" ? ` (${AUTO_LABELS[r.autoResult].label.toLowerCase()})` : "";
+    return { status: "success", message: `Request received. A person will check the payment${why}, usually the same day, and email you. You can check its status any time with your email and transaction ID.` };
   } catch (err) {
     return toActionState(err);
   }
-  return { status: "success", message: "Request received. Once your payment is checked we will email you, and then you can sign in with an email link." };
+}
+
+/** Where my request stands: needs the email and the transaction ID (or voucher) together. */
+export async function accessStatusAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const r = await accessStatus(getDb(), { email: formText(form, "email"), reference: formText(form, "reference") });
+    if (!r) return { status: "error", message: "No request matches that email and transaction ID. Check both, or send a request." };
+    const until = r.expiresAt ? r.expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" }) : null;
+    const text = {
+      approved: `Approved${until ? `, until ${until}` : ""}. Sign in with an email link.`,
+      pending: `Waiting for a person to check the payment.${r.autoResult ? ` Automatic check: ${AUTO_LABELS[r.autoResult].note}` : ""}`,
+      rejected: `Not approved: ${r.note ?? "no reason given"}. You can send the request again, corrected.`,
+      expired: `Your access ended${until ? ` on ${until}` : ""}. Send a new request to renew it for this induction.`,
+    }[r.status];
+    return { status: r.status === "approved" ? "success" : "error", message: text };
+  } catch (err) {
+    return toActionState(err);
+  }
 }

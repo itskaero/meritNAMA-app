@@ -5,6 +5,7 @@ import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
   accessRequests,
+  accessVouchers,
   activityPings,
   candidateLinks,
   chatBlocks,
@@ -56,7 +57,7 @@ export async function exportMyData(db: Database, session: Session | null) {
     db.select({ title: discussionThreads.title, body: discussionThreads.body, createdAt: discussionThreads.createdAt }).from(discussionThreads).where(eq(discussionThreads.authorId, me.id)),
     db.select({ body: discussionPosts.body, createdAt: discussionPosts.createdAt }).from(discussionPosts).where(eq(discussionPosts.authorId, me.id)),
     db.select({ body: chatMessages.body, createdAt: chatMessages.createdAt }).from(chatMessages).where(eq(chatMessages.authorId, me.id)),
-    db.select({ amountPkr: accessRequests.amountPkr, reference: accessRequests.reference, status: accessRequests.status, createdAt: accessRequests.createdAt }).from(accessRequests).where(eq(accessRequests.email, email)),
+    db.select({ amountPkr: accessRequests.amountPkr, reference: accessRequests.reference, channel: accessRequests.channel, status: accessRequests.status, createdAt: accessRequests.createdAt, expiresAt: accessRequests.expiresAt }).from(accessRequests).where(eq(accessRequests.email, email)),
     myMerit(db, session).catch(() => null),
   ]);
   const savedJobs = await mySavedJobs(db, me.id);
@@ -110,6 +111,8 @@ export async function deleteMyAccount(db: Database, session: Session | null, inp
     await tx.delete(chatMessages).where(eq(chatMessages.authorId, me.id));
     await tx.delete(chatMembers).where(eq(chatMembers.userId, me.id));
     await tx.delete(activityPings).where(eq(activityPings.userId, me.id));
+    // A used access code keeps that it was used, not by whom.
+    await tx.update(accessVouchers).set({ usedBy: "deleted account" }).where(eq(accessVouchers.usedBy, email));
     await tx
       .update(users)
       .set({ email: `deleted-${me.id}@deleted.invalid`, displayName: "Deleted member", shortlistAlerts: false, showBand: false, peerCounted: false, dmOpen: false })

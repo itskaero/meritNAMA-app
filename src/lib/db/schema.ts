@@ -399,12 +399,65 @@ export const accessRequests = pgTable(
     reviewedBy: text("reviewed_by"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    /** easypaisa, jazzcash, bank or voucher: how they paid. */
+    channel: text("channel"),
+    /** The induction the access is for; it ends with that cycle. */
+    induction: integer("induction"),
+    /** Approved access stops working after this (null = no end). */
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    /** What the automatic payment check found: matched, voucher, amount_short, tid_reused, duplicate_tid, tid_unseen, stale. */
+    autoResult: text("auto_result"),
+    /** When the "access ends soon" email went out. */
+    remindedAt: timestamp("reminded_at", { withTimezone: true }),
   },
   (t) => [
     uniqueIndex("access_requests_email_uq").on(t.email),
     index("access_requests_status_idx").on(t.status, t.createdAt),
     check("access_requests_status", sql`${t.status} in ('pending', 'approved', 'rejected')`),
   ],
+);
+
+/**
+ * Wallet and bank payments read from imported statements or pasted SMS (src/lib/payments).
+ * Only the transaction ID, amount and time are kept: never the payer's phone number or name.
+ * A request whose transaction ID matches an unused payment of the right amount is approved.
+ */
+export const payments = pgTable(
+  "payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** easypaisa, jazzcash or bank. */
+    channel: text("channel").notNull(),
+    /** Transaction ID, upper case, letters and digits only. */
+    tid: text("tid").notNull(),
+    amountPkr: doublePrecision("amount_pkr").notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    /** sms, csv or manual. */
+    source: text("source").notNull(),
+    matchedRequestId: uuid("matched_request_id").references(() => accessRequests.id, { onDelete: "set null" }),
+    importedBy: text("imported_by").notNull(),
+    importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("payments_tid_uq").on(t.tid)],
+);
+
+/** Single-use access codes the team hands out (cash, promotions, refunds). Only a hash of the code is stored. */
+export const accessVouchers = pgTable(
+  "access_vouchers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    codeHash: text("code_hash").notNull(),
+    /** The last four characters, so the team can tell codes apart. */
+    hint: text("hint").notNull(),
+    induction: integer("induction"),
+    note: text("note"),
+    createdBy: text("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    usedBy: text("used_by"),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("access_vouchers_code_uq").on(t.codeHash)],
 );
 
 /**
@@ -674,7 +727,7 @@ export const candidateLinks = pgTable(
 // ── Follows and the in-app inbox ───────────────────────────────────────────────
 
 export const followKind = pgEnum("follow_kind", ["induction", "round", "speciality", "hospital", "thread"]);
-export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round", "new_review", "shortlist", "new_job"]);
+export const notificationKind = pgEnum("notification_kind", ["answer", "accepted", "new_thread", "new_round", "new_review", "shortlist", "new_job", "access"]);
 
 /** What a member follows: a topic (same keys as discussion topics) or a thread (its id). */
 export const follows = pgTable(
