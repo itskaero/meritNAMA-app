@@ -735,3 +735,13 @@ export async function hospitalRoundPeople(db: Database, session: Session | null,
   ]);
   return { total: Number(c?.n ?? 0), rows };
 }
+
+/** The name and PMDC number an applicant was last published under (public merit lists). */
+export async function applicantIdentity(db: Database, session: Session | null, applicantId: string) {
+  assertCan(session, "portal");
+  const [r] = await db.select({ name: meritAllocations.name, pmdcNo: meritAllocations.pmdcNo })
+    .from(meritAllocations).innerJoin(meritRounds, eq(meritRounds.id, meritAllocations.roundId))
+    .where(and(eq(meritAllocations.applicantId, applicantId), sql`${meritAllocations.name} is not null`))
+    .orderBy(desc(meritRounds.inductionId), desc(meritRounds.roundNo)).limit(1);
+  return r ?? null;
+}

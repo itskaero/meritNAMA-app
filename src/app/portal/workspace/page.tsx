@@ -1,4 +1,8 @@
 import { AreaPage } from "@/components/area-page";
+import { AuroraHeader } from "@/components/ui/aurora-header";
+import { Pill } from "@/components/ui/segmented";
+import { applicantIdentity, marksStanding } from "@/lib/data/merit";
+import { formatMarks } from "@/lib/format";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -68,8 +72,37 @@ export default async function WorkspacePage({ searchParams }: { searchParams: Pr
     (groups.get(k) ?? groups.set(k, []).get(k)!).push(x);
   }
 
+  const [who, standing] = await Promise.all([
+    mine ? applicantIdentity(db, session, mine.applicantId).catch(() => null) : null,
+    own ? marksStanding(db, session, { induction: own.induction, roundNo: own.roundNo, program: own.program, marks: own.marks }).catch(() => null) : null,
+  ]);
+  const display = who?.name ?? session?.email.replace(/@.*/, "") ?? "You";
+  const initials = display.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+  const following = places.hospitals.length + places.specialities.length;
+
   return (
-    <AreaPage {...frame}>
+    <AreaPage {...frame} bare>
+      <AuroraHeader as="section" className="flex flex-wrap items-center gap-5 p-5 sm:p-6">
+        <span aria-hidden className="grid h-16 w-16 flex-none place-items-center rounded-full bg-violet text-xl font-semibold text-white shadow-[0_0_24px_var(--mn-violet-glow)]">{initials}</span>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-2xl font-semibold tracking-tight text-[#F3EEE5] sm:text-3xl">{display}</h1>
+          <p className="font-mono text-xs text-[#F3EEE5]/70">
+            {mine ? [mine.applicantId, who?.pmdcNo ? `PMDC ${who.pmdcNo}` : null, own ? `${own.program.trim()} · ${own.quota.trim()}` : null].filter(Boolean).join(" · ") : "Not linked to an applicant record yet"}
+          </p>
+          <p className="mt-2 flex flex-wrap gap-1.5">
+            {standing ? <Pill tone="violet">{standing.percentile >= 75 ? "High" : standing.percentile >= 40 ? "Middle" : "Lower"} · {standing.percentile}th</Pill> : null}
+            {own ? <Pill tone="success">Seat in round {own.roundNo}</Pill> : null}
+            {own?.consent ? <Pill tone="amber">consent: {own.consent}</Pill> : null}
+            {!mine ? <Link href="/portal/profile" className="text-sm font-semibold text-violet-pale hover:underline">Link your record →</Link> : null}
+          </p>
+        </div>
+        <dl className="flex flex-wrap gap-2">
+          {([[own ? formatMarks(own.marks) : "—", "marks"], [String(items.length), "shortlist"], [String(following), "following"], [String(views.length), "saved views"]] as const).map(([v, l]) => (
+            <div key={l} className="grid min-w-20 place-items-center rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2"><dd className="text-xl font-semibold tabular-nums text-[#F3EEE5]">{v}</dd><dt className="text-[0.7rem] text-[#F3EEE5]/65">{l}</dt></div>
+          ))}
+          <Link href="/portal/account" className="mn-btn-ghost grid place-items-center rounded-xl px-4 text-sm text-[#F3EEE5]">Your data</Link>
+        </dl>
+      </AuroraHeader>
       <div className="grid gap-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
       <MeRail items={[
         { href: "#seat", label: "My seat", icon: "target" },
