@@ -2,12 +2,9 @@ import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { EstimateListCard } from "@/components/estimate-list-card";
-import { Icon } from "@/components/icon";
 import { WasteTiles, wasteSentence } from "@/components/joining";
-import { AuroraHeader } from "@/components/ui/aurora-header";
 import { Card, CardHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
-import { Pill } from "@/components/ui/segmented";
 import { cycleSteps, type CycleStep } from "@/lib/admin/today";
 import { ChanceSparks, CycleGantt, Glass, IV, MedianChart, PrefRing, ReadinessArc, SeatStrip, StandingTicks, VideoHero, type CycleBar, type PrefChip } from "@/components/overview/overview-parts";
 import { getSession } from "@/lib/auth/session";
@@ -17,7 +14,10 @@ import { computeOptions } from "@/lib/data/finder";
 import { latestJoining } from "@/lib/data/joining";
 import { consentReadiness, inductionTimeline, listInductionsWithRounds, marksStanding } from "@/lib/data/merit";
 import { inductionRunning, predictRound } from "@/lib/data/predictions";
-import { latestSchedule } from "@/lib/data/schedule";
+import { latestSchedule, seatMatrixTotal } from "@/lib/data/schedule";
+import { calculatorPolicies } from "@/lib/data/policies";
+import { policyInductions } from "@/lib/domain/scoring-policy";
+import { NewInduction } from "@/components/overview/new-induction";
 import { featureFlags } from "@/lib/data/settings";
 import { gazetteCandidate, publishedEstimates } from "@/lib/data/simulation";
 import { ensureUser } from "@/lib/data/users";
@@ -28,8 +28,6 @@ import { findSection } from "@/lib/navigation";
 export const metadata = { title: "Overview" };
 export const dynamic = "force-dynamic";
 
-const IVORY = "text-[#F3EEE5]";
-const IVORY_DIM = "text-[#F3EEE5]/65";
 const fmt = (n: number) => n.toLocaleString("en-US");
 
 function greeting(now: Date) {
@@ -72,8 +70,26 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
 
   // A newer induction is announced (PHF schedule in) but has no merit list yet.
   if (schedule && (!latest || schedule.induction > latest.id)) {
-    const asking = flags.community ? await listThreads(db, session, { sort: "active", limit: 4 }).catch(() => []) : [];
-    return <NewInduction frame={frame} induction={schedule.induction} rows={schedule.rows} steps={phf} running={latest} asking={asking} name={name} now={now} estimates={estimates.filter((e) => !e.official)} />;
+    const [asking, policies, seats] = await Promise.all([
+      flags.community ? listThreads(db, session, { sort: "helpful", limit: 3 }).catch(() => []) : Promise.resolve([]),
+      calculatorPolicies(db, session),
+      seatMatrixTotal(db, session, schedule.induction),
+    ]);
+    const policyFor = (n: number) => policies.find((p) => policyInductions(p.policy).includes(n))?.policy ?? null;
+    const mine = merit?.rows.find((r) => r.induction === latest?.id) ?? null;
+    const current = estimates.filter((e) => !e.official);
+    return (
+      <AreaPage {...frame} bare title={`${greeting(now)}${name ? `, ${name}` : ""}`}>
+        <NewInduction
+          induction={schedule.induction} rows={schedule.rows} steps={phf} now={now} seats={seats}
+          running={latest ? { id: latest.id, roundNo: latest.rounds.at(-1)?.roundNo ?? null, seat: mine ? `${mine.speciality} · ${mine.hospital.split(",")[0]}` : null } : null}
+          asking={asking.map((t) => ({ id: t.id, title: t.title, replies: t.replies, helpful: Number(t.helpful) || 0, answered: Boolean(t.answered) }))}
+          policy={policyFor(schedule.induction)} previous={latest ? policyFor(latest.id) : null}
+          hasEstimate={current.some((e) => e.induction === schedule.induction)}
+        />
+        {current.length ? <EstimateListCard estimates={current} title="Estimated merit list out" /> : null}
+      </AreaPage>
+    );
   }
 
   const current = estimates.filter((e) => !e.official);
@@ -281,96 +297,5 @@ function NextCard({ latest, lastRound, running, estimates, nextPhf, afterJoining
         )}
       </div>
     </Card>
-  );
-}
-
-
-type Thread = Awaited<ReturnType<typeof listThreads>>[number];
-
-/** Overview while a new induction is announced and has no list yet (mockup Overview22). */
-function NewInduction({ frame, induction, rows, steps, running, asking, name, now, estimates }: {
-  frame: { area: "portal"; trail: { label: string }[]; isRoot: boolean; title: string; description: string };
-  induction: number;
-  rows: { title: string; startsAt: Date | null; endsAt: Date | null }[];
-  steps: CycleStep[];
-  running: Awaited<ReturnType<typeof listInductionsWithRounds>>[number] | null;
-  asking: Thread[];
-  name: string | null;
-  now: Date;
-  estimates: Awaited<ReturnType<typeof publishedEstimates>>;
-}) {
-  const next = rows.find((r) => r.startsAt && r.startsAt > now) ?? null;
-  const open = rows.find((r) => r.startsAt && r.startsAt <= now && (!r.endsAt || r.endsAt > now)) ?? null;
-  const target = open?.endsAt ?? next?.startsAt ?? null;
-  const left = target ? Math.max(0, target.getTime() - now.getTime()) : 0;
-  const days = Math.floor(left / 86_400_000), hours = Math.floor((left % 86_400_000) / 3_600_000);
-  return (
-    <AreaPage {...frame} bare title={`${greeting(now)}${name ? `, ${name}` : ""}`}>
-      {running ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-card px-4 py-2.5 text-sm">
-          <Pill tone="success">Running</Pill>
-          <span className="font-semibold text-heading">Induction {running.id}</span>
-          <span className="text-muted">round {running.rounds.at(-1)?.roundNo} out</span>
-          <span className="flex-1" />
-          <Link href={`/portal/history/${running.id}`} className="font-semibold text-violet-pale hover:underline">Open induction {running.id} →</Link>
-        </div>
-      ) : null}
-      <AuroraHeader as="section" className="grid gap-5 p-6 sm:p-8">
-        <p className={cn("flex items-center gap-2 text-xs", IVORY_DIM)}><Pill tone="info">New induction</Pill> From PHF&apos;s schedule</p>
-        <h1 className={cn("text-3xl font-semibold tracking-tight sm:text-5xl", IVORY)}>Induction {induction}</h1>
-        <p className={cn("max-w-2xl text-sm", IVORY_DIM)}>No merit list yet. Work out your marks under the scoring policy, check the dates, and an estimated first list appears here once the candidates&apos; list is in.</p>
-        <div className="flex flex-wrap items-center gap-3">
-          {target ? (
-            <>
-              <span className="grid min-w-20 place-items-center rounded-xl border border-violet-soft/40 px-3 py-2"><span className={cn("text-2xl font-semibold tabular-nums", IVORY)}>{days}</span><span className={cn("text-xs", IVORY_DIM)}>days</span></span>
-              <span className="grid min-w-20 place-items-center rounded-xl border border-violet-soft/40 px-3 py-2"><span className={cn("text-2xl font-semibold tabular-nums", IVORY)}>{String(hours).padStart(2, "0")}</span><span className={cn("text-xs", IVORY_DIM)}>hours</span></span>
-              <span className={cn("max-w-32 text-sm", IVORY_DIM)}>{open ? `until ${open.title} closes` : `until ${next!.title}`}</span>
-            </>
-          ) : null}
-          <Link href="/portal/calculator" className="mn-btn inline-flex h-11 items-center rounded-xl px-4 text-sm font-semibold">Calculate my marks →</Link>
-          <Link href="/portal/guide" className="mn-btn-ghost inline-flex h-11 items-center rounded-xl px-4 text-sm">How it works</Link>
-        </div>
-      </AuroraHeader>
-      {estimates.length ? <EstimateListCard estimates={estimates} title="Estimated merit list out" /> : null}
-      <Card>
-        <CardHeader title={`Induction ${induction} timeline`} action={<Link href="/portal/calendar" className="text-sm font-medium text-signal hover:underline">Calendar</Link>} />
-        <ol className="grid grid-flow-col auto-cols-[minmax(9rem,1fr)] gap-3 overflow-x-auto pb-1">
-          {steps.map((x, i) => (
-            <li key={`${x.title}-${i}`} className="grid gap-1.5">
-              <span className="flex items-center gap-2">
-                <span aria-hidden className={cn("h-3.5 w-3.5 flex-none rounded-full", x.state === "done" ? "bg-success shadow-[0_0_10px_var(--mn-success)]" : x.state === "now" ? "border-2 border-violet-soft bg-[var(--mn-violet-fill)] shadow-[0_0_12px_var(--mn-violet-glow)]" : "border border-line-strong")} />
-                <span aria-hidden className="h-px flex-1 bg-line" />
-              </span>
-              <span className={cn("text-sm font-semibold", x.state === "now" ? "text-violet-pale" : x.state === "next" ? "text-muted" : "text-heading")}>{x.title}</span>
-              <span className="text-xs text-subtle">{x.when}</span>
-            </li>
-          ))}
-        </ol>
-      </Card>
-      <div className="grid gap-5 xl:grid-cols-2">
-        <Card>
-          <CardHeader title="Your marks under the policy" description="From your details, with the scoring policy for this induction." />
-          <p className="text-sm text-muted">Past closing merit can only be compared when the scoring scheme is the same. The calculator says which inductions compare.</p>
-          <Link href="/portal/calculator" className="mn-btn mt-3 inline-flex h-9 w-fit items-center rounded-lg px-3 text-sm font-semibold">Open the calculator</Link>
-        </Card>
-        <Card>
-          <CardHeader title="People are asking" action={<Link href="/portal/community" className="text-sm font-medium text-signal hover:underline">Community</Link>} />
-          {asking.length ? (
-            <ul className="grid gap-2">
-              {asking.map((t) => (
-                <li key={t.id}>
-                  <Link href={`/portal/community/${t.id}`} className="flex items-start gap-3 rounded-lg p-1 hover:bg-hover/50">
-                    <span className="grid h-9 min-w-9 place-items-center rounded-lg border border-line text-sm font-semibold tabular-nums">{t.helpful}</span>
-                    <span className="min-w-0"><span className="block truncate text-sm font-medium text-heading">{t.title}</span><span className="text-xs text-muted">{t.replies} answer{t.replies === 1 ? "" : "s"}{t.answered ? " · answered" : ""}</span></span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="text-sm text-muted">No questions yet.</p>}
-          <Link href="/portal/community/new" className="mn-btn mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg text-sm font-semibold">Ask about induction {induction}</Link>
-        </Card>
-      </div>
-      <p className="text-xs text-subtle"><Icon name="spark" className="mr-1 inline h-3.5 w-3.5" />meritNAMA is independent and not an official admissions authority.</p>
-    </AreaPage>
   );
 }

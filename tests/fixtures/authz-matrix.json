@@ -218,6 +218,7 @@
  "rooms#postToRoom": "candidate data_editor policy_editor verifier moderator owner",
  "rooms#roomPulse": "candidate data_editor policy_editor verifier moderator owner",
  "schedule#latestSchedule": "candidate data_editor policy_editor verifier moderator owner",
+ "schedule#seatMatrixTotal": "candidate data_editor policy_editor verifier moderator owner",
  "settings#featureFlags": "candidate data_editor policy_editor verifier moderator owner",
  "settings#assertFeature": "candidate data_editor policy_editor verifier moderator owner",
  "settings#setFeatures": "owner",
