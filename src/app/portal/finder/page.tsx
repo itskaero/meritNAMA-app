@@ -3,25 +3,24 @@ import { latestJoining } from "@/lib/data/joining";
 import { ChancesTabs } from "@/components/chances-tabs";
 import Link from "next/link";
 import { AreaPage } from "@/components/area-page";
+import { marksStanding } from "@/lib/data/merit";
+import { peerInterest, peerKey } from "@/lib/data/social";
+import { formatMarks } from "@/lib/format";
 import { AuroraHeader } from "@/components/ui/aurora-header";
-import { LineChart } from "@/components/charts/line-chart";
 import { CountUp } from "@/components/charts/count-up";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { EntityLink } from "@/components/entity-link";
-import { STATUS_STYLE, StatusIcon, StatusPill } from "@/components/finder/status";
+import { STATUS_STYLE } from "@/components/finder/status";
 import { Icon } from "@/components/icon";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
-import { selectClass } from "@/components/ui/styles";
 import { getSession } from "@/lib/auth/session";
 import { myMerit } from "@/lib/data/candidates";
 import { releasedBeforeFinal } from "@/lib/data/insights";
 import { inductionRunning, predictRound } from "@/lib/data/predictions";
-import { ChanceDial } from "@/components/charts/chance-dial";
-import { snippetParam } from "@/lib/domain/community";
 import { findOptions, finderOptions, listShortlist, optionHistory, type FinderOption } from "@/lib/data/finder";
 import { getDb } from "@/lib/db/client";
 import { optionKey, parseOptionKey, STATUS_LABEL, type FinderStatus } from "@/lib/domain/finder";
@@ -118,10 +117,7 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   // Compare up to two options (a, b) across every induction.
   const picks = [parseOptionKey(sp.a), parseOptionKey(sp.b)].filter((x): x is NonNullable<typeof x> => Boolean(x));
   const histories = await Promise.all(picks.map((p) => optionHistory(db, session, { program, quota, ...p })));
-  const compareLabels = [...new Set(histories.flat().map((h) => `I${h.inductionId} R${h.roundNo}`))].sort((x, y) => {
-    const [ai, ar] = x.slice(1).split(" R").map(Number), [bi, br] = y.slice(1).split(" R").map(Number);
-    return ai! - bi! || ar! - br!;
-  });
+;
   const pickHref = (o: FinderOption) => {
     const key = optionKey(o);
     if (sp.a === key || sp.b === key) return href({ a: sp.a === key ? sp.b : sp.a, b: undefined });
@@ -147,230 +143,145 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
   const hospitals = [...new Set(visible.map((o) => o.hospital))].sort();
 
   const query = new URLSearchParams(Object.entries(sp).filter((e): e is [string, string] => typeof e[1] === "string" && e[1] !== "")).toString();
+  const lastRoundNo = options.length ? Math.max(...options.map((o) => o.lastRound)) : null;
+  const [standing, peers] = await Promise.all([
+    result && marks !== null && lastRoundNo ? marksStanding(db, session, { induction: induction.id, roundNo: lastRoundNo, program, marks: (marks / total) * induction.total }).catch(() => null) : null,
+    peerInterest(db, session, { limit: 50 }).catch(() => null),
+  ]);
+  const IV = "text-[#F3EEE5]/[.68]";
+  const fld = "grid gap-1.5 text-xs text-[#F3EEE5]/[.68]";
+  const fldInput = "h-11 w-full rounded-xl border border-[#F3EEE5]/[.18] bg-[rgba(12,12,14,.45)] px-3.5 text-sm text-[#F3EEE5] outline-none focus:border-violet-soft";
+  const BAND: Record<FinderStatus, { label: string; color: string; rgb: string; path: string }> = {
+    safe: { label: "Safe", color: "#3DDC97", rgb: "61,220,151", path: "M0 26 C15 24, 25 28, 40 20 S 70 16, 100 5" },
+    borderline: { label: "Target", color: "#E5A04B", rgb: "229,160,75", path: "M0 18 C15 12, 25 22, 45 16 S 75 20, 100 14" },
+    out: { label: "Reach", color: "#FF7A7A", rgb: "255,122,122", path: "M0 6 C20 8, 30 12, 50 16 S 80 24, 100 28" },
+  };
+  const you = result ? result.mePct : null;
+  const pctOf = (o: FinderOption) => o.lastPct;
+  const tableTitle = show ? `${visible.length} ${BAND[show].label.toLowerCase()} seat${visible.length === 1 ? "" : "s"}` : `${visible.length} seats · ${program} · ${quota}`;
+  const histFor = (i: number) => histories[i] ?? [];
+  const sparkPath = (v: number[]) => {
+    if (v.length < 2) return null;
+    const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1;
+    return v.map((x, j) => `${j ? "L" : "M"}${((j / (v.length - 1)) * 196 + 2).toFixed(1)} ${(4 + (1 - (x - lo) / span) * 26).toFixed(1)}`).join(" ");
+  };
+
   return (
     <AreaPage {...frame} bare>
-      <AuroraHeader as="section" className="grid gap-5 p-5 sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-[#F3EEE5] sm:text-4xl">My chances</h1>
-            <p className="mt-1 text-sm text-[#F3EEE5]/70">Where your marks can get a seat, from past closing merit under the same scoring.</p>
-          </div>
+      <AuroraHeader as="section" className="grid gap-[18px] px-5 py-[22px] sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><h1 className="text-[2rem] font-bold tracking-[-0.03em]">My chances</h1><p className={cn("mt-1", IV)}>Where your marks can get a seat, from past closing merit under the same scoring.</p></div>
           <ChancesTabs current="/portal/finder" variant="pills" />
         </div>
-        <form method="get" className="grid gap-4 text-[#F3EEE5] md:grid-cols-[repeat(4,minmax(0,1fr))_auto] md:items-end">
-          <label className="grid gap-1.5 text-sm font-medium">
-            Your marks
-            <span className="flex items-center gap-2">
-              <input name="marks" inputMode="decimal" required defaultValue={sp.marks ?? (own ? own.marks.toFixed(4) : "")} placeholder="e.g. 22.5" className={cn(selectClass, "font-mono")} />
-              <span className="whitespace-nowrap text-sm text-muted">of</span>
-              <input name="total" inputMode="decimal" defaultValue={String(total)} aria-label="Out of (total marks)" className={cn(selectClass, "w-20 font-mono")} />
-            </span>
+        <form method="get" className="grid items-end gap-3 md:grid-cols-[1fr_0.7fr_1.2fr_1.2fr_auto]">
+          <label className={fld}>Your marks<input name="marks" inputMode="decimal" required defaultValue={sp.marks ?? (own ? own.marks.toFixed(2) : "")} placeholder="e.g. 22.5" className={cn(fldInput, "font-mono")} /></label>
+          <label className={fld}>Out of<input name="total" inputMode="decimal" defaultValue={String(total)} className={cn(fldInput, "font-mono")} /></label>
+          <label className={fld}>Programme · quota
+            <select name="track" defaultValue={trackValue} className={fldInput}>{induction.tracks.map((t) => <option key={`${t.program}|${t.quota}`} value={`${t.program}|${t.quota}`}>{t.program} · {t.quota}</option>)}</select>
           </label>
-          <label className="grid gap-1.5 text-sm font-medium">
-            Programme · quota
-            <select name="track" defaultValue={trackValue} className={selectClass}>
-              {induction.tracks.map((t) => <option key={`${t.program}|${t.quota}`} value={`${t.program}|${t.quota}`}>{t.program} · {t.quota}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1.5 text-sm font-medium">
-            Compare with
-            <select name="induction" defaultValue={induction.id} className={selectClass}>
-              {opts.inductions.map((i) => <option key={i.id} value={i.id}>Induction {i.id} (out of {i.total})</option>)}
-            </select>
+          <label className={fld}>Compare with
+            <select name="induction" defaultValue={induction.id} className={fldInput}>{opts.inductions.map((i) => <option key={i.id} value={i.id}>Induction {i.id} {i.likeForLike ? "(same scoring)" : `(out of ${i.total})`}</option>)}</select>
           </label>
           <input type="hidden" name="view" value={view} />
-          <Button type="submit" className="md:self-end">Analyse →</Button>
+          <button type="submit" className="mn-btn h-11 rounded-xl px-5 text-sm font-semibold">Analyse →</button>
         </form>
-      <div className="text-[#F3EEE5]/70 [&_.text-subtle]:text-[#F3EEE5]/60">
-          {own ? <p className="mt-3 text-xs font-medium text-success">Filled in from your verified record: induction {own.induction}, round {own.roundNo} (out of {total}).</p> : null}
-          <p className="mt-3 text-xs text-subtle">
-            {opts.activePolicy ? `Your marks are on the current policy (${opts.activePolicy}, out of ${opts.defaultTotal}). ` : ""}
-            Inductions are compared in percent of their total, so a score out of 30 lines up with one out of 35. Weights of the parts differ between years, so treat this as a guide, not a guarantee.
-          </p>
-      </div>
+        {result ? (
+          <div className="grid gap-3.5 md:grid-cols-[230px_repeat(3,minmax(0,1fr))]">
+            <div className="rounded-[14px] border border-[rgba(155,135,255,.45)] bg-[rgba(110,86,255,.18)] px-4 py-3.5 shadow-[0_0_30px_rgba(110,86,255,.25)]">
+              <p className={cn("text-xs", IV)}>{standing ? "Your percentile" : "Your score"}</p>
+              <p className="mt-0.5 text-[46px] font-bold leading-[1.05] tracking-[-0.03em]">{standing ? <>{standing.percentile}<span className={cn("text-lg", IV)}>th</span></> : pct(result.mePct)}</p>
+              <p className="mt-0.5 text-[13px] text-[#D6CCFF]">{standing ? `${standing.percentile >= 75 ? "High" : standing.percentile >= 40 ? "Middle" : "Lower"} · better than ${standing.percentile} of 100` : `${marks} of ${total}`}</p>
+            </div>
+            {STATUSES.map((st) => {
+              const on = show === st, b = BAND[st];
+              return (
+                <Link key={st} href={href({ show: on ? undefined : st })} aria-pressed={on} aria-label={`${b.label}: ${counts[st]}${on ? ", showing" : ""}`}
+                  className={cn("rounded-[14px] border p-3.5 transition-[box-shadow,border-color]", on ? "" : "border-[#F3EEE5]/[.12] bg-[rgba(16,36,58,.45)] hover:border-[#F3EEE5]/30")}
+                  style={on ? { borderColor: `rgba(${b.rgb},.7)`, boxShadow: `0 0 26px rgba(${b.rgb},.3)`, background: `rgba(${b.rgb},.12)` } : undefined}>
+                  <span className="text-xs" style={{ color: b.color }}>● {b.label}{on ? " · showing" : ""}</span>
+                  <span className="block text-[30px] font-bold tabular-nums" style={{ color: b.color }}><CountUp value={counts[st]} /></span>
+                  <svg aria-hidden width="100%" height="28" viewBox="0 0 100 32" preserveAspectRatio="none"><path className="mn-draw-line" d={b.path} fill="none" stroke={b.color} strokeWidth="2" style={{ filter: `drop-shadow(0 0 4px rgba(${b.rgb},0.7))` }} /></svg>
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
+        <div className={cn("text-xs", IV)}>
+          {own ? <p className="text-[#3DDC97]">Filled in from your verified record: induction {own.induction}, round {own.roundNo}.</p> : null}
+          <p className="mt-1">Inductions are compared in percent of their total, so a score out of 30 lines up with one out of 35. Weights of the parts differ between years: a guide, not a guarantee.</p>
+        </div>
       </AuroraHeader>
-      {query ? <div><SaveView href={`/portal/finder?${query}`} label={`Finder${sp.marks ? `: ${sp.marks} marks` : ""}${sp.track ? `, ${sp.track.replace("|", " · ")}` : ""}`} /></div> : null}
 
       {!opts.likeForLike.length ? (
         <Notice tone="warning" title="No past induction was scored like the current one">
-          {opts.activeLabel ? `The current scoring (${opts.activeLabel}) has no closing-merit history yet. ` : ""}
-          Past inductions below were scored differently, so your marks cannot be placed against them with any confidence. Percent only lines up the totals, not what the marks reward. Use this as a rough guide, and expect real chances to become clear once the first round of this induction is published.
+          {opts.activeLabel ? `The current scoring (${opts.activeLabel}) has no closing-merit history yet. ` : ""}Past inductions were scored differently, so your marks cannot be placed against them with any confidence. Expect real chances once the first round of this induction is out.
         </Notice>
       ) : !induction.likeForLike ? (
         <Notice tone="warning" title={`Induction ${induction.id} was scored differently`}>
-          {induction.label ? `It used ${induction.label}` : "Its scoring is not recorded"}, not the current scheme. Percent only lines up the totals, not what the marks reward. Inductions scored like the current one: {opts.likeForLike.join(", ")}.
+          {induction.label ? `It used ${induction.label}` : "Its scoring is not recorded"}, not the current scheme. Inductions scored like the current one: {opts.likeForLike.join(", ")}.
         </Notice>
       ) : null}
-
       {error ? <Notice tone="warning" title="Check your marks">{error}</Notice> : null}
 
       {!result ? (
         <Card>
           <CardHeader title="How it works" />
           <ol className="grid gap-3 text-sm text-muted sm:grid-cols-3">
-            <li className="rounded-xl bg-elevated p-4"><StatusPill status="safe" /><p className="mt-2">Your score reached the closing merit in the first round. You would have had this seat from the start.</p></li>
-            <li className="rounded-xl bg-elevated p-4"><StatusPill status="borderline" /><p className="mt-2">Below the first-round closing, but seats freed up later and the final round closed at or below your score.</p></li>
-            <li className="rounded-xl bg-elevated p-4"><StatusPill status="out" /><p className="mt-2">Below the closing merit even in the final round.</p></li>
+            <li className="rounded-xl bg-white/[.03] p-4"><span className="mn-pill g">Safe</span><p className="mt-2">Your score reached the closing merit in the first round: you would have had this seat from the start.</p></li>
+            <li className="rounded-xl bg-white/[.03] p-4"><span className="mn-pill a">Target</span><p className="mt-2">Below the first-round closing, but seats freed up later and the final round closed at or below your score.</p></li>
+            <li className="rounded-xl bg-white/[.03] p-4"><span className="mn-pill r">Reach</span><p className="mt-2">Below the closing merit even in the final round.</p></li>
           </ol>
         </Card>
       ) : (
-        <>
-          <section aria-label="Summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="mn-rise rounded-xl border border-violet-soft/45 bg-[var(--mn-violet-fill)] p-5 shadow-[0_0_24px_var(--mn-violet-glow)]">
-              <p className="text-xs text-muted">Your score</p>
-              <p className="mt-3 font-display text-4xl font-extrabold tracking-tight [font-stretch:110%]">{pct(result.mePct)}</p>
-              <p className="mt-1 text-xs text-subtle">{marks} of {total} · compared with induction {induction.id} (out of {induction.total})</p>
-            </div>
-            {STATUSES.map((st, i) => (
-              <Link
-                key={st}
-                href={href({ show: show === st ? undefined : st })}
-                aria-current={show === st ? "true" : undefined}
-                className={cn("mn-rise rounded-xl border bg-surface p-5 transition-colors hover:bg-elevated", show === st ? "border-ink" : "border-line")}
-                style={{ animationDelay: `${(i + 1) * 70}ms` }}
-              >
-                <p className="flex items-center gap-2 text-xs text-muted"><StatusIcon status={st} className={cn("h-2.5 w-2.5", STATUS_STYLE[st].text)} />{STATUS_LABEL[st]}</p>
-                <p className="mt-3 font-display text-4xl font-extrabold tracking-tight [font-stretch:110%]"><CountUp value={counts[st]} /></p>
-                <p className="mt-1 text-xs text-subtle">{show === st ? "Showing only these · select to show all" : "options · select to show only these"}</p>
-              </Link>
-            ))}
-          </section>
-
-          {picks.length ? (
-            <Card>
-              <CardHeader
-                title={picks.length === 2 ? "Compare two options" : "Pick a second option to compare"}
-                description={`${program} · ${quota} · closing merit as percent of each induction's total.`}
-                action={<ButtonLink href={href({ a: undefined, b: undefined })} variant="ghost" size="sm">Clear</ButtonLink>}
-              />
-              <div className="grid gap-4 md:grid-cols-2">
-                {picks.map((p, i) => {
-                  const o = options.find((x) => x.speciality === p.speciality && x.hospital === p.hospital);
-                  return (
-                    <div key={optionKey(p)} className={cn("rounded-2xl border p-4", i === 0 ? "border-ember/50" : "border-line-strong")}>
-                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: i === 0 ? "var(--mn-ember-hot)" : "var(--mn-text-muted)" }}>Option {i === 0 ? "A" : "B"}</p>
-                      <p className="mt-1 font-semibold">{p.speciality}</p>
-                      <p className="text-sm text-muted">{p.hospital}</p>
-                      {o && result ? (
-                        <div className="mt-3">
-                          <ChanceDial mePct={result.mePct} firstPct={o.firstPct} lastPct={o.lastPct} firstRound={o.firstRound} lastRound={o.lastRound} predicted={nextBand(o)} note={`Induction ${induction.id}: R${o.firstRound} ${o.firstClosing.toFixed(2)} → R${o.lastRound} ${o.lastClosing.toFixed(2)} of ${induction.total}`} />
-                        </div>
-                      ) : <p className="mt-3 text-sm text-subtle">Not offered in induction {induction.id}.</p>}
-                      {(() => {
-                        const last = histories[i]!.at(-1);
-                        if (!last) return null;
-                        const card = snippetParam({ induction: last.inductionId, round: last.roundNo, program, quota, speciality: p.speciality, hospital: p.hospital });
-                        return (
-                          <Link href={`/portal/community/new?${new URLSearchParams({ topic: `round|${last.inductionId}:${last.roundNo}`, snippet: card })}`} className="mt-3 inline-block text-sm font-semibold text-signal hover:underline">
-                            Ask about this →
-                          </Link>
-                        );
-                      })()}
-                    </div>
-                  );
-                })}
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <section aria-label="Seats" className="mn-card-glass overflow-hidden rounded-[20px] border border-line">
+            <header className="flex flex-wrap items-center justify-between gap-3 px-4 pb-2 pt-4">
+              <h2 className="text-[15px] font-semibold text-heading">{tableTitle}</h2>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted">Tick two to compare · ☆ shortlist</span>
+                <nav aria-label="View" className="mn-seg"><Link href={href({ view: "list" })} aria-current={view === "list" ? "page" : undefined}>List</Link><Link href={href({ view: "grid" })} aria-current={view === "grid" ? "page" : undefined}>Heatmap</Link></nav>
               </div>
-              {compareLabels.length ? (
-                <div className="mt-4">
-                  <LineChart
-                    title="Closing merit of the chosen options, percent of total, by induction and round"
-                    xLabels={compareLabels}
-                    series={picks.map((p, i) => ({
-                      label: `${i === 0 ? "A" : "B"}: ${p.speciality}, ${p.hospital}`,
-                      tone: i === 0 ? ("ember" as const) : ("teal" as const),
-                      values: compareLabels.map((l) => histories[i]!.find((h) => `I${h.inductionId} R${h.roundNo}` === l)?.pct ?? null),
-                      details: compareLabels.map((l) => {
-                        const h = histories[i]!.find((x) => `I${x.inductionId} R${x.roundNo}` === l);
-                        return h ? h.closing.toFixed(2) : null;
-                      }),
-                    }))}
-                    format={(v) => `${v.toFixed(1)}%`}
-                  />
-                  {result ? <p className="mt-2 text-xs text-subtle">Your score: {pct(result.mePct)}.</p> : null}
-                </div>
-              ) : null}
-            </Card>
-          ) : null}
-
-          <Card>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-semibold">{visible.length} options · {program} · {quota}</h2>
-                <p className="mt-1 text-sm text-muted">Select a hospital to compare it; ☆ adds it to your shortlist ({shortlist.length} saved).</p>
-              </div>
-              <nav aria-label="View" className="inline-flex rounded-full border border-line bg-canvas p-1">
-                {(["list", "grid"] as const).map((v) => (
-                  <Link key={v} href={href({ view: v })} aria-current={view === v ? "page" : undefined} className={cn("rounded-full px-4 py-1.5 text-sm font-semibold", view === v ? "bg-ink text-canvas" : "text-muted hover:text-ink")}>
-                    {v === "list" ? "List" : "Heatmap"}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-
+            </header>
             {visible.length === 0 ? (
-              <EmptyState title="No options in this view" action={<ButtonLink href={href({ show: undefined })} variant="secondary">Show all</ButtonLink>} />
+              <p className="px-4 py-8 text-center text-sm text-muted">No seats in this view. <Link href={href({ show: undefined })} className="text-[#A797FF]">Show all</Link></p>
             ) : view === "list" ? (
-              <div className="grid gap-4">
-                {[...bySpeciality].map(([spec, rows], gi) => (
-                  <section key={spec} className="mn-rise rounded-2xl border border-line" style={{ animationDelay: `${Math.min(gi, 8) * 40}ms` }}>
-                    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
-                      <h3 className="font-semibold"><EntityLink kind="speciality" id={rows[0]!.specialityId} name={spec} /></h3>
-                      <span className="flex flex-wrap gap-1.5">
-                        {STATUSES.map((st) => { const n = rows.filter((r) => r.status === st).length; return n ? <span key={st} className={cn("rounded-full border px-2 py-0.5 font-mono text-xs", STATUS_STYLE[st].pill)}>{n} {STATUS_LABEL[st].toLowerCase()}</span> : null; })}
-                      </span>
-                    </header>
-                    <ul className="divide-y divide-line">
-                      {rows.map((o) => (
-                        <li key={o.hospital} className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm sm:grid-cols-[minmax(0,1fr)_7rem_9rem_auto]", isPicked(o) && "bg-ember/10")}>
-                          <span className="min-w-0">
-                            <Link href={pickHref(o)} className="block truncate hover:text-signal hover:underline" aria-label={`${isPicked(o) ? "Remove from comparison" : "Compare"}: ${o.hospital}`}>
-                              {o.hospital}
-                            </Link>
-                            {o.status === "borderline" && released.get(`${o.speciality}|${o.hospital}`) ? (
-                              <span className="block text-[0.7rem] text-amber">{released.get(`${o.speciality}|${o.hospital}`)} {released.get(`${o.speciality}|${o.hospital}`) === 1 ? "seat" : "seats"} freed before the final round</span>
-                            ) : null}
-                            {o.status !== "safe" && nextBand(o) ? (
-                              <span className="block text-[0.7rem] text-signal" title="Estimate from how closing merit moved at this point in other inductions. Not official.">
-                                Next round likely {nextBand(o)!.lowPct.toFixed(1)}–{nextBand(o)!.highPct.toFixed(1)}% · {nextBand(o)!.confidence.toLowerCase()} confidence
-                              </span>
-                            ) : null}
-                          </span>
-                          <span className="sm:order-none"><StatusPill status={o.status} /></span>
-                          <span className="col-span-2 text-xs text-muted sm:col-span-1 sm:text-right" title={`Round ${o.firstRound}: ${o.firstClosing.toFixed(2)} · round ${o.lastRound}: ${o.lastClosing.toFixed(2)} (out of ${induction.total})`}>
-                            {induction.likeForLike ? (
-                              <>
-                                R{o.firstRound} {o.firstClosing.toFixed(2)} → R{o.lastRound} <span className="font-semibold text-ink">{o.lastClosing.toFixed(2)}</span>
-                                <span className="block font-mono text-[0.7rem] text-subtle">{pct(o.lastPct)} of {induction.total}</span>
-                              </>
-                            ) : (
-                              <>
-                                R{o.firstRound} {pct(o.firstPct)} → R{o.lastRound} <span className="font-semibold text-ink">{pct(o.lastPct)}</span>
-                                <span className="block font-mono text-[0.7rem] text-subtle">{o.lastClosing.toFixed(2)} / {induction.total}</span>
-                              </>
-                            )}
-                          </span>
-                          <span className="col-start-2 row-start-1 sm:col-start-auto sm:row-start-auto">
-                            <Star saved={saved.has(optionKey(o))} item={{ program, quota, speciality: o.speciality, hospital: o.hospital }} label={`${o.speciality} at ${o.hospital}`} />
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
+              <div className="max-h-[70vh] overflow-auto">
+                <table className="mn-tbl min-w-[46rem]">
+                  <thead className="sticky top-0 z-[1] bg-[#17171C]"><tr><th scope="col"><span className="sr-only">Compare</span></th><th scope="col">Speciality · hospital</th><th scope="col" className="!text-right">Final</th><th scope="col">You vs final</th><th scope="col">Next round likely</th><th scope="col"><span className="sr-only">Shortlist</span></th></tr></thead>
+                  <tbody>
+                    {visible.map((o) => {
+                      const diff = you != null ? ((you - pctOf(o)) / 100) * induction.total : 0;
+                      const nb = nextBand(o);
+                      const freed = released.get(`${o.speciality}|${o.hospital}`);
+                      return (
+                        <tr key={`${o.speciality}|${o.hospital}`} className={cn(isPicked(o) && "!bg-[rgba(110,86,255,.08)]")}>
+                          <td><Link href={pickHref(o)} aria-label={`${isPicked(o) ? "Remove from comparison" : "Compare"}: ${o.speciality} at ${o.hospital}`} className={cn("grid h-4 w-4 place-items-center rounded-[4px] border text-[10px]", isPicked(o) ? "border-[#7B61FF] bg-[#7B61FF] text-white" : "border-white/30")}>{isPicked(o) ? "✓" : ""}</Link></td>
+                          <td><b><EntityLink kind="speciality" id={o.specialityId} name={o.speciality} /></b><span className="block text-xs text-muted">{o.hospital}{o.status === "borderline" && freed ? ` · ${freed} freed before the final round` : ""}</span></td>
+                          <td className="text-right font-mono">{o.lastClosing.toFixed(2)}</td>
+                          <td className="w-[150px]">
+                            <span className="relative block h-1.5 rounded-full bg-white/[.08]">
+                              <span className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.max(6, Math.min(100, 50 + diff * 40))}%`, background: diff >= 0 ? "linear-gradient(90deg,#E5A04B,#3DDC97)" : "linear-gradient(90deg,#E5A04B,#FF7A7A)" }} />
+                              <span aria-hidden className="absolute -top-1 h-3.5 w-[3px] rounded-full bg-white" style={{ left: "50%" }} />
+                            </span>
+                            <span className={cn("text-[11px]", diff >= 0 ? "text-[#3DDC97]" : "text-[#FF7A7A]")}>{diff >= 0 ? "+" : "−"}{Math.abs(diff).toFixed(2)} {diff >= 0 ? "above" : "below"}</span>
+                          </td>
+                          <td className="font-mono text-[#E5A04B]">{nb ? `${nb.low.toFixed(1)} – ${nb.high.toFixed(1)}` : <span className="text-muted">—</span>}</td>
+                          <td><Star saved={saved.has(optionKey(o))} item={{ program, quota, speciality: o.speciality, hospital: o.hospital }} label={`${o.speciality} at ${o.hospital}`} /></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <>
+              <div className="px-4 pb-4">
                 <div className="relative max-h-[70vh] overflow-auto rounded-2xl border border-line">
                   <table className="border-separate border-spacing-0 text-xs">
-                    <caption className="sr-only">Heatmap of options: rows are specialities, columns are hospitals, each cell shows the status for your score</caption>
+                    <caption className="sr-only">Heatmap of options: rows are specialities, columns are hospitals</caption>
                     <thead>
                       <tr>
-                        <th scope="col" className="sticky left-0 top-0 z-[2] bg-elevated px-3 py-2 text-left font-medium text-muted">Speciality</th>
-                        {hospitals.map((h) => (
-                          <th key={h} scope="col" className="sticky top-0 z-[1] h-40 min-w-8 bg-elevated px-1 align-bottom font-medium text-muted">
-                            <span className="block max-h-36 overflow-hidden whitespace-nowrap py-2 [writing-mode:vertical-rl] rotate-180" title={h}>{h}</span>
-                          </th>
-                        ))}
+                        <th scope="col" className="sticky left-0 top-0 z-[2] bg-[#17171C] px-3 py-2 text-left font-medium text-muted">Speciality</th>
+                        {hospitals.map((h) => <th key={h} scope="col" className="sticky top-0 z-[1] h-40 min-w-8 bg-[#17171C] px-1 align-bottom font-medium text-muted"><span className="block max-h-36 overflow-hidden whitespace-nowrap py-2 [writing-mode:vertical-rl] rotate-180" title={h}>{h}</span></th>)}
                       </tr>
                     </thead>
                     <tbody>
@@ -378,23 +289,10 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                         const at = new Map(rows.map((r) => [r.hospital, r]));
                         return (
                           <tr key={spec}>
-                            <th scope="row" className="sticky left-0 z-[1] max-w-48 truncate border-t border-line bg-surface px-3 py-1.5 text-left font-normal text-ink">{spec}</th>
+                            <th scope="row" className="sticky left-0 z-[1] max-w-48 truncate border-t border-line bg-[#17171C] px-3 py-1.5 text-left font-normal text-ink">{spec}</th>
                             {hospitals.map((h) => {
                               const o = at.get(h);
-                              return (
-                                <td key={h} className="border-t border-line p-0.5">
-                                  {o ? (
-                                    <Link
-                                      href={pickHref(o)}
-                                      title={`${spec} · ${h}: ${STATUS_LABEL[o.status]}, final round ${pct(o.lastPct)} (${o.lastClosing.toFixed(2)} / ${induction.total})`}
-                                      className={cn("grid h-7 w-7 place-items-center rounded-md text-[0.7rem] font-bold text-canvas transition-colors", STATUS_STYLE[o.status].cell, isPicked(o) && "ring-2 ring-ember-hot")}
-                                    >
-                                      {o.status === "out" ? null : <StatusIcon status={o.status} className="h-3 w-3" />}
-                                      <span className="sr-only">{`${spec} at ${h}: ${STATUS_LABEL[o.status]}`}</span>
-                                    </Link>
-                                  ) : <span aria-hidden className="block h-7 w-7" />}
-                                </td>
-                              );
+                              return <td key={h} className="border-t border-line p-0.5">{o ? <Link href={pickHref(o)} title={`${spec} · ${h}: ${STATUS_LABEL[o.status]}, final ${o.lastClosing.toFixed(2)}`} className={cn("block h-7 w-7 rounded-md", STATUS_STYLE[o.status].cell, isPicked(o) && "ring-2 ring-[#9B87FF]")}><span className="sr-only">{`${spec} at ${h}: ${STATUS_LABEL[o.status]}`}</span></Link> : <span aria-hidden className="block h-7 w-7" />}</td>;
                             })}
                           </tr>
                         );
@@ -402,22 +300,55 @@ export default async function ScoreFinderPage({ searchParams }: { searchParams: 
                     </tbody>
                   </table>
                 </div>
-                <p className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
-                  {STATUSES.map((st) => <span key={st} className="inline-flex items-center gap-2"><span aria-hidden className={cn("h-3 w-3 rounded", STATUS_STYLE[st].cell)} />{STATUS_LABEL[st]}</span>)}
-                  <span>Empty: not offered. Select a cell to compare.</span>
-                </p>
-              </>
+              </div>
             )}
-          </Card>
-        </>
+          </section>
+
+          <aside className="grid gap-3.5">
+            <section aria-label="Compare" className="mn-card-glass rounded-[20px] border border-[rgba(155,135,255,.35)] p-5 shadow-[0_0_30px_rgba(110,86,255,.15)]">
+              <div className="flex justify-between"><h2 className="text-[15px] font-semibold text-heading">Comparing {picks.length} of 2</h2>{picks.length ? <Link href={href({ a: undefined, b: undefined })} className="text-xs text-[#A797FF]">Clear</Link> : null}</div>
+              <div className="mt-3 grid gap-2.5">
+                {picks.map((pk, i) => {
+                  const h = histFor(i).map((x) => x.pct);
+                  const path = sparkPath(h);
+                  const easier = h.length > 1 && h.at(-1)! <= h[0]!;
+                  return (
+                    <div key={optionKey(pk)} className="rounded-xl bg-white/[.03] px-3 py-2.5">
+                      <div className="flex justify-between gap-2"><b className="truncate text-[13px]">{pk.speciality} · {pk.hospital.split(",")[0]}</b>{h.length > 1 ? <span className={cn("mn-pill", easier ? "g" : "r")}>{easier ? "easier" : "harder"}</span> : null}</div>
+                      {path ? <svg aria-hidden width="100%" height="34" viewBox="0 0 200 34" preserveAspectRatio="none"><path d={path} fill="none" stroke={easier ? "#3DDC97" : "#FF7A7A"} strokeWidth="2.5" style={{ filter: `drop-shadow(0 0 5px ${easier ? "rgba(61,220,151,.7)" : "rgba(255,122,122,.7)"})` }} /></svg> : null}
+                      <p className="text-[11px] text-muted">{h.length ? `${h.length} lists on record · last ${h.at(-1)!.toFixed(1)}% of total` : "Not offered before"}</p>
+                    </div>
+                  );
+                })}
+                {picks.length < 2 ? <div className="rounded-xl border border-dashed border-[rgba(155,135,255,.4)] p-3.5 text-center text-xs text-muted">Tick {picks.length ? "a second" : "two"} seat{picks.length ? "" : "s"}</div> : null}
+              </div>
+            </section>
+            {peers && peers.marks != null && peers.seats.length ? (
+              <section aria-label="People like you" className="mn-card-glass rounded-[20px] border border-line p-5">
+                <h2 className="text-[15px] font-semibold text-heading">People near {formatMarks(peers.marks)} shortlisted</h2>
+                <ul className="mt-3 grid gap-2.5 text-[13px]">
+                  {peers.seats.slice(0, 4).map((x) => <li key={peerKey(x)} className="flex items-center justify-between gap-2"><span className="truncate">{x.speciality} · {x.hospital.split(",")[0]}</span><span className="text-muted">{x.peers}</span></li>)}
+                </ul>
+                <p className="mt-3 text-[11px] text-muted">Counts only, from members who share their shortlist.</p>
+              </section>
+            ) : null}
+            {joining && joining.total.wasted ? (
+              <section className="mn-card-glass rounded-[20px] border border-line p-5 text-[13px] text-muted">
+                <p><span className="font-semibold text-heading">Seats go unused after joining.</span> In induction {joining.induction}, {joining.total.wasted.toLocaleString("en-US")} of {joining.total.seats.toLocaleString("en-US")} ({Math.round(joining.total.pct * 100)}%) were not taken up.</p>
+                <Link href={`/portal/history/${joining.induction}/joining`} className="mt-2 inline-block text-[#A797FF]">See which →</Link>
+              </section>
+            ) : null}
+          </aside>
+        </div>
       )}
 
+      {query ? <div><SaveView href={`/portal/finder?${query}`} label={`Finder${sp.marks ? `: ${sp.marks} marks` : ""}${sp.track ? `, ${sp.track.replace("|", " · ")}` : ""}`} /></div> : null}
       {shortlist.length ? (
         <Card>
-          <CardHeader title="Your shortlist" description="Saved on your account. It will feed the preference planner." action={<ButtonLink href="/portal/workspace" variant="ghost" size="sm">Open workspace</ButtonLink>} />
+          <CardHeader title="Your shortlist" description="Saved on your account. It feeds the preference planner." action={<ButtonLink href="/portal/workspace" variant="ghost" size="sm">Open Me</ButtonLink>} />
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {shortlist.map((x) => (
-              <li key={`${x.program}|${x.quota}|${optionKey(x)}`} className="flex items-center justify-between gap-3 rounded-xl bg-elevated px-3 py-2 text-sm">
+              <li key={`${x.program}|${x.quota}|${optionKey(x)}`} className="flex items-center justify-between gap-3 rounded-xl bg-white/[.03] px-3 py-2 text-sm">
                 <span className="min-w-0"><span className="block truncate font-medium">{x.speciality}</span><span className="block truncate text-xs text-muted">{x.hospital} · {x.program} · {x.quota}</span></span>
                 <Star saved item={{ program: x.program, quota: x.quota, speciality: x.speciality, hospital: x.hospital }} label={`${x.speciality} at ${x.hospital}`} />
               </li>
