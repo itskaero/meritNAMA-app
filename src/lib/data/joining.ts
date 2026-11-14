@@ -3,7 +3,7 @@ import { and, desc, eq, max, sql } from "drizzle-orm";
 import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import { hospitals, inductionSeats, joiningStatus, meritAllocations, meritRounds, quotas, specialities } from "@/lib/db/schema";
-import { idKey, joinStates, nameKey, wasteBy, wastedSeats, type JoinState, type PlacedRow, type Waste, type WasteRow } from "@/lib/domain/joining";
+import { idKey, joinKey, joinStates, nameKey, wasteBy, wastedSeats, type JoinState, type PlacedRow, type Waste, type WasteRow } from "@/lib/domain/joining";
 
 /**
  * Joining status (PHF's joining file) against the last round's list, and wasted seats.
@@ -48,6 +48,8 @@ async function totalSeats(db: Database, induction: number): Promise<number | nul
 export type JoiningOverview = {
   induction: number; roundNo: number; importedAt: Date; total: Waste;
   bySpeciality: WasteRow[]; byHospital: WasteRow[]; byQuota: WasteRow[];
+  /** Placed but did not join, per programme, most first. */
+  notJoinedByProgram: { name: string; n: number }[];
 };
 
 /** Everything the joining page shows for one induction, or null without a joining file. */
@@ -63,7 +65,41 @@ export async function joiningOverview(db: Database, session: Session | null, ind
     bySpeciality: wasteBy(spec, l.placed, l.states, (p) => ({ key: idKey(p.specialityId, p.speciality), name: p.speciality, id: p.specialityId })),
     byHospital: wasteBy(hosp, l.placed, l.states, (p) => ({ key: idKey(p.hospitalId, p.hospital), name: p.hospital, id: p.hospitalId })),
     byQuota: wasteBy(quota, l.placed, l.states, (p) => ({ key: nameKey(p.quota), name: p.quota, id: null })),
+    notJoinedByProgram: notJoinedBy(l),
   };
+}
+
+function notJoinedBy(l: Loaded): { name: string; n: number }[] {
+  const m = new Map<string, number>();
+  for (const p of l.placed) if ((l.states.get(joinKey(p.applicantId, p.program)) ?? "not_joined") === "not_joined") m.set(p.program, (m.get(p.program) ?? 0) + 1);
+  return [...m.entries()].map(([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n);
+}
+
+export type JoiningListRow = { rowNo: number; applicantId: string; name: string | null; pmdcNo: string | null; program: string; speciality: string; hospital: string; marks: number; state: JoinState };
+
+/**
+ * The last round's list with each person's joining state (PHF publishes names and PMDC
+ * numbers on merit lists), optionally one state only, merit order.
+ */
+export async function joiningList(db: Database, session: Session | null, input: { induction: number; state?: JoinState; offset?: number; limit?: number }) {
+  assertCan(session, "portal");
+  const ind = (await joiningInductions(db)).find((x) => x.id === input.induction);
+  if (!ind) return null;
+  const [round] = await db.select({ id: meritRounds.id, roundNo: meritRounds.roundNo }).from(meritRounds)
+    .where(eq(meritRounds.inductionId, input.induction)).orderBy(desc(meritRounds.roundNo)).limit(1);
+  if (!round) return null;
+  const [rows, file] = await Promise.all([
+    db.select({ rowNo: meritAllocations.rowNo, applicantId: meritAllocations.applicantId, name: meritAllocations.name, pmdcNo: meritAllocations.pmdcNo, program: meritAllocations.program, speciality: meritAllocations.speciality, hospital: meritAllocations.hospital, marks: meritAllocations.marks })
+      .from(meritAllocations).where(eq(meritAllocations.roundId, round.id)).orderBy(desc(meritAllocations.marks), meritAllocations.rowNo),
+    db.select({ applicantId: joiningStatus.applicantId, program: joiningStatus.program, status: joiningStatus.status }).from(joiningStatus).where(eq(joiningStatus.inductionId, input.induction)),
+  ]);
+  const states = joinStates(rows, file);
+  const all: JoiningListRow[] = rows.map((r) => ({ ...r, state: states.get(joinKey(r.applicantId, r.program)) ?? "not_joined" }));
+  const counts = { all: all.length, joined: 0, not_joined: 0, pending: 0 } as Record<"all" | JoinState, number>;
+  for (const r of all) counts[r.state]++;
+  const shown = input.state ? all.filter((r) => r.state === input.state) : all;
+  const offset = Math.max(0, input.offset ?? 0), limit = Math.min(200, Math.max(1, input.limit ?? 50));
+  return { roundNo: round.roundNo, counts, total: shown.length, rows: shown.slice(offset, offset + limit) };
 }
 
 /** The newest induction with a joining file: its totals (Overview, My chances). */

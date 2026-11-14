@@ -136,6 +136,7 @@
  "jobs#setJobFlags": "data_editor owner",
  "jobs#addManualJob": "data_editor owner",
  "joining#joiningOverview": "candidate data_editor policy_editor verifier moderator owner",
+ "joining#joiningList": "candidate data_editor policy_editor verifier moderator owner",
  "joining#latestJoining": "candidate data_editor policy_editor verifier moderator owner",
  "joining#joiningTrend": "candidate data_editor policy_editor verifier moderator owner",
  "joining#roundJoinStates": "candidate data_editor policy_editor verifier moderator owner",

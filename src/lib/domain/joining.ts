@@ -17,7 +17,7 @@ export type JoinFileRow = { applicantId: string; program: string; status: string
 export const joinKey = (applicantId: string, program: string) => `${applicantId}|${program.trim().toUpperCase()}`;
 
 /** Every placed row's state. */
-export function joinStates(placed: PlacedRow[], file: JoinFileRow[]): Map<string, JoinState> {
+export function joinStates(placed: Pick<PlacedRow, "applicantId" | "program">[], file: JoinFileRow[]): Map<string, JoinState> {
   const inFile = new Map(file.map((r) => [joinKey(r.applicantId, r.program), r.status]));
   const out = new Map<string, JoinState>();
   for (const p of placed) {
