@@ -5,6 +5,7 @@ import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
 import { setShortlistAlerts } from "@/lib/data/notifications";
 import { setMyPrivacy } from "@/lib/data/privacy";
+import { isPrivacySwitch } from "@/lib/domain/settings";
 import { deleteView, saveView } from "@/lib/data/workspace";
 import { getDb } from "@/lib/db/client";
 import { isUuid } from "@/lib/format";
@@ -26,7 +27,9 @@ export async function deleteViewAction(form: FormData) {
 }
 
 export async function setPrivacyAction(form: FormData) {
-  await setMyPrivacy(getDb(), await getSession(), { hideName: form.get("hideName") === "on", hidePmdc: form.get("hidePmdc") === "on", hideRecord: form.get("hideRecord") === "on" });
+  // Only the switches the page showed: the others keep their value.
+  const shown = form.getAll("shown").map(String).filter(isPrivacySwitch);
+  await setMyPrivacy(getDb(), await getSession(), Object.fromEntries(shown.map((k) => [k, form.get(k) === "on"])));
   revalidatePath("/portal", "layout");
 }
 

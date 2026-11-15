@@ -5,8 +5,17 @@ export const FEATURES = {
   calculator: { label: "Merit calculator", description: "Work out merit marks under a scoring policy.", href: "/portal/calculator" },
   planner: { label: "Preference planner", description: "Draft preference lists checked against closing merit.", href: "/portal/preferences" },
   simulation: { label: "What-if simulation", description: "Change your own consent and simulate the next list.", href: "/portal/simulation" },
+  // Privacy switches a linked candidate gets on Me. Off: the switch is gone and nothing is hidden
+  // (their choice is kept, and applies again when the switch comes back).
+  hideName: { label: "Hide my name", description: "Lists show the candidate's applicant ID instead, and nobody finds them by name.", href: "/portal/workspace", group: "privacy" },
+  hidePmdc: { label: "Hide my PMDC number", description: "Not shown on lists, and nobody finds them by it.", href: "/portal/workspace", group: "privacy" },
+  hideRecord: { label: "Hide my record notes", description: "PHF's verification remarks and any corrections, on their Candidates profile.", href: "/portal/workspace", group: "privacy" },
 } as const;
 export type Feature = keyof typeof FEATURES;
+/** The privacy switches, in the order Me shows them. */
+export const PRIVACY_SWITCHES = ["hideName", "hidePmdc", "hideRecord"] as const satisfies readonly Feature[];
+export type PrivacySwitch = (typeof PRIVACY_SWITCHES)[number];
+export const isPrivacySwitch = (k: string): k is PrivacySwitch => (PRIVACY_SWITCHES as readonly string[]).includes(k);
 export type FeatureFlags = Record<Feature, boolean>;
 
 /** Days to keep each kind of short-lived data. The audit history is never purged. */

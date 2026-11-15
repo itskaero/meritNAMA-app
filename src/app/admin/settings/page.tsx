@@ -73,7 +73,7 @@ export default async function TeamPage() {
       </div>
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Candidate features" description="Switch a feature off to hide it from candidates and refuse their changes to it (their data is kept). Staff keep access, to try it before switching it back on." />
+          <CardHeader title="Candidate features" description="Switch a feature off to hide it from candidates and refuse their changes to it (their data is kept). Staff keep access, to try it before switching it back on. The privacy switches set what candidates may hide on Me." />
           <FeaturesForm flags={flags} />
         </Card>
         <Card>

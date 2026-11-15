@@ -41,7 +41,7 @@ describe.skipIf(!url)("workspace settings (integration)", () => {
   });
 
   it("switches features off for candidates only, and only owners can", async () => {
-    expect(await featureFlags(db, candidate)).toEqual({ community: true, calculator: true, planner: true, simulation: true });
+    expect(await featureFlags(db, candidate)).toEqual({ community: true, calculator: true, planner: true, simulation: true, hideName: true, hidePmdc: true, hideRecord: true });
     await expect(setFeatures(db, editor, { flags: { planner: false }, reason: "x" })).rejects.toThrow("forbidden");
     await expect(setFeatures(db, owner, { flags: { planner: false }, reason: " " })).rejects.toThrow(/reason/);
     await setFeatures(db, owner, { flags: { planner: false, nonsense: true } as never, reason: "result week" });

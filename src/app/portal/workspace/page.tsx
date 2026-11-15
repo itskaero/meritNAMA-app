@@ -253,7 +253,7 @@ export default async function MePage() {
         ) : <p className="mt-3 text-sm text-muted">Nothing saved yet. Star seats in <Link href="/portal/finder" className="text-[#A797FF]">My chances</Link>.</p>}
       </section>
 
-      {privacy ? (
+      {privacy && privacy.allowed.length ? (
         <section aria-labelledby="privacy" className={card}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="privacy" className="text-[15px] font-semibold text-heading">What other candidates see</h2>
@@ -261,12 +261,13 @@ export default async function MePage() {
           </div>
           <form action={setPrivacyAction} className="mt-3 grid gap-3">
             <div className="grid gap-2.5 sm:grid-cols-3">
-              {([
+              {(([
                 ["hideName", "Hide my name", "Lists show your applicant ID instead. Nobody finds you by name.", privacy.hideName],
                 ["hidePmdc", "Hide my PMDC number", "Not shown on lists, and nobody finds you by it.", privacy.hidePmdc],
                 ["hideRecord", "Hide my record notes", "PHF's verification remarks and any corrections.", privacy.hideRecord],
-              ] as const).map(([name, label, hint, on]) => (
+              ] as const).filter(([name]) => privacy.allowed.includes(name))).map(([name, label, hint, on]) => (
                 <label key={name} className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-white/[.08] bg-white/[.03] p-3.5 has-[:checked]:border-[rgba(155,135,255,.55)] has-[:checked]:bg-[rgba(110,86,255,.10)]">
+                  <input type="hidden" name="shown" value={name} />
                   <input type="checkbox" name={name} defaultChecked={on} className="mt-0.5 h-4 w-4 flex-none accent-[#7B61FF]" />
                   <span className="min-w-0"><b className="block text-[13px]">{label}</b><span className="mt-0.5 block text-xs text-muted">{hint}</span></span>
                 </label>

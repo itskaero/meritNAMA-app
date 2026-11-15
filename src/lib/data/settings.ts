@@ -22,7 +22,7 @@ export { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, t
 
 // ── Feature switches ───────────────────────────────────────────────────────────
 
-const ALL_ON: FeatureFlags = { community: true, calculator: true, planner: true, simulation: true };
+const ALL_ON = Object.fromEntries(Object.keys(FEATURES).map((k) => [k, true])) as FeatureFlags;
 
 async function readSetting<T>(db: Db, key: string): Promise<{ value: T; updatedBy: string; updatedAt: Date } | null> {
   const [r] = await db.select().from(appSettings).where(eq(appSettings.key, key)).limit(1);

@@ -6,7 +6,7 @@ import { cn } from "@/components/ui/cn";
 import { ActionResult, Field, fieldClass, ReasonField } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, ROLES, type Role } from "@/lib/auth/roles";
-import { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
+import { FEATURES, isPrivacySwitch, PRIVACY_SWITCHES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
 import { applyRetentionAction, sendTestEmailAction, setFeaturesAction, setRetentionAction, setRoleAction } from "./actions";
 
 /** Give someone a role by email (works before their first sign-in). */
@@ -62,19 +62,28 @@ export function FeaturesForm({ flags }: { flags: FeatureFlags }) {
   const changed = (Object.keys(flags) as Feature[]).some((k) => flags[k] !== on[k]);
   return (
     <form action={action} className="grid gap-3">
-      <ul className="grid gap-2">
-        {(Object.keys(FEATURES) as Feature[]).map((k) => (
-          <li key={k}>
-            <label className="flex items-start gap-3 rounded-xl bg-canvas p-3 text-sm">
-              <input type="checkbox" name={`f_${k}`} value="1" checked={on[k]} onChange={(e) => setOn({ ...on, [k]: e.target.checked })} className="mt-0.5 h-4 w-4 accent-[var(--color-signal)]" />
-              <span className="grid gap-0.5">
-                <span className="font-medium">{FEATURES[k].label} <span className={on[k] ? "text-success" : "text-amber"}>· {on[k] ? "on" : "off"}</span></span>
-                <span className="text-xs text-muted">{FEATURES[k].description}</span>
-              </span>
-            </label>
-          </li>
-        ))}
-      </ul>
+      {([
+        ["Features", (Object.keys(FEATURES) as Feature[]).filter((k) => !isPrivacySwitch(k)), null],
+        ["Privacy switches on Me", [...PRIVACY_SWITCHES], "What a linked candidate may hide from other candidates. Off: the switch is gone and nothing is hidden by it; their choice comes back when you switch it on. Staff always see everything."],
+      ] as const).map(([title, keys, note]) => (
+        <fieldset key={title} className="grid gap-2">
+          <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">{title}</legend>
+          {note ? <p className="-mt-1 mb-1 text-xs text-muted">{note}</p> : null}
+          <ul className="grid gap-2">
+            {keys.map((k) => (
+              <li key={k}>
+                <label className="flex items-start gap-3 rounded-xl bg-canvas p-3 text-sm">
+                  <input type="checkbox" name={`f_${k}`} value="1" checked={on[k]} onChange={(e) => setOn({ ...on, [k]: e.target.checked })} className="mt-0.5 h-4 w-4 accent-[var(--color-signal)]" />
+                  <span className="grid gap-0.5">
+                    <span className="font-medium">{FEATURES[k].label} <span className={on[k] ? "text-success" : "text-amber"}>· {on[k] ? "on" : "off"}</span></span>
+                    <span className="text-xs text-muted">{FEATURES[k].description}</span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      ))}
       <ReasonField placeholder="e.g. Pause the community during result week" />
       <div><Button type="submit" disabled={pending || !changed}>Save switches</Button></div>
       <ActionResult state={res} />

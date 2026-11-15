@@ -16,6 +16,7 @@ const { consumeLoginLink, endSession, requestLoginLink, sessionFromId } = await 
 const { indexGazette, linkByCnic, listLinkRequests, myLink, myMerit, readEvidence, recoverAccount, requestLink, reviewLink } = await import("@/lib/data/candidates");
 const { masked, myPrivacy, privacyMask, setMyPrivacy } = await import("@/lib/data/privacy");
 const { proposeMeritRound } = await import("@/lib/data/changes");
+const { setFeatures } = await import("@/lib/data/settings");
 
 /**
  * Sign-in, the candidate index and account links, against a DISPOSABLE database
@@ -208,12 +209,27 @@ describe.skipIf(!url)("sign-in and candidate verification (integration)", () => 
     const gil = await signIn("gil-new-signin@test.local");
     const other = await signIn("someone-signin@test.local");
     await setMyPrivacy(db, gil, { hideName: true, hidePmdc: true, hideRecord: false });
-    expect(await myPrivacy(db, gil)).toEqual({ hideName: true, hidePmdc: true, hideRecord: false });
+    expect(await myPrivacy(db, gil)).toEqual({ hideName: true, hidePmdc: true, hideRecord: false, allowed: ["hideName", "hidePmdc", "hideRecord"] });
     await expect(setMyPrivacy(db, other, { hideName: true, hidePmdc: false, hideRecord: false })).rejects.toThrow("Link your merit record");
     const row = [{ applicantId: B, name: "Gil", pmdcNo: "1-P" }];
     expect(masked(row, await privacyMask(db, other))[0]).toMatchObject({ name: null, pmdcNo: null, nameHidden: true });
     expect(masked(row, await privacyMask(db, gil))[0]).toEqual(row[0]);
     expect(masked(row, await privacyMask(db, verifier))[0]).toEqual(row[0]);
+
+    // The owner turns "hide my name" off: names show again, the switch leaves Me, the choice is kept.
+    const [kept] = await db.select().from(schema.appSettings).where(eq(schema.appSettings.key, "features"));
+    try {
+      await setFeatures(db, admin, { flags: { hideName: false }, reason: "privacy switch test" });
+      expect(masked(row, await privacyMask(db, other))[0]).toMatchObject({ name: "Gil", pmdcNo: null });
+      expect(await myPrivacy(db, gil)).toMatchObject({ hideName: true, allowed: ["hidePmdc", "hideRecord"] });
+      await setMyPrivacy(db, gil, { hideName: false, hidePmdc: false });
+      expect(await myPrivacy(db, gil)).toMatchObject({ hideName: true, hidePmdc: false });
+      await setFeatures(db, admin, { flags: { hideName: true }, reason: "privacy switch test" });
+      expect(masked(row, await privacyMask(db, other))[0]).toMatchObject({ name: null, nameHidden: true });
+    } finally {
+      await db.delete(schema.appSettings).where(eq(schema.appSettings.key, "features"));
+      if (kept) await db.insert(schema.appSettings).values(kept);
+    }
     await db.delete(schema.candidatePrivacy).where(eq(schema.candidatePrivacy.applicantId, B));
   });
 });
