@@ -35,7 +35,7 @@ export const newSecret = (bytes = 32) => randomBytes(bytes).toString("base64url"
 export const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
 /** Keyed hash of a normalised identity value; the kind is mixed in so an email never matches a PMDC number. */
-export function identityHmac(secret: string, kind: "email" | "pmdc" | "cnic", normalised: string) {
+export function identityHmac(secret: string, kind: "email" | "pmdc" | "cnic" | "ip" | "net" | "mark", normalised: string) {
   return createHmac("sha256", secret).update(`${kind}:${normalised}`).digest("hex");
 }
 

@@ -28,7 +28,8 @@ import { ensureUser } from "./users";
 const DEV_SECRET = "development-only-candidate-index-secret-0000";
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
-function indexSecret(): string {
+/** The keyed-hash secret for identity matching (also used for address and watermark codes). */
+export function indexSecret(): string {
   const { CANDIDATE_INDEX_SECRET, NODE_ENV } = env();
   if (CANDIDATE_INDEX_SECRET) return CANDIDATE_INDEX_SECRET;
   if (NODE_ENV === "production") throw new Error("CANDIDATE_INDEX_SECRET is not configured");

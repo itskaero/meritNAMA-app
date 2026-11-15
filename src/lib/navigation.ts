@@ -75,6 +75,7 @@ export const adminSections: Section[] = [
     match: ["/admin/access"],
   },
   { href: "/admin/community", capability: "community.moderate", group: "People", icon: "flag", label: "Community", description: "Reported posts, hidden content and locked discussions." },
+  { href: "/admin/activity", capability: "roles.manage", group: "People", icon: "monitor", label: "Activity", description: "Who is online and what they open, devices and networks, accounts that look shared, session replays and screenshot tracing." },
   { href: "/admin/settings", capability: "roles.manage", group: "People", icon: "settings", label: "Team & settings", description: "Who is on the team and what each person may do; candidate feature switches, data retention and backups." },
   {
     href: "/admin/policies", capability: "policy.edit", group: "Advanced", icon: "sliders", label: "Policies & rules",
@@ -98,6 +99,7 @@ export const adminSections: Section[] = [
 
 /** Admin quick actions for the Ctrl K palette, beyond the sidebar pages. */
 export const adminCommands: { label: string; hint: string; href: string; icon: IconName; download?: boolean; keywords?: string; capability: Capability }[] = [
+  { label: "Activity", hint: "Who is online, replays", href: "/admin/activity", icon: "monitor", keywords: "online users dashboard replay watermark shared account surveillance", capability: "roles.manage" },
   { label: "Import merit rounds", hint: "Inductions", href: "/admin/inductions", icon: "upload", keywords: "merit list round_ file", capability: "data.edit" },
   { label: "Import a seat file", hint: "Reference data", href: "/admin/reference-data", icon: "upload", keywords: "seats matrix induction upload", capability: "data.edit" },
   { label: "Hospitals", hint: "Reference data · lookups", href: "/admin/reference-data/lookups?kind=hospitals", icon: "building", keywords: "rename add hospital", capability: "data.edit" },

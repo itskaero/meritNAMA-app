@@ -225,6 +225,13 @@
       "when": 1794724047575,
       "tag": "0031_cnic_privacy",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794728347176,
+      "tag": "0032_activity_replays",
+      "breakpoints": true
     }
   ]
 }

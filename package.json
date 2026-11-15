@@ -22,6 +22,7 @@
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
+    "@rrweb/record": "2.2.0",
     "drizzle-orm": "0.45.4",
     "next": "16.4.3",
     "node-html-parser": "7.0.1",
@@ -29,6 +30,7 @@
     "postgres": "3.4.9",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "rrweb-player": "2.2.0",
     "server-only": "0.0.1",
     "zod": "4.6.7"
   },

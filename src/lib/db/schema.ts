@@ -1277,3 +1277,48 @@ export const announcements = pgTable("announcements", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   removedAt: timestamp("removed_at", { withTimezone: true }),
 });
+
+// ── Owner's activity log and session replays ──────────────────────────────────
+
+/**
+ * Each page a signed-in candidate opens, for the owner's Activity page: what, when, on which
+ * device and from which network. The address is never stored, only keyed hashes of it and
+ * of its network (/24, /48). Removed after the "page visits" retention period.
+ */
+export const pageVisits = pgTable(
+  "page_visits",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    /** sessions.id_hash of the sign-in it came from (one browser). */
+    sessionHash: text("session_hash"),
+    path: text("path").notNull(),
+    device: text("device").notNull(),
+    ipHmac: text("ip_hmac"),
+    netHmac: text("net_hmac"),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("page_visits_user_idx").on(t.userId, t.at), index("page_visits_at_idx").on(t.at)],
+);
+
+/**
+ * One recorded browser tab (rrweb events, inputs masked), kept as gzip files under
+ * <APP_STORAGE_DIR>/replays/. Removed with its file after the "replays" retention period.
+ */
+export const replays = pgTable(
+  "replays",
+  {
+    id: uuid("id").primaryKey(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    sessionHash: text("session_hash"),
+    device: text("device").notNull(),
+    netHmac: text("net_hmac"),
+    firstPath: text("first_path").notNull(),
+    file: text("file").notNull(),
+    events: integer("events").notNull().default(0),
+    bytes: integer("bytes").notNull().default(0),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    lastAt: timestamp("last_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("replays_user_idx").on(t.userId, t.startedAt), index("replays_started_idx").on(t.startedAt)],
+);

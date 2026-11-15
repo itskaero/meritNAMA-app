@@ -55,6 +55,8 @@ const NO_SESSION = new Set([
   // the privacy mask applied to rows a checked function already fetched, and what access is on
   // sale (the public request form shows it).
   "announcements#signInStatus", "candidates#indexGazette", "candidates#recoverAccount", "privacy#masked", "access#currentSale",
+  // Activity log: retention pruning (the daily run) and the watermark code for the signed-in page itself.
+  "activity-log#pruneReplays", "activity-log#pruneVisits", "activity-log#watermarkCode", "activity-log#watermarkText", "candidates#indexSecret",
 ]);
 
 const expectedFile = path.join(__dirname, "fixtures", "authz-matrix.json");

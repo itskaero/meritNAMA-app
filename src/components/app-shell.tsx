@@ -4,7 +4,7 @@ import { inductionRunning } from "@/lib/data/predictions";
 import { publishedEstimates } from "@/lib/data/simulation";
 import { BottomTabs, type BottomTab } from "./bottom-tabs";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { signOutAction } from "@/app/_actions/auth";
 import { ROLE_LABELS, type Session } from "@/lib/auth/roles";
 import { myLink } from "@/lib/data/candidates";
@@ -12,6 +12,11 @@ import { unreadCount } from "@/lib/data/notifications";
 import { Icon } from "./icon";
 import type { Section } from "@/lib/navigation";
 import { liveNotices } from "@/lib/data/announcements";
+import { watermarkText } from "@/lib/data/activity-log";
+import { loadFeatures } from "@/lib/data/settings";
+import { ensureUser } from "@/lib/data/users";
+import { ActivityBeacon } from "./activity-beacon";
+import { Watermark } from "./watermark";
 import { NoticeBar } from "./notice-bar";
 import { getDb } from "@/lib/db/client";
 import { parseTheme, parseUiMode, THEME_COOKIE, UI_MODE_COOKIE, type Theme, type UiMode } from "@/lib/ui-mode";
@@ -108,6 +113,10 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
   const nextList = area === "Candidate portal" ? await sidebarNext(session).catch(() => null) : null;
   const unread = await unreadCount(getDb(), session).catch(() => 0);
   const notices = await liveNotices(getDb(), session).catch(() => []);
+  // Candidates' use is logged for the owner (Admin → Activity); team members are never logged.
+  const monitored = session.role === "candidate";
+  const flags = monitored ? await loadFeatures(getDb()).catch(() => null) : null;
+  const mark = monitored && flags?.watermark ? await ensureUser(getDb(), session).then((u) => watermarkText(u.id)).catch(() => null) : null;
   const pro = mode === "pro";
   const items: NavItem[] = [...sections.filter((x) => !x.hideInNav).map(({ href, label, group, icon, match }) => ({ href, label, group, icon, match })), ...links];
   const palette: Command[] = [
@@ -168,6 +177,8 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
           {children}
         </main>
       </div>
+      {monitored ? <Suspense fallback={null}><ActivityBeacon replay={Boolean(flags?.replay)} /></Suspense> : null}
+      {mark ? <Watermark text={mark} /> : null}
       <CommandPalette commands={palette} />
       {bottomTabs?.length ? <BottomTabs tabs={bottomTabs} /> : null}
     </div>

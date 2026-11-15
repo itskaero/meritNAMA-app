@@ -6,7 +6,7 @@ import { cn } from "@/components/ui/cn";
 import { ActionResult, Field, fieldClass, ReasonField } from "@/components/ui/form";
 import { idleState } from "@/lib/action-state";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, ROLES, type Role } from "@/lib/auth/roles";
-import { FEATURES, isPrivacySwitch, PRIVACY_SWITCHES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
+import { FEATURES, isPrivacySwitch, MONITORING_SWITCHES, PRIVACY_SWITCHES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
 import { applyRetentionAction, sendTestEmailAction, setFeaturesAction, setRetentionAction, setRoleAction } from "./actions";
 
 /** Give someone a role by email (works before their first sign-in). */
@@ -63,8 +63,9 @@ export function FeaturesForm({ flags }: { flags: FeatureFlags }) {
   return (
     <form action={action} className="grid gap-3">
       {([
-        ["Features", (Object.keys(FEATURES) as Feature[]).filter((k) => !isPrivacySwitch(k)), null],
+        ["Features", (Object.keys(FEATURES) as Feature[]).filter((k) => !isPrivacySwitch(k) && !(MONITORING_SWITCHES as readonly string[]).includes(k)), null],
         ["Privacy switches on Me", [...PRIVACY_SWITCHES], "What a linked candidate may hide from other candidates. Off: the switch is gone and nothing is hidden by it; their choice comes back when you switch it on. Staff always see everything."],
+        ["Monitoring", [...MONITORING_SWITCHES], "What you see of candidates' use on Activity. Page visits are always logged; these add recordings and the watermark. The privacy policy says so."],
       ] as const).map(([title, keys, note]) => (
         <fieldset key={title} className="grid gap-2">
           <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-subtle">{title}</legend>

@@ -29,7 +29,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ m
   const up = (await checkDatabase()) === "ok";
   const figures = up ? await landingFigures(getDb()).catch(() => empty) : empty;
   // Switched-off features are not advertised. Without a database, show everything.
-  const allOn = { community: true, calculator: true, planner: true, simulation: true, hideName: true, hidePmdc: true, hideRecord: true };
+  const allOn = { community: true, calculator: true, planner: true, simulation: true, hideName: true, hidePmdc: true, hideRecord: true, replay: true, watermark: true };
   const features = up ? await loadFeatures(getDb()).catch(() => allOn) : allOn;
   // The hero's "check your marks" box: a GET form, answered on the server with counts only.
   const sp = await searchParams;

@@ -32,9 +32,9 @@ describe("admin today", () => {
     expect(ago(at("2026-11-12T06:00:00Z"), now)).toBe("2 days ago");
   });
 
-  it("keeps the admin menu to eight items", () => {
+  it("keeps the admin menu to nine items (Activity added for the owner)", () => {
     expect(adminSections.filter((s) => !s.hideInNav).map((s) => s.label)).toEqual([
-      "Today", "Data", "Jobs", "Candidates & access", "Community", "Team & settings", "Policies & rules", "Changes & audit",
+      "Today", "Data", "Jobs", "Candidates & access", "Community", "Activity", "Team & settings", "Policies & rules", "Changes & audit",
     ]);
   });
 });

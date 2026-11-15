@@ -5,13 +5,14 @@ import { and, eq, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 import { cache } from "react";
 import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
-import { appSettings, candidateLinks, devOutbox, loginTokens, notifications, roundRoomMessages, sessions, simulationRuns } from "@/lib/db/schema";
+import { appSettings, candidateLinks, devOutbox, loginTokens, notifications, pageVisits, replays, roundRoomMessages, sessions, simulationRuns } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
 import { UserFacingError } from "@/lib/errors";
 import { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey } from "@/lib/domain/settings";
 import { requireReason, writeAudit, type Db } from "./shared";
 import { pruneActivity } from "./activity";
+import { pruneReplays, pruneVisits } from "./activity-log";
 
 export { FEATURES, RETENTION, type Feature, type FeatureFlags, type Retention, type RetentionKey };
 
@@ -111,6 +112,8 @@ function retentionScopes(days: Retention) {
     whatIfRuns: and(isNotNull(simulationRuns.ownerUserId), lt(simulationRuns.createdAt, before(days.whatIfRuns)), inArray(simulationRuns.status, ["done", "failed"]))!,
     roomMessages: and(eq(roundRoomMessages.kind, "message"), lt(roundRoomMessages.createdAt, before(days.roomMessages)))!,
     evidence: and(isNotNull(candidateLinks.evidenceFile), inArray(candidateLinks.status, ["verified", "rejected"]), lt(candidateLinks.reviewedAt, before(days.evidence)))!,
+    pageVisits: lt(pageVisits.at, before(days.pageVisits)),
+    replays: lt(replays.lastAt, before(days.replays)),
   };
 }
 
@@ -127,7 +130,9 @@ export async function retentionPreview(db: Database, session: Session | null): P
   const [e] = await db.select({ n: count }).from(simulationRuns).where(w.whatIfRuns);
   const [f] = await db.select({ n: count }).from(candidateLinks).where(w.evidence);
   const [g] = await db.select({ n: count }).from(roundRoomMessages).where(w.roomMessages);
-  return { signInLinks: a?.n ?? 0, sessions: b?.n ?? 0, devMailbox: c?.n ?? 0, readNotifications: d?.n ?? 0, whatIfRuns: e?.n ?? 0, evidence: f?.n ?? 0, roomMessages: g?.n ?? 0 };
+  const [h] = await db.select({ n: count }).from(pageVisits).where(w.pageVisits);
+  const [i] = await db.select({ n: count }).from(replays).where(w.replays);
+  return { signInLinks: a?.n ?? 0, sessions: b?.n ?? 0, devMailbox: c?.n ?? 0, readNotifications: d?.n ?? 0, whatIfRuns: e?.n ?? 0, evidence: f?.n ?? 0, roomMessages: g?.n ?? 0, pageVisits: h?.n ?? 0, replays: i?.n ?? 0 };
 }
 
 /**
@@ -153,6 +158,8 @@ async function purge(db: Database, actor: string, reason: string, opts: { root?:
       readNotifications: await n(tx.delete(notifications).where(w.readNotifications).returning({ id: notifications.id })),
       whatIfRuns: await n(tx.delete(simulationRuns).where(w.whatIfRuns).returning({ id: simulationRuns.id })),
       roomMessages: await n(tx.delete(roundRoomMessages).where(w.roomMessages).returning({ id: roundRoomMessages.id })),
+      pageVisits: await pruneVisits(tx, before(r.days.pageVisits)),
+      replays: await pruneReplays(tx, before(r.days.replays), opts),
       evidence: evidence.length
         ? await n(tx.update(candidateLinks).set({ evidenceFile: null }).where(inArray(candidateLinks.id, evidence.map((e) => e.id))).returning({ id: candidateLinks.id }))
         : 0,
