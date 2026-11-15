@@ -10,7 +10,8 @@ const display = Space_Grotesk({ subsets: ["latin"], weight: ["500"], display: "s
  * Sign-in, access and verify pages (docs/mockups/v4/SignIn.dc.html): one 1180px card on
  * near-black. Left, the night-study photograph under a navy fade with the latest seat
  * count; right, a frosted pane with the form and a few figures from the running cycle.
- * Public aggregates only. On phones the photo pane becomes a short band above the form.
+ * Public aggregates only. Side by side from 768px (tablets, phones in desktop mode); on
+ * narrower phones the photo pane becomes a short band above the form.
  */
 export async function AuthShell({ children }: { step?: 1 | 2 | 3; children: ReactNode }) {
   const f = (await checkDatabase()) === "ok" ? await landingFigures(getDb()).catch(() => null) : null;
@@ -19,8 +20,8 @@ export async function AuthShell({ children }: { step?: 1 | 2 | 3; children: Reac
   const updated = f?.updatedAt ? new Date(f.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Karachi" }) : null;
   return (
     <main id="main" className="grid min-h-screen place-items-center p-3 sm:p-8 lg:p-16 [background:radial-gradient(800px_500px_at_20%_20%,rgba(77,184,217,.10),transparent_60%),#070A10]">
-      <div className="flex w-full max-w-[1180px] flex-col overflow-hidden rounded-[20px] border border-white/[.06] text-[#E5E8EE] shadow-[0_40px_120px_rgba(0,0,0,.6)] lg:min-h-[680px] lg:flex-row">
-        <section aria-label="meritNAMA" className="relative flex min-h-48 flex-col justify-between overflow-hidden bg-[#10243A] p-6 sm:p-12 lg:flex-[1.35]">
+      <div className="flex w-full max-w-[1180px] flex-col overflow-hidden rounded-[20px] border border-white/[.06] text-[#E5E8EE] shadow-[0_40px_120px_rgba(0,0,0,.6)] md:min-h-[600px] md:flex-row lg:min-h-[680px]">
+        <section aria-label="meritNAMA" className="relative flex min-h-48 flex-col justify-between overflow-hidden bg-[#10243A] p-6 sm:p-10 md:flex-[1.15] lg:flex-[1.35] lg:p-12">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/v4/night-study.jpg" alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover [object-position:40%_center]" />
           <div aria-hidden className="absolute inset-0 [background:linear-gradient(180deg,rgba(16,36,58,.55)_0%,rgba(16,36,58,.15)_40%,rgba(10,14,22,.92)_100%),radial-gradient(500px_360px_at_85%_20%,rgba(229,160,75,.18),transparent_70%)]" />
@@ -28,7 +29,7 @@ export async function AuthShell({ children }: { step?: 1 | 2 | 3; children: Reac
           <div className="relative hidden sm:block">
             {f?.seats ? (
               <div className="flex flex-wrap items-end gap-[22px]">
-                <p className={`${display.className} text-[clamp(4.5rem,9vw,8.25rem)] font-medium leading-[0.85] tracking-[-0.04em] tabular-nums`}>{f.seats.toLocaleString("en-US")}</p>
+                <p className={`${display.className} text-[clamp(4rem,8vw,8.25rem)] font-medium leading-[0.85] tracking-[-0.04em] tabular-nums`}>{f.seats.toLocaleString("en-US")}</p>
                 <div className="pb-2">
                   <p className="text-[30px] font-semibold">seats</p>
                   <p className="mt-1 text-[13px] text-[#A3ABBD]">{f.latest ? `Induction ${f.latest.induction}${last ? ` · round ${last.round}` : ""}` : "in the latest matrix"}{updated ? ` · ${updated}` : ""}</p>
@@ -38,7 +39,7 @@ export async function AuthShell({ children }: { step?: 1 | 2 | 3; children: Reac
             <p className="mt-[22px] max-w-[460px] text-base leading-[1.6] text-[#C7CEDB]">Know where you stand. Every merit list since 2020, who holds which seat, and where your marks can land next round.</p>
           </div>
         </section>
-        <section className="flex flex-col gap-[22px] bg-[rgba(20,27,40,.86)] p-6 backdrop-blur-[18px] sm:px-12 sm:py-11 lg:flex-1">
+        <section className="flex flex-col gap-[22px] bg-[rgba(20,27,40,.86)] p-6 backdrop-blur-[18px] sm:px-10 sm:py-11 md:flex-1 md:px-8 lg:px-12">
           {children}
           {f && f.rounds ? (
             <dl className="mt-1.5 border-t border-white/[.08] pt-5 text-sm">
