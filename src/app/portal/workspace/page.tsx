@@ -260,12 +260,20 @@ export default async function MePage() {
             <span className="text-xs text-muted">Only about your own record · the team always sees everything</span>
           </div>
           <form action={setPrivacyAction} className="mt-3 grid gap-3">
-            <label className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-white/[.08] bg-white/[.03] p-3.5 has-[:checked]:border-[rgba(155,135,255,.55)] has-[:checked]:bg-[rgba(110,86,255,.10)] sm:max-w-md">
-              <input type="checkbox" name="hideRecord" defaultChecked={privacy.hideRecord} className="mt-0.5 h-4 w-4 flex-none accent-[#7B61FF]" />
-              <span className="min-w-0"><b className="block text-[13px]">Hide my record notes</b><span className="mt-0.5 block text-xs text-muted">PHF&apos;s verification remarks and any corrections, on your Candidates profile.</span></span>
-            </label>
+            <div className="grid gap-2.5 sm:grid-cols-3">
+              {([
+                ["hideName", "Hide my name", "Lists show your applicant ID instead. Nobody finds you by name.", privacy.hideName],
+                ["hidePmdc", "Hide my PMDC number", "Not shown on lists, and nobody finds you by it.", privacy.hidePmdc],
+                ["hideRecord", "Hide my record notes", "PHF's verification remarks and any corrections.", privacy.hideRecord],
+              ] as const).map(([name, label, hint, on]) => (
+                <label key={name} className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-white/[.08] bg-white/[.03] p-3.5 has-[:checked]:border-[rgba(155,135,255,.55)] has-[:checked]:bg-[rgba(110,86,255,.10)]">
+                  <input type="checkbox" name={name} defaultChecked={on} className="mt-0.5 h-4 w-4 flex-none accent-[#7B61FF]" />
+                  <span className="min-w-0"><b className="block text-[13px]">{label}</b><span className="mt-0.5 block text-xs text-muted">{hint}</span></span>
+                </label>
+              ))}
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs text-muted">Your name, PMDC number, marks, seat and preferences always show: they are on PHF&apos;s gazette and merit lists, which everyone needs.</p>
+              <p className="text-xs text-muted">Your marks, rank, seat and preferences stay visible: the merit lists and estimates are built from them.</p>
               <button type="submit" className="mn-ob">Save</button>
             </div>
           </form>

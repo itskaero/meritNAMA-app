@@ -4,6 +4,7 @@ import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import { hospitals, inductionSeats, joiningStatus, meritAllocations, meritRounds, quotas, specialities } from "@/lib/db/schema";
 import { idKey, joinKey, joinStates, nameKey, wasteBy, wastedSeats, type JoinState, type PlacedRow, type Waste, type WasteRow } from "@/lib/domain/joining";
+import { masked, privacyMask } from "./privacy";
 
 /**
  * Joining status (PHF's joining file) against the last round's list, and wasted seats.
@@ -94,7 +95,7 @@ export async function joiningList(db: Database, session: Session | null, input: 
     db.select({ applicantId: joiningStatus.applicantId, program: joiningStatus.program, status: joiningStatus.status }).from(joiningStatus).where(eq(joiningStatus.inductionId, input.induction)),
   ]);
   const states = joinStates(rows, file);
-  const all: JoiningListRow[] = rows.map((r) => ({ ...r, state: states.get(joinKey(r.applicantId, r.program)) ?? "not_joined" }));
+  const all: JoiningListRow[] = masked(rows, await privacyMask(db, session)).map((r) => ({ ...r, state: states.get(joinKey(r.applicantId, r.program)) ?? "not_joined" }));
   const counts = { all: all.length, joined: 0, not_joined: 0, pending: 0 } as Record<"all" | JoinState, number>;
   for (const r of all) counts[r.state]++;
   const shown = input.state ? all.filter((r) => r.state === input.state) : all;

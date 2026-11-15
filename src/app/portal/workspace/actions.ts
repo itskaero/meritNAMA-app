@@ -26,7 +26,7 @@ export async function deleteViewAction(form: FormData) {
 }
 
 export async function setPrivacyAction(form: FormData) {
-  await setMyPrivacy(getDb(), await getSession(), { hideRecord: form.get("hideRecord") === "on" });
+  await setMyPrivacy(getDb(), await getSession(), { hideName: form.get("hideName") === "on", hidePmdc: form.get("hidePmdc") === "on", hideRecord: form.get("hideRecord") === "on" });
   revalidatePath("/portal", "layout");
 }
 

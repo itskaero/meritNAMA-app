@@ -272,7 +272,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
                           <Link href={`${href({ id: r.applicantId, page: String(page) })}#cand-panel`} scroll={false} className="group flex items-center gap-[9px]">
                             <span aria-hidden className="mn-av !h-7 !w-7 !text-[10px]" style={mine ? { background: "linear-gradient(135deg,#8B73FF,#5B3FF5)", boxShadow: "0 0 10px rgba(110,86,255,.6)" } : { background: avatarOf(r.applicantId) }}>{initials(r.name, r.applicantId)}</span>
                             <span className="min-w-0">
-                              <b className="whitespace-nowrap font-semibold group-hover:text-[#D6CCFF]">{r.name ?? "Name not published"}</b>{mine ? <> <span className="mn-pill v">you</span></> : null}
+                              <b className={cn("whitespace-nowrap font-semibold group-hover:text-[#D6CCFF]", !r.name && "font-normal italic text-muted")}>{r.name ?? ("nameHidden" in r && r.nameHidden ? "Name hidden" : "Name not published")}</b>{mine ? <> <span className="mn-pill v">you</span></> : null}
                               <span className="block font-mono text-[11px] text-muted">{r.applicantId}{r.pmdcNo ? ` · ${r.pmdcNo}` : ""}</span>
                               <span className="mt-[3px] block">{r.programmes.map((p) => <span key={p.program} className="mn-tag">{p.program}</span>)}{r.programmes.length === 0 ? <span className="mn-tag !border-[rgba(229,160,75,.5)] !text-[#E5A04B]">no preferences</span> : null}</span>
                             </span>
@@ -350,7 +350,7 @@ function CandidatePanel({ c, rank, closeHref, latestRound, join, mine }: { c: Pa
       <div className="flex items-center gap-3">
         <span aria-hidden className="mn-av !h-11 !w-11 !text-[15px]" style={mine ? { background: "linear-gradient(135deg,#8B73FF,#5B3FF5)" } : { background: avatarOf(c.applicantId), boxShadow: `0 0 0 3px ${avatarOf(c.applicantId)}66` }}>{initials(c.name, c.applicantId)}</span>
         <div className="min-w-0 flex-1">
-          <h2 id="cand-panel-h" className="truncate text-[17px] font-semibold">{c.name ?? `Applicant ${c.applicantId}`}</h2>
+          <h2 id="cand-panel-h" className="truncate text-[17px] font-semibold">{c.name ?? `Applicant ${c.applicantId}`}{c.nameHidden ? <span className="ml-1.5 align-middle text-[11px] font-normal text-muted">· name hidden</span> : null}</h2>
           <p className="mt-0.5 font-mono text-[11px] text-muted">{c.applicantId}{c.pmdcNo ? ` · PMDC ${c.pmdcNo}` : ""}{rank ? ` · rank ${n(rank)}` : ""}</p>
         </div>
         <Link href={closeHref} scroll={false} aria-label="Close" className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg border border-white/[.12] text-[#A3A3AD] hover:text-white">✕</Link>
