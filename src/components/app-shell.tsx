@@ -152,6 +152,13 @@ export async function AppShell({ area, sections, links = [], commands = [], sess
               </div>
             ) : null}
             <AccountMenu session={session} mode={mode} theme={theme} verified={verified} who={who} />
+            {session.isStub ? null : (
+              <form action={signOutAction} className="mt-1 lg:hidden">
+                <button type="submit" className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-sm text-ink hover:bg-hover">
+                  <Icon name="logout" className="h-4 w-4 text-decor" />Sign out
+                </button>
+              </form>
+            )}
           </>
         }
       />

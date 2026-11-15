@@ -16,6 +16,7 @@ import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
 import { deleteViewAction, setAlertsAction } from "./actions";
+import { signOutAction } from "@/app/_actions/auth";
 
 export const metadata = { title: "Me" };
 export const dynamic = "force-dynamic";
@@ -122,6 +123,9 @@ export default async function MePage() {
             <div key={l} className="mn-glass min-w-[4.5rem] text-center"><p className="text-[22px] font-bold tabular-nums">{v}</p><p className={cn("text-[11px]", IV)}>{l}</p></div>
           ))}
           <Link href="/portal/account" className="mn-ob">Your data</Link>
+          {session.isStub ? null : (
+            <form action={signOutAction}><button type="submit" className="mn-ob">Sign out</button></form>
+          )}
         </div>
       </AuroraHeader>
 
