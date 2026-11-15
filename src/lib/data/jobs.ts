@@ -1,13 +1,17 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import { appSettings, hospitals, jobSaves, jobSources, jobs } from "@/lib/db/schema";
 import { nameKey } from "@/lib/domain/merit-round";
+import { env } from "@/lib/env";
 import { UserFacingError } from "@/lib/errors";
 import { isUuid } from "@/lib/format";
-import { jobzToRaw, parseJobzDetail, parseJobzList, parsePpsc, parsePshd, parseShcme, shortHash, type JobSource, type RawJob } from "@/lib/jobs/parse";
+import { isJobzAdvertImage, jobzToRaw, parseJobzDetail, parseJobzList, parsePpsc, parsePshd, parseShcme, shortHash, type JobSource, type RawJob } from "@/lib/jobs/parse";
 import { folderOf, isDoctorJob, jobState, mergeJobs, postType, todayPk, type Folder, type JobState, type PostType } from "@/lib/jobs/rules";
 import { notifyFollowers } from "./notifications";
 import { writeAudit, type Db } from "./shared";
@@ -62,8 +66,9 @@ async function runJobz(db: Db, get: (url: string) => Promise<string>): Promise<S
     if (!items.size) return { source: "jobzpk", found: 0, kept: [], seenIds: [], error: String((e as Error).message ?? e) };
   }
   const ids = [...items.keys()];
+  // Adverts read before images were kept (images null) are read once more, to pick up the scan.
   const known = new Set(
-    ids.length ? (await db.select({ id: jobs.sourceId }).from(jobs).where(and(eq(jobs.source, "jobzpk"), inArray(jobs.sourceId, ids)))).map((r) => r.id) : [],
+    ids.length ? (await db.select({ id: jobs.sourceId }).from(jobs).where(and(eq(jobs.source, "jobzpk"), inArray(jobs.sourceId, ids), isNotNull(jobs.images)))).map((r) => r.id) : [],
   );
   const kept: RawJob[] = [];
   let details = 0;
@@ -113,6 +118,7 @@ function rowValues(j: RawJob, hospitalId: number | null) {
     vacancies: j.vacancies.slice(0, 60),
     applyOnline: j.applyOnline,
     adNo: j.adNo,
+    images: j.images ? j.images.slice(0, 4) : null,
     folder: folderOf(j),
     postType: postType(j),
     hospitalId,
@@ -138,7 +144,7 @@ export async function syncJobs(db: Database, opts: SyncOptions = {}): Promise<Jo
     const [r] = await db.insert(jobs).values({ ...v, firstSeen: now, lastSeen: now })
       .onConflictDoUpdate({
         target: [jobs.source, jobs.sourceId],
-        set: { title: v.title, employer: v.employer, city: v.city, postedOn: v.postedOn, lastDate: v.lastDate, link: v.link, education: v.education, vacancies: v.vacancies, applyOnline: v.applyOnline, adNo: v.adNo, folder: v.folder, postType: v.postType, hospitalId: sql`coalesce(${jobs.hospitalId}, excluded.hospital_id)`, lastSeen: now },
+        set: { title: v.title, employer: v.employer, city: v.city, postedOn: v.postedOn, lastDate: v.lastDate, link: v.link, education: v.education, vacancies: v.vacancies, applyOnline: v.applyOnline, adNo: v.adNo, images: sql`coalesce(excluded.images, ${jobs.images})`, folder: v.folder, postType: v.postType, hospitalId: sql`coalesce(${jobs.hospitalId}, excluded.hospital_id)`, lastSeen: now },
       })
       .returning({ id: jobs.id, inserted: sql<boolean>`(xmax = 0)` });
     if (r?.inserted) {
@@ -195,6 +201,8 @@ export type JobCard = {
   id: string; source: string; title: string; employer: string | null; city: string | null;
   postedOn: string | null; lastDate: string | null; link: string; official: boolean;
   education: string[]; vacancies: string[]; applyOnline: boolean | null; adNo: string | null;
+  /** How many advert scans we can show (/api/jobs/image/<id>?n=0…). */
+  imageCount: number;
   folder: Folder; postType: PostType; hospitalId: number | null; pinned: boolean; firstSeen: Date;
   state: JobState; saved: boolean;
 };
@@ -212,7 +220,7 @@ export type JobFilter = z.infer<typeof jobFilterSchema>;
 const cardColumns = {
   id: jobs.id, source: jobs.source, title: jobs.title, employer: jobs.employer, city: jobs.city, postedOn: jobs.postedOn,
   lastDate: jobs.lastDate, link: jobs.link, official: jobs.official, education: jobs.education, vacancies: jobs.vacancies,
-  applyOnline: jobs.applyOnline, adNo: jobs.adNo, folder: jobs.folder, postType: jobs.postType, hospitalId: jobs.hospitalId,
+  applyOnline: jobs.applyOnline, adNo: jobs.adNo, images: jobs.images, folder: jobs.folder, postType: jobs.postType, hospitalId: jobs.hospitalId,
   pinned: jobs.pinned, firstSeen: jobs.firstSeen,
 };
 
@@ -228,8 +236,8 @@ export async function listJobs(db: Database, session: Session | null, raw: JobFi
     db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, SYNC_KEY)).limit(1),
   ]);
   const saved = new Set(saves.map((s) => s.jobId));
-  const all: JobCard[] = rows.map((r) => ({
-    ...r, folder: r.folder as Folder, postType: r.postType as PostType,
+  const all: JobCard[] = rows.map(({ images, ...r }) => ({
+    ...r, imageCount: images?.length ?? 0, folder: r.folder as Folder, postType: r.postType as PostType,
     education: (r.education as string[]) ?? [], vacancies: (r.vacancies as string[]) ?? [],
     state: jobState(r.lastDate, today), saved: saved.has(r.id),
   }));
@@ -261,6 +269,37 @@ export async function jobTeaser(db: Database, limit = 3) {
     .from(jobs).where(and(eq(jobs.hidden, false), or(isNull(jobs.lastDate), sql`${jobs.lastDate} >= ${today}`))).orderBy(desc(jobs.firstSeen)).limit(Math.min(limit, 6));
   const [c] = await db.select({ n: sql<number>`count(*)::int` }).from(jobs).where(and(eq(jobs.hidden, false), or(isNull(jobs.lastDate), sql`${jobs.lastDate} >= ${today}`)));
   return { open: c?.n ?? 0, latest: rows };
+}
+
+// ── Advert scans ───────────────────────────────────────────────────────────────
+
+const imageRoot = (root?: string) => path.resolve(/* turbopackIgnore: true */ root ?? env().APP_STORAGE_DIR, "job-images");
+const IMAGE_TYPES: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif", webp: "image/webp" };
+const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
+
+/**
+ * One advert scan, served from our own origin: fetched from jobz.pk the first time anyone opens it,
+ * then kept on disk until the advert is removed. Visitors never load jobz.pk directly.
+ */
+export async function jobAdvertImage(db: Database, session: Session | null, jobId: unknown, n: number, opts: { fetch?: FetchLike; root?: string } = {}) {
+  assertCan(session, "portal");
+  if (!isUuid(jobId) || !Number.isInteger(n) || n < 0 || n > 3) return null;
+  const [j] = await db.select({ images: jobs.images, hidden: jobs.hidden }).from(jobs).where(eq(jobs.id, jobId)).limit(1);
+  const url = j && !j.hidden ? j.images?.[n] : undefined;
+  if (!url || !isJobzAdvertImage(url)) return null;
+  const ext = /\.(\w+)$/.exec(new URL(url).pathname)![1]!.toLowerCase();
+  const type = IMAGE_TYPES[ext] ?? "image/jpeg";
+  const file = path.join(imageRoot(opts.root), `${createHash("sha256").update(url).digest("hex").slice(0, 32)}.${ext}`);
+  try {
+    return { body: await readFile(file), type };
+  } catch {}
+  const res = await (opts.fetch ?? fetch)(url, { headers: { "User-Agent": UA, Accept: "image/*", Referer: "https://www.jobz.pk/" }, signal: AbortSignal.timeout(20_000), redirect: "error" }).catch(() => null);
+  if (!res?.ok || !/^image\//.test(res.headers.get("content-type") ?? "")) return null;
+  const body = Buffer.from(await res.arrayBuffer());
+  if (!body.length || body.length > MAX_IMAGE_BYTES) return null;
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, body).catch(() => {});
+  return { body, type };
 }
 
 // ── Members ────────────────────────────────────────────────────────────────────
@@ -329,7 +368,7 @@ export const manualJobSchema = z.object({
 export async function addManualJob(db: Database, session: Session | null, input: z.input<typeof manualJobSchema>) {
   assertCan(session, "data.edit");
   const v = manualJobSchema.parse(input);
-  const raw: RawJob = { source: "jobzpk", sourceId: "", title: v.title, employer: v.employer, city: v.city, postedOn: todayPk(), lastDate: v.lastDate, link: v.link, official: v.official, education: [], vacancies: [], applyOnline: null, adNo: null };
+  const raw: RawJob = { source: "jobzpk", sourceId: "", title: v.title, employer: v.employer, city: v.city, postedOn: todayPk(), lastDate: v.lastDate, link: v.link, official: v.official, education: [], vacancies: [], applyOnline: null, adNo: null, images: [] };
   const matchHospital = await hospitalMatcher(db);
   return db.transaction(async (tx) => {
     const values = { ...rowValues(raw, matchHospital(raw)), source: "manual", sourceId: shortHash(v.link + v.title) };

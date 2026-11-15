@@ -12,18 +12,21 @@ import { getDb } from "@/lib/db/client";
 import { FOLDER_LABELS, POST_TYPE_LABELS, todayPk, type Folder, type PostType } from "@/lib/jobs/rules";
 import { findSection } from "@/lib/navigation";
 import { saveJobAction } from "./actions";
+import { ScrollTo } from "./scroll-to";
 
 export const metadata = { title: "Jobs" };
 export const dynamic = "force-dynamic";
 
 const FOLDERS: Folder[] = ["ppsc", "teaching", "district", "federal", "private"];
-const COVERS: Record<Folder, string> = {
-  ppsc: "/images/v4/campus.jpg",
-  teaching: "/images/v4/night-ward.jpg",
-  district: "/images/brand/hospital-aerial.jpg",
-  federal: "/images/brand/doctor-corridor.jpg",
-  private: "/images/brand/study-desk.jpg",
+/** Folder tints for adverts without a scan (official PDFs): colour, not stock photos. */
+const TINT: Record<Folder, string> = {
+  ppsc: "linear-gradient(135deg,#1d2f52,#3b5fa8)",
+  teaching: "linear-gradient(135deg,#2a1f6b,#7B61FF)",
+  district: "linear-gradient(135deg,#123a33,#2f9e7e)",
+  federal: "linear-gradient(135deg,#3a2414,#b5793d)",
+  private: "linear-gradient(135deg,#3a1630,#b0477f)",
 };
+const imageUrl = (id: string, n = 0) => `/api/jobs/image/${id}?n=${n}`;
 const SOURCE_LABEL: Record<string, string> = { shcme: "SHC&ME", pshd: "P&SHD", ppsc: "PPSC", jobzpk: "jobz.pk", manual: "meritNAMA team" };
 
 type Sp = { folder?: string; state?: string; type?: string; q?: string; saved?: string; job?: string };
@@ -85,7 +88,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         <ul className="grid min-w-[52rem] grid-cols-7 gap-3">
           {FOLDERS.map((f) => (
             <li key={f}>
-              <FolderTile href={href(sp, { folder: filter.folder === f ? undefined : f, job: undefined })} label={FOLDER_LABELS[f]} count={data.folders[f]} cover={COVERS[f]} active={filter.folder === f} />
+              <FolderTile href={href(sp, { folder: filter.folder === f ? undefined : f, job: undefined })} label={FOLDER_LABELS[f]} count={data.folders[f]} tint={TINT[f]} active={filter.folder === f} />
             </li>
           ))}
           <li><FolderTile href={href(sp, { state: state === "closing" ? undefined : "closing", job: undefined })} label="Closing this week" count={data.closingSoon} tone="amber" active={state === "closing"} /></li>
@@ -112,19 +115,22 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         </form>
       </div>
 
-      {open ? <JobDetail job={open} closeHref={href(sp, { job: undefined })} /> : null}
-
       {data.jobs.length === 0 ? (
         <EmptyState title={data.open ? "No jobs match" : "No jobs yet"}>
           {data.open ? "Try another folder or clear the search." : "The first check runs within 6 hours of the site starting. New adverts appear here, newest first."}
         </EmptyState>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {data.jobs.map((j, i) => (
-            <li key={j.id} className="mn-rise" style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}>
-              <JobTile job={j} href={href(sp, { job: j.id })} />
-            </li>
-          ))}
+        // The opened advert sits right after its card, full width. Dense packing fills the rest of that
+        // card's row with the next cards, so on any screen it opens just under what was tapped.
+        <ul className="grid grid-flow-row-dense gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {data.jobs.flatMap((j, i) => [
+            <li key={j.id} id={`job-${j.id}`} className="mn-rise scroll-mt-24" style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}>
+              <JobTile job={j} href={href(sp, { job: open?.id === j.id ? undefined : j.id })} active={open?.id === j.id} />
+            </li>,
+            ...(open?.id === j.id
+              ? [<li key="detail" id="job-detail-panel" className="col-span-full scroll-mt-24"><JobDetail job={open} closeHref={href(sp, { job: undefined })} /><ScrollTo id="job-detail-panel" /></li>]
+              : []),
+          ])}
         </ul>
       )}
       <p className="text-xs text-subtle">meritNAMA is not affiliated with any employer. Each card links to the original advert; check the advert before applying.</p>
@@ -132,15 +138,15 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   );
 }
 
-function FolderTile({ href, label, count, cover, tone, active }: { href: string; label: string; count: number; cover?: string; tone?: "amber" | "violet"; active: boolean }) {
+function FolderTile({ href, label, count, tint, tone, active }: { href: string; label: string; count: number; tint?: string; tone?: "amber" | "violet"; active: boolean }) {
   return (
     <Link href={href} aria-current={active ? "true" : undefined} className={cn("group mn-lift relative block h-32 overflow-hidden rounded-2xl border", active ? "border-violet-soft shadow-[0_0_24px_var(--mn-violet-glow)]" : "border-line")}>
       <span
         aria-hidden
         className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-        style={{ backgroundImage: cover ? `url(${cover})` : tone === "amber" ? "linear-gradient(135deg,#5a3a12,#E5A04B)" : "linear-gradient(135deg,#2a1f6b,#7B61FF)" }}
+        style={{ backgroundImage: tint ?? (tone === "amber" ? "linear-gradient(135deg,#5a3a12,#E5A04B)" : "linear-gradient(135deg,#2a1f6b,#7B61FF)") }}
       />
-      {/* The folder front: a glass panel with a tab, over the cover. */}
+      {/* The folder front: a glass panel with a tab, over the tint. */}
       <span className="absolute inset-x-0 bottom-0 h-[62%] rounded-t-xl border-t border-white/15 bg-[rgba(12,12,14,.62)] px-3 pt-2.5 backdrop-blur-md before:absolute before:-top-3 before:left-0 before:h-3 before:w-14 before:rounded-t-lg before:border-t before:border-white/15 before:bg-[rgba(12,12,14,.62)]">
         <span className="block truncate text-[0.8rem] font-semibold text-white">{label}</span>
         <span className={cn("mt-0.5 block text-xl font-semibold tabular-nums", tone === "amber" ? "text-[#E5A04B]" : "text-[#D6CCFF]")}>{count}</span>
@@ -161,12 +167,32 @@ function ApplyBy({ job }: { job: JobCard }) {
   );
 }
 
-function JobTile({ job, href }: { job: JobCard; href: string }) {
+function Thumb({ job }: { job: JobCard }) {
+  if (job.imageCount) {
+    return (
+      <div className="relative h-36 overflow-hidden bg-[#f4f1ea]">
+        {/* eslint-disable-next-line @next/next/no-img-element -- our own route; the scan is already sized by the source */}
+        <img src={imageUrl(job.id)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover object-top transition-transform duration-500 group-hover/tile:scale-[1.03]" />
+        <span aria-hidden className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-b from-transparent to-[var(--mn-card)]" />
+        {job.imageCount > 1 ? <span className="absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-white">{job.imageCount} pages</span> : null}
+      </div>
+    );
+  }
+  // No scan (official adverts are PDFs): the source as a quiet typographic mark.
+  return (
+    <div aria-hidden className="relative flex h-24 items-end overflow-hidden px-5 pb-3" style={{ backgroundImage: TINT[job.folder] }}>
+      <span className="absolute -right-2 -top-3 whitespace-nowrap text-[4.5rem] font-black leading-none tracking-tighter text-white/[.09]">{SOURCE_LABEL[job.source] ?? job.source}</span>
+      <span className="relative flex items-center gap-1.5 text-xs font-medium text-white/80"><Icon name="folder" className="h-3.5 w-3.5" />{job.official ? "Official advert · PDF" : FOLDER_LABELS[job.folder]}</span>
+    </div>
+  );
+}
+
+function JobTile({ job, href, active }: { job: JobCard; href: string; active: boolean }) {
   const posts = job.vacancies.length;
   return (
-    <article className="mn-lift mn-card-glass relative flex h-full flex-col overflow-hidden rounded-xl border border-line">
-      <div aria-hidden className="h-20 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(180deg, transparent, var(--mn-card)), url(${COVERS[job.folder]})` }} />
-      <div className="flex flex-1 flex-col gap-3 p-5 pt-1">
+    <article className={cn("group/tile mn-lift mn-card-glass relative flex h-full flex-col overflow-hidden rounded-xl border", active ? "border-violet-soft shadow-[0_0_24px_var(--mn-violet-glow)]" : "border-line")}>
+      <Link href={href} scroll={false} tabIndex={-1} aria-hidden className="block"><Thumb job={job} /></Link>
+      <div className="flex flex-1 flex-col gap-3 p-5 pt-3">
         <div className="flex items-center gap-2">
           {job.official ? <Pill tone="success"><Icon name="check" className="h-3.5 w-3.5" />Official · {SOURCE_LABEL[job.source] ?? job.source}</Pill> : <Pill>via {SOURCE_LABEL[job.source] ?? job.source}</Pill>}
           {job.pinned ? <Pill tone="violet">Pinned</Pill> : null}
@@ -178,7 +204,7 @@ function JobTile({ job, href }: { job: JobCard; href: string }) {
             </button>
           </form>
         </div>
-        <Link href={href} scroll={false} className="group">
+        <Link href={href} scroll={false} aria-expanded={active} className="group">
           <h2 className="line-clamp-3 text-[1.15rem] font-semibold leading-snug text-heading group-hover:text-violet-pale">{job.title}</h2>
           {job.employer && job.employer !== job.title ? <p className="mt-1 line-clamp-1 text-sm text-muted">{job.employer}</p> : null}
         </Link>
@@ -204,8 +230,10 @@ function JobDetail({ job, closeHref }: { job: JobCard; closeHref: string }) {
     ["Apply online", job.applyOnline == null ? "See the advert" : job.applyOnline ? "Yes" : "No, by post or in person"],
   ];
   if (job.adNo) rows.push(["Advert no.", job.adNo]);
+  const scans = Array.from({ length: job.imageCount }, (_, n) => n);
   return (
-    <section aria-labelledby="job-detail" className="mn-card-glass rounded-xl border border-violet-soft/40 p-5 shadow-[0_0_30px_var(--mn-violet-glow)] sm:p-6">
+    <section aria-labelledby="job-detail" className={cn("mn-rise mn-card-glass rounded-xl border border-violet-soft/40 p-5 shadow-[0_0_30px_var(--mn-violet-glow)] sm:p-6", scans.length > 0 && "grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]")}>
+      <div className="min-w-0">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap gap-2">
@@ -213,7 +241,7 @@ function JobDetail({ job, closeHref }: { job: JobCard; closeHref: string }) {
             <Pill>{FOLDER_LABELS[job.folder]}</Pill>
             <ApplyBy job={job} />
           </div>
-          <h2 id="job-detail" className="mt-3 text-xl font-semibold text-heading">{job.title}</h2>
+          <h2 id="job-detail" tabIndex={-1} className="mt-3 text-xl font-semibold text-heading outline-none">{job.title}</h2>
         </div>
         <Link href={closeHref} scroll={false} aria-label="Close" className="mn-btn-ghost grid h-10 w-10 flex-none place-items-center rounded-lg"><Icon name="close" className="h-4 w-4" /></Link>
       </div>
@@ -233,6 +261,19 @@ function JobDetail({ job, closeHref }: { job: JobCard; closeHref: string }) {
         {job.hospitalId ? <Link href={`/portal/explore/hospitals/${job.hospitalId}`} className="mn-btn-ghost inline-flex h-10 items-center rounded-lg px-4 text-sm">Hospital page</Link> : null}
         <span className="text-xs text-subtle">From {SOURCE_LABEL[job.source] ?? job.source}. meritNAMA shows a summary; the advert is the official word.</span>
       </div>
+      </div>
+      {scans.length ? (
+        <figure className="grid content-start gap-3">
+          {scans.map((n) => (
+            <a key={n} href={imageUrl(job.id, n)} target="_blank" rel="noopener" title="Open the full advert picture" className="group/scan relative block overflow-hidden rounded-lg border border-line bg-[#f4f1ea]">
+              {/* eslint-disable-next-line @next/next/no-img-element -- our own route */}
+              <img src={imageUrl(job.id, n)} alt={`The advert as published${scans.length > 1 ? `, page ${n + 1}` : ""}`} className="max-h-[70vh] w-full object-contain object-top" />
+              <span className="absolute bottom-2 right-2 rounded-md bg-black/65 px-2 py-1 text-[11px] font-medium text-white">Full size ↗</span>
+            </a>
+          ))}
+          <figcaption className="text-xs text-subtle">The advert as printed, via {SOURCE_LABEL[job.source] ?? job.source}.</figcaption>
+        </figure>
+      ) : null}
     </section>
   );
 }

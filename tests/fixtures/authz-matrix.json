@@ -137,6 +137,7 @@
  "insights#releasedBeforeFinal": "candidate data_editor policy_editor verifier moderator owner",
  "jobs#syncJobsNow": "data_editor owner",
  "jobs#listJobs": "candidate data_editor policy_editor verifier moderator owner",
+ "jobs#jobAdvertImage": "candidate data_editor policy_editor verifier moderator owner",
  "jobs#setJobSaved": "candidate data_editor policy_editor verifier moderator owner",
  "jobs#jobSourceHealth": "data_editor policy_editor verifier moderator owner",
  "jobs#adminJobs": "data_editor owner",

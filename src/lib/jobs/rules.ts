@@ -93,6 +93,7 @@ export function mergeJobs(jobs: RawJob[]): RawJob[] {
       education: keep.education.length ? keep.education : other.education,
       vacancies: keep.vacancies.length ? keep.vacancies : other.vacancies,
       applyOnline: keep.applyOnline ?? other.applyOnline,
+      images: keep.images?.length ? keep.images : (other.images ?? keep.images),
     };
     out[out.indexOf(prev)] = merged;
     byKey.set(k!, merged);

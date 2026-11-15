@@ -25,6 +25,8 @@ export type RawJob = {
   applyOnline: boolean | null;
   /** PPSC advertisement and case numbers, when known. */
   adNo: string | null;
+  /** The advert's own scans (jobz.pk newspaper clippings). null = the advert page was not read. */
+  images: string[] | null;
 };
 
 const MONTHS: Record<string, number> = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
@@ -74,7 +76,17 @@ export function parseJobzList(html: string): JobzListItem[] {
   return out;
 }
 
-export type JobzDetail = { organization: string | null; education: string[]; lastDate: string | null; applyOnline: boolean | null; vacancies: string[]; location: string | null; postedOn: string | null };
+export type JobzDetail = { organization: string | null; education: string[]; lastDate: string | null; applyOnline: boolean | null; vacancies: string[]; location: string | null; postedOn: string | null; images: string[] };
+
+/** Only jobz.pk's own advert scans (www.jobz.pk/images/jobs/…jpg) are kept: never banners or profile pictures. */
+export function isJobzAdvertImage(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.host === "www.jobz.pk" && /^\/images\/jobs\/[\w/-]+\.(?:jpe?g|png|gif|webp)$/i.test(u.pathname) && !u.search;
+  } catch {
+    return false;
+  }
+}
 
 /** A job's own page: label/value rows, and the "Vacancies in …" block. */
 export function parseJobzDetail(html: string): JobzDetail {
@@ -93,6 +105,7 @@ export function parseJobzDetail(html: string): JobzDetail {
     if (v) vacancies.push(v);
   }
   const apply = fields.get("apply online if applicable");
+  const images = [...new Set(root.querySelectorAll("img").map((i) => abs(i.getAttribute("src") ?? "", "https://www.jobz.pk/")?.replace(/^http:/, "https:") ?? ""))].filter(isJobzAdvertImage).slice(0, 4);
   return {
     organization: fields.get("organization") || null,
     education: (fields.get("education") ?? "").split(/[|,]/).map((s) => s.trim()).filter(Boolean),
@@ -101,6 +114,7 @@ export function parseJobzDetail(html: string): JobzDetail {
     vacancies: [...new Set(vacancies)],
     location: fields.get("vacancy location") || null,
     postedOn: parseDate(fields.get("date posted / updated")),
+    images,
   };
 }
 
@@ -119,6 +133,7 @@ export function jobzToRaw(item: JobzListItem, d: JobzDetail | null): RawJob {
     vacancies: d?.vacancies ?? [],
     applyOnline: d?.applyOnline ?? null,
     adNo: null,
+    images: d ? d.images : null,
   };
 }
 
@@ -138,7 +153,7 @@ export function parseShcme(html: string, base = "https://health.punjab.gov.pk/")
     out.push({
       source: "shcme", sourceId: shortHash(`${title}|${file}`), title, employer: "Specialized Healthcare & Medical Education Department",
       city: null, postedOn: null, lastDate: parseDate(text(td[2])), link: link ?? `${base}Jobs.aspx`, official: true,
-      education: [], vacancies: [], applyOnline: null, adNo: null,
+      education: [], vacancies: [], applyOnline: null, adNo: null, images: [],
     });
   }
   return out;
@@ -161,7 +176,7 @@ export function parsePshd(html: string, base = "https://pshealthpunjab.gov.pk/")
     out.push({
       source: "pshd", sourceId: shortHash(href), title, employer: "Primary & Secondary Healthcare Department",
       city: null, postedOn: null, lastDate: parseDate(closing ?? text(td[2])), link: abs(href, base) ?? `${base}Home/Jobs`, official: true,
-      education: [], vacancies: [], applyOnline: null, adNo: null,
+      education: [], vacancies: [], applyOnline: null, adNo: null, images: [],
     });
   }
   return out;
@@ -181,7 +196,7 @@ export function parsePpsc(html: string, base = "https://ppsc.gop.pk/"): RawJob[]
     out.push({
       source: "ppsc", sourceId: (caseNo || shortHash(`${adNo}|${post}`)).toLowerCase(), title: post.replace(/\s+/g, " "),
       employer: department ? department.replace(/\s+/g, " ") : null, city: null, postedOn: parseDate(adDate), lastDate: parseDate(closing),
-      link: `${base}Jobs.aspx`, official: true, education: [], vacancies: [], applyOnline: true, adNo: adNo || null,
+      link: `${base}Jobs.aspx`, official: true, education: [], vacancies: [], applyOnline: true, adNo: adNo || null, images: [],
     });
   }
   return out;

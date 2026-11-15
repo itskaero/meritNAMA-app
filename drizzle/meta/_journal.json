@@ -232,6 +232,13 @@
       "when": 1794728347176,
       "tag": "0032_activity_replays",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794737826447,
+      "tag": "0033_job_images",
+      "breakpoints": true
     }
   ]
 }

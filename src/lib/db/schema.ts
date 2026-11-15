@@ -1182,6 +1182,8 @@ export const jobs = pgTable(
     vacancies: json("vacancies").notNull().default([]),
     applyOnline: boolean("apply_online"),
     adNo: text("ad_no"),
+    /** The advert's scans (jobz.pk images, served through /api/jobs/image). null = advert page not read yet. */
+    images: json("images").$type<string[]>(),
     /** ppsc, teaching, district, federal or private (src/lib/jobs/rules.ts). */
     folder: text("folder").notNull(),
     postType: text("post_type").notNull(),

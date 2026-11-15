@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { jobzToRaw, parseDate, parseJobzDetail, parseJobzList, parsePpsc, parsePshd, parseShcme } from "@/lib/jobs/parse";
+import { isJobzAdvertImage, jobzToRaw, parseDate, parseJobzDetail, parseJobzList, parsePpsc, parsePshd, parseShcme } from "@/lib/jobs/parse";
 import { dedupeKey, folderOf, isDoctorJob, jobState, mergeJobs, postType, todayPk, type Folder } from "@/lib/jobs/rules";
 
 const fx = (name: string) => readFileSync(`tests/fixtures/jobs/${name}`, "utf8");
@@ -32,6 +32,17 @@ describe("jobz.pk (saved pages)", () => {
     expect(isDoctorJob(raw)).toBe(true);
     expect(folderOf(raw)).toBe("teaching");
     expect(postType(raw)).toBe("trainee");
+  });
+
+  it("keeps the advert scan and nothing else from the page's pictures", () => {
+    const d = parseJobzDetail(fx("jobzpk-detail.html"));
+    expect(d.images).toEqual(["https://www.jobz.pk/images/jobs/2026-11/788080_1.jpg"]);
+    expect(jobzToRaw(parseJobzList(fx("jobzpk-list.html"))[0]!, d).images).toEqual(d.images);
+    expect(jobzToRaw(parseJobzList(fx("jobzpk-list.html"))[0]!, null).images).toBeNull();
+    expect(isJobzAdvertImage("https://www.jobz.pk/images/jobs/2026-11/1_2.jpg")).toBe(true);
+    for (const bad of ["https://www.jobz.pk/images/male.jpg", "http://www.jobz.pk/images/jobs/a.jpg", "https://evil.example/images/jobs/a.jpg", "https://www.jobz.pk/images/jobs/a.jpg?x=1", "https://www.jobz.pk/images/jobs/../../etc.jpg"]) {
+      expect(isJobzAdvertImage(bad)).toBe(false);
+    }
   });
 });
 
@@ -77,12 +88,12 @@ describe("rules", () => {
   });
 
   it("merges the same advert from two sources, official link first", () => {
-    const a = { ...base, sourceId: "1", title: "SHC&ME Department Jobs 2026", employer: "Specialized Healthcare & Medical Education Department", city: "Lahore", postedOn: null, lastDate: "2026-11-30", link: "https://www.jobz.pk/x", official: false, applyOnline: true, adNo: null, education: ["MBBS"] };
-    const b = { ...a, source: "shcme" as const, sourceId: "2", title: "Training program advert", link: "https://health.punjab.gov.pk/uploads/jobs/x.pdf", official: true, city: null, education: [] };
+    const a = { ...base, sourceId: "1", title: "SHC&ME Department Jobs 2026", employer: "Specialized Healthcare & Medical Education Department", city: "Lahore", postedOn: null, lastDate: "2026-11-30", link: "https://www.jobz.pk/x", official: false, applyOnline: true, adNo: null, education: ["MBBS"], images: ["https://www.jobz.pk/images/jobs/2026-11/1_1.jpg"] };
+    const b = { ...a, source: "shcme" as const, sourceId: "2", title: "Training program advert", link: "https://health.punjab.gov.pk/uploads/jobs/x.pdf", official: true, city: null, education: [], images: [] };
     expect(dedupeKey(a)).toBe(dedupeKey(b));
     const out = mergeJobs([a, b]);
     expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ official: true, link: b.link, city: "Lahore", education: ["MBBS"] });
+    expect(out[0]).toMatchObject({ official: true, link: b.link, city: "Lahore", education: ["MBBS"], images: a.images });
   });
 
   it("works out open, closing and closed in Pakistan time", () => {
