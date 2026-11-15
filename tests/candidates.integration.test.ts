@@ -14,7 +14,7 @@ process.env.OWNER_EMAILS = "boss-signin@test.local";
 
 const { consumeLoginLink, endSession, requestLoginLink, sessionFromId } = await import("@/lib/auth/login");
 const { indexGazette, linkByCnic, listLinkRequests, myLink, myMerit, readEvidence, recoverAccount, requestLink, reviewLink } = await import("@/lib/data/candidates");
-const { masked, myPrivacy, privacyMask, setMyPrivacy } = await import("@/lib/data/privacy");
+const { myPrivacy, privacyMask, setMyPrivacy } = await import("@/lib/data/privacy");
 const { proposeMeritRound } = await import("@/lib/data/changes");
 
 /**
@@ -204,16 +204,15 @@ describe.skipIf(!url)("sign-in and candidate verification (integration)", () => 
     expect(await myLink(db, gilNew)).toMatchObject({ status: "verified", applicantId: B });
   });
 
-  it("hides what a candidate chose from other candidates, not from them or staff", async () => {
+  it("hides record notes a candidate chose from other candidates, not from them or staff", async () => {
     const gil = await signIn("gil-new-signin@test.local");
     const other = await signIn("someone-signin@test.local");
-    await setMyPrivacy(db, gil, { hideName: true, hidePmdc: true, hideRecord: false });
-    expect(await myPrivacy(db, gil)).toEqual({ hideName: true, hidePmdc: true, hideRecord: false });
-    await expect(setMyPrivacy(db, other, { hideName: true, hidePmdc: false, hideRecord: false })).rejects.toThrow("Link your merit record");
-    const row = [{ applicantId: B, name: "Gil", pmdcNo: "1-P" }];
-    expect(masked(row, await privacyMask(db, other))[0]).toMatchObject({ name: null, pmdcNo: null, nameHidden: true });
-    expect(masked(row, await privacyMask(db, gil))[0]).toEqual(row[0]);
-    expect(masked(row, await privacyMask(db, verifier))[0]).toEqual(row[0]);
+    await setMyPrivacy(db, gil, { hideRecord: true });
+    expect(await myPrivacy(db, gil)).toEqual({ hideRecord: true });
+    await expect(setMyPrivacy(db, other, { hideRecord: true })).rejects.toThrow("Link your merit record");
+    expect((await privacyMask(db, other))(B)).toEqual({ hideRecord: true });
+    expect((await privacyMask(db, gil))(B)).toEqual({ hideRecord: false });
+    expect((await privacyMask(db, verifier))(B)).toEqual({ hideRecord: false });
     await db.delete(schema.candidatePrivacy).where(eq(schema.candidatePrivacy.applicantId, B));
   });
 });

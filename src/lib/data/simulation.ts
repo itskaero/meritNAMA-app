@@ -5,7 +5,7 @@ import path from "node:path";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { cleanName } from "@/lib/domain/merit-round";
 import { indexGazette } from "./candidates";
-import { masked, privacyMask } from "./privacy";
+import { privacyMask } from "./privacy";
 import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
@@ -916,7 +916,7 @@ async function resultAgainstList(db: Database, session: Session | null, inductio
   });
   const p = (await privacyMask(db, session))(applicantId);
   const verification = (who?.verification ?? []) as VerificationStep[];
-  return { induction, roundNo, applicantId, name: p.hideName ? null : who?.name ?? null, pmdcNo: p.hidePmdc ? null : who?.pmdcNo ?? null, verification: p.hideRecord ? verification.map((v) => ({ ...v, remarks: null })) : verification, programmes };
+  return { induction, roundNo, applicantId, name: who?.name ?? null, pmdcNo: who?.pmdcNo ?? null, verification: p.hideRecord ? verification.map((v) => ({ ...v, remarks: null })) : verification, programmes };
 }
 
 /**
@@ -1309,9 +1309,9 @@ export async function gazetteBoard(db: Database, session: Session | null, induct
     };
   });
   rows.sort((a, b) => b.marks - a.marks || a.applicantId.localeCompare(b.applicantId));
-  // What each candidate chose to hide from other candidates (search runs on the masked rows).
+  // Record notes a candidate keeps to themselves (names and marks are PHF's, and stay).
   const mask = await privacyMask(db, session);
-  const shown = masked(rows, mask).map((r) => (mask(r.applicantId).hideRecord ? { ...r, verification: r.verification.map((v) => ({ ...v, remarks: null })), corrected: [] } : r));
+  const shown = rows.map((r) => (mask(r.applicantId).hideRecord ? { ...r, verification: r.verification.map((v) => ({ ...v, remarks: null })), corrected: [] } : r));
   return { induction, latestRound: latest?.roundNo ?? null, rows: shown };
 }
 
@@ -1336,7 +1336,7 @@ export async function gazetteCandidate(db: Database, session: Session | null, in
   const p = (await privacyMask(db, session))(applicantId);
   const verification = (who?.verification ?? []) as VerificationStep[];
   return {
-    ...rec, applicantId, name: p.hideName ? null : who?.name ?? null, nameHidden: p.hideName, pmdcNo: p.hidePmdc ? null : who?.pmdcNo ?? null,
+    ...rec, applicantId, name: who?.name ?? null, pmdcNo: who?.pmdcNo ?? null,
     verification: p.hideRecord ? verification.map((v) => ({ ...v, remarks: null })) : verification,
     rounds, corrections: p.hideRecord ? [] : corrections, recordHidden: p.hideRecord,
   };

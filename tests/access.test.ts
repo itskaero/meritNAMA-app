@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accessDecision, accessRequestSchema, accessSettingsSchema, DEFAULT_ACCESS, priceText } from "@/lib/domain/access";
+import { accessDecision, accessRequestSchema, accessSettingsSchema, DEFAULT_ACCESS, priceText, saleTerms } from "@/lib/domain/access";
 
 const on = { paywall: true, keepExisting: true, since: "2026-11-01T00:00:00Z" };
 const base = { settings: on, ownerEmail: false, existingRole: null, existingSince: null, approved: false };
@@ -72,5 +72,25 @@ describe("access settings", () => {
 
   it("keeps the range in order", () => {
     expect(accessSettingsSchema.safeParse({ ...input, priceMinPkr: 900, priceMaxPkr: 300 }).success).toBe(false);
+  });
+});
+
+describe("what access is sold for, and until when", () => {
+  const cycle21 = { induction: 21, start: new Date("2026-04-30T19:00:00Z"), end: new Date("2026-06-30T12:00:00Z") };
+  it("follows PHF's schedule when nothing is set", () => {
+    expect(saleTerms({ saleInduction: null, accessEndsOn: null }, cycle21)).toEqual({ induction: 21, start: cycle21.start, end: cycle21.end, source: "schedule" });
+  });
+  it("sells a new induction with no end until a date is set", () => {
+    expect(saleTerms({ saleInduction: 22, accessEndsOn: null }, cycle21)).toEqual({ induction: 22, start: null, end: null, source: "none" });
+  });
+  it("uses the owner's date, to the end of that day in Pakistan", () => {
+    const t = saleTerms({ saleInduction: 22, accessEndsOn: "2027-09-30" }, cycle21);
+    expect(t).toMatchObject({ induction: 22, source: "set" });
+    expect(t.end!.toISOString()).toBe("2027-09-30T18:59:59.000Z");
+  });
+  it("keeps the settings form's dates valid", () => {
+    const ok = accessSettingsSchema.safeParse({ ...DEFAULT_ACCESS, saleInduction: 22, accessEndsOn: "2027-09-30" });
+    expect(ok.success).toBe(true);
+    expect(accessSettingsSchema.safeParse({ ...DEFAULT_ACCESS, accessEndsOn: "30/09/2027" }).success).toBe(false);
   });
 });

@@ -54,7 +54,11 @@ const on = (form: FormData, k: string) => form.get(k) === "on";
 
 export async function saveAccessSettingsAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {
-    await saveAccessSettings(getDb(), await getSession(), {
+    const ind = formText(form, "saleInduction").trim();
+    const ends = formText(form, "accessEndsOn").trim();
+    const saved = await saveAccessSettings(getDb(), await getSession(), {
+      saleInduction: ind ? Number(ind) : null,
+      accessEndsOn: ends || null,
       paywall: on(form, "paywall"),
       requestsOpen: on(form, "requestsOpen"),
       paymentRequired: on(form, "paymentRequired"),
@@ -74,7 +78,7 @@ export async function saveAccessSettingsAction(_prev: ActionState, form: FormDat
       refundNote: formText(form, "refundNote"),
       reason: formText(form, "reason"),
     });
-    return done("Saved.");
+    return done(saved.redated ? `Saved. ${saved.redated} approved ${saved.redated === 1 ? "person's" : "people's"} access now ends on the new date.` : "Saved.");
   } catch (err) {
     return toActionState(err);
   }

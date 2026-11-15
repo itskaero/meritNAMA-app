@@ -7,7 +7,7 @@ import { RequestAccessForm } from "@/components/auth/request-access-form";
 import { Notice } from "@/components/ui/notice";
 import { googleConfig } from "@/lib/auth/google";
 import { getSession } from "@/lib/auth/session";
-import { loadAccessSettings } from "@/lib/data/access";
+import { currentSale, loadAccessSettings } from "@/lib/data/access";
 import { getDb } from "@/lib/db/client";
 import { DEFAULT_ACCESS } from "@/lib/domain/access";
 
@@ -28,6 +28,10 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const access = await loadAccessSettings(getDb()).catch(() => DEFAULT_ACCESS);
   const isDev = process.env.NODE_ENV !== "production";
   const asking = access.paywall && tab !== "signin" && !signedOut && !error;
+  const sale = asking ? await currentSale(getDb(), access).catch(() => null) : null;
+  const forWhat = sale?.induction
+    ? `for induction ${sale.induction}${sale.end ? `, until ${sale.end.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Karachi" })}` : ""}`
+    : "for one induction";
   return (
     <AuthShell step={1} showStatus>
       {access.paywall ? (
@@ -38,7 +42,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
       ) : null}
       <div>
         <h1 className="text-2xl font-bold">{asking ? "Request access" : "Welcome back"}</h1>
-        <p className="mt-1.5 text-[#A3ABBD]">{asking ? "Access is by approval, for one induction. Pay by Easypaisa or JazzCash and give the transaction ID: if we already have the payment you are in at once." : "We email you a one-time link. No password to remember."}</p>
+        <p className="mt-1.5 text-[#A3ABBD]">{asking ? `Access is by approval, ${forWhat}. Pay by Easypaisa or JazzCash and give the transaction ID: if we already have the payment you are in at once.` : "We email you a one-time link. No password to remember."}</p>
       </div>
       {signedOut ? <Notice title="You are signed out." /> : null}
       {deleted ? <Notice title="Your account was deleted." /> : null}

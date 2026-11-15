@@ -70,7 +70,16 @@ export function AccessSettingsForm({ s }: { s: AccessSettings }) {
       <Check name="paywall" label="Paywall on" hint="Sign-in needs an approved request. The sign-in page then shows Request access." on={s.paywall} />
       <Check name="requestsOpen" label="Accept new requests" hint="Turn off to close the door without lifting the paywall." on={s.requestsOpen} />
       <Check name="paymentRequired" label="Payment required with a request" hint="People enter the amount and the bank reference." on={s.paymentRequired} />
-      <Check name="perInduction" label="Access lasts one induction" hint="Approvals end with the running induction's cycle (never sooner than 30 days). People are emailed a week before." on={s.perInduction} />
+      <Check name="perInduction" label="Access lasts one induction" hint="Approvals end on the date below, or PHF's schedule when it has one (never sooner than 30 days). People are emailed a week before." on={s.perInduction} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-sm font-medium">Induction being sold <span className="font-normal text-subtle">(blank: the latest in PHF&apos;s files)</span>
+          <input name="saleInduction" inputMode="numeric" placeholder="e.g. 22" defaultValue={s.saleInduction ?? ""} className={fieldClass} />
+        </label>
+        <label className="grid gap-1.5 text-sm font-medium">Access ends on <span className="font-normal text-subtle">(blank: PHF&apos;s schedule, else no end yet)</span>
+          <input name="accessEndsOn" type="date" defaultValue={s.accessEndsOn ?? ""} className={fieldClass} />
+        </label>
+        <p className="text-xs text-muted sm:col-span-2">Changing the date moves everyone already approved for that induction too, so set a safe guess now and push it back when PHF announces the real dates.</p>
+      </div>
       <Check name="keepExisting" label="Keep people who already have an account" hint="Accounts made before the paywall was switched on keep signing in." on={s.keepExisting} />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1.5 text-sm font-medium">Lowest amount (PKR)<input name="priceMinPkr" inputMode="numeric" defaultValue={s.priceMinPkr} className={fieldClass} /></label>

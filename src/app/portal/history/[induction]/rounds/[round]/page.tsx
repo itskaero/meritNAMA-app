@@ -248,7 +248,7 @@ async function Candidates({ db, session, roundId, prevId, prevNo, filters, q, cp
                     <td>
                       <Link href={keep({ c: r.applicantId })} scroll={false} className="flex items-center gap-2.5">
                         <span aria-hidden className="mn-av" style={you ? { background: "linear-gradient(135deg,#8B73FF,#5B3FF5)", boxShadow: "0 0 12px rgba(110,86,255,.6)" } : { background: avColor(r.applicantId) }}>{initials(r.name, r.applicantId)}</span>
-                        <span className="min-w-0"><b className={r.name ? "text-ink" : "font-normal italic text-muted"}>{r.name ?? ("nameHidden" in r && r.nameHidden ? "Name hidden" : "Name not published")}</b>{you ? <span className="mn-pill v ml-1.5">you</span> : null}<span className="block font-mono text-[11px] text-muted">{r.applicantId}{r.pmdcNo ? ` · ${r.pmdcNo}` : ""}</span></span>
+                        <span className="min-w-0"><b className="text-ink">{r.name ?? "Name not published"}</b>{you ? <span className="mn-pill v ml-1.5">you</span> : null}<span className="block font-mono text-[11px] text-muted">{r.applicantId}{r.pmdcNo ? ` · ${r.pmdcNo}` : ""}</span></span>
                       </Link>
                     </td>
                     <td className="text-right font-mono">{formatMarks(r.marks)}</td>

@@ -2,12 +2,13 @@ import { AreaPage } from "@/components/area-page";
 import { StatTiles } from "@/components/charts/stat-tiles";
 import { whenDatabaseDown } from "@/components/database-unavailable";
 import { Badge } from "@/components/ui/badge";
+import { Notice } from "@/components/ui/notice";
 import { Card, CardHeader } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/page-header";
 import { Pill, Segmented } from "@/components/ui/segmented";
 import { can } from "@/lib/auth/roles";
 import { requireSection } from "@/lib/auth/session";
-import { accessCounts, accessSettings, currentCycle, listAccessRequests, listPayments, listVouchers } from "@/lib/data/access";
+import { accessCounts, accessSettings, currentCycle, currentSale, listAccessRequests, listPayments, listVouchers } from "@/lib/data/access";
 import { getDb } from "@/lib/db/client";
 import { AUTO_LABELS, type AutoResult } from "@/lib/domain/payments";
 import { formatUtc } from "@/lib/format";
@@ -42,6 +43,9 @@ export default async function AdminAccessPage({ searchParams }: { searchParams: 
   const tab: Tab = (TABS as readonly string[]).includes(asked ?? "") ? (asked as Tab) : "requests";
   const db = getDb();
   const [settings, counts, cycle] = await Promise.all([accessSettings(db, session), accessCounts(db, session), currentCycle(db)]);
+  const sale = await currentSale(db, settings);
+  // The automatic choice is an induction whose cycle is already over: new buyers want the next one.
+  const stale = settings.saleInduction == null && cycle.end != null && cycle.end < new Date();
 
   const tabs = [
     { href: "/admin/access", label: "Requests", active: tab === "requests", count: counts.waiting || undefined },
@@ -54,9 +58,14 @@ export default async function AdminAccessPage({ searchParams }: { searchParams: 
     <AreaPage {...frame} status={<StatusPill tone={settings.paywall ? "warning" : "live"}>{settings.paywall ? "Paywall on" : "Paywall off: link sign-in"}</StatusPill>}>
       <CandidateTabs current="/admin/access" />
       <Segmented label="Access" items={tabs} />
-      {settings.perInduction && cycle.induction ? (
-        <p className="text-sm text-muted">Access bought now is for induction {cycle.induction}{cycle.end ? ` and ends ${day(cycle.end)} (or 30 days from approval, if later)` : "; no end date is known yet, so it does not end"}.</p>
+      {settings.perInduction && sale.induction ? (
+        <p className="text-sm text-muted">
+          Access bought now is for induction {sale.induction}
+          {sale.end ? ` and ends ${day(sale.end)}${sale.source === "set" ? " (your date)" : " (PHF's schedule)"}, or 30 days from approval if later` : ": no end date yet, so it lasts until you set one"}.
+          {" "}<a href="/admin/access?tab=settings#settings" className="font-semibold text-signal hover:underline">Change</a>
+        </p>
       ) : null}
+      {stale && settings.paywall ? <Notice tone="warning" title={`Induction ${cycle.induction}'s cycle is over`}>New payments are still being counted for it. In Settings, set the induction being sold (e.g. {Number(cycle.induction) + 1}) and an end date.</Notice> : null}
       {tab === "requests" ? <Requests session={session} counts={counts} /> : null}
       {tab === "payments" ? <Payments session={session} /> : null}
       {tab === "vouchers" ? <Vouchers session={session} /> : null}

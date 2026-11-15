@@ -26,7 +26,6 @@ const EXEMPT: Record<string, string> = {
   "users#ensureUser": "internal helper; callers check permissions and pass a signed-in session",
   "announcements#liveNotices": "public notification bar: signed-out visitors see 'everyone' notices; 'members' posts need a session",
   "privacy#privacyMask": "builds the mask for rows a checked function already fetched; staff get none, the session only decides what to hide",
-  "privacy#notHiddenSql": "a search filter for checked queries; the session only decides whether staff skip it",
 };
 
 /**
@@ -52,8 +51,8 @@ const NO_SESSION = new Set([
   "what-if#baseKey", "what-if#parseBase",
   // Sign-in page status (public figures), gazette CNIC index (called inside a checked import),
   // lost-email recovery (signed out by nature: applicant ID + CNIC are the check, rate-limited),
-  // and the privacy mask applied to rows a checked function already fetched.
-  "announcements#signInStatus", "candidates#indexGazette", "candidates#recoverAccount", "privacy#masked",
+  // and what access is on sale (the public request form shows it).
+  "announcements#signInStatus", "candidates#indexGazette", "candidates#recoverAccount", "access#currentSale",
 ]);
 
 const expectedFile = path.join(__dirname, "fixtures", "authz-matrix.json");

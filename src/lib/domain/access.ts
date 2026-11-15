@@ -29,6 +29,10 @@ export type AccessSettings = {
   walletTitle: string;
   /** Access ends with the induction cycle it was bought in. */
   perInduction: boolean;
+  /** The induction access is sold for now; null = the latest one PHF's files show. */
+  saleInduction: number | null;
+  /** When that induction's access ends (YYYY-MM-DD, Pakistan time); null = PHF's schedule, else no end yet. */
+  accessEndsOn: string | null;
   /** Shown above the payment details. */
   note: string;
   closedMessage: string;
@@ -54,6 +58,8 @@ export const DEFAULT_ACCESS: AccessSettings = {
   jazzcashNumber: "",
   walletTitle: "",
   perInduction: true,
+  saleInduction: null,
+  accessEndsOn: null,
   note: "Send the amount from Easypaisa, JazzCash or your bank app, then enter the transaction ID (TID) from the confirmation. If we already have the payment you are in at once; otherwise we check it, usually the same day.",
   closedMessage: "Access requests are closed for now. Please check back later.",
   refundNote: "If your request is rejected, or you ask within 7 days and have not used the site, we send your payment back. Write to us from the Contact page with your transaction reference.",
@@ -76,6 +82,8 @@ export const accessSettingsSchema = z
     jazzcashNumber: z.string().trim().max(30),
     walletTitle: z.string().trim().max(80),
     perInduction: z.boolean(),
+    saleInduction: z.number().int().min(1).max(999).nullable(),
+    accessEndsOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date.").nullable(),
     note: z.string().trim().max(600),
     closedMessage: z.string().trim().max(300),
     refundNote: z.string().trim().max(500),
@@ -86,6 +94,25 @@ export const accessSettingsSchema = z
     path: ["easypaisaNumber"],
     message: "Add a wallet number, account number or Raast ID people should pay, before turning the paywall on.",
   });
+
+export type SaleTerms = { induction: number | null; start: Date | null; end: Date | null; source: "set" | "schedule" | "none" };
+
+/** The end of a calendar day in Pakistan (UTC+5). */
+export const endOfDayPk = (iso: string) => new Date(`${iso}T18:59:59Z`);
+
+/**
+ * What access bought now is for: the induction the owner chose (else the latest in PHF's
+ * files), ending on the owner's date, else on PHF's schedule for that induction, else with
+ * no end until a date is set. PHF rarely publishes the whole schedule up front.
+ */
+export function saleTerms(s: Pick<AccessSettings, "saleInduction" | "accessEndsOn">, cycle: { induction: number | null; start: Date | null; end: Date | null }): SaleTerms {
+  const induction = s.saleInduction ?? cycle.induction;
+  const same = induction != null && induction === cycle.induction;
+  const start = same ? cycle.start : null;
+  if (s.accessEndsOn) return { induction, start, end: endOfDayPk(s.accessEndsOn), source: "set" };
+  if (same && cycle.end) return { induction, start, end: cycle.end, source: "schedule" };
+  return { induction, start, end: null, source: "none" };
+}
 
 /** "PKR 250–670", or one amount when both are the same. */
 export function priceText(s: Pick<AccessSettings, "priceMinPkr" | "priceMaxPkr">): string {

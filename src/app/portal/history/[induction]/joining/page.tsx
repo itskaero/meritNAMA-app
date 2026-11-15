@@ -173,7 +173,7 @@ export default async function JoiningPage({ params, searchParams }: { params: Pr
               {list.rows.map((r) => (
                 <tr key={`${r.rowNo}`}>
                   <td className="font-mono text-muted">{r.rowNo}</td>
-                  <td className={r.name ? "font-medium text-heading" : "italic text-muted"}>{r.name ?? ("nameHidden" in r && r.nameHidden ? "Name hidden" : "—")}</td>
+                  <td className="font-medium text-heading">{r.name ?? "—"}</td>
                   <td className="whitespace-nowrap font-mono text-xs text-muted">{r.applicantId}{r.pmdcNo ? ` · ${r.pmdcNo}` : ""}</td>
                   <td><span className="text-ink">{r.speciality}</span><span className="block text-xs text-muted">{r.hospital} · {r.program}</span></td>
                   <td className="text-right font-mono">{formatMarks(r.marks)}</td>

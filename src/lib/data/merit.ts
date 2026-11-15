@@ -16,7 +16,6 @@ import {
 import { classifyQuery, cleanName, cleanPmdc, isoDay, meritRoundFileSchema, nameKey } from "@/lib/domain/merit-round";
 import { UserFacingError } from "@/lib/errors";
 import { notifyFollowers, notifyShortlists } from "./notifications";
-import { masked, notHiddenSql, privacyMask } from "./privacy";
 import { postRoundDay } from "./rooms";
 import { requireReason, writeAudit, type Db } from "./shared";
 
@@ -308,14 +307,13 @@ export async function getRound(db: Database, session: Session | null, induction:
  * applicant-id search. Used for the "Candidates" list on the round page only.
  */
 /** SQL filter for a search box: applicant id (contains), PMDC number (exact) or name (contains, any case). */
-function candidateSearch(raw: string | undefined, session: Session | null) {
+function candidateSearch(raw: string | undefined) {
   const q = classifyQuery(raw ?? "");
   if (!q) return undefined;
   if (q.kind === "id") return sql`${meritAllocations.applicantId}::text like ${`%${q.value}%`}`;
-  // Someone who hid their PMDC number or name cannot be found by it.
-  if (q.kind === "pmdc") return and(eq(meritAllocations.pmdcNo, q.value), notHiddenSql(session, meritAllocations.applicantId, "pmdc"));
+  if (q.kind === "pmdc") return eq(meritAllocations.pmdcNo, q.value);
   const like = `%${q.value.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-  return and(sql`${meritAllocations.name} ilike ${like}`, notHiddenSql(session, meritAllocations.applicantId, "name"));
+  return sql`${meritAllocations.name} ilike ${like}`;
 }
 
 export async function roundCandidates(
@@ -331,7 +329,7 @@ export async function roundCandidates(
     f.quota ? eq(meritAllocations.quota, f.quota) : undefined,
     f.speciality ? eq(meritAllocations.speciality, f.speciality) : undefined,
     f.hospital ? eq(meritAllocations.hospital, f.hospital) : undefined,
-    candidateSearch(input.q, session),
+    candidateSearch(input.q),
   );
   const [rows, counted] = await Promise.all([
     db
@@ -355,7 +353,7 @@ export async function roundCandidates(
       .offset(Math.max(input.offset ?? 0, 0)),
     db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(meritAllocations).where(where),
   ]);
-  return { rows: masked(rows, await privacyMask(db, session)), total: counted[0]?.n ?? 0 };
+  return { rows, total: counted[0]?.n ?? 0 };
 }
 
 /**
@@ -735,7 +733,7 @@ export async function hospitalRoundPeople(db: Database, session: Session | null,
       .from(meritAllocations).where(where).orderBy(desc(meritAllocations.marks)).limit(Math.min(input.limit ?? 4, 20)),
     db.select({ n: count() }).from(meritAllocations).where(where),
   ]);
-  return { total: Number(c?.n ?? 0), rows: masked(rows, await privacyMask(db, session)) };
+  return { total: Number(c?.n ?? 0), rows };
 }
 
 /** The name and PMDC number an applicant was last published under (public merit lists). */

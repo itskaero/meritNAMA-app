@@ -700,13 +700,11 @@ export const candidateLinkStatus = pgEnum("candidate_link_status", ["pending", "
 export const candidateLinkMethod = pgEnum("candidate_link_method", ["email", "manual", "cnic"]);
 
 /**
- * What a linked candidate hides from other candidates (staff still see everything). Keyed by
- * applicant so it follows the record across inductions and pages. Preferences are never hidden.
+ * What a linked candidate hides from other candidates (staff still see everything): their
+ * record notes. What PHF publishes (name, PMDC number, marks, seats) and preferences always show.
  */
 export const candidatePrivacy = pgTable("candidate_privacy", {
   applicantId: text("applicant_id").primaryKey(),
-  hideName: boolean("hide_name").notNull().default(false),
-  hidePmdc: boolean("hide_pmdc").notNull().default(false),
   /** Verification remarks and corrections on the Candidates panel. */
   hideRecord: boolean("hide_record").notNull().default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

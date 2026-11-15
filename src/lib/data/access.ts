@@ -11,6 +11,7 @@ import {
   accessRequestSchema,
   accessSettingsSchema,
   DEFAULT_ACCESS,
+  saleTerms,
   type AccessDecision,
   type AccessSettings,
 } from "@/lib/domain/access";
@@ -51,6 +52,11 @@ export async function currentCycle(db: Database): Promise<{ induction: number | 
   const [rounds] = await db.select({ start: min(meritRounds.startsOn), end: max(meritRounds.endsOn) }).from(meritRounds).where(eq(meritRounds.inductionId, induction));
   const day = (d: string | null | undefined) => (d ? new Date(`${d}T18:59:59Z`) : null); // end of the day in Pakistan
   return { induction, start: day(rounds?.start), end: day(rounds?.end) };
+}
+
+/** What access bought now is for, and when it ends (the owner's choice, else PHF's schedule). */
+export async function currentSale(db: Database, settings?: AccessSettings) {
+  return saleTerms(settings ?? (await loadAccessSettings(db)), await currentCycle(db));
 }
 
 async function entryDecision(db: Database, rawEmail: string): Promise<AccessDecision> {
@@ -98,7 +104,21 @@ export async function saveAccessSettings(db: Database, session: Session | null, 
       .onConflictDoUpdate({ target: appSettings.key, set: { value, updatedBy: session!.email, updatedAt: new Date() } });
     await writeAudit(tx, session!.email, { action: "settings.access", entityType: "settings", entityId: KEY, before, after: value, reason });
   });
-  return value;
+  // A new end date (or induction) applies to everyone already approved for that induction,
+  // never sooner than 30 days after their approval.
+  let redated = 0;
+  if (value.perInduction && (value.accessEndsOn !== before.accessEndsOn || value.saleInduction !== before.saleInduction)) {
+    const t = await currentSale(db, value);
+    if (t.induction != null) {
+      const rows = await db.update(accessRequests)
+        .set({ expiresAt: t.end ? sql`greatest(${t.end.toISOString()}::timestamptz, coalesce(${accessRequests.reviewedAt}, now()) + interval '30 days')` : null, remindedAt: null })
+        .where(and(eq(accessRequests.status, "approved"), eq(accessRequests.induction, t.induction)))
+        .returning({ id: accessRequests.id });
+      redated = rows.length;
+      if (redated) await writeAudit(db, session!.email, { action: "access.redate", entityType: "settings", entityId: KEY, after: { induction: t.induction, endsAt: t.end, count: redated }, reason });
+    }
+  }
+  return { ...value, redated };
 }
 
 // ── Telling people ───────────────────────────────────────────────────────────
@@ -136,8 +156,8 @@ async function tellRejected(db: Database, email: string, note: string) {
 // ── Approving ────────────────────────────────────────────────────────────────
 
 async function expiryNow(db: Database, settings: AccessSettings) {
-  const cycle = await currentCycle(db);
-  return { induction: cycle.induction, expiresAt: settings.perInduction ? accessEnds(cycle.end, new Date()) : null };
+  const t = await currentSale(db, settings);
+  return { induction: t.induction, expiresAt: settings.perInduction ? accessEnds(t.end, new Date()) : null };
 }
 
 async function approveTx(tx: Tx, id: string, by: string, fields: { note: string | null; autoResult?: AutoResult | null; induction: number | null; expiresAt: Date | null }) {
@@ -184,7 +204,7 @@ async function checkOne(db: Database, id: string, settings: AccessSettings, cycl
 export async function autoMatchPending(db: Database): Promise<number> {
   const settings = await loadAccessSettings(db);
   if (!settings.paywall) return 0;
-  const [c, exp] = [await currentCycle(db), await expiryNow(db, settings)];
+  const [c, exp] = [await currentSale(db, settings), await expiryNow(db, settings)];
   const cycle = { induction: c.induction, start: c.start, expiresAt: exp.expiresAt };
   const waiting = await db.select({ id: accessRequests.id }).from(accessRequests).where(and(eq(accessRequests.status, "pending"), isNotNull(accessRequests.reference))).orderBy(accessRequests.createdAt).limit(500);
   let approved = 0;
@@ -241,7 +261,7 @@ export async function submitAccessRequest(db: Database, input: AccessInput): Pro
   }
 
   const [req] = await db.insert(accessRequests).values(row).onConflictDoUpdate({ target: accessRequests.email, set: row }).returning({ id: accessRequests.id });
-  const c = await currentCycle(db);
+  const c = await currentSale(db, settings);
   const result = await checkOne(db, req!.id, settings, { induction: c.induction, start: c.start, expiresAt: exp.expiresAt });
   return result === "matched" ? { status: "approved", autoResult: result, expiresAt: exp.expiresAt } : { status: "pending", autoResult: result, expiresAt: null };
 }
@@ -398,7 +418,7 @@ export async function createVouchers(db: Database, session: Session | null, inpu
   if (!(n >= 1 && n <= 100)) throw new UserFacingError("Make between 1 and 100 codes at a time.");
   const note = input.note.trim();
   if (note.length < 3) throw new UserFacingError("Say what the codes are for, e.g. paid in cash at the desk.");
-  const { induction } = await currentCycle(db);
+  const { induction } = await currentSale(db);
   const codes = Array.from({ length: n }, () => voucherCode(randomBytes(8)));
   await db.transaction(async (tx) => {
     await tx.insert(accessVouchers).values(codes.map((c) => ({ codeHash: hashCode(c), hint: c.slice(-4), induction, note, createdBy: session!.email })));
