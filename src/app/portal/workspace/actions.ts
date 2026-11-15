@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
 import { setShortlistAlerts } from "@/lib/data/notifications";
+import { setMyPrivacy } from "@/lib/data/privacy";
 import { deleteView, saveView } from "@/lib/data/workspace";
 import { getDb } from "@/lib/db/client";
 import { isUuid } from "@/lib/format";
@@ -22,6 +23,11 @@ export async function deleteViewAction(form: FormData) {
   const id = formText(form, "id");
   if (isUuid(id)) await deleteView(getDb(), await getSession(), id);
   revalidatePath("/portal/workspace");
+}
+
+export async function setPrivacyAction(form: FormData) {
+  await setMyPrivacy(getDb(), await getSession(), { hideName: form.get("hideName") === "on", hidePmdc: form.get("hidePmdc") === "on", hideRecord: form.get("hideRecord") === "on" });
+  revalidatePath("/portal", "layout");
 }
 
 export async function setAlertsAction(form: FormData) {

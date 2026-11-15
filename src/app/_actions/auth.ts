@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { consumeLoginLink, endSession, requestLoginLink, SESSION_COOKIE, sessionFromId } from "@/lib/auth/login";
 import { accessStatus, submitAccessRequest } from "@/lib/data/access";
+import { recoverAccount } from "@/lib/data/candidates";
 import { AUTO_LABELS } from "@/lib/domain/payments";
 import { getDb } from "@/lib/db/client";
 import { setSessionCookie } from "@/lib/auth/session-cookie";
@@ -84,6 +85,23 @@ export async function accessStatusAction(_prev: ActionState, form: FormData): Pr
       expired: `Your access ended${until ? ` on ${until}` : ""}. Send a new request to renew it for this induction.`,
     }[r.status];
     return { status: r.status === "approved" ? "success" : "error", message: text };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+/** Lost email: applicant ID + CNIC move the account (and paid access) to a new email. */
+export async function recoverAccountAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const r = await recoverAccount(getDb(), {
+      applicantId: formText(form, "applicantId"),
+      cnic: formText(form, "cnic"),
+      newEmail: formText(form, "email"),
+      reference: formText(form, "reference"),
+      ip: await clientIp(),
+    });
+    const what = r.movedAccount && r.movedAccess ? "Your account and your access" : r.movedAccount ? "Your account" : "Your access";
+    return { status: "success", message: `${what} now use the new email. Sign in with it: we sent a note there too.`, href: "/sign-in?tab=signin", hrefLabel: "Sign in" };
   } catch (err) {
     return toActionState(err);
   }

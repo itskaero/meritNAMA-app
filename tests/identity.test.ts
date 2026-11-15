@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { identityHmac, normalizeEmail, normalizePmdc, parseEmailList, sha256, newSecret } from "@/lib/domain/identity";
+import { identityHmac, normalizeCnic, normalizeEmail, normalizePmdc, parseEmailList, sha256, newSecret } from "@/lib/domain/identity";
 import * as script from "../scripts/lib/identity-index.mjs";
 
 describe("identity rules", () => {
@@ -28,9 +28,20 @@ describe("identity rules", () => {
     for (const e of [" Candidate0@Example.test", "someone@phf.gop.pk"]) expect(script.normalizeEmail(e)).toBe(normalizeEmail(e));
     for (const p of ["0000-X", "12345 p", 98765]) expect(script.normalizePmdc(p)).toBe(normalizePmdc(p));
     expect(script.identityHmac(secret, "pmdc", "0000X")).toBe(identityHmac(secret, "pmdc", "0000X"));
-    const rows = script.identitiesFromRound({ Table: [{ inductionId: 20 }], Table5: [{ applicantId: "A1", emailId: "A@B.co", pmdcNo: "1-2-3" }] }, secret);
-    expect(rows).toEqual([{ applicantId: "A1", emailHmac: identityHmac(secret, "email", "a@b.co"), pmdcHmac: identityHmac(secret, "pmdc", "123"), lastInduction: 20 }]);
+    for (const c of ["35202-1234567-1", 3520212345671, "35202 1234567 1", "123"]) expect(script.normalizeCnic(c)).toBe(normalizeCnic(c));
+    const rows = script.identitiesFromRound({ Table: [{ inductionId: 20 }], Table5: [{ applicantId: "A1", emailId: "A@B.co", pmdcNo: "1-2-3", cnic: "35202-1234567-1" }] }, secret);
+    expect(rows).toEqual([{ applicantId: "A1", emailHmac: identityHmac(secret, "email", "a@b.co"), pmdcHmac: identityHmac(secret, "pmdc", "123"), cnicHmac: identityHmac(secret, "cnic", "3520212345671"), lastInduction: 20 }]);
+    // A gazette row (no email) is indexed by its CNIC alone.
+    expect(script.identitiesFromRound({ Table: [{ inductionId: 21 }], Table5: [{ applicantId: 7, cnic: "3520212345671" }] }, secret)?.[0]?.cnicHmac).toBe(identityHmac(secret, "cnic", "3520212345671"));
     expect(script.identitiesFromRound({ nope: true }, secret)).toBeNull();
+  });
+
+  it("reads a CNIC as 13 digits, dashes or not", () => {
+    expect(normalizeCnic("35202-1234567-1")).toBe("3520212345671");
+    expect(normalizeCnic(" 35202 1234567 1 ")).toBe("3520212345671");
+    expect(normalizeCnic("3520212345")).toBeNull();
+    expect(normalizeCnic("0000000000000")).toBeNull();
+    expect(identityHmac("s".repeat(32), "cnic", "3520212345671")).not.toBe(identityHmac("s".repeat(32), "pmdc", "3520212345671"));
   });
 
   it("makes long random secrets and stores only their hash", () => {

@@ -3,9 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { formText, toActionState, type ActionState } from "@/lib/action-state";
 import { getSession } from "@/lib/auth/session";
-import { EVIDENCE_MAX_BYTES, requestLink } from "@/lib/data/candidates";
+import { EVIDENCE_MAX_BYTES, linkByCnic, requestLink } from "@/lib/data/candidates";
 import { getDb } from "@/lib/db/client";
 import { UserFacingError } from "@/lib/errors";
+
+export async function linkByCnicAction(_prev: ActionState, form: FormData): Promise<ActionState> {
+  let moved = false;
+  try {
+    ({ moved } = await linkByCnic(getDb(), await getSession(), { applicantId: formText(form, "applicantId"), cnic: formText(form, "cnic") }));
+  } catch (err) {
+    return toActionState(err);
+  }
+  revalidatePath("/portal", "layout");
+  return { status: "success", message: moved ? "Linked. Your record moved here from your old account, which we told by email." : "Linked. Your record is now on your account.", href: "/portal/workspace", hrefLabel: "Open Me" };
+}
 
 export async function requestLinkAction(_prev: ActionState, form: FormData): Promise<ActionState> {
   try {

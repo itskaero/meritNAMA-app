@@ -218,6 +218,13 @@
       "when": 1794649300433,
       "tag": "0030_access_automation",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794724047575,
+      "tag": "0031_cnic_privacy",
+      "breakpoints": true
     }
   ]
 }

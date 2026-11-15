@@ -2,7 +2,7 @@ import "server-only";
 import { and, desc, eq, gt, isNotNull, isNull, lte } from "drizzle-orm";
 import { assertCan, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
-import { announcements, inductionSchedule, meritRounds, simulationRuns } from "@/lib/db/schema";
+import { announcements, inductionSchedule, meritRounds, simDatasets, simulationRuns } from "@/lib/db/schema";
 import { deadlineNotice, estimateNotice, noticeInputSchema, pickNotices, roundNotice, type Notice, type NoticeTone } from "@/lib/domain/notices";
 import { UserFacingError } from "@/lib/errors";
 import { isUuid } from "@/lib/format";
@@ -38,6 +38,49 @@ export async function liveNotices(db: Database, session: Session | null, now = n
     roundNotice(round ? { induction: round.induction, roundNo: round.roundNo, importedAt: round.importedAt } : null, now),
     est ? estimateNotice({ id: est.id, roundNo: estRound, publishedAt: est.publishedAt!, official: superseded }, now) : null,
   ]);
+}
+
+export type StatusLine = { tone: "done" | "live" | "wait"; label: string; text: string };
+
+/**
+ * Where the data stands, for the sign-in page (no session): the latest induction with lists
+ * in, and the next one, which opens here only after PHF's applications close and its gazette
+ * is out. Plus the team's public posts, which say anything the dates cannot.
+ */
+export async function signInStatus(db: Database, now = new Date()): Promise<{ team: Notice[]; lines: StatusLine[] }> {
+  const team = (await db.select({ id: announcements.id, text: announcements.text, href: announcements.href, tone: announcements.tone })
+    .from(announcements)
+    .where(and(isNull(announcements.removedAt), eq(announcements.audience, "all"), lte(announcements.startsAt, now), gt(announcements.endsAt, now)))
+    .orderBy(desc(announcements.createdAt)).limit(2))
+    .map((t) => ({ id: t.id, text: t.text, href: t.href, tone: t.tone as NoticeTone, auto: false }));
+  const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Asia/Karachi" });
+
+  const [last] = await db.select({ induction: meritRounds.inductionId, roundNo: meritRounds.roundNo, importedAt: meritRounds.importedAt })
+    .from(meritRounds).orderBy(desc(meritRounds.inductionId), desc(meritRounds.roundNo)).limit(1);
+  const [sched] = await db.select({ id: inductionSchedule.inductionId }).from(inductionSchedule).orderBy(desc(inductionSchedule.inductionId)).limit(1);
+  const steps = sched ? await db.select().from(inductionSchedule).where(eq(inductionSchedule.inductionId, sched.id)) : [];
+  const ends = steps.map((s) => s.endsAt).filter((d): d is Date => Boolean(d));
+  const cycleEnd = ends.length ? new Date(Math.max(...ends.map((d) => d.getTime()))) : null;
+  const openStep = steps.filter((s) => s.endsAt && s.endsAt > now && (!s.startsAt || s.startsAt <= now)).sort((a, b) => a.endsAt!.getTime() - b.endsAt!.getTime())[0];
+
+  const lines: StatusLine[] = [];
+  if (last) {
+    const sameCycle = sched?.id === last.induction;
+    const closed = sameCycle && cycleEnd != null && cycleEnd < now;
+    lines.push(closed
+      ? { tone: "done", label: `Induction ${last.induction}`, text: `Complete: all ${last.roundNo} rounds are in.` }
+      : { tone: "live", label: `Induction ${last.induction}`, text: `Round ${last.roundNo} is the latest list, in on ${day(last.importedAt)}.${openStep && sameCycle ? ` On PHF now: ${openStep.title} until ${day(openStep.endsAt!)}.` : ""}` });
+  }
+  const next = sched && (!last || sched.id > last.induction) ? sched.id : (last?.induction ?? 0) + 1;
+  const [gazette] = next > 0 ? await db.select({ id: simDatasets.inductionId }).from(simDatasets).where(eq(simDatasets.inductionId, next)).limit(1) : [];
+  if (gazette) {
+    lines.push({ tone: "live", label: `Induction ${next}`, text: "The gazette is in: every applicant and their marks are on Candidates. Round 1 shows here as soon as PHF publishes it." });
+  } else if (next > 0 && (!last || next > last.induction)) {
+    lines.push(sched?.id === next && openStep
+      ? { tone: "wait", label: `Induction ${next}`, text: `PHF's portal is open (${openStep.title} until ${day(openStep.endsAt!)}). It opens here once applications close and the gazette is out.` }
+      : { tone: "wait", label: `Induction ${next}`, text: "Not open here yet. While candidates apply on PHF's portal there is nothing to show; it opens here once applications close and the gazette is out." });
+  }
+  return { team, lines };
 }
 
 /** Team posts, newest first, for Admin → Today. */

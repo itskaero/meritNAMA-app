@@ -688,6 +688,8 @@ export const candidateIdentities = pgTable(
     applicantId: text("applicant_id").primaryKey(),
     emailHmac: text("email_hmac"),
     pmdcHmac: text("pmdc_hmac"),
+    /** From merit files and the gazette: a candidate proves it is them by typing it. */
+    cnicHmac: text("cnic_hmac"),
     lastInduction: integer("last_induction").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -695,7 +697,20 @@ export const candidateIdentities = pgTable(
 );
 
 export const candidateLinkStatus = pgEnum("candidate_link_status", ["pending", "verified", "rejected"]);
-export const candidateLinkMethod = pgEnum("candidate_link_method", ["email", "manual"]);
+export const candidateLinkMethod = pgEnum("candidate_link_method", ["email", "manual", "cnic"]);
+
+/**
+ * What a linked candidate hides from other candidates (staff still see everything). Keyed by
+ * applicant so it follows the record across inductions and pages. Preferences are never hidden.
+ */
+export const candidatePrivacy = pgTable("candidate_privacy", {
+  applicantId: text("applicant_id").primaryKey(),
+  hideName: boolean("hide_name").notNull().default(false),
+  hidePmdc: boolean("hide_pmdc").notNull().default(false),
+  /** Verification remarks and corrections on the Candidates panel. */
+  hideRecord: boolean("hide_record").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 /** An account's claim to an applicant record, verified automatically or by a verifier. */
 export const candidateLinks = pgTable(

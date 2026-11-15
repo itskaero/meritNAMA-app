@@ -4,6 +4,8 @@ import { lstat, mkdir, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { cleanName } from "@/lib/domain/merit-round";
+import { indexGazette } from "./candidates";
+import { masked, privacyMask } from "./privacy";
 import { assertCan, can, type Session } from "@/lib/auth/roles";
 import type { Database } from "@/lib/db/client";
 import {
@@ -266,6 +268,8 @@ export async function importSimulationDataset(db: Database, session: Session | n
     }
     const prefs = candidates.flatMap((c) => c.preferences.map((p) => ({ inductionId: input.induction, applicantId: c.applicantId, ...p })));
     for (let i = 0; i < prefs.length; i += 2000) await tx.insert(simPreferences).values(prefs.slice(i, i + 2000));
+    // The gazette lists every applicant with their CNIC: index its HMAC for linking by CNIC.
+    if (data.gazette) await indexGazette(tx, data.gazette);
     const consent = await writeConsent(tx, input.induction, dir, scan.consent);
     await writeAudit(tx, session.email, {
       action: "simulation.import_dataset",
@@ -868,7 +872,7 @@ export async function estimateApplicantResult(db: Database, session: Session | n
   assertCan(session, "portal");
   const est = await estimateList(db, session, input.runId);
   if (!est) return null;
-  return resultAgainstList(db, est.run.inductionId, est.roundNo, input.applicantId, est.rows);
+  return resultAgainstList(db, session, est.run.inductionId, est.roundNo, input.applicantId, est.rows);
 }
 
 /**
@@ -879,10 +883,10 @@ export async function roundApplicantResult(db: Database, session: Session | null
   assertCan(session, "portal");
   const rows = await publishedRound(db, input.induction, input.roundNo);
   if (!rows) return null;
-  return resultAgainstList(db, input.induction, input.roundNo, input.applicantId, rows);
+  return resultAgainstList(db, session, input.induction, input.roundNo, input.applicantId, rows);
 }
 
-async function resultAgainstList(db: Database, induction: number, roundNo: number, rawId: string, list: PublishedAllocation[]) {
+async function resultAgainstList(db: Database, session: Session | null, induction: number, roundNo: number, rawId: string, list: PublishedAllocation[]) {
   const applicantId = rawId.replace(/\D/g, "").slice(0, 10);
   if (!applicantId) return null;
   const rec = await simRecordFor(db, { induction, applicantId });
@@ -910,7 +914,9 @@ async function resultAgainstList(db: Database, induction: number, roundNo: numbe
       rows: applicantResults(p.preferences.map((x) => ({ preferenceNo: x.preferenceNo, quota: x.quota, speciality: x.speciality, hospital: x.hospital, mark: x.mark })), seats.get(p.program) ?? new Map(), placedNo),
     };
   });
-  return { induction, roundNo, applicantId, name: who?.name ?? null, pmdcNo: who?.pmdcNo ?? null, verification: (who?.verification ?? []) as VerificationStep[], programmes };
+  const p = (await privacyMask(db, session))(applicantId);
+  const verification = (who?.verification ?? []) as VerificationStep[];
+  return { induction, roundNo, applicantId, name: p.hideName ? null : who?.name ?? null, pmdcNo: p.hidePmdc ? null : who?.pmdcNo ?? null, verification: p.hideRecord ? verification.map((v) => ({ ...v, remarks: null })) : verification, programmes };
 }
 
 /**
@@ -1303,7 +1309,10 @@ export async function gazetteBoard(db: Database, session: Session | null, induct
     };
   });
   rows.sort((a, b) => b.marks - a.marks || a.applicantId.localeCompare(b.applicantId));
-  return { induction, latestRound: latest?.roundNo ?? null, rows };
+  // What each candidate chose to hide from other candidates (search runs on the masked rows).
+  const mask = await privacyMask(db, session);
+  const shown = masked(rows, mask).map((r) => (mask(r.applicantId).hideRecord ? { ...r, verification: r.verification.map((v) => ({ ...v, remarks: null })), corrected: [] } : r));
+  return { induction, latestRound: latest?.roundNo ?? null, rows: shown };
 }
 
 /** One gazette candidate in full for the side panel: record, preferences, and every round they appear in. */
@@ -1324,7 +1333,13 @@ export async function gazetteCandidate(db: Database, session: Session | null, in
     .from(candidateCorrections)
     .where(and(eq(candidateCorrections.inductionId, input.induction), eq(candidateCorrections.applicantId, applicantId), isNull(candidateCorrections.revokedAt)))
     .orderBy(asc(candidateCorrections.createdAt));
-  return { ...rec, applicantId, name: who?.name ?? null, pmdcNo: who?.pmdcNo ?? null, verification: (who?.verification ?? []) as VerificationStep[], rounds, corrections };
+  const p = (await privacyMask(db, session))(applicantId);
+  const verification = (who?.verification ?? []) as VerificationStep[];
+  return {
+    ...rec, applicantId, name: p.hideName ? null : who?.name ?? null, nameHidden: p.hideName, pmdcNo: p.hidePmdc ? null : who?.pmdcNo ?? null,
+    verification: p.hideRecord ? verification.map((v) => ({ ...v, remarks: null })) : verification,
+    rounds, corrections: p.hideRecord ? [] : corrections, recordHidden: p.hideRecord,
+  };
 }
 
 /** Inductions with a gazette loaded, newest first (the Candidates page's picker). */

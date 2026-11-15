@@ -11,7 +11,7 @@ import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
 import { myDataChecklist } from "@/lib/data/simulation";
 import { DataChecklist } from "./data-checklist";
-import { LinkRequestForm } from "./forms";
+import { CnicLinkForm, LinkRequestForm } from "./forms";
 
 export const metadata = { title: "Merit profile" };
 export const dynamic = "force-dynamic";
@@ -41,7 +41,7 @@ export default async function PortalProfilePage() {
                 <Badge tone="success">Verified</Badge>
                 <p className="text-sm text-muted">
                   Linked to applicant <span className="font-mono text-ink">{merit.applicantId}</span>
-                  {link.method === "email" ? " automatically: your sign-in email matches the official record." : " by a verifier."}
+                  {link.method === "email" ? " automatically: your sign-in email matches the official record." : link.method === "cnic" ? ": your CNIC matched the official record." : " by a verifier."}
                 </p>
               </div>
               {latest ? (
@@ -82,7 +82,7 @@ export default async function PortalProfilePage() {
           <>
             {link.status === "pending" ? (
               <Notice title="Waiting for a verifier">
-                You asked to link applicant <span className="font-mono">{link.applicantId}</span>. A verifier checks the document you sent; this page updates when they decide.
+                You asked to link applicant <span className="font-mono">{link.applicantId}</span>. A verifier checks the document you sent; this page updates when they decide. Or link at once with your CNIC below.
               </Notice>
             ) : null}
             {link.status === "rejected" ? (
@@ -93,13 +93,20 @@ export default async function PortalProfilePage() {
             <Card>
               <CardHeader
                 title="Link your merit record"
-                description="Verified candidates see their own rows, get their marks filled in on the score finder, and can post in the community."
+                description="Linked candidates see their own rows, get their marks filled in on the score finder, choose what others see of them, and can post in the community."
               />
               <ol className="mb-5 grid list-decimal gap-1.5 pl-5 text-sm text-muted">
                 <li>Signing in with the email from your PHF application links you automatically.</li>
-                <li>Otherwise, send your applicant ID, PMDC number and proof. A verifier approves it.</li>
+                <li>Otherwise, enter your applicant ID and CNIC. If they match PHF&apos;s record you are linked at once: no screenshots, nobody looks at anything.</li>
               </ol>
-              {link.status === "pending" ? null : <LinkRequestForm />}
+              <CnicLinkForm />
+              {link.status === "pending" ? null : (
+                <details className="mt-6 rounded-xl border border-line p-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-heading">No CNIC in PHF&apos;s file, or it does not match?</summary>
+                  <p className="mb-4 mt-2 text-sm text-muted">Send a document to a verifier instead. Crop it to your applicant ID and name.</p>
+                  <LinkRequestForm />
+                </details>
+              )}
             </Card>
           </>
         )}

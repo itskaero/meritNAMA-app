@@ -1,10 +1,12 @@
 import { Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { signInStatus, type StatusLine } from "@/lib/data/announcements";
 import { landingFigures } from "@/lib/data/public";
 import { checkDatabase, getDb } from "@/lib/db/client";
 
 const display = Space_Grotesk({ subsets: ["latin"], weight: ["500"], display: "swap" });
+const DOT: Record<StatusLine["tone"], string> = { done: "#3ECF8E", live: "#E8A627", wait: "#737C90" };
 
 /**
  * Sign-in, access and verify pages (docs/mockups/v4/SignIn.dc.html): one 1180px card on
@@ -13,8 +15,11 @@ const display = Space_Grotesk({ subsets: ["latin"], weight: ["500"], display: "s
  * Public aggregates only. Side by side from 768px (tablets, phones in desktop mode); on
  * narrower phones the photo pane becomes a short band above the form.
  */
-export async function AuthShell({ children }: { step?: 1 | 2 | 3; children: ReactNode }) {
-  const f = (await checkDatabase()) === "ok" ? await landingFigures(getDb()).catch(() => null) : null;
+export async function AuthShell({ children, showStatus = false }: { step?: 1 | 2 | 3; showStatus?: boolean; children: ReactNode }) {
+  const up = (await checkDatabase()) === "ok";
+  const [f, status] = up ? await Promise.all([landingFigures(getDb()).catch(() => null), signInStatus(getDb()).catch(() => null)]) : [null, null];
+  // A finished cycle has no next list to wait for.
+  const closed = status?.lines[0]?.tone === "done";
   const trend = f?.latest?.trend ?? [];
   const last = trend.at(-1), before = trend.at(-2);
   const updated = f?.updatedAt ? new Date(f.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Karachi" }) : null;
@@ -40,6 +45,19 @@ export async function AuthShell({ children }: { step?: 1 | 2 | 3; children: Reac
           </div>
         </section>
         <section className="flex flex-col gap-[22px] bg-[rgba(20,27,40,.86)] p-6 backdrop-blur-[18px] sm:px-10 sm:py-11 md:flex-1 md:px-8 lg:px-12">
+          {showStatus && status && (status.team.length || status.lines.length) ? (
+            <section aria-label="Where things stand" role="status" className="grid gap-2 rounded-xl border border-white/[.08] bg-white/[.04] px-3.5 py-3 text-[13px] leading-snug">
+              {status.team.map((n) => (
+                <p key={n.id} className="flex gap-2.5"><span aria-hidden className="mt-[5px] h-2 w-2 flex-none rounded-full bg-[#B9AAFF] shadow-[0_0_8px_#B9AAFF]" /><span className="text-[#E5E8EE]">{n.text}{n.href ? <> <a href={n.href} className="font-semibold text-[#B9AAFF] hover:underline">More</a></> : null}</span></p>
+              ))}
+              {status.lines.map((l) => (
+                <p key={l.label} className="flex gap-2.5">
+                  <span aria-hidden className="mt-[5px] h-2 w-2 flex-none rounded-full" style={{ background: DOT[l.tone], boxShadow: `0 0 8px ${DOT[l.tone]}` }} />
+                  <span className="text-[#A3ABBD]"><b className="font-semibold text-[#E5E8EE]">{l.label}</b> · {l.text}</span>
+                </p>
+              ))}
+            </section>
+          ) : null}
           {children}
           {f && f.rounds ? (
             <dl className="mt-1.5 border-t border-white/[.08] pt-5 text-sm">
@@ -47,7 +65,7 @@ export async function AuthShell({ children }: { step?: 1 | 2 | 3; children: Reac
               <div className="flex justify-between py-2 text-[#A3ABBD]"><dt>Rounds published</dt><dd className="font-mono text-[#E5E8EE]">{f.rounds}</dd></div>
               {last ? <div className="flex justify-between py-2 text-[#A3ABBD]"><dt>Median closing merit</dt><dd className="font-mono text-[#3ECF8E]">{last.median.toFixed(2)} {before ? (last.median <= before.median ? "▼" : "▲") : ""}</dd></div> : null}
               {f.latest ? <div className="flex justify-between py-2 text-[#A3ABBD]"><dt>Latest list</dt><dd className="font-mono text-[#E5E8EE]">Induction {f.latest.induction}{last ? ` · round ${last.round}` : ""}</dd></div> : null}
-              {last ? <div className="flex justify-between py-2 text-[#A3ABBD]"><dt>Next list</dt><dd className="font-mono text-[#E8A627]">Round {last.round + 1}</dd></div> : null}
+              {last && !closed ? <div className="flex justify-between py-2 text-[#A3ABBD]"><dt>Next list</dt><dd className="font-mono text-[#E8A627]">Round {last.round + 1}</dd></div> : null}
             </dl>
           ) : null}
           <p className="mt-auto text-xs text-[#737C90]"><Link href="/privacy" className="text-[#B9AAFF] hover:text-[#D6CCFF]">Privacy</Link> · <Link href="/terms" className="text-[#B9AAFF] hover:text-[#D6CCFF]">Terms</Link> · <Link href="/contact" className="text-[#B9AAFF] hover:text-[#D6CCFF]">Contact</Link> · Independent, not an official admissions authority.</p>

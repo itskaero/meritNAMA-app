@@ -15,7 +15,8 @@ import { followedPlaces, listSavedViews } from "@/lib/data/workspace";
 import { getDb } from "@/lib/db/client";
 import { formatMarks } from "@/lib/format";
 import { findSection } from "@/lib/navigation";
-import { deleteViewAction, setAlertsAction } from "./actions";
+import { myPrivacy } from "@/lib/data/privacy";
+import { deleteViewAction, setAlertsAction, setPrivacyAction } from "./actions";
 import { signOutAction } from "@/app/_actions/auth";
 
 export const metadata = { title: "Me" };
@@ -52,11 +53,12 @@ export default async function MePage() {
   const latest = inductions[0] ?? null;
   const lastRound = latest?.rounds.at(-1) ?? null;
   const prevRound = latest?.rounds.at(-2) ?? null;
-  const [who, standing, movement, prefs] = await Promise.all([
+  const [who, standing, movement, prefs, privacy] = await Promise.all([
     merit ? applicantIdentity(db, session, merit.applicantId).catch(() => null) : null,
     own ? marksStanding(db, session, { induction: own.induction, roundNo: own.roundNo, program: own.program, marks: own.marks }).catch(() => null) : null,
     latest && lastRound && prevRound ? compareRounds(db, session, latest.id, prevRound.roundNo, lastRound.roundNo).catch(() => null) : null,
     merit && latest && lastRound ? roundApplicantResult(db, session, { induction: latest.id, roundNo: lastRound.roundNo, applicantId: merit.applicantId }).catch(() => null) : null,
+    merit ? myPrivacy(db, session).catch(() => null) : null,
   ]);
 
   // Safe / target / reach for each shortlisted seat, against the latest induction.
@@ -250,6 +252,33 @@ export default async function MePage() {
           </div>
         ) : <p className="mt-3 text-sm text-muted">Nothing saved yet. Star seats in <Link href="/portal/finder" className="text-[#A797FF]">My chances</Link>.</p>}
       </section>
+
+      {privacy ? (
+        <section aria-labelledby="privacy" className={card}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="privacy" className="text-[15px] font-semibold text-heading">What other candidates see</h2>
+            <span className="text-xs text-muted">Only about your own record · the team always sees everything</span>
+          </div>
+          <form action={setPrivacyAction} className="mt-3 grid gap-3">
+            <div className="grid gap-2.5 sm:grid-cols-3">
+              {([
+                ["hideName", "Hide my name", "Lists show your applicant ID instead. Nobody finds you by name.", privacy.hideName],
+                ["hidePmdc", "Hide my PMDC number", "Not shown on lists, and nobody finds you by it.", privacy.hidePmdc],
+                ["hideRecord", "Hide my record notes", "PHF's verification remarks and any corrections.", privacy.hideRecord],
+              ] as const).map(([name, label, hint, on]) => (
+                <label key={name} className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-white/[.08] bg-white/[.03] p-3.5 has-[:checked]:border-[rgba(155,135,255,.55)] has-[:checked]:bg-[rgba(110,86,255,.10)]">
+                  <input type="checkbox" name={name} defaultChecked={on} className="mt-0.5 h-4 w-4 flex-none accent-[#7B61FF]" />
+                  <span className="min-w-0"><b className="block text-[13px]">{label}</b><span className="mt-0.5 block text-xs text-muted">{hint}</span></span>
+                </label>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-muted">Your marks, rank, seat and preferences stay visible: the merit lists and estimates are built from them.</p>
+              <button type="submit" className="mn-ob">Save</button>
+            </div>
+          </form>
+        </section>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <section className={card}>

@@ -4,7 +4,8 @@
 //   DATABASE_URL=… CANDIDATE_INDEX_SECRET=… npm run index:candidates -- <folder or files…>
 //
 // Folders are searched recursively for round files (round_<n>.json, i20_round_6.json,
-// and the inbox/processed names). Only HMACs are written; nothing raw is stored.
+// and the inbox/processed names) and gazettes (gazette_<n>.json), which carry every
+// applicant's CNIC. Only HMACs are written; nothing raw is stored.
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
@@ -22,7 +23,7 @@ if (targets.length === 0) {
   process.exit(1);
 }
 
-const ROUND = /round[_-]?\d{1,2}\.json$/i;
+const ROUND = /(round[_-]?\d{1,2}|gazette[_-]?\d{1,3})\.json$/i;
 async function* files(p) {
   const s = await stat(p);
   if (s.isFile()) yield p;
@@ -47,12 +48,13 @@ try {
       }
       filesSeen++;
       for (let i = 0; i < rows.length; i += 1000) {
-        const chunk = rows.slice(i, i + 1000).map((r) => ({ applicant_id: r.applicantId, email_hmac: r.emailHmac, pmdc_hmac: r.pmdcHmac, last_induction: r.lastInduction }));
+        const chunk = rows.slice(i, i + 1000).map((r) => ({ applicant_id: r.applicantId, email_hmac: r.emailHmac, pmdc_hmac: r.pmdcHmac, cnic_hmac: r.cnicHmac, last_induction: r.lastInduction }));
         await sql`
-          insert into candidate_identities ${sql(chunk, "applicant_id", "email_hmac", "pmdc_hmac", "last_induction")}
+          insert into candidate_identities ${sql(chunk, "applicant_id", "email_hmac", "pmdc_hmac", "cnic_hmac", "last_induction")}
           on conflict (applicant_id) do update set
             email_hmac = case when excluded.last_induction >= candidate_identities.last_induction then coalesce(excluded.email_hmac, candidate_identities.email_hmac) else coalesce(candidate_identities.email_hmac, excluded.email_hmac) end,
             pmdc_hmac = case when excluded.last_induction >= candidate_identities.last_induction then coalesce(excluded.pmdc_hmac, candidate_identities.pmdc_hmac) else coalesce(candidate_identities.pmdc_hmac, excluded.pmdc_hmac) end,
+            cnic_hmac = case when excluded.last_induction >= candidate_identities.last_induction then coalesce(excluded.cnic_hmac, candidate_identities.cnic_hmac) else coalesce(candidate_identities.cnic_hmac, excluded.cnic_hmac) end,
             last_induction = greatest(candidate_identities.last_induction, excluded.last_induction),
             updated_at = now()`;
       }

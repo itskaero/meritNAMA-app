@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { desc, eq, inArray, like } from "drizzle-orm";
+import { and, desc, eq, inArray, like } from "drizzle-orm";
 import postgres from "postgres";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Session } from "@/lib/auth/roles";
@@ -13,7 +13,8 @@ import * as schema from "@/lib/db/schema";
 process.env.OWNER_EMAILS = "boss-signin@test.local";
 
 const { consumeLoginLink, endSession, requestLoginLink, sessionFromId } = await import("@/lib/auth/login");
-const { listLinkRequests, myLink, myMerit, readEvidence, requestLink, reviewLink } = await import("@/lib/data/candidates");
+const { indexGazette, linkByCnic, listLinkRequests, myLink, myMerit, readEvidence, recoverAccount, requestLink, reviewLink } = await import("@/lib/data/candidates");
+const { masked, myPrivacy, privacyMask, setMyPrivacy } = await import("@/lib/data/privacy");
 const { proposeMeritRound } = await import("@/lib/data/changes");
 
 /**
@@ -38,6 +39,8 @@ describe.skipIf(!url)("sign-in and candidate verification (integration)", () => 
     if (rounds.length) await db.delete(schema.meritRounds).where(inArray(schema.meritRounds.id, rounds.map((r) => r.id)));
     await db.delete(schema.inductions).where(eq(schema.inductions.id, IND));
     await db.delete(schema.candidateIdentities).where(inArray(schema.candidateIdentities.applicantId, applicants));
+    await db.delete(schema.candidatePrivacy).where(inArray(schema.candidatePrivacy.applicantId, applicants));
+    await db.delete(schema.auditLog).where(and(eq(schema.auditLog.action, "candidate_link.cnic_miss"), inArray(schema.auditLog.entityId, applicants)));
     await db.delete(schema.users).where(like(schema.users.email, "%@example.test"));
     await db.delete(schema.users).where(like(schema.users.email, "%-signin@test.local"));
     await db.delete(schema.loginTokens).where(like(schema.loginTokens.email, "%-signin@test.local"));
@@ -56,8 +59,10 @@ describe.skipIf(!url)("sign-in and candidate verification (integration)", () => 
   });
 
   /** Ask for a link and pull the token out of the dev outbox. */
+  let ipNo = 0;
   const linkFor = async (email: string, now?: Date) => {
-    await requestLoginLink(db, { email, ip: "10.0.0.1", now });
+    // A fresh address each time: the per-IP limit is not what these tests are about.
+    await requestLoginLink(db, { email, ip: `10.0.${++ipNo}.1`, now });
     const [mail] = await db.select().from(schema.devOutbox).where(eq(schema.devOutbox.to, email.trim().toLowerCase())).orderBy(desc(schema.devOutbox.id)).limit(1);
     return decodeURIComponent(/token=([^\s]+)/.exec(mail!.body)![1]!);
   };
@@ -147,5 +152,68 @@ describe.skipIf(!url)("sign-in and candidate verification (integration)", () => 
     expect(await reviewLink(db, verifier, { id: r2.id, decision: "reject", reason: "Proof is for another applicant" })).toBe("rejected");
     expect(await myLink(db, dave)).toMatchObject({ status: "rejected", reason: "Proof is for another applicant" });
     expect(await myMerit(db, dave)).toBeNull();
+  });
+
+  // Made-up CNICs, indexed from a gazette-shaped file: only their HMACs are stored.
+  const [A, B, C] = [applicants[3]!, applicants[4]!, applicants[5]!];
+  const CNIC = { [A]: "35202-0000003-3", [B]: "35202-0000004-4", [C]: "35202-0000005-5" };
+
+  it("indexes CNICs from a gazette without storing them", async () => {
+    const n = await indexGazette(db, { Table: [{ inductionId: IND }], Table5: Object.entries(CNIC).map(([applicantId, cnic]) => ({ applicantId, cnic, nameFull: "Test" })) });
+    expect(n).toBe(3);
+    const rows = await db.select().from(schema.candidateIdentities).where(inArray(schema.candidateIdentities.applicantId, [A, B, C]));
+    expect(rows.every((r) => /^[0-9a-f]{64}$/.test(r.cnicHmac ?? ""))).toBe(true);
+    expect(JSON.stringify(rows)).not.toMatch(/35202|0000003/);
+    // The email and PMDC hashes from the merit file are kept.
+    expect(rows.find((r) => r.applicantId === A)!.emailHmac).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("links by applicant ID and CNIC at once, and moves a record from a lost account", async () => {
+    const erin = await signIn("erin-signin@test.local");
+    await expect(linkByCnic(db, erin, { applicantId: A, cnic: "35202-9999999-9" })).rejects.toThrow("does not match");
+    await expect(linkByCnic(db, erin, { applicantId: A, cnic: "123" })).rejects.toThrow("13 digits");
+    expect(await linkByCnic(db, erin, { applicantId: A, cnic: CNIC[A]! })).toEqual({ applicantId: A, moved: false });
+    expect(await myLink(db, erin)).toMatchObject({ status: "verified", applicantId: A, method: "cnic" });
+    await expect(linkByCnic(db, erin, { applicantId: B, cnic: CNIC[B]! })).rejects.toThrow("already linked");
+
+    // Erin lost that email and signs up with another: the CNIC moves the record over.
+    const erin2 = await signIn("erin2-signin@test.local");
+    expect(await linkByCnic(db, erin2, { applicantId: A, cnic: "3520200000033" })).toEqual({ applicantId: A, moved: true });
+    expect(await myLink(db, erin2)).toMatchObject({ status: "verified", applicantId: A });
+    expect((await myLink(db, erin)).status).toBe("rejected");
+    const [note] = await db.select().from(schema.devOutbox).where(eq(schema.devOutbox.to, "erin-signin@test.local")).orderBy(desc(schema.devOutbox.id)).limit(1);
+    expect(note!.subject).toContain("moved");
+  });
+
+  it("stops guessing after a few wrong CNICs a day", async () => {
+    const fay = await signIn("fay-signin@test.local");
+    for (let i = 0; i < 5; i++) await expect(linkByCnic(db, fay, { applicantId: C, cnic: `35202-111111${i}-1` })).rejects.toThrow("does not match");
+    await expect(linkByCnic(db, fay, { applicantId: C, cnic: CNIC[C]! })).rejects.toThrow("Too many");
+  });
+
+  it("moves a signed-out person's account to a new email", async () => {
+    const gil = await signIn("gil-signin@test.local");
+    await linkByCnic(db, gil, { applicantId: B, cnic: CNIC[B]! });
+    await expect(recoverAccount(db, { applicantId: B, cnic: "35202-0000009-9", newEmail: "gil-new-signin@test.local" })).rejects.toThrow("does not match");
+    expect(await recoverAccount(db, { applicantId: B, cnic: CNIC[B]!, newEmail: "gil-new-signin@test.local", ip: "10.0.0.2" })).toEqual({ movedAccount: true, movedAccess: false });
+    // The old session ends; the same account now signs in with the new email, still linked.
+    const [old] = await db.select({ n: schema.sessions.idHash }).from(schema.sessions).where(eq(schema.sessions.userId, gil.userId));
+    expect(old).toBeUndefined();
+    const gilNew = await signIn("gil-new-signin@test.local");
+    expect(gilNew.userId).toBe(gil.userId);
+    expect(await myLink(db, gilNew)).toMatchObject({ status: "verified", applicantId: B });
+  });
+
+  it("hides what a candidate chose from other candidates, not from them or staff", async () => {
+    const gil = await signIn("gil-new-signin@test.local");
+    const other = await signIn("someone-signin@test.local");
+    await setMyPrivacy(db, gil, { hideName: true, hidePmdc: true, hideRecord: false });
+    expect(await myPrivacy(db, gil)).toEqual({ hideName: true, hidePmdc: true, hideRecord: false });
+    await expect(setMyPrivacy(db, other, { hideName: true, hidePmdc: false, hideRecord: false })).rejects.toThrow("Link your merit record");
+    const row = [{ applicantId: B, name: "Gil", pmdcNo: "1-P" }];
+    expect(masked(row, await privacyMask(db, other))[0]).toMatchObject({ name: null, pmdcNo: null, nameHidden: true });
+    expect(masked(row, await privacyMask(db, gil))[0]).toEqual(row[0]);
+    expect(masked(row, await privacyMask(db, verifier))[0]).toEqual(row[0]);
+    await db.delete(schema.candidatePrivacy).where(eq(schema.candidatePrivacy.applicantId, B));
   });
 });

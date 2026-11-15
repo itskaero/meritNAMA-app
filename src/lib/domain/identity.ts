@@ -21,6 +21,13 @@ export function normalizePmdc(value: unknown): string | null {
   return v.length >= 3 ? v : null;
 }
 
+/** A CNIC as 13 digits ("35202-1234567-1", "3520212345671"); null otherwise. */
+export function normalizeCnic(value: unknown): string | null {
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  const v = String(value).replace(/\D/g, "");
+  return /^\d{13}$/.test(v) && !/^0+$/.test(v) ? v : null;
+}
+
 /** A random, URL-safe secret (tokens and session ids). */
 export const newSecret = (bytes = 32) => randomBytes(bytes).toString("base64url");
 
@@ -28,7 +35,7 @@ export const newSecret = (bytes = 32) => randomBytes(bytes).toString("base64url"
 export const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 
 /** Keyed hash of a normalised identity value; the kind is mixed in so an email never matches a PMDC number. */
-export function identityHmac(secret: string, kind: "email" | "pmdc", normalised: string) {
+export function identityHmac(secret: string, kind: "email" | "pmdc" | "cnic", normalised: string) {
   return createHmac("sha256", secret).update(`${kind}:${normalised}`).digest("hex");
 }
 

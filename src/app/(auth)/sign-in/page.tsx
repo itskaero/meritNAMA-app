@@ -29,7 +29,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   const isDev = process.env.NODE_ENV !== "production";
   const asking = access.paywall && tab !== "signin" && !signedOut && !error;
   return (
-    <AuthShell step={1}>
+    <AuthShell step={1} showStatus>
       {access.paywall ? (
         <nav aria-label="Choose" className="flex gap-1 self-start rounded-xl bg-white/5 p-1 text-[13px]">
           <Link href="/sign-in?tab=signin" aria-current={!asking ? "page" : undefined} className={!asking ? "flex h-[34px] items-center rounded-[9px] px-4 font-semibold text-white [background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(110,86,255,.45))] shadow-[inset_0_-2px_0_#7B61FF,0_0_18px_rgba(110,86,255,.3)]" : "flex h-[34px] items-center rounded-[9px] px-4 text-[#A3ABBD] hover:text-white"}>Sign in</Link>
@@ -49,7 +49,10 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
           <p className="text-sm text-[#A3ABBD]">Sent a request already? <Link href="/access" className="font-semibold text-[#B9AAFF] hover:underline">Check its status</Link> · <Link href="/access?renew=1" className="font-semibold text-[#B9AAFF] hover:underline">Renew</Link></p>
         </>
       ) : (
-        <SignInForm google={Boolean(googleConfig())} />
+        <>
+          <SignInForm google={Boolean(googleConfig())} />
+          <p className="text-sm text-[#A3ABBD]">Can&apos;t open that email any more? <Link href="/recover" className="font-semibold text-[#B9AAFF] hover:underline">Move your account to a new one</Link></p>
+        </>
       )}
       {isDev ? (
         <p className="text-xs text-[#737C90]">

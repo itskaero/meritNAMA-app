@@ -9,6 +9,7 @@ import { AuroraHeader } from "@/components/ui/aurora-header";
 import { AutoSelect } from "@/components/ui/auto-select";
 import { cn } from "@/components/ui/cn";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ScrollIntoView } from "@/components/ui/scroll-into-view";
 import { getSession } from "@/lib/auth/session";
 import { verifiedApplicant } from "@/lib/data/candidates";
 import { gazetteBoard, gazetteCandidate, gazetteInductions, type GazetteBoardRow } from "@/lib/data/simulation";
@@ -271,7 +272,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
                           <Link href={`${href({ id: r.applicantId, page: String(page) })}#cand-panel`} scroll={false} className="group flex items-center gap-[9px]">
                             <span aria-hidden className="mn-av !h-7 !w-7 !text-[10px]" style={mine ? { background: "linear-gradient(135deg,#8B73FF,#5B3FF5)", boxShadow: "0 0 10px rgba(110,86,255,.6)" } : { background: avatarOf(r.applicantId) }}>{initials(r.name, r.applicantId)}</span>
                             <span className="min-w-0">
-                              <b className="whitespace-nowrap font-semibold group-hover:text-[#D6CCFF]">{r.name ?? "Name not published"}</b>{mine ? <> <span className="mn-pill v">you</span></> : null}
+                              <b className={cn("whitespace-nowrap font-semibold group-hover:text-[#D6CCFF]", !r.name && "font-normal italic text-muted")}>{r.name ?? ("nameHidden" in r && r.nameHidden ? "Name hidden" : "Name not published")}</b>{mine ? <> <span className="mn-pill v">you</span></> : null}
                               <span className="block font-mono text-[11px] text-muted">{r.applicantId}{r.pmdcNo ? ` · ${r.pmdcNo}` : ""}</span>
                               <span className="mt-[3px] block">{r.programmes.map((p) => <span key={p.program} className="mn-tag">{p.program}</span>)}{r.programmes.length === 0 ? <span className="mn-tag !border-[rgba(229,160,75,.5)] !text-[#E5A04B]">no preferences</span> : null}</span>
                             </span>
@@ -345,10 +346,11 @@ function CandidatePanel({ c, rank, closeHref, latestRound, join, mine }: { c: Pa
   const dot = (color: string, glow = true) => <span aria-hidden className="absolute -left-[21px] top-[3px] h-2.5 w-2.5 rounded-full" style={{ background: color, boxShadow: glow ? `0 0 8px ${color}` : undefined }} />;
   return (
     <aside id="cand-panel" aria-labelledby="cand-panel-h" className="mn-card-glass order-first flex w-full flex-none scroll-mt-4 flex-col gap-3.5 rounded-[20px] border border-[rgba(155,135,255,.4)] p-[18px] shadow-[0_0_40px_rgba(110,86,255,.15)] xl:sticky xl:top-4 xl:order-none xl:max-h-[calc(100dvh-2rem)] xl:w-[350px] xl:overflow-y-auto">
+      <ScrollIntoView target="cand-panel" id={c.applicantId} />
       <div className="flex items-center gap-3">
         <span aria-hidden className="mn-av !h-11 !w-11 !text-[15px]" style={mine ? { background: "linear-gradient(135deg,#8B73FF,#5B3FF5)" } : { background: avatarOf(c.applicantId), boxShadow: `0 0 0 3px ${avatarOf(c.applicantId)}66` }}>{initials(c.name, c.applicantId)}</span>
         <div className="min-w-0 flex-1">
-          <h2 id="cand-panel-h" className="truncate text-[17px] font-semibold">{c.name ?? `Applicant ${c.applicantId}`}</h2>
+          <h2 id="cand-panel-h" className="truncate text-[17px] font-semibold">{c.name ?? `Applicant ${c.applicantId}`}{c.nameHidden ? <span className="ml-1.5 align-middle text-[11px] font-normal text-muted">· name hidden</span> : null}</h2>
           <p className="mt-0.5 font-mono text-[11px] text-muted">{c.applicantId}{c.pmdcNo ? ` · PMDC ${c.pmdcNo}` : ""}{rank ? ` · rank ${n(rank)}` : ""}</p>
         </div>
         <Link href={closeHref} scroll={false} aria-label="Close" className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg border border-white/[.12] text-[#A3A3AD] hover:text-white">✕</Link>
@@ -375,6 +377,7 @@ function CandidatePanel({ c, rank, closeHref, latestRound, join, mine }: { c: Pa
           {c.rounds.map((r, i) => <li key={`r${i}`} className="relative">{dot("#3DDC97", false)}<b>Round {r.roundNo}</b> <span className="text-muted">· {r.preferenceNo ? `#${r.preferenceNo} ` : ""}{r.speciality}, {short(r.hospital)}</span></li>)}
           {joined ? <li className="relative">{dot(joined === "joined" ? "#3DDC97" : joined === "pending" ? "#E5A04B" : "#FF7A7A")}<b>Joining</b> <JoinPill state={joined} /></li> : null}
         </ol>
+        {c.recordHidden ? <p className="mt-2.5 text-[11px] text-muted">This candidate keeps PHF&apos;s remarks and any corrections to themselves.</p> : null}
       </div>
 
       {c.programmes.filter((p) => p.preferences.length).length === 0 ? <p className="text-xs text-muted">No preferences in the portal data.</p> : null}
